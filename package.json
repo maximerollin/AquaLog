@@ -1,0 +1,7 @@
+{
+  "name": "aqualog-rapid-session-prototype",
+  "private": true,
+  "scripts": {
+    "prototype": "python3 -m http.server 4173 --directory prototype/rapid-session"
+  }
+}

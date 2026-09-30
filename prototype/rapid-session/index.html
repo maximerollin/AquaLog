@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#006c4c" />
+    <title>AquaLog — prototype de session rapide</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="prototype-layout">
+      <aside class="brief-panel" aria-labelledby="prototype-title">
+        <p class="eyebrow">Prototype jetable · Android</p>
+        <h1 id="prototype-title">Une session en moins de 30 secondes ?</h1>
+        <p class="brief-copy">
+          Comparez trois parcours. Les données restent uniquement dans cet onglet et
+          l'enregistrement simule un retour immédiat vers la chronologie.
+        </p>
+
+        <div class="scenario-toggle" role="group" aria-label="Scénario de test">
+          <button type="button" data-scenario="routine" class="selected">Routine</button>
+          <button type="button" data-scenario="complete">Session complète</button>
+        </div>
+
+        <section class="mission-card" aria-live="polite">
+          <div class="mission-heading">
+            <span>Mission</span>
+            <button type="button" id="reset-button" class="text-button">Recommencer</button>
+          </div>
+          <ol id="mission-list"></ol>
+        </section>
+
+        <section class="metrics-card" aria-labelledby="metrics-heading">
+          <div class="metrics-heading-row">
+            <h2 id="metrics-heading">État & mesure</h2>
+            <span id="completion-chip" class="status-chip neutral">En attente</span>
+          </div>
+          <div class="metric-grid">
+            <div><strong id="metric-time">0,0 s</strong><span>temps</span></div>
+            <div><strong id="metric-actions">0</strong><span>actions</span></div>
+            <div><strong id="metric-screens">1</strong><span>écrans</span></div>
+            <div><strong id="metric-fields">0/4</strong><span>éléments</span></div>
+          </div>
+          <pre id="state-output" aria-label="État complet du prototype"></pre>
+        </section>
+      </aside>
+
+      <section class="device-stage" aria-label="Téléphone Android simulé">
+        <div class="phone-shell">
+          <div class="phone-status" aria-hidden="true">
+            <span>09:41</span>
+            <span>● ◔ ▰</span>
+          </div>
+          <div id="app" class="app-surface"></div>
+          <div class="gesture-bar" aria-hidden="true"></div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="variant-switcher" aria-label="Changer de variante">
+      <button type="button" id="variant-prev" aria-label="Variante précédente">←</button>
+      <div>
+        <span>VARIANTE</span>
+        <strong id="variant-label">A</strong>
+      </div>
+      <button type="button" id="variant-next" aria-label="Variante suivante">→</button>
+    </nav>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
