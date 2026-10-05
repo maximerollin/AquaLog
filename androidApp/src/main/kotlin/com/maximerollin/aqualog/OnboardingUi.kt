@@ -46,7 +46,13 @@ fun AquaLogContent(
 ) {
     when {
         state.isLoading -> LoadingContent(modifier)
-        state.setup != null -> AquariumHome(state.setup.aquarium, modifier)
+        state.rapidSession != null && state.setup != null -> RapidSessionScreen(
+            state = state.rapidSession,
+            aquarium = state.setup.aquarium,
+            viewModel = viewModel,
+            modifier = modifier,
+        )
+        state.setup != null -> AquariumHome(state, viewModel, modifier)
         state.step == OnboardingStep.WELCOME -> WelcomeScreen(viewModel::startOnboarding, modifier)
         state.step == OnboardingStep.PROFILE -> ProfileScreen(
             selected = state.profile,
@@ -414,7 +420,8 @@ private fun PlanCard(title: Int, description: Int) {
 }
 
 @Composable
-private fun AquariumHome(aquarium: Aquarium, modifier: Modifier) {
+private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
+    val aquarium = requireNotNull(state.setup).aquarium
     StandardScreen(modifier) {
         Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
         Text(
@@ -430,16 +437,29 @@ private fun AquariumHome(aquarium: Aquarium, modifier: Modifier) {
         }
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.no_session_yet), style = MaterialTheme.typography.titleMedium)
                 Text(
-                    stringResource(R.string.no_session_description),
+                    stringResource(
+                        if (state.latestSession == null) R.string.no_session_yet else R.string.session_saved,
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    stringResource(
+                        if (state.latestSession == null) {
+                            R.string.no_session_description
+                        } else {
+                            R.string.session_saved_description
+                        },
+                        state.latestSession?.measurements?.size ?: 0,
+                        state.latestSession?.maintenanceActions?.size ?: 0,
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
         Spacer(Modifier.weight(1f))
-        PrimaryButton(R.string.new_session, {})
+        PrimaryButton(R.string.new_session, viewModel::openRapidSession)
     }
 }
 
@@ -484,7 +504,7 @@ private fun ErrorText(message: Int) {
 }
 
 @Composable
-private fun BuiltInParameter.label(): String = stringResource(
+internal fun BuiltInParameter.label(): String = stringResource(
     when (this) {
         BuiltInParameter.TEMPERATURE -> R.string.parameter_temperature
         BuiltInParameter.PH -> R.string.parameter_ph

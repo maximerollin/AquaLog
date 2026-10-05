@@ -21,6 +21,12 @@ interface AquariumRepository {
         profile: AquariumProfile,
         parameters: List<ParameterDefinitionDraft>,
     ): AquariumSetup
+
+    suspend fun loadRapidSessionContext(aquariumId: String): RapidSessionContext
+
+    suspend fun saveRapidSession(input: RapidSessionInput): RecordedSession
+
+    fun observeLatestSession(aquariumId: String): Flow<RecordedSession?>
 }
 
 class RoomAquariumRepository(
@@ -29,6 +35,7 @@ class RoomAquariumRepository(
     private val currentTimeMillis: () -> Long,
 ) : AquariumRepository {
     private val aquariumDao = database.aquariumDao()
+    private val sessionDao = database.sessionDao()
 
     override fun observeCurrentAquarium(): Flow<Aquarium?> =
         aquariumDao.observeCurrent().map { it?.toDomain() }
@@ -113,6 +120,83 @@ class RoomAquariumRepository(
         )
         return AquariumSetup(aquarium, definitions)
     }
+
+    override suspend fun loadRapidSessionContext(aquariumId: String): RapidSessionContext {
+        val setup = requireNotNull(aquariumDao.getSetup(aquariumId)) { "Aquarium does not exist" }.toDomain()
+        val activeParameters = setup.parameters.filter(ParameterDefinition::isActive)
+            .sortedBy(ParameterDefinition::position)
+        val lastMeasurements = sessionDao.measurementsForAquarium(aquariumId)
+            .distinctBy(MeasurementEntity::parameterDefinitionId)
+            .associate { it.parameterDefinitionId to it.value }
+        val lastActions = sessionDao.maintenanceActionsForAquarium(aquariumId)
+            .map(MaintenanceActionEntity::toDomain)
+            .distinctBy(MaintenanceAction::type)
+            .associateBy(MaintenanceAction::type)
+        return RapidSessionContext(
+            activeParameters = activeParameters,
+            measurementInputs = activeParameters.associate { it.id to "" },
+            lastMeasurements = lastMeasurements,
+            lastMaintenanceActions = lastActions,
+        )
+    }
+
+    override suspend fun saveRapidSession(input: RapidSessionInput): RecordedSession {
+        require(input.idempotencyKey.isNotBlank()) { "A Session interaction requires an idempotency key" }
+        val setup = requireNotNull(aquariumDao.getSetup(input.aquariumId)) { "Aquarium does not exist" }.toDomain()
+        val activeParameters = setup.parameters.filter(ParameterDefinition::isActive).associateBy(ParameterDefinition::id)
+        val session = Session(
+            id = generateId(),
+            aquariumId = input.aquariumId,
+            occurredAtEpochMillis = input.occurredAtEpochMillis,
+            createdAtEpochMillis = currentTimeMillis(),
+        )
+        val measurements = input.measurementInputs.mapNotNull { (parameterId, rawValue) ->
+            if (rawValue.isBlank()) return@mapNotNull null
+            val definition = requireNotNull(activeParameters[parameterId]) { "Measure must target an active Parameter" }
+            val feedback = evaluateMeasurement(rawValue, definition)
+            require(feedback.isValid) { "Measure must be a decimal value" }
+            Measurement(
+                id = generateId(),
+                sessionId = session.id,
+                parameterDefinitionId = parameterId,
+                value = requireNotNull(feedback.value),
+            )
+        }
+        val actions = input.maintenanceActions.map { draft ->
+            val quantity = if (draft.quantity.isBlank()) null else draft.quantity.normalizedDecimalOrNull()
+            require(draft.quantity.isBlank() || quantity?.isFinite() == true) { "Action quantity must be a decimal value" }
+            MaintenanceAction(
+                id = generateId(),
+                sessionId = session.id,
+                type = draft.type,
+                quantity = quantity,
+                unit = draft.unit.trim().ifBlank { null },
+                product = draft.product.trim().ifBlank { null },
+            )
+        }
+        val events = buildList {
+            input.observation.trim().takeIf(String::isNotEmpty)?.let { note ->
+                add(SessionEvent(generateId(), session.id, EventType.OBSERVATION, note))
+            }
+            input.incident.trim().takeIf(String::isNotEmpty)?.let { note ->
+                add(SessionEvent(generateId(), session.id, EventType.INCIDENT, note))
+            }
+        }
+        require(measurements.isNotEmpty() || actions.isNotEmpty() || events.isNotEmpty()) {
+            "An empty Session cannot be recorded"
+        }
+        return sessionDao.create(
+            session = session.toEntity(input.idempotencyKey),
+            measurements = measurements.map(Measurement::toEntity),
+            actions = actions.map(MaintenanceAction::toEntity),
+            events = events.map(SessionEvent::toEntity),
+        ).toDomain()
+    }
+
+    override fun observeLatestSession(aquariumId: String): Flow<RecordedSession?> =
+        sessionDao.observeLatest(aquariumId).map { it?.toDomain() }
+
+    suspend fun sessionCount(aquariumId: String): Int = sessionDao.count(aquariumId)
 }
 
 private fun AquariumEntity.toDomain() = Aquarium(
@@ -160,4 +244,47 @@ private fun ParameterDefinition.toEntity() = ParameterDefinitionEntity(
     precision = precision,
     indicativeMinimum = indicativeMinimum,
     indicativeMaximum = indicativeMaximum,
+)
+
+private fun Session.toEntity(idempotencyKey: String) = SessionEntity(
+    id = id,
+    aquariumId = aquariumId,
+    occurredAtEpochMillis = occurredAtEpochMillis,
+    createdAtEpochMillis = createdAtEpochMillis,
+    idempotencyKey = idempotencyKey,
+)
+
+private fun SessionEntity.toDomain() = Session(id, aquariumId, occurredAtEpochMillis, createdAtEpochMillis)
+
+private fun Measurement.toEntity() = MeasurementEntity(id, sessionId, parameterDefinitionId, value)
+
+private fun MeasurementEntity.toDomain() = Measurement(id, sessionId, parameterDefinitionId, value)
+
+private fun MaintenanceAction.toEntity() = MaintenanceActionEntity(
+    id,
+    sessionId,
+    type.storageValue,
+    quantity,
+    unit,
+    product,
+)
+
+private fun MaintenanceActionEntity.toDomain() = MaintenanceAction(
+    id,
+    sessionId,
+    MaintenanceActionType.fromStorageValue(type),
+    quantity,
+    unit,
+    product,
+)
+
+private fun SessionEvent.toEntity() = SessionEventEntity(id, sessionId, type.storageValue, note)
+
+private fun SessionEventEntity.toDomain() = SessionEvent(id, sessionId, EventType.fromStorageValue(type), note)
+
+private fun RecordedSessionEntity.toDomain() = RecordedSession(
+    session = session.toDomain(),
+    measurements = measurements.map(MeasurementEntity::toDomain),
+    maintenanceActions = maintenanceActions.map(MaintenanceActionEntity::toDomain),
+    events = events.map(SessionEventEntity::toDomain),
 )
