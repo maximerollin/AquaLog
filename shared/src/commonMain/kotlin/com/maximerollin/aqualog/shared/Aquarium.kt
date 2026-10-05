@@ -6,6 +6,12 @@ data class Aquarium(
     val volume: Double,
     val volumeUnit: VolumeUnit,
     val createdAtEpochMillis: Long,
+    val profile: AquariumProfile = AquariumProfile.ESTABLISHED,
+)
+
+data class AquariumSetup(
+    val aquarium: Aquarium,
+    val parameters: List<ParameterDefinition>,
 )
 
 enum class VolumeUnit(val storageValue: String) {
