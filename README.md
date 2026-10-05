@@ -1,8 +1,9 @@
 # AquaLog
 
-AquaLog is an Android-first, local-first aquarium log. This repository currently
-contains the first vertical slice: create one Aquarium and retrieve it from the
-local Room database when the app starts again.
+AquaLog is an Android-first, local-first aquarium log. The current vertical
+slices let a new user complete the offline onboarding, configure an Aquarium
+and its built-in Parameters, try a non-persisted mini-session, skip the
+provisional paywall and return to the configured Aquarium after a restart.
 
 ## Development setup
 
@@ -24,7 +25,8 @@ Run the JVM contract test and build the development application:
 ./gradlew :androidApp:assembleDebug :androidApp:lintDebug
 ```
 
-With an emulator or device connected, run the visible persistence seam:
+With an emulator or device connected, run the visible onboarding-to-persistence
+seam:
 
 ```shell
 ./gradlew :androidApp:connectedDebugAndroidTest

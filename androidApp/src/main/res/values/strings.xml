@@ -1,16 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AquaLog</string>
-    <string name="create_aquarium_title">Create your Aquarium</string>
-    <string name="create_aquarium_description">Add the essentials now. You can complete the setup later.</string>
+
+    <string name="welcome_title">One Session. Your whole routine.</string>
+    <string name="welcome_description">Record several water measurements, maintenance actions and an observation together—without creating an account.</string>
+    <string name="get_started">Get started</string>
+
+    <string name="profile_title">What are you tracking?</string>
+    <string name="profile_description">AquaLog will suggest an editable set of Parameters. Nothing is locked in.</string>
+    <string name="profile_established">Established</string>
+    <string name="profile_established_description">A balanced routine for an established freshwater Aquarium.</string>
+    <string name="profile_cycling">Cycling</string>
+    <string name="profile_cycling_description">Prioritizes ammonia, nitrites and nitrates while the Aquarium matures.</string>
+    <string name="profile_planted_shrimp">Planted / shrimp</string>
+    <string name="profile_planted_shrimp_description">Adds hardness, TDS and phosphate to the routine.</string>
+    <string name="continue_to_aquarium">Continue to Aquarium</string>
+
+    <string name="aquarium_details_title">Your first Aquarium</string>
+    <string name="aquarium_details_description">This stays on your device. No account or network is required.</string>
     <string name="aquarium_name_label">Aquarium name</string>
     <string name="aquarium_volume_label">Volume</string>
     <string name="volume_unit_label">Volume unit</string>
     <string name="unit_liters">Liters</string>
     <string name="unit_us_gallons">US gallons</string>
-    <string name="save_aquarium">Save Aquarium</string>
     <string name="invalid_aquarium">Enter a name and a volume greater than zero.</string>
+    <string name="continue_to_parameters">Continue to Parameters</string>
+
+    <string name="parameters_title">Shape your routine</string>
+    <string name="parameters_description">Enable, reorder and edit every built-in Parameter. Indicative ranges are only personal reference points.</string>
+    <string name="parameter_temperature">Temperature</string>
+    <string name="parameter_ph">pH</string>
+    <string name="parameter_ammonia">Ammonia / ammonium</string>
+    <string name="parameter_nitrite">Nitrite</string>
+    <string name="parameter_nitrate">Nitrate</string>
+    <string name="parameter_gh">GH</string>
+    <string name="parameter_kh">KH</string>
+    <string name="parameter_tds">TDS</string>
+    <string name="parameter_phosphate">Phosphate</string>
+    <string name="parameter_salinity">Salinity</string>
+    <string name="enabled_for_parameter">Enabled for %1$s</string>
+    <string name="move_parameter_up">Move %1$s up</string>
+    <string name="move_parameter_down">Move %1$s down</string>
+    <string name="move_up_symbol">↑</string>
+    <string name="move_down_symbol">↓</string>
+    <string name="parameter_unit">Unit</string>
+    <string name="unit_for_parameter">Unit for %1$s</string>
+    <string name="parameter_precision">Decimals</string>
+    <string name="precision_for_parameter">Precision for %1$s</string>
+    <string name="parameter_minimum">Indicative min</string>
+    <string name="minimum_for_parameter">Indicative minimum for %1$s</string>
+    <string name="parameter_maximum">Indicative max</string>
+    <string name="maximum_for_parameter">Indicative maximum for %1$s</string>
+    <string name="invalid_parameters">Keep at least one Parameter active. Units, precision and ranges must be valid.</string>
+    <string name="try_mini_session">Try a mini Session</string>
+
+    <string name="practice_title">Try your first Session</string>
+    <string name="practice_description">Enter a few example values to feel the quick flow. This practice is never saved.</string>
+    <string name="practice_value_for_parameter">Practice value for %1$s</string>
+    <string name="practice_not_saved">Practice only · no Session or Measurement will be created</string>
+    <string name="see_free_and_pro">See Free and Pro</string>
+
+    <string name="paywall_title">Start free. Upgrade when it helps.</string>
+    <string name="paywall_description">Your core routine stays useful for free. This provisional screen never starts a purchase.</string>
+    <string name="free_plan">Free</string>
+    <string name="free_plan_description">One Aquarium, unlimited Sessions and Measurements, 90 days of history.</string>
+    <string name="pro_plan">Pro · €14.99/year</string>
+    <string name="pro_plan_description">Multiple Aquariums, unlimited history and advanced analysis. Billing comes in a later slice.</string>
+    <string name="continue_for_free">Continue for free</string>
+
     <string name="home_title">Your Aquarium</string>
+    <string name="aquarium_ready">Ready for your next routine</string>
+    <string name="no_session_yet">No Session yet</string>
+    <string name="no_session_description">Your practice values were not saved. Start when you have real measurements or maintenance to log.</string>
+    <string name="new_session">New Session</string>
     <string name="volume_liters_format">%1$s L</string>
     <string name="volume_us_gallons_format">%1$s US gal</string>
 </resources>
