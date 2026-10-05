@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AquaLog</string>
+    <string name="create_aquarium_title">Create your Aquarium</string>
+    <string name="create_aquarium_description">Add the essentials now. You can complete the setup later.</string>
+    <string name="aquarium_name_label">Aquarium name</string>
+    <string name="aquarium_volume_label">Volume</string>
+    <string name="volume_unit_label">Volume unit</string>
+    <string name="unit_liters">Liters</string>
+    <string name="unit_us_gallons">US gallons</string>
+    <string name="save_aquarium">Save Aquarium</string>
+    <string name="invalid_aquarium">Enter a name and a volume greater than zero.</string>
+    <string name="home_title">Your Aquarium</string>
+    <string name="volume_liters_format">%1$s L</string>
+    <string name="volume_us_gallons_format">%1$s US gal</string>
+</resources>
