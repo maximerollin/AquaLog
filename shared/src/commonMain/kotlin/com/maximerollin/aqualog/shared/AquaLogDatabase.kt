@@ -6,7 +6,9 @@ import androidx.room3.Dao
 import androidx.room3.Database
 import androidx.room3.Embedded
 import androidx.room3.Entity
+import androidx.room3.Index
 import androidx.room3.Insert
+import androidx.room3.OnConflictStrategy
 import androidx.room3.PrimaryKey
 import androidx.room3.Query
 import androidx.room3.Relation
@@ -51,6 +53,54 @@ data class AquariumSetupEntity(
     val parameters: List<ParameterDefinitionEntity>,
 )
 
+@Entity(
+    tableName = "sessions",
+    indices = [Index(value = ["idempotencyKey"], unique = true)],
+)
+data class SessionEntity(
+    @PrimaryKey val id: String,
+    val aquariumId: String,
+    val occurredAtEpochMillis: Long,
+    val createdAtEpochMillis: Long,
+    val idempotencyKey: String,
+)
+
+@Entity(tableName = "measurements")
+data class MeasurementEntity(
+    @PrimaryKey val id: String,
+    val sessionId: String,
+    val parameterDefinitionId: String,
+    val value: Double,
+)
+
+@Entity(tableName = "maintenance_actions")
+data class MaintenanceActionEntity(
+    @PrimaryKey val id: String,
+    val sessionId: String,
+    val type: String,
+    val quantity: Double?,
+    val unit: String?,
+    val product: String?,
+)
+
+@Entity(tableName = "session_events")
+data class SessionEventEntity(
+    @PrimaryKey val id: String,
+    val sessionId: String,
+    val type: String,
+    val note: String,
+)
+
+data class RecordedSessionEntity(
+    @Embedded val session: SessionEntity,
+    @Relation(parentColumns = ["id"], entityColumns = ["sessionId"])
+    val measurements: List<MeasurementEntity>,
+    @Relation(parentColumns = ["id"], entityColumns = ["sessionId"])
+    val maintenanceActions: List<MaintenanceActionEntity>,
+    @Relation(parentColumns = ["id"], entityColumns = ["sessionId"])
+    val events: List<SessionEventEntity>,
+)
+
 @Dao
 abstract class AquariumDao {
     @Query("SELECT * FROM aquariums ORDER BY createdAtEpochMillis ASC LIMIT 1")
@@ -59,6 +109,10 @@ abstract class AquariumDao {
     @Transaction
     @Query("SELECT * FROM aquariums ORDER BY createdAtEpochMillis ASC LIMIT 1")
     abstract fun observeCurrentSetup(): Flow<AquariumSetupEntity?>
+
+    @Transaction
+    @Query("SELECT * FROM aquariums WHERE id = :aquariumId")
+    abstract suspend fun getSetup(aquariumId: String): AquariumSetupEntity?
 
     @Insert
     protected abstract suspend fun insert(aquarium: AquariumEntity)
@@ -81,14 +135,70 @@ abstract class AquariumDao {
     }
 }
 
+@Dao
+abstract class SessionDao {
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    protected abstract suspend fun insertSession(session: SessionEntity): Long
+
+    @Insert
+    protected abstract suspend fun insertMeasurements(measurements: List<MeasurementEntity>)
+
+    @Insert
+    protected abstract suspend fun insertMaintenanceActions(actions: List<MaintenanceActionEntity>)
+
+    @Insert
+    protected abstract suspend fun insertEvents(events: List<SessionEventEntity>)
+
+    @Transaction
+    @Query("SELECT * FROM sessions WHERE idempotencyKey = :idempotencyKey LIMIT 1")
+    protected abstract suspend fun getByIdempotencyKey(idempotencyKey: String): RecordedSessionEntity?
+
+    @Transaction
+    @Query("SELECT * FROM sessions WHERE aquariumId = :aquariumId ORDER BY occurredAtEpochMillis DESC, createdAtEpochMillis DESC LIMIT 1")
+    abstract fun observeLatest(aquariumId: String): Flow<RecordedSessionEntity?>
+
+    @Query("SELECT COUNT(*) FROM sessions WHERE aquariumId = :aquariumId")
+    abstract suspend fun count(aquariumId: String): Int
+
+    @Query("SELECT m.* FROM measurements m INNER JOIN sessions s ON s.id = m.sessionId WHERE s.aquariumId = :aquariumId ORDER BY s.occurredAtEpochMillis DESC, s.createdAtEpochMillis DESC")
+    abstract suspend fun measurementsForAquarium(aquariumId: String): List<MeasurementEntity>
+
+    @Query("SELECT a.* FROM maintenance_actions a INNER JOIN sessions s ON s.id = a.sessionId WHERE s.aquariumId = :aquariumId ORDER BY s.occurredAtEpochMillis DESC, s.createdAtEpochMillis DESC")
+    abstract suspend fun maintenanceActionsForAquarium(aquariumId: String): List<MaintenanceActionEntity>
+
+    @Transaction
+    open suspend fun create(
+        session: SessionEntity,
+        measurements: List<MeasurementEntity>,
+        actions: List<MaintenanceActionEntity>,
+        events: List<SessionEventEntity>,
+    ): RecordedSessionEntity {
+        val inserted = insertSession(session) != -1L
+        if (inserted) {
+            if (measurements.isNotEmpty()) insertMeasurements(measurements)
+            if (actions.isNotEmpty()) insertMaintenanceActions(actions)
+            if (events.isNotEmpty()) insertEvents(events)
+        }
+        return requireNotNull(getByIdempotencyKey(session.idempotencyKey))
+    }
+}
+
 @Database(
-    entities = [AquariumEntity::class, ParameterDefinitionEntity::class],
-    version = 2,
+    entities = [
+        AquariumEntity::class,
+        ParameterDefinitionEntity::class,
+        SessionEntity::class,
+        MeasurementEntity::class,
+        MaintenanceActionEntity::class,
+        SessionEventEntity::class,
+    ],
+    version = 3,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
 abstract class AquaLogDatabase : RoomDatabase() {
     abstract fun aquariumDao(): AquariumDao
+    abstract fun sessionDao(): SessionDao
 }
 
 @Suppress("NO_ACTUAL_FOR_EXPECT")
@@ -101,7 +211,7 @@ fun createAquaLogDatabase(
 ): AquaLogDatabase = builder
     .setDriver(BundledSQLiteDriver())
     .setQueryCoroutineContext(Dispatchers.IO)
-    .addMigrations(MIGRATION_1_2)
+    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
     .build()
 
 private val MIGRATION_1_2 = Migration(1, 2) { connection ->
@@ -122,5 +232,23 @@ private val MIGRATION_1_2 = Migration(1, 2) { connection ->
             indicativeMaximum REAL
         )
         """.trimIndent(),
+    )
+}
+
+private val MIGRATION_2_3 = Migration(2, 3) { connection ->
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS sessions (id TEXT NOT NULL PRIMARY KEY, aquariumId TEXT NOT NULL, occurredAtEpochMillis INTEGER NOT NULL, createdAtEpochMillis INTEGER NOT NULL, idempotencyKey TEXT NOT NULL)",
+    )
+    connection.execSQL(
+        "CREATE UNIQUE INDEX IF NOT EXISTS index_sessions_idempotencyKey ON sessions (idempotencyKey)",
+    )
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS measurements (id TEXT NOT NULL PRIMARY KEY, sessionId TEXT NOT NULL, parameterDefinitionId TEXT NOT NULL, value REAL NOT NULL)",
+    )
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS maintenance_actions (id TEXT NOT NULL PRIMARY KEY, sessionId TEXT NOT NULL, type TEXT NOT NULL, quantity REAL, unit TEXT, product TEXT)",
+    )
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS session_events (id TEXT NOT NULL PRIMARY KEY, sessionId TEXT NOT NULL, type TEXT NOT NULL, note TEXT NOT NULL)",
     )
 }

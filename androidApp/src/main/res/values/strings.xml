@@ -75,4 +75,36 @@
     <string name="new_session">New Session</string>
     <string name="volume_liters_format">%1$s L</string>
     <string name="volume_us_gallons_format">%1$s US gal</string>
+
+    <string name="rapid_session_title">New Session</string>
+    <string name="cancel">Cancel</string>
+    <string name="session_aquarium">Aquarium: %1$s</string>
+    <string name="earlier_time">−15 min</string>
+    <string name="later_time">+15 min</string>
+    <string name="measurements_heading">Measurements</string>
+    <string name="measurement_for_parameter">Measurement for %1$s</string>
+    <string name="last_measurement">Last: %1$s %2$s · new value stays empty</string>
+    <string name="no_previous_measurement">Not measured yet · leave empty to skip</string>
+    <string name="invalid_measurement">Enter a decimal number using a point or comma.</string>
+    <string name="unusual_measurement">Outside your indicative range. Check the value; saving remains available.</string>
+    <string name="maintenance_heading">Maintenance actions</string>
+    <string name="action_water_change">Water change</string>
+    <string name="action_fertilization">Fertilization</string>
+    <string name="action_filter">Filter maintenance</string>
+    <string name="action_vacuum">Vacuum</string>
+    <string name="action_glass">Glass cleaning</string>
+    <string name="action_pruning">Pruning</string>
+    <string name="edit_action">Edit</string>
+    <string name="action_quantity">Quantity</string>
+    <string name="action_product">Product</string>
+    <string name="add_observation">Add observation</string>
+    <string name="hide_observation">Hide observation</string>
+    <string name="observation">Observation</string>
+    <string name="add_incident">Add incident</string>
+    <string name="hide_incident">Hide incident</string>
+    <string name="incident">Incident</string>
+    <string name="save_session">Save Session</string>
+    <string name="session_save_error">The Session could not be saved. Your entries are still here; try again.</string>
+    <string name="session_saved">Session saved</string>
+    <string name="session_saved_description">Chronology confirmation · %1$d Measurements · %2$d maintenance actions</string>
 </resources>

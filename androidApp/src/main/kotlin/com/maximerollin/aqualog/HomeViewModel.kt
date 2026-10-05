@@ -7,14 +7,21 @@ import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.MaintenanceActionInput
+import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinitionDraft
+import com.maximerollin.aqualog.shared.RapidSessionContext
+import com.maximerollin.aqualog.shared.RapidSessionInput
+import com.maximerollin.aqualog.shared.RecordedSession
 import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.evaluateMeasurement
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 enum class OnboardingStep {
     WELCOME,
@@ -77,10 +84,41 @@ data class HomeUiState(
     val isSaving: Boolean = false,
     val showAquariumValidationError: Boolean = false,
     val showParameterValidationError: Boolean = false,
+    val rapidSession: RapidSessionUiState? = null,
+    val latestSession: RecordedSession? = null,
 )
+
+data class RapidSessionUiState(
+    val context: RapidSessionContext? = null,
+    val idempotencyKey: String,
+    val aquariumId: String,
+    val occurredAtEpochMillis: Long,
+    val measurementInputs: Map<String, String> = emptyMap(),
+    val actions: Map<MaintenanceActionType, MaintenanceActionInput> = emptyMap(),
+    val editingAction: MaintenanceActionType? = null,
+    val showObservation: Boolean = false,
+    val observation: String = "",
+    val showIncident: Boolean = false,
+    val incident: String = "",
+    val isSaving: Boolean = false,
+    val saveError: Boolean = false,
+) {
+    val hasContent: Boolean
+        get() = measurementInputs.values.any(String::isNotBlank) ||
+            actions.isNotEmpty() || observation.isNotBlank() || incident.isNotBlank()
+
+    val allMeasurementsValid: Boolean
+        get() = context?.activeParameters?.all { definition ->
+            evaluateMeasurement(measurementInputs[definition.id].orEmpty(), definition).isValid
+        } ?: false
+
+    val canSave: Boolean get() = hasContent && allMeasurementsValid && !isSaving
+}
 
 class HomeViewModel(
     private val aquariumRepository: AquariumRepository,
+    private val currentTimeMillis: () -> Long = System::currentTimeMillis,
+    private val generateInteractionId: () -> String = { UUID.randomUUID().toString() },
 ) : ViewModel() {
     private val mutableUiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = mutableUiState.asStateFlow()
@@ -200,6 +238,134 @@ class HomeViewModel(
         }
     }
 
+    fun openRapidSession() {
+        val setup = mutableUiState.value.setup ?: return
+        val draft = RapidSessionUiState(
+            idempotencyKey = generateInteractionId(),
+            aquariumId = setup.aquarium.id,
+            occurredAtEpochMillis = currentTimeMillis(),
+        )
+        mutableUiState.update { it.copy(rapidSession = draft) }
+        viewModelScope.launch {
+            val context = aquariumRepository.loadRapidSessionContext(setup.aquarium.id)
+            mutableUiState.update { state ->
+                val current = state.rapidSession
+                if (current?.idempotencyKey != draft.idempotencyKey) state else {
+                    state.copy(
+                        rapidSession = current.copy(
+                            context = context,
+                            measurementInputs = context.measurementInputs,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    fun closeRapidSession() {
+        mutableUiState.update { it.copy(rapidSession = null) }
+    }
+
+    fun shiftSessionTimeByMinutes(minutes: Int) = updateRapidSession {
+        it.copy(occurredAtEpochMillis = it.occurredAtEpochMillis + minutes * 60_000L)
+    }
+
+    fun updateMeasurement(parameterDefinitionId: String, value: String) = updateRapidSession {
+        it.copy(
+            measurementInputs = it.measurementInputs + (parameterDefinitionId to value),
+            saveError = false,
+        )
+    }
+
+    fun toggleMaintenanceAction(type: MaintenanceActionType) = updateRapidSession { state ->
+        if (type in state.actions) {
+            state.copy(actions = state.actions - type, editingAction = null)
+        } else {
+            val previous = state.context?.lastMaintenanceActions?.get(type)
+            val default = when (type) {
+                MaintenanceActionType.WATER_CHANGE -> MaintenanceActionInput(type, "20", "%")
+                MaintenanceActionType.FERTILIZATION -> MaintenanceActionInput(type, "1", "mL")
+                else -> MaintenanceActionInput(type)
+            }
+            state.copy(
+                actions = state.actions + (
+                    type to previous?.let {
+                        MaintenanceActionInput(
+                            type = type,
+                            quantity = it.quantity.displayInput(),
+                            unit = it.unit.orEmpty(),
+                            product = it.product.orEmpty(),
+                        )
+                    }.orDefault(default)
+                ),
+                saveError = false,
+            )
+        }
+    }
+
+    fun editMaintenanceAction(type: MaintenanceActionType) = updateRapidSession {
+        it.copy(editingAction = if (it.editingAction == type) null else type)
+    }
+
+    fun updateMaintenanceQuantity(type: MaintenanceActionType, value: String) = updateAction(type) {
+        it.copy(quantity = value)
+    }
+
+    fun updateMaintenanceUnit(type: MaintenanceActionType, value: String) = updateAction(type) {
+        it.copy(unit = value)
+    }
+
+    fun updateMaintenanceProduct(type: MaintenanceActionType, value: String) = updateAction(type) {
+        it.copy(product = value)
+    }
+
+    fun toggleObservation() = updateRapidSession { it.copy(showObservation = !it.showObservation) }
+
+    fun updateObservation(value: String) = updateRapidSession { it.copy(observation = value, saveError = false) }
+
+    fun toggleIncident() = updateRapidSession { it.copy(showIncident = !it.showIncident) }
+
+    fun updateIncident(value: String) = updateRapidSession { it.copy(incident = value, saveError = false) }
+
+    fun saveRapidSession() {
+        val draft = mutableUiState.value.rapidSession ?: return
+        if (!draft.canSave) return
+        mutableUiState.update { it.copy(rapidSession = draft.copy(isSaving = true, saveError = false)) }
+        viewModelScope.launch {
+            runCatching {
+                aquariumRepository.saveRapidSession(
+                    RapidSessionInput(
+                        aquariumId = draft.aquariumId,
+                        occurredAtEpochMillis = draft.occurredAtEpochMillis,
+                        idempotencyKey = draft.idempotencyKey,
+                        measurementInputs = draft.measurementInputs,
+                        maintenanceActions = draft.actions.values.toList(),
+                        observation = draft.observation,
+                        incident = draft.incident,
+                    ),
+                )
+            }.onSuccess { recorded ->
+                mutableUiState.update { it.copy(rapidSession = null, latestSession = recorded) }
+            }.onFailure {
+                updateRapidSession { it.copy(isSaving = false, saveError = true) }
+            }
+        }
+    }
+
+    private fun updateAction(
+        type: MaintenanceActionType,
+        transform: (MaintenanceActionInput) -> MaintenanceActionInput,
+    ) = updateRapidSession { state ->
+        val action = state.actions[type] ?: return@updateRapidSession state
+        state.copy(actions = state.actions + (type to transform(action)), saveError = false)
+    }
+
+    private fun updateRapidSession(transform: (RapidSessionUiState) -> RapidSessionUiState) {
+        mutableUiState.update { state ->
+            state.rapidSession?.let { state.copy(rapidSession = transform(it)) } ?: state
+        }
+    }
+
     private fun moveTo(step: OnboardingStep) {
         mutableUiState.update { it.copy(step = step) }
     }
@@ -245,3 +411,5 @@ private fun Double?.displayInput(): String = when {
     this % 1.0 == 0.0 -> toLong().toString()
     else -> toString()
 }
+
+private fun <T> T?.orDefault(default: T): T = this ?: default

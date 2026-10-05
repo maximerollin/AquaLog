@@ -11,7 +11,7 @@ import java.util.UUID
 open class AquaLogApplication : Application() {
     protected open val databaseName: String = AQUA_LOG_DATABASE_NAME
 
-    val aquariumRepository: AquariumRepository by lazy {
+    open val aquariumRepository: AquariumRepository by lazy {
         val database = createAquaLogDatabase(
             createAndroidDatabaseBuilder(this, databaseName),
         )

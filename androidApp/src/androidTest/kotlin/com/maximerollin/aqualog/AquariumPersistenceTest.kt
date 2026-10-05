@@ -15,7 +15,6 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.maximerollin.aqualog.shared.AQUA_LOG_DATABASE_NAME
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,7 +27,7 @@ class AquariumPersistenceTest {
     @Test
     fun onboarding_createsConfiguredAquarium_withoutPersistingPracticeValue() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        context.deleteDatabase(AQUA_LOG_DATABASE_NAME)
+        (context.applicationContext as TestAquaLogApplication).resetRepository()
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
         composeRule.onNodeWithText("Get started").performClick()
