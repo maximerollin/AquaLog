@@ -107,4 +107,42 @@
     <string name="session_save_error">The Session could not be saved. Your entries are still here; try again.</string>
     <string name="session_saved">Session saved</string>
     <string name="session_saved_description">Chronology confirmation · %1$d Measurements · %2$d maintenance actions</string>
+
+    <string name="navigation_home">Home</string>
+    <string name="navigation_history">History</string>
+    <string name="navigation_settings">Settings</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_placeholder">Account, units and appearance settings will be added in their dedicated slices.</string>
+
+    <string name="timeline_title">Chronology</string>
+    <string name="timeline_offline_status">Offline-ready · stored on this device</string>
+    <string name="timeline_period_all">All time</string>
+    <string name="timeline_period_7">7 days</string>
+    <string name="timeline_period_30">30 days</string>
+    <string name="timeline_period_90">90 days</string>
+    <string name="timeline_all_aquariums">All Aquariums</string>
+    <string name="timeline_all_parameters">All Parameters</string>
+    <string name="timeline_all_actions">All actions</string>
+    <string name="timeline_empty_title">No matching history</string>
+    <string name="timeline_empty_description">Record a Session or adjust the filters to see local history here.</string>
+    <string name="timeline_loading">Loading local history…</string>
+    <string name="timeline_error">Local history could not be read. Your saved data is still on this device.</string>
+    <string name="retry">Retry</string>
+    <string name="timeline_session">Session</string>
+    <string name="open_session_details">Open Session details</string>
+    <string name="back_to_timeline">Back to Chronology</string>
+    <string name="session_details">Session details</string>
+    <string name="timeline_events">Events</string>
+    <plurals name="timeline_measurement_count">
+        <item quantity="one">%d Measurement</item>
+        <item quantity="other">%d Measurements</item>
+    </plurals>
+    <plurals name="timeline_action_count">
+        <item quantity="one">%d maintenance action</item>
+        <item quantity="other">%d maintenance actions</item>
+    </plurals>
+    <plurals name="timeline_event_count">
+        <item quantity="one">%d Event</item>
+        <item quantity="other">%d Events</item>
+    </plurals>
 </resources>

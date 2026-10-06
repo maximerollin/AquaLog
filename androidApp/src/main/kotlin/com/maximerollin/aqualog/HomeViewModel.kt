@@ -14,11 +14,15 @@ import com.maximerollin.aqualog.shared.ParameterDefinitionDraft
 import com.maximerollin.aqualog.shared.RapidSessionContext
 import com.maximerollin.aqualog.shared.RapidSessionInput
 import com.maximerollin.aqualog.shared.RecordedSession
+import com.maximerollin.aqualog.shared.TimelineFilter
+import com.maximerollin.aqualog.shared.TimelineSession
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.evaluateMeasurement
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -31,6 +35,31 @@ enum class OnboardingStep {
     PRACTICE,
     PAYWALL,
 }
+
+enum class MainDestination {
+    HOME,
+    HISTORY,
+    SETTINGS,
+}
+
+enum class TimelinePeriod(val days: Int?) {
+    ALL(null),
+    SEVEN_DAYS(7),
+    THIRTY_DAYS(30),
+    NINETY_DAYS(90),
+}
+
+data class TimelineUiState(
+    val isLoading: Boolean = false,
+    val isOffline: Boolean = true,
+    val entries: List<TimelineSession> = emptyList(),
+    val period: TimelinePeriod = TimelinePeriod.ALL,
+    val aquariumId: String? = null,
+    val parameterDefinitionId: String? = null,
+    val maintenanceActionType: MaintenanceActionType? = null,
+    val selectedSessionId: String? = null,
+    val hasRecoverableError: Boolean = false,
+)
 
 data class ParameterEditorState(
     val parameter: BuiltInParameter,
@@ -86,6 +115,8 @@ data class HomeUiState(
     val showParameterValidationError: Boolean = false,
     val rapidSession: RapidSessionUiState? = null,
     val latestSession: RecordedSession? = null,
+    val destination: MainDestination = MainDestination.HOME,
+    val timeline: TimelineUiState = TimelineUiState(),
 )
 
 data class RapidSessionUiState(
@@ -122,6 +153,7 @@ class HomeViewModel(
 ) : ViewModel() {
     private val mutableUiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = mutableUiState.asStateFlow()
+    private var timelineJob: Job? = null
 
     init {
         viewModelScope.launch {
@@ -266,6 +298,43 @@ class HomeViewModel(
         mutableUiState.update { it.copy(rapidSession = null) }
     }
 
+    fun selectDestination(destination: MainDestination) {
+        mutableUiState.update { it.copy(destination = destination) }
+        if (destination == MainDestination.HISTORY && timelineJob == null) {
+            observeTimeline()
+        }
+    }
+
+    fun selectTimelinePeriod(period: TimelinePeriod) = updateTimelineFilter {
+        it.copy(period = period)
+    }
+
+    fun selectTimelineAquarium(aquariumId: String?) = updateTimelineFilter {
+        it.copy(aquariumId = aquariumId)
+    }
+
+    fun selectTimelineParameter(parameterDefinitionId: String?) = updateTimelineFilter {
+        it.copy(parameterDefinitionId = parameterDefinitionId)
+    }
+
+    fun selectTimelineAction(type: MaintenanceActionType?) = updateTimelineFilter {
+        it.copy(maintenanceActionType = type)
+    }
+
+    fun openTimelineSession(sessionId: String) {
+        mutableUiState.update { state ->
+            state.copy(timeline = state.timeline.copy(selectedSessionId = sessionId))
+        }
+    }
+
+    fun closeTimelineSession() {
+        mutableUiState.update { state ->
+            state.copy(timeline = state.timeline.copy(selectedSessionId = null))
+        }
+    }
+
+    fun retryTimeline() = observeTimeline()
+
     fun shiftSessionTimeByMinutes(minutes: Int) = updateRapidSession {
         it.copy(occurredAtEpochMillis = it.occurredAtEpochMillis + minutes * 60_000L)
     }
@@ -363,6 +432,58 @@ class HomeViewModel(
     private fun updateRapidSession(transform: (RapidSessionUiState) -> RapidSessionUiState) {
         mutableUiState.update { state ->
             state.rapidSession?.let { state.copy(rapidSession = transform(it)) } ?: state
+        }
+    }
+
+    private fun updateTimelineFilter(transform: (TimelineUiState) -> TimelineUiState) {
+        mutableUiState.update { state ->
+            state.copy(timeline = transform(state.timeline).copy(selectedSessionId = null))
+        }
+        observeTimeline()
+    }
+
+    private fun observeTimeline() {
+        timelineJob?.cancel()
+        val timeline = mutableUiState.value.timeline
+        val since = timeline.period.days?.let { days ->
+            currentTimeMillis() - days * 24L * 60L * 60L * 1_000L
+        }
+        mutableUiState.update { state ->
+            state.copy(
+                timeline = state.timeline.copy(
+                    isLoading = true,
+                    hasRecoverableError = false,
+                ),
+            )
+        }
+        timelineJob = viewModelScope.launch {
+            aquariumRepository.observeTimeline(
+                TimelineFilter(
+                    sinceEpochMillisInclusive = since,
+                    aquariumId = timeline.aquariumId,
+                    parameterDefinitionId = timeline.parameterDefinitionId,
+                    maintenanceActionType = timeline.maintenanceActionType,
+                ),
+            ).catch {
+                mutableUiState.update { state ->
+                    state.copy(
+                        timeline = state.timeline.copy(
+                            isLoading = false,
+                            hasRecoverableError = true,
+                        ),
+                    )
+                }
+            }.collect { entries ->
+                mutableUiState.update { state ->
+                    state.copy(
+                        timeline = state.timeline.copy(
+                            isLoading = false,
+                            entries = entries,
+                            hasRecoverableError = false,
+                        ),
+                    )
+                }
+            }
         }
     }
 
