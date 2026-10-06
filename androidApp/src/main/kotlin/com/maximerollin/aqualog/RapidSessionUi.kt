@@ -203,33 +203,41 @@ fun RapidSessionScreen(
                 MaintenanceActionEditor(type, state, viewModel)
             }
             item {
-                TextButton(onClick = viewModel::toggleObservation) {
-                    Text(stringResource(if (state.showObservation) R.string.hide_observation else R.string.add_observation))
-                }
-            }
-            if (state.showObservation) {
-                item {
-                    OutlinedTextField(
-                        value = state.observation,
-                        onValueChange = viewModel::updateObservation,
-                        label = { Text(stringResource(R.string.observation)) },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = viewModel::toggleObservation) {
+                        Text(
+                            stringResource(
+                                if (state.showObservation) R.string.hide_observation else R.string.add_observation,
+                            ),
+                        )
+                    }
+                    if (state.showObservation) {
+                        OutlinedTextField(
+                            value = state.observation,
+                            onValueChange = viewModel::updateObservation,
+                            label = { Text(stringResource(R.string.observation)) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             }
             item {
-                TextButton(onClick = viewModel::toggleIncident) {
-                    Text(stringResource(if (state.showIncident) R.string.hide_incident else R.string.add_incident))
-                }
-            }
-            if (state.showIncident) {
-                item {
-                    OutlinedTextField(
-                        value = state.incident,
-                        onValueChange = viewModel::updateIncident,
-                        label = { Text(stringResource(R.string.incident)) },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = viewModel::toggleIncident) {
+                        Text(
+                            stringResource(
+                                if (state.showIncident) R.string.hide_incident else R.string.add_incident,
+                            ),
+                        )
+                    }
+                    if (state.showIncident) {
+                        OutlinedTextField(
+                            value = state.incident,
+                            onValueChange = viewModel::updateIncident,
+                            label = { Text(stringResource(R.string.incident)) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             }
             if (state.saveError) {

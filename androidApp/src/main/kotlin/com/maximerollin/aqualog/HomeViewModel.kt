@@ -2,7 +2,10 @@ package com.maximerollin.aqualog
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
@@ -28,6 +31,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.Serializable
 import java.util.UUID
 
 enum class OnboardingStep {
@@ -153,12 +157,40 @@ data class RapidSessionUiState(
     val canSave: Boolean get() = hasContent && allMeasurementsValid && !isSaving
 }
 
+private data class RapidSessionDraftSnapshot(
+    val idempotencyKey: String,
+    val aquariumId: String,
+    val occurredAtEpochMillis: Long,
+    val editingSessionId: String?,
+    val measurementInputs: Map<String, String>,
+    val actions: List<MaintenanceActionDraftSnapshot>,
+    val editingAction: String?,
+    val showObservation: Boolean,
+    val observation: String,
+    val showIncident: Boolean,
+    val incident: String,
+) : Serializable
+
+private data class MaintenanceActionDraftSnapshot(
+    val type: String,
+    val quantity: String,
+    val unit: String,
+    val product: String,
+) : Serializable
+
 class HomeViewModel(
     private val aquariumRepository: AquariumRepository,
     private val currentTimeMillis: () -> Long = System::currentTimeMillis,
     private val generateInteractionId: () -> String = { UUID.randomUUID().toString() },
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
-    private val mutableUiState = MutableStateFlow(HomeUiState())
+    private val mutableUiState = MutableStateFlow(
+        HomeUiState(
+            rapidSession = savedStateHandle
+                .get<RapidSessionDraftSnapshot>(rapidSessionDraftKey)
+                ?.toUiState(),
+        ),
+    )
     val uiState: StateFlow<HomeUiState> = mutableUiState.asStateFlow()
     private var timelineJob: Job? = null
 
@@ -174,6 +206,7 @@ class HomeViewModel(
                     )
                 }
                 if (setup != null) {
+                    restoreRapidSessionContext(setup)
                     aquariumRepository.observeLatestSession(setup.aquarium.id).collect { latest ->
                         mutableUiState.update { state ->
                             state.copy(
@@ -303,25 +336,25 @@ class HomeViewModel(
             aquariumId = setup.aquarium.id,
             occurredAtEpochMillis = currentTimeMillis(),
         )
-        mutableUiState.update { it.copy(rapidSession = draft) }
+        setRapidSession(draft)
         viewModelScope.launch {
             val context = aquariumRepository.loadRapidSessionContext(setup.aquarium.id)
             mutableUiState.update { state ->
                 val current = state.rapidSession
                 if (current?.idempotencyKey != draft.idempotencyKey) state else {
-                    state.copy(
-                        rapidSession = current.copy(
-                            context = context,
-                            measurementInputs = context.measurementInputs,
-                        ),
+                    val hydrated = current.copy(
+                        context = context,
+                        measurementInputs = context.measurementInputs,
                     )
+                    savedStateHandle[rapidSessionDraftKey] = hydrated.toSnapshot()
+                    state.copy(rapidSession = hydrated)
                 }
             }
         }
     }
 
     fun closeRapidSession() {
-        mutableUiState.update { it.copy(rapidSession = null) }
+        setRapidSession(null)
     }
 
     fun openSessionDetails() {
@@ -352,33 +385,33 @@ class HomeViewModel(
             occurredAtEpochMillis = recorded.session.occurredAtEpochMillis,
             editingSessionId = recorded.session.id,
         )
-        mutableUiState.update { it.copy(rapidSession = draft) }
+        setRapidSession(draft)
         viewModelScope.launch {
             val context = aquariumRepository.loadRapidSessionContext(setup.aquarium.id)
             val observations = recorded.events.associateBy { it.type }
             mutableUiState.update { state ->
                 val current = state.rapidSession
                 if (current?.editingSessionId != recorded.session.id) state else {
-                    state.copy(
-                        rapidSession = current.copy(
-                            context = context,
-                            measurementInputs = context.measurementInputs + recorded.measurements.associate {
-                                it.parameterDefinitionId to it.value.displayInput()
-                            },
-                            actions = recorded.maintenanceActions.associate { action ->
-                                action.type to MaintenanceActionInput(
-                                    type = action.type,
-                                    quantity = action.quantity.displayInput(),
-                                    unit = action.unit.orEmpty(),
-                                    product = action.product.orEmpty(),
-                                )
-                            },
-                            showObservation = EventType.OBSERVATION in observations,
-                            observation = observations[EventType.OBSERVATION]?.note.orEmpty(),
-                            showIncident = EventType.INCIDENT in observations,
-                            incident = observations[EventType.INCIDENT]?.note.orEmpty(),
-                        ),
+                    val hydrated = current.copy(
+                        context = context,
+                        measurementInputs = context.measurementInputs + recorded.measurements.associate {
+                            it.parameterDefinitionId to it.value.displayInput()
+                        },
+                        actions = recorded.maintenanceActions.associate { action ->
+                            action.type to MaintenanceActionInput(
+                                type = action.type,
+                                quantity = action.quantity.displayInput(),
+                                unit = action.unit.orEmpty(),
+                                product = action.product.orEmpty(),
+                            )
+                        },
+                        showObservation = EventType.OBSERVATION in observations,
+                        observation = observations[EventType.OBSERVATION]?.note.orEmpty(),
+                        showIncident = EventType.INCIDENT in observations,
+                        incident = observations[EventType.INCIDENT]?.note.orEmpty(),
                     )
+                    savedStateHandle[rapidSessionDraftKey] = hydrated.toSnapshot()
+                    state.copy(rapidSession = hydrated)
                 }
             }
         }
@@ -537,6 +570,7 @@ class HomeViewModel(
                     )
                 }
             }.onSuccess { recorded ->
+                savedStateHandle[rapidSessionDraftKey] = null
                 mutableUiState.update {
                     it.copy(
                         rapidSession = null,
@@ -560,7 +594,33 @@ class HomeViewModel(
 
     private fun updateRapidSession(transform: (RapidSessionUiState) -> RapidSessionUiState) {
         mutableUiState.update { state ->
-            state.rapidSession?.let { state.copy(rapidSession = transform(it)) } ?: state
+            state.rapidSession?.let {
+                val updated = transform(it)
+                savedStateHandle[rapidSessionDraftKey] = updated.toSnapshot()
+                state.copy(rapidSession = updated)
+            } ?: state
+        }
+    }
+
+    private fun setRapidSession(draft: RapidSessionUiState?) {
+        savedStateHandle[rapidSessionDraftKey] = draft?.toSnapshot()
+        mutableUiState.update { it.copy(rapidSession = draft) }
+    }
+
+    private suspend fun restoreRapidSessionContext(setup: AquariumSetup) {
+        val draft = mutableUiState.value.rapidSession ?: return
+        if (draft.context != null || draft.aquariumId != setup.aquarium.id) return
+        val context = aquariumRepository.loadRapidSessionContext(setup.aquarium.id)
+        mutableUiState.update { state ->
+            val current = state.rapidSession
+            if (current == null || current.idempotencyKey != draft.idempotencyKey) state else {
+                val hydrated = current.copy(
+                    context = context,
+                    measurementInputs = context.measurementInputs + current.measurementInputs,
+                )
+                savedStateHandle[rapidSessionDraftKey] = hydrated.toSnapshot()
+                state.copy(rapidSession = hydrated)
+            }
         }
     }
 
@@ -640,13 +700,67 @@ class HomeViewModel(
         }
 
     companion object {
+        private const val rapidSessionDraftKey = "rapid-session-draft"
+
         fun factory(repository: AquariumRepository): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                    HomeViewModel(repository) as T
+                override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T =
+                    HomeViewModel(
+                        aquariumRepository = repository,
+                        savedStateHandle = extras.createSavedStateHandle(),
+                    ) as T
             }
     }
+}
+
+private fun RapidSessionUiState.toSnapshot() = RapidSessionDraftSnapshot(
+    idempotencyKey = idempotencyKey,
+    aquariumId = aquariumId,
+    occurredAtEpochMillis = occurredAtEpochMillis,
+    editingSessionId = editingSessionId,
+    measurementInputs = measurementInputs,
+    actions = actions.values.map {
+        MaintenanceActionDraftSnapshot(
+            type = it.type.name,
+            quantity = it.quantity,
+            unit = it.unit,
+            product = it.product,
+        )
+    },
+    editingAction = editingAction?.name,
+    showObservation = showObservation,
+    observation = observation,
+    showIncident = showIncident,
+    incident = incident,
+)
+
+private fun RapidSessionDraftSnapshot.toUiState(): RapidSessionUiState {
+    val restoredActions = actions.mapNotNull { snapshot ->
+        runCatching { MaintenanceActionType.valueOf(snapshot.type) }.getOrNull()?.let { type ->
+            type to MaintenanceActionInput(
+                type = type,
+                quantity = snapshot.quantity,
+                unit = snapshot.unit,
+                product = snapshot.product,
+            )
+        }
+    }.toMap()
+    return RapidSessionUiState(
+        idempotencyKey = idempotencyKey,
+        aquariumId = aquariumId,
+        occurredAtEpochMillis = occurredAtEpochMillis,
+        editingSessionId = editingSessionId,
+        measurementInputs = measurementInputs,
+        actions = restoredActions,
+        editingAction = editingAction?.let { name ->
+            runCatching { MaintenanceActionType.valueOf(name) }.getOrNull()
+        },
+        showObservation = showObservation,
+        observation = observation,
+        showIncident = showIncident,
+        incident = incident,
+    )
 }
 
 private data class OptionalDecimal(val value: Double?)

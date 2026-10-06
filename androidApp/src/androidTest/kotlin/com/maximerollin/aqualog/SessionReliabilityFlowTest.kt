@@ -73,7 +73,9 @@ class SessionReliabilityFlowTest {
         composeRule.onNodeWithText("Fertilization").performClick()
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Hide observation"))
         composeRule.onNodeWithText("Observation").performTextClearance()
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Add incident"))
         composeRule.onNodeWithText("Add incident").performClick()
+        waitForText("Hide incident")
         composeRule.onNodeWithText("Incident").performTextInput("Filtre corrigé")
         composeRule.onNodeWithText("Save changes").performClick()
 
