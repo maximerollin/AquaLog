@@ -104,7 +104,7 @@ private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier:
             if (selected.points.isEmpty()) {
                 item { EmptyTrendCard() }
             } else {
-                items(selected.points, key = { it.sessionId }) { point ->
+                items(selected.points, key = { "trend-point-${it.sessionId}" }) { point ->
                     val value = point.value.displayTrendValue(selected.definition.precision)
                     val exactValueDescription = stringResource(
                         R.string.trends_exact_value_description,
@@ -130,7 +130,7 @@ private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier:
             if (snapshot.events.isEmpty()) {
                 item { Text(stringResource(R.string.trends_no_events)) }
             } else {
-                items(snapshot.events, key = { it.sessionId }) { marker ->
+                items(snapshot.events, key = { "trend-event-${it.sessionId}" }) { marker ->
                     Card(Modifier.fillMaxWidth()) {
                         Text(
                             "${marker.occurredAtEpochMillis.displayTrendDate()} · ${marker.displayText()}",

@@ -78,6 +78,8 @@ class TrendsFlowTest {
         composeRule.onNodeWithTag("trend-list")
             .performScrollToNode(hasText("Water change · Incident: Heater stopped", substring = true))
         composeRule.onNodeWithText("Water change · Incident: Heater stopped", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithTag("trend-list")
+            .performScrollToNode(hasText("Free trends show up to 90 days. Older data stays saved."))
         composeRule.onNodeWithText("Free trends show up to 90 days. Older data stays saved.")
             .assertIsDisplayed()
 
