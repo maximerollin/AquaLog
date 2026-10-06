@@ -29,6 +29,7 @@ import java.util.Date
 fun SessionDetailsScreen(
     recorded: RecordedSession,
     setup: AquariumSetup,
+    returnToTimeline: Boolean,
     showDeleteConfirmation: Boolean,
     viewModel: HomeViewModel,
     modifier: Modifier = Modifier,
@@ -43,7 +44,11 @@ fun SessionDetailsScreen(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(stringResource(R.string.session_details), style = MaterialTheme.typography.headlineMedium)
                 TextButton(onClick = viewModel::closeSessionDetails) {
-                    Text(stringResource(R.string.back))
+                    Text(
+                        stringResource(
+                            if (returnToTimeline) R.string.back_to_timeline else R.string.back,
+                        ),
+                    )
                 }
             }
         }

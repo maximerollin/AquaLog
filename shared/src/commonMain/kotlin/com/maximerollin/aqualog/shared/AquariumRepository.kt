@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog.shared
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 interface AquariumRepository {
@@ -33,6 +34,8 @@ interface AquariumRepository {
     suspend fun updateSession(input: SessionEditInput): RecordedSession
 
     suspend fun deleteSession(sessionId: String)
+
+    fun observeTimeline(filter: TimelineFilter): Flow<List<TimelineSession>>
 }
 
 class RoomAquariumRepository(
@@ -256,6 +259,37 @@ class RoomAquariumRepository(
     override suspend fun deleteSession(sessionId: String) {
         sessionDao.delete(sessionId)
     }
+
+    override fun observeTimeline(filter: TimelineFilter): Flow<List<TimelineSession>> =
+        combine(
+            aquariumDao.observeAllSetups(),
+            sessionDao.observeAll(),
+        ) { setupEntities, recordedEntities ->
+            val setups = setupEntities.map(AquariumSetupEntity::toDomain)
+                .associateBy { it.aquarium.id }
+            recordedEntities.mapNotNull { recordedEntity ->
+                val recorded = recordedEntity.toDomain()
+                val setup = setups[recorded.session.aquariumId] ?: return@mapNotNull null
+                TimelineSession(
+                    aquarium = setup.aquarium,
+                    session = recorded.session,
+                    measurements = recorded.measurements.mapNotNull { measurement ->
+                        setup.parameters.firstOrNull { it.id == measurement.parameterDefinitionId }
+                            ?.let { TimelineMeasurement(measurement, it) }
+                    },
+                    maintenanceActions = recorded.maintenanceActions,
+                    events = recorded.events,
+                )
+            }.filter { item ->
+                (filter.sinceEpochMillisInclusive == null ||
+                    item.session.occurredAtEpochMillis >= filter.sinceEpochMillisInclusive) &&
+                    (filter.aquariumId == null || item.aquarium.id == filter.aquariumId) &&
+                    (filter.parameterDefinitionId == null ||
+                        item.measurements.any { it.definition.id == filter.parameterDefinitionId }) &&
+                    (filter.maintenanceActionType == null ||
+                        item.maintenanceActions.any { it.type == filter.maintenanceActionType })
+            }
+        }
 
     suspend fun sessionCount(aquariumId: String): Int = sessionDao.count(aquariumId)
 }
