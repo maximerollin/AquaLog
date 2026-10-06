@@ -107,6 +107,19 @@
     <string name="session_save_error">The Session could not be saved. Your entries are still here; try again.</string>
     <string name="session_saved">Session saved</string>
     <string name="session_saved_description">Chronology confirmation · %1$d Measurements · %2$d maintenance actions</string>
+    <string name="view_session_details">View Session details</string>
+    <string name="session_details">Session details</string>
+    <string name="session_date">Recorded on %1$s</string>
+    <string name="session_measurement_detail">%1$s · %2$s %3$s</string>
+    <string name="session_action_detail">%1$s · %2$s</string>
+    <string name="session_event_detail">%1$s · %2$s</string>
+    <string name="edit_session">Edit Session</string>
+    <string name="save_changes">Save changes</string>
+    <string name="delete_session">Delete Session</string>
+    <string name="delete_session_title">Delete this Session?</string>
+    <string name="delete_session_description">Its Measurements, maintenance actions and Events will also be removed from this device.</string>
+    <string name="delete">Delete</string>
+    <string name="back">Back</string>
 
     <string name="navigation_home">Home</string>
     <string name="navigation_history">History</string>
@@ -131,7 +144,6 @@
     <string name="timeline_session">Session</string>
     <string name="open_session_details">Open Session details</string>
     <string name="back_to_timeline">Back to Chronology</string>
-    <string name="session_details">Session details</string>
     <string name="timeline_events">Events</string>
     <plurals name="timeline_measurement_count">
         <item quantity="one">%d Measurement</item>

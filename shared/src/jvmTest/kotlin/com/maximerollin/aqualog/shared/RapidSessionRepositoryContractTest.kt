@@ -9,6 +9,7 @@ import kotlin.system.measureTimeMillis
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class RapidSessionRepositoryContractTest {
@@ -84,6 +85,99 @@ class RapidSessionRepositoryContractTest {
         assertEquals(first.session.id, replay.session.id)
         assertEquals(1, fixture.repository.sessionCount(setup.aquarium.id))
         assertEquals(1, replay.measurements.size)
+        fixture.close()
+    }
+
+    @Test
+    fun `a recorded Session can be reopened and atomically corrected`() = runTest {
+        val databasePath = Files.createTempDirectory("aqualog-session-correction")
+            .resolve("aqualog.db")
+            .toAbsolutePath()
+            .toString()
+        val ids = generateSequence(1) { it + 1 }.map { "id-$it" }.iterator()
+        val firstDatabase = createAquaLogDatabase(createJvmDatabaseBuilder(databasePath))
+        val firstRepository = RoomAquariumRepository(firstDatabase, ids::next, { 1_700_000_000_000L })
+        val setup = firstRepository.createConfiguredAquarium(
+            name = "Amazonien",
+            volume = 120.0,
+            volumeUnit = VolumeUnit.LITERS,
+            profile = AquariumProfile.ESTABLISHED,
+            parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+        )
+        val active = setup.parameters.filter(ParameterDefinition::isActive)
+        val recorded = firstRepository.saveRapidSession(
+            RapidSessionInput(
+                aquariumId = setup.aquarium.id,
+                occurredAtEpochMillis = 1_700_000_100_000L,
+                idempotencyKey = "tap-correct",
+                measurementInputs = mapOf(active[0].id to "24.5", active[1].id to "7.2"),
+                maintenanceActions = listOf(
+                    MaintenanceActionInput(MaintenanceActionType.WATER_CHANGE, "20", "%"),
+                ),
+                observation = "Avant correction",
+            ),
+        )
+        firstDatabase.close()
+
+        val reopenedDatabase = createAquaLogDatabase(createJvmDatabaseBuilder(databasePath))
+        val reopenedRepository = RoomAquariumRepository(reopenedDatabase, ids::next, { 1_700_000_200_000L })
+        val reopened = assertNotNull(reopenedRepository.observeSession(recorded.session.id).first())
+        assertEquals(1_700_000_100_000L, reopened.session.occurredAtEpochMillis)
+        assertEquals(listOf(24.5, 7.2), reopened.measurements.map(Measurement::value))
+
+        reopenedRepository.updateSession(
+            SessionEditInput(
+                sessionId = recorded.session.id,
+                aquariumId = setup.aquarium.id,
+                occurredAtEpochMillis = 1_700_000_300_000L,
+                measurementInputs = mapOf(active[0].id to "25,1"),
+                maintenanceActions = listOf(
+                    MaintenanceActionInput(
+                        MaintenanceActionType.FERTILIZATION,
+                        quantity = "2,5",
+                        unit = "mL",
+                        product = "Green",
+                    ),
+                ),
+                incident = "Filtre corrigé",
+            ),
+        )
+
+        val corrected = assertNotNull(reopenedRepository.observeSession(recorded.session.id).first())
+        assertEquals(1_700_000_300_000L, corrected.session.occurredAtEpochMillis)
+        assertEquals(listOf(25.1), corrected.measurements.map(Measurement::value))
+        assertEquals(listOf(MaintenanceActionType.FERTILIZATION), corrected.maintenanceActions.map(MaintenanceAction::type))
+        assertEquals("Green", corrected.maintenanceActions.single().product)
+        assertEquals(listOf(EventType.INCIDENT), corrected.events.map(SessionEvent::type))
+        assertEquals("Filtre corrigé", corrected.events.single().note)
+        reopenedDatabase.close()
+    }
+
+    @Test
+    fun `deleting a Session removes it and all dependent data`() = runTest {
+        val fixture = sessionFixture()
+        val setup = fixture.createConfiguredAquarium()
+        val parameter = setup.parameters.first(ParameterDefinition::isActive)
+        val recorded = fixture.repository.saveRapidSession(
+            RapidSessionInput(
+                aquariumId = setup.aquarium.id,
+                occurredAtEpochMillis = 1_700_000_100_000L,
+                idempotencyKey = "tap-delete",
+                measurementInputs = mapOf(parameter.id to "24"),
+                maintenanceActions = listOf(
+                    MaintenanceActionInput(MaintenanceActionType.FILTER_MAINTENANCE),
+                ),
+                observation = "À supprimer",
+            ),
+        )
+
+        fixture.repository.deleteSession(recorded.session.id)
+
+        assertNull(fixture.repository.observeSession(recorded.session.id).first())
+        assertNull(fixture.repository.observeLatestSession(setup.aquarium.id).first())
+        assertEquals(0, fixture.repository.sessionCount(setup.aquarium.id))
+        assertTrue(fixture.repository.loadRapidSessionContext(setup.aquarium.id).lastMeasurements.isEmpty())
+        assertTrue(fixture.repository.loadRapidSessionContext(setup.aquarium.id).lastMaintenanceActions.isEmpty())
         fixture.close()
     }
 

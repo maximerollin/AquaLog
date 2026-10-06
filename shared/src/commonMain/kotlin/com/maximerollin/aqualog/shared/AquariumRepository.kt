@@ -29,6 +29,12 @@ interface AquariumRepository {
 
     fun observeLatestSession(aquariumId: String): Flow<RecordedSession?>
 
+    fun observeSession(sessionId: String): Flow<RecordedSession?>
+
+    suspend fun updateSession(input: SessionEditInput): RecordedSession
+
+    suspend fun deleteSession(sessionId: String)
+
     fun observeTimeline(filter: TimelineFilter): Flow<List<TimelineSession>>
 
     fun observeFreeTrends(aquariumId: String, period: TrendPeriod): Flow<TrendSnapshot>
@@ -200,6 +206,61 @@ class RoomAquariumRepository(
 
     override fun observeLatestSession(aquariumId: String): Flow<RecordedSession?> =
         sessionDao.observeLatest(aquariumId).map { it?.toDomain() }
+
+    override fun observeSession(sessionId: String): Flow<RecordedSession?> =
+        sessionDao.observeById(sessionId).map { it?.toDomain() }
+
+    override suspend fun updateSession(input: SessionEditInput): RecordedSession {
+        val setup = requireNotNull(aquariumDao.getSetup(input.aquariumId)) { "Aquarium does not exist" }.toDomain()
+        val activeParameters = setup.parameters.filter(ParameterDefinition::isActive).associateBy(ParameterDefinition::id)
+        val measurements = input.measurementInputs.mapNotNull { (parameterId, rawValue) ->
+            if (rawValue.isBlank()) return@mapNotNull null
+            val definition = requireNotNull(activeParameters[parameterId]) { "Measure must target an active Parameter" }
+            val feedback = evaluateMeasurement(rawValue, definition)
+            require(feedback.isValid) { "Measure must be a decimal value" }
+            Measurement(
+                id = generateId(),
+                sessionId = input.sessionId,
+                parameterDefinitionId = parameterId,
+                value = requireNotNull(feedback.value),
+            )
+        }
+        val actions = input.maintenanceActions.map { draft ->
+            val quantity = if (draft.quantity.isBlank()) null else draft.quantity.normalizedDecimalOrNull()
+            require(draft.quantity.isBlank() || quantity?.isFinite() == true) { "Action quantity must be a decimal value" }
+            MaintenanceAction(
+                id = generateId(),
+                sessionId = input.sessionId,
+                type = draft.type,
+                quantity = quantity,
+                unit = draft.unit.trim().ifBlank { null },
+                product = draft.product.trim().ifBlank { null },
+            )
+        }
+        val events = buildList {
+            input.observation.trim().takeIf(String::isNotEmpty)?.let { note ->
+                add(SessionEvent(generateId(), input.sessionId, EventType.OBSERVATION, note))
+            }
+            input.incident.trim().takeIf(String::isNotEmpty)?.let { note ->
+                add(SessionEvent(generateId(), input.sessionId, EventType.INCIDENT, note))
+            }
+        }
+        require(measurements.isNotEmpty() || actions.isNotEmpty() || events.isNotEmpty()) {
+            "An empty Session cannot be recorded"
+        }
+        return sessionDao.update(
+            sessionId = input.sessionId,
+            aquariumId = input.aquariumId,
+            occurredAtEpochMillis = input.occurredAtEpochMillis,
+            measurements = measurements.map(Measurement::toEntity),
+            actions = actions.map(MaintenanceAction::toEntity),
+            events = events.map(SessionEvent::toEntity),
+        ).toDomain()
+    }
+
+    override suspend fun deleteSession(sessionId: String) {
+        sessionDao.delete(sessionId)
+    }
 
     override fun observeTimeline(filter: TimelineFilter): Flow<List<TimelineSession>> =
         combine(

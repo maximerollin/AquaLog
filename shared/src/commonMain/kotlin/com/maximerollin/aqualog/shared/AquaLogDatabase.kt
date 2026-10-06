@@ -161,6 +161,14 @@ abstract class SessionDao {
     protected abstract suspend fun getByIdempotencyKey(idempotencyKey: String): RecordedSessionEntity?
 
     @Transaction
+    @Query("SELECT * FROM sessions WHERE id = :sessionId LIMIT 1")
+    protected abstract suspend fun getById(sessionId: String): RecordedSessionEntity?
+
+    @Transaction
+    @Query("SELECT * FROM sessions WHERE id = :sessionId LIMIT 1")
+    abstract fun observeById(sessionId: String): Flow<RecordedSessionEntity?>
+
+    @Transaction
     @Query("SELECT * FROM sessions WHERE aquariumId = :aquariumId ORDER BY occurredAtEpochMillis DESC, createdAtEpochMillis DESC LIMIT 1")
     abstract fun observeLatest(aquariumId: String): Flow<RecordedSessionEntity?>
 
@@ -189,6 +197,25 @@ abstract class SessionDao {
     @Query("SELECT a.* FROM maintenance_actions a INNER JOIN sessions s ON s.id = a.sessionId WHERE s.aquariumId = :aquariumId ORDER BY s.occurredAtEpochMillis DESC, s.createdAtEpochMillis DESC")
     abstract suspend fun maintenanceActionsForAquarium(aquariumId: String): List<MaintenanceActionEntity>
 
+    @Query("UPDATE sessions SET occurredAtEpochMillis = :occurredAtEpochMillis WHERE id = :sessionId AND aquariumId = :aquariumId")
+    protected abstract suspend fun updateOccurredAt(
+        sessionId: String,
+        aquariumId: String,
+        occurredAtEpochMillis: Long,
+    ): Int
+
+    @Query("DELETE FROM measurements WHERE sessionId = :sessionId")
+    protected abstract suspend fun deleteMeasurements(sessionId: String)
+
+    @Query("DELETE FROM maintenance_actions WHERE sessionId = :sessionId")
+    protected abstract suspend fun deleteMaintenanceActions(sessionId: String)
+
+    @Query("DELETE FROM session_events WHERE sessionId = :sessionId")
+    protected abstract suspend fun deleteEvents(sessionId: String)
+
+    @Query("DELETE FROM sessions WHERE id = :sessionId")
+    protected abstract suspend fun deleteSessionRow(sessionId: String): Int
+
     @Transaction
     open suspend fun create(
         session: SessionEntity,
@@ -203,6 +230,36 @@ abstract class SessionDao {
             if (events.isNotEmpty()) insertEvents(events)
         }
         return requireNotNull(getByIdempotencyKey(session.idempotencyKey))
+    }
+
+    @Transaction
+    open suspend fun update(
+        sessionId: String,
+        aquariumId: String,
+        occurredAtEpochMillis: Long,
+        measurements: List<MeasurementEntity>,
+        actions: List<MaintenanceActionEntity>,
+        events: List<SessionEventEntity>,
+    ): RecordedSessionEntity {
+        require(updateOccurredAt(sessionId, aquariumId, occurredAtEpochMillis) == 1) {
+            "Session does not exist in this Aquarium"
+        }
+        deleteMeasurements(sessionId)
+        deleteMaintenanceActions(sessionId)
+        deleteEvents(sessionId)
+        if (measurements.isNotEmpty()) insertMeasurements(measurements)
+        if (actions.isNotEmpty()) insertMaintenanceActions(actions)
+        if (events.isNotEmpty()) insertEvents(events)
+        return requireNotNull(getById(sessionId))
+    }
+
+    @Transaction
+    open suspend fun delete(sessionId: String) {
+        requireNotNull(getById(sessionId)) { "Session does not exist" }
+        deleteMeasurements(sessionId)
+        deleteMaintenanceActions(sessionId)
+        deleteEvents(sessionId)
+        check(deleteSessionRow(sessionId) == 1)
     }
 }
 
