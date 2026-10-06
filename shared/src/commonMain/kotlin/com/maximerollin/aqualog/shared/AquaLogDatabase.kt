@@ -119,6 +119,10 @@ abstract class AquariumDao {
     abstract fun observeCurrentSetup(): Flow<AquariumSetupEntity?>
 
     @Transaction
+    @Query("SELECT * FROM aquariums ORDER BY createdAtEpochMillis ASC")
+    abstract fun observeAllSetups(): Flow<List<AquariumSetupEntity>>
+
+    @Transaction
     @Query("SELECT * FROM aquariums WHERE id = :aquariumId")
     abstract suspend fun getSetup(aquariumId: String): AquariumSetupEntity?
 
@@ -170,6 +174,10 @@ abstract class SessionDao {
     @Transaction
     @Query("SELECT * FROM sessions WHERE aquariumId = :aquariumId ORDER BY occurredAtEpochMillis DESC, createdAtEpochMillis DESC LIMIT 1")
     abstract fun observeLatest(aquariumId: String): Flow<RecordedSessionEntity?>
+
+    @Transaction
+    @Query("SELECT * FROM sessions ORDER BY occurredAtEpochMillis DESC, createdAtEpochMillis DESC")
+    abstract fun observeAll(): Flow<List<RecordedSessionEntity>>
 
     @Query("SELECT COUNT(*) FROM sessions WHERE aquariumId = :aquariumId")
     abstract suspend fun count(aquariumId: String): Int
