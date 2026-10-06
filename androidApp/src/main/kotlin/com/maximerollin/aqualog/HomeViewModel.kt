@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.maximerollin.aqualog.shared.AquariumProfile
+import com.maximerollin.aqualog.shared.AccountActivationCoordinator
+import com.maximerollin.aqualog.shared.AccountActivationResult
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
@@ -31,6 +33,25 @@ enum class OnboardingStep {
     PRACTICE,
     PAYWALL,
 }
+
+enum class AccountStep {
+    HIDDEN,
+    INVITATION,
+    METHODS,
+    MAGIC_EMAIL,
+    MAGIC_SENT,
+    WAITING_BROWSER,
+    WORKING,
+    ERROR,
+}
+
+enum class AccountError { AUTHENTICATION, EXPIRED_LINK, MIGRATION }
+
+data class AccountUiState(
+    val step: AccountStep = AccountStep.HIDDEN,
+    val email: String = "",
+    val error: AccountError? = null,
+)
 
 data class ParameterEditorState(
     val parameter: BuiltInParameter,
@@ -86,6 +107,7 @@ data class HomeUiState(
     val showParameterValidationError: Boolean = false,
     val rapidSession: RapidSessionUiState? = null,
     val latestSession: RecordedSession? = null,
+    val account: AccountUiState = AccountUiState(),
 )
 
 data class RapidSessionUiState(
@@ -117,6 +139,7 @@ data class RapidSessionUiState(
 
 class HomeViewModel(
     private val aquariumRepository: AquariumRepository,
+    private val accountCoordinator: AccountActivationCoordinator? = null,
     private val currentTimeMillis: () -> Long = System::currentTimeMillis,
     private val generateInteractionId: () -> String = { UUID.randomUUID().toString() },
 ) : ViewModel() {
@@ -128,6 +151,13 @@ class HomeViewModel(
             aquariumRepository.observeCurrentSetup().collect { setup ->
                 mutableUiState.update {
                     it.copy(isLoading = false, setup = setup, isSaving = false)
+                }
+            }
+        }
+        if (accountCoordinator != null) {
+            viewModelScope.launch {
+                if (accountCoordinator.hasPendingMigration()) {
+                    updateAccount { it.copy(step = AccountStep.ERROR, error = AccountError.MIGRATION) }
                 }
             }
         }
@@ -330,6 +360,7 @@ class HomeViewModel(
     fun saveRapidSession() {
         val draft = mutableUiState.value.rapidSession ?: return
         if (!draft.canSave) return
+        val isFirstSession = mutableUiState.value.latestSession == null
         mutableUiState.update { it.copy(rapidSession = draft.copy(isSaving = true, saveError = false)) }
         viewModelScope.launch {
             runCatching {
@@ -345,11 +376,83 @@ class HomeViewModel(
                     ),
                 )
             }.onSuccess { recorded ->
-                mutableUiState.update { it.copy(rapidSession = null, latestSession = recorded) }
+                mutableUiState.update {
+                    it.copy(
+                        rapidSession = null,
+                        latestSession = recorded,
+                        account = if (isFirstSession && accountCoordinator != null) {
+                            AccountUiState(AccountStep.INVITATION)
+                        } else {
+                            it.account
+                        },
+                    )
+                }
             }.onFailure {
                 updateRapidSession { it.copy(isSaving = false, saveError = true) }
             }
         }
+    }
+
+    fun openAccountMethods() = updateAccount { it.copy(step = AccountStep.METHODS, error = null) }
+
+    fun dismissAccount() = updateAccount { AccountUiState() }
+
+    fun openMagicEmail() = updateAccount { it.copy(step = AccountStep.MAGIC_EMAIL, error = null) }
+
+    fun updateAccountEmail(value: String) = updateAccount { it.copy(email = value, error = null) }
+
+    fun signInWithGoogle() = launchAccountAction(AccountError.AUTHENTICATION) {
+        requireNotNull(accountCoordinator).signInWithGoogle()
+    }
+
+    fun requestMagicLink() {
+        val email = mutableUiState.value.account.email
+        launchAccountAction(AccountError.AUTHENTICATION) {
+            requireNotNull(accountCoordinator).requestMagicLink(email)
+        }
+    }
+
+    fun completeAccountCallback(callbackUrl: String) = launchAccountAction(AccountError.AUTHENTICATION) {
+        requireNotNull(accountCoordinator).completeMagicLink(callbackUrl)
+    }
+
+    fun retryAccountMigration() = launchAccountAction(AccountError.MIGRATION) {
+        requireNotNull(accountCoordinator).resumePendingMigration()
+    }
+
+    private fun launchAccountAction(
+        failure: AccountError,
+        action: suspend () -> AccountActivationResult,
+    ) {
+        if (accountCoordinator == null) return
+        updateAccount { it.copy(step = AccountStep.WORKING, error = null) }
+        viewModelScope.launch {
+            handleAccountResult(
+                result = runCatching { action() }.getOrElse { AccountActivationResult.Failed("failed") },
+                failure = failure,
+            )
+        }
+    }
+
+    private fun handleAccountResult(result: AccountActivationResult, failure: AccountError) {
+        updateAccount { current ->
+            when (result) {
+                AccountActivationResult.Activated -> AccountUiState()
+                AccountActivationResult.AwaitingAuthentication -> current.copy(step = AccountStep.WAITING_BROWSER)
+                AccountActivationResult.Cancelled -> current.copy(step = AccountStep.METHODS, error = null)
+                AccountActivationResult.ExpiredLink -> current.copy(step = AccountStep.ERROR, error = AccountError.EXPIRED_LINK)
+                AccountActivationResult.MagicLinkSent -> current.copy(step = AccountStep.MAGIC_SENT)
+                is AccountActivationResult.Failed -> current.copy(step = AccountStep.ERROR, error = failure)
+                is AccountActivationResult.MigrationFailed -> current.copy(
+                    step = AccountStep.ERROR,
+                    error = AccountError.MIGRATION,
+                )
+            }
+        }
+    }
+
+    private fun updateAccount(transform: (AccountUiState) -> AccountUiState) {
+        mutableUiState.update { it.copy(account = transform(it.account)) }
     }
 
     private fun updateAction(
@@ -390,11 +493,14 @@ class HomeViewModel(
         }
 
     companion object {
-        fun factory(repository: AquariumRepository): ViewModelProvider.Factory =
+        fun factory(
+            repository: AquariumRepository,
+            accountCoordinator: AccountActivationCoordinator? = null,
+        ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                    HomeViewModel(repository) as T
+                    HomeViewModel(repository, accountCoordinator) as T
             }
     }
 }

@@ -46,6 +46,7 @@ fun AquaLogContent(
 ) {
     when {
         state.isLoading -> LoadingContent(modifier)
+        state.account.step != AccountStep.HIDDEN -> AccountScreen(state.account, viewModel, modifier)
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(
             state = state.rapidSession,
             aquarium = state.setup.aquarium,
@@ -81,6 +82,83 @@ fun AquaLogContent(
             onContinueForFree = viewModel::finishForFree,
             modifier = modifier,
         )
+    }
+}
+
+@Composable
+private fun AccountScreen(state: AccountUiState, viewModel: HomeViewModel, modifier: Modifier) {
+    StandardScreen(modifier) {
+        when (state.step) {
+            AccountStep.INVITATION -> {
+                ScreenHeading(R.string.account_invitation_title, R.string.account_invitation_description)
+                Spacer(Modifier.weight(1f))
+                PrimaryButton(R.string.create_account, viewModel::openAccountMethods)
+                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.not_now))
+                }
+            }
+            AccountStep.METHODS -> {
+                ScreenHeading(R.string.account_methods_title, R.string.account_methods_description)
+                PrimaryButton(R.string.continue_with_google, viewModel::signInWithGoogle)
+                PrimaryButton(R.string.continue_with_email, viewModel::openMagicEmail)
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+            AccountStep.MAGIC_EMAIL -> {
+                ScreenHeading(R.string.magic_link_title, R.string.magic_link_description)
+                OutlinedTextField(
+                    value = state.email,
+                    onValueChange = viewModel::updateAccountEmail,
+                    label = { Text(stringResource(R.string.email_address)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                PrimaryButton(R.string.send_magic_link, viewModel::requestMagicLink)
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = viewModel::openAccountMethods, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.back))
+                }
+            }
+            AccountStep.MAGIC_SENT -> {
+                ScreenHeading(R.string.magic_link_sent_title, R.string.magic_link_sent_description)
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.back_to_aquarium))
+                }
+            }
+            AccountStep.WAITING_BROWSER -> {
+                ScreenHeading(R.string.authentication_waiting_title, R.string.authentication_waiting_description)
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.back_to_aquarium))
+                }
+            }
+            AccountStep.WORKING -> LoadingContent(Modifier.fillMaxSize())
+            AccountStep.ERROR -> {
+                val message = when (state.error) {
+                    AccountError.EXPIRED_LINK -> R.string.magic_link_expired
+                    AccountError.AUTHENTICATION -> R.string.authentication_failed
+                    AccountError.MIGRATION, null -> R.string.account_migration_failed
+                }
+                ScreenHeading(R.string.account_error_title, message)
+                PrimaryButton(
+                    R.string.try_again,
+                    if (state.error == AccountError.MIGRATION) {
+                        viewModel::retryAccountMigration
+                    } else {
+                        viewModel::openAccountMethods
+                    },
+                )
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.back_to_aquarium))
+                }
+            }
+            AccountStep.HIDDEN -> Unit
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog
 
 import android.os.Bundle
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -19,7 +20,7 @@ import com.maximerollin.aqualog.ui.theme.AquaLogTheme
 class MainActivity : ComponentActivity() {
     private val homeViewModel: HomeViewModel by viewModels {
         val application = application as AquaLogApplication
-        HomeViewModel.factory(application.aquariumRepository)
+        HomeViewModel.factory(application.aquariumRepository, application.accountCoordinator)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,6 +30,13 @@ class MainActivity : ComponentActivity() {
                 AquaLogApp(homeViewModel)
             }
         }
+        intent?.dataString?.let(homeViewModel::completeAccountCallback)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent.dataString?.let(homeViewModel::completeAccountCallback)
     }
 }
 

@@ -33,3 +33,29 @@ seam:
 ```
 
 The debug APK is generated under `androidApp/build/outputs/apk/debug/`.
+
+## Supabase account configuration
+
+Account creation is deliberately disabled unless the build receives the public
+Supabase project URL and anonymous client key. Supply them as Gradle properties
+or environment variables; never commit values to the repository:
+
+```shell
+AQUALOG_SUPABASE_URL=https://PROJECT.supabase.co \
+AQUALOG_SUPABASE_ANON_KEY=PUBLIC_ANON_KEY \
+./gradlew :androidApp:assembleDebug
+```
+
+Configure `aqualog://auth/callback` as an allowed Auth redirect in Supabase and
+enable Google plus email OTP providers. The application validates callback
+tokens against `/auth/v1/user` before accepting the account. Access and refresh
+tokens are encrypted with an Android Keystore AES-GCM key; they are never stored
+in plain preferences.
+
+The initial account attachment calls an authenticated Edge Function named
+`migrate-initial-copy`. That function must authorize the bearer user, reject a
+different `accountId`, and upsert every entity by its existing UUID in one
+idempotent operation under Row Level Security. Deploying that server contract is
+required before account creation is enabled in a release environment. No
+service-role or other privileged key belongs in the Android build. Ongoing
+multi-device synchronization is intentionally outside this slice.

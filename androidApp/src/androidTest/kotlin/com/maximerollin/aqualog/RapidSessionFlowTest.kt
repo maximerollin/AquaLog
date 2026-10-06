@@ -62,6 +62,8 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithText("Water change").performClick()
         save.assertIsEnabled().performClick()
 
+        composeRule.onNodeWithText("Keep this Aquarium on your devices").assertIsDisplayed()
+        composeRule.onNodeWithText("Not now").performClick()
         composeRule.onNodeWithText("Session saved").assertIsDisplayed()
         composeRule.onNodeWithText("Chronology confirmation · 3 Measurements · 1 maintenance actions")
             .assertIsDisplayed()
