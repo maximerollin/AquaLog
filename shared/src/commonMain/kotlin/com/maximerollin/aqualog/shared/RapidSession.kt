@@ -76,6 +76,16 @@ data class RapidSessionInput(
     val incident: String = "",
 )
 
+data class SessionEditInput(
+    val sessionId: String,
+    val aquariumId: String,
+    val occurredAtEpochMillis: Long,
+    val measurementInputs: Map<String, String> = emptyMap(),
+    val maintenanceActions: List<MaintenanceActionInput> = emptyList(),
+    val observation: String = "",
+    val incident: String = "",
+)
+
 data class RapidSessionContext(
     val activeParameters: List<ParameterDefinition>,
     val measurementInputs: Map<String, String>,
