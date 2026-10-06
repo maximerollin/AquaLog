@@ -72,7 +72,11 @@ fun RapidSessionScreen(
                     if (state.isSaving) {
                         CircularProgressIndicator()
                     } else {
-                        Text(stringResource(R.string.save_session))
+                        Text(
+                            stringResource(
+                                if (state.editingSessionId == null) R.string.save_session else R.string.save_changes,
+                            ),
+                        )
                     }
                 }
             }
@@ -80,7 +84,16 @@ fun RapidSessionScreen(
     ) { padding ->
         val context = state.context
         if (context == null) {
-            Column(Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.Center) {
+            Column(
+                Modifier.fillMaxSize().padding(padding).padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
+                Text(
+                    stringResource(
+                        if (state.editingSessionId == null) R.string.rapid_session_title else R.string.edit_session,
+                    ),
+                    style = MaterialTheme.typography.headlineMedium,
+                )
                 CircularProgressIndicator()
             }
             return@Scaffold
@@ -101,7 +114,16 @@ fun RapidSessionScreen(
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
-                        Text(stringResource(R.string.rapid_session_title), style = MaterialTheme.typography.headlineMedium)
+                        Text(
+                            stringResource(
+                                if (state.editingSessionId == null) {
+                                    R.string.rapid_session_title
+                                } else {
+                                    R.string.edit_session
+                                },
+                            ),
+                            style = MaterialTheme.typography.headlineMedium,
+                        )
                         Text(aquarium.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     TextButton(onClick = viewModel::closeRapidSession) { Text(stringResource(R.string.cancel)) }
@@ -280,7 +302,7 @@ private fun ActionDetails(action: MaintenanceActionInput, viewModel: HomeViewMod
 }
 
 @Composable
-private fun MaintenanceActionType.label(): String = stringResource(
+internal fun MaintenanceActionType.label(): String = stringResource(
     when (this) {
         MaintenanceActionType.WATER_CHANGE -> R.string.action_water_change
         MaintenanceActionType.FERTILIZATION -> R.string.action_fertilization

@@ -52,6 +52,13 @@ fun AquaLogContent(
             viewModel = viewModel,
             modifier = modifier,
         )
+        state.sessionDetail != null && state.setup != null -> SessionDetailsScreen(
+            recorded = state.sessionDetail,
+            setup = state.setup,
+            showDeleteConfirmation = state.showDeleteConfirmation,
+            viewModel = viewModel,
+            modifier = modifier,
+        )
         state.setup != null -> AquariumHome(state, viewModel, modifier)
         state.step == OnboardingStep.WELCOME -> WelcomeScreen(viewModel::startOnboarding, modifier)
         state.step == OnboardingStep.PROFILE -> ProfileScreen(
@@ -456,6 +463,11 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (state.latestSession != null) {
+                    TextButton(onClick = viewModel::openSessionDetails) {
+                        Text(stringResource(R.string.view_session_details))
+                    }
+                }
             }
         }
         Spacer(Modifier.weight(1f))

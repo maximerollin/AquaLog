@@ -7,6 +7,7 @@ import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
@@ -14,11 +15,13 @@ import com.maximerollin.aqualog.shared.ParameterDefinitionDraft
 import com.maximerollin.aqualog.shared.RapidSessionContext
 import com.maximerollin.aqualog.shared.RapidSessionInput
 import com.maximerollin.aqualog.shared.RecordedSession
+import com.maximerollin.aqualog.shared.SessionEditInput
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.evaluateMeasurement
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -86,6 +89,8 @@ data class HomeUiState(
     val showParameterValidationError: Boolean = false,
     val rapidSession: RapidSessionUiState? = null,
     val latestSession: RecordedSession? = null,
+    val sessionDetail: RecordedSession? = null,
+    val showDeleteConfirmation: Boolean = false,
 )
 
 data class RapidSessionUiState(
@@ -93,6 +98,7 @@ data class RapidSessionUiState(
     val idempotencyKey: String,
     val aquariumId: String,
     val occurredAtEpochMillis: Long,
+    val editingSessionId: String? = null,
     val measurementInputs: Map<String, String> = emptyMap(),
     val actions: Map<MaintenanceActionType, MaintenanceActionInput> = emptyMap(),
     val editingAction: MaintenanceActionType? = null,
@@ -125,9 +131,28 @@ class HomeViewModel(
 
     init {
         viewModelScope.launch {
-            aquariumRepository.observeCurrentSetup().collect { setup ->
+            aquariumRepository.observeCurrentSetup().collectLatest { setup ->
                 mutableUiState.update {
-                    it.copy(isLoading = false, setup = setup, isSaving = false)
+                    it.copy(
+                        isLoading = false,
+                        setup = setup,
+                        isSaving = false,
+                        latestSession = if (setup == null) null else it.latestSession,
+                    )
+                }
+                if (setup != null) {
+                    aquariumRepository.observeLatestSession(setup.aquarium.id).collect { latest ->
+                        mutableUiState.update { state ->
+                            state.copy(
+                                latestSession = latest,
+                                sessionDetail = if (state.sessionDetail?.session?.id == latest?.session?.id) {
+                                    latest
+                                } else {
+                                    state.sessionDetail
+                                },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -266,6 +291,72 @@ class HomeViewModel(
         mutableUiState.update { it.copy(rapidSession = null) }
     }
 
+    fun openSessionDetails() {
+        mutableUiState.update { state -> state.copy(sessionDetail = state.latestSession) }
+    }
+
+    fun closeSessionDetails() {
+        mutableUiState.update { it.copy(sessionDetail = null, showDeleteConfirmation = false) }
+    }
+
+    fun editSession() {
+        val recorded = mutableUiState.value.sessionDetail ?: return
+        val setup = mutableUiState.value.setup ?: return
+        val draft = RapidSessionUiState(
+            idempotencyKey = recorded.session.id,
+            aquariumId = recorded.session.aquariumId,
+            occurredAtEpochMillis = recorded.session.occurredAtEpochMillis,
+            editingSessionId = recorded.session.id,
+        )
+        mutableUiState.update { it.copy(rapidSession = draft) }
+        viewModelScope.launch {
+            val context = aquariumRepository.loadRapidSessionContext(setup.aquarium.id)
+            val observations = recorded.events.associateBy { it.type }
+            mutableUiState.update { state ->
+                val current = state.rapidSession
+                if (current?.editingSessionId != recorded.session.id) state else {
+                    state.copy(
+                        rapidSession = current.copy(
+                            context = context,
+                            measurementInputs = context.measurementInputs + recorded.measurements.associate {
+                                it.parameterDefinitionId to it.value.displayInput()
+                            },
+                            actions = recorded.maintenanceActions.associate { action ->
+                                action.type to MaintenanceActionInput(
+                                    type = action.type,
+                                    quantity = action.quantity.displayInput(),
+                                    unit = action.unit.orEmpty(),
+                                    product = action.product.orEmpty(),
+                                )
+                            },
+                            showObservation = EventType.OBSERVATION in observations,
+                            observation = observations[EventType.OBSERVATION]?.note.orEmpty(),
+                            showIncident = EventType.INCIDENT in observations,
+                            incident = observations[EventType.INCIDENT]?.note.orEmpty(),
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
+    fun requestSessionDeletion() {
+        mutableUiState.update { it.copy(showDeleteConfirmation = true) }
+    }
+
+    fun cancelSessionDeletion() {
+        mutableUiState.update { it.copy(showDeleteConfirmation = false) }
+    }
+
+    fun confirmSessionDeletion() {
+        val sessionId = mutableUiState.value.sessionDetail?.session?.id ?: return
+        mutableUiState.update { it.copy(showDeleteConfirmation = false) }
+        viewModelScope.launch {
+            aquariumRepository.deleteSession(sessionId)
+            mutableUiState.update { it.copy(sessionDetail = null) }
+        }
+    }
+
     fun shiftSessionTimeByMinutes(minutes: Int) = updateRapidSession {
         it.copy(occurredAtEpochMillis = it.occurredAtEpochMillis + minutes * 60_000L)
     }
@@ -333,19 +424,39 @@ class HomeViewModel(
         mutableUiState.update { it.copy(rapidSession = draft.copy(isSaving = true, saveError = false)) }
         viewModelScope.launch {
             runCatching {
-                aquariumRepository.saveRapidSession(
-                    RapidSessionInput(
-                        aquariumId = draft.aquariumId,
-                        occurredAtEpochMillis = draft.occurredAtEpochMillis,
-                        idempotencyKey = draft.idempotencyKey,
-                        measurementInputs = draft.measurementInputs,
-                        maintenanceActions = draft.actions.values.toList(),
-                        observation = draft.observation,
-                        incident = draft.incident,
-                    ),
-                )
+                if (draft.editingSessionId == null) {
+                    aquariumRepository.saveRapidSession(
+                        RapidSessionInput(
+                            aquariumId = draft.aquariumId,
+                            occurredAtEpochMillis = draft.occurredAtEpochMillis,
+                            idempotencyKey = draft.idempotencyKey,
+                            measurementInputs = draft.measurementInputs,
+                            maintenanceActions = draft.actions.values.toList(),
+                            observation = draft.observation,
+                            incident = draft.incident,
+                        ),
+                    )
+                } else {
+                    aquariumRepository.updateSession(
+                        SessionEditInput(
+                            sessionId = draft.editingSessionId,
+                            aquariumId = draft.aquariumId,
+                            occurredAtEpochMillis = draft.occurredAtEpochMillis,
+                            measurementInputs = draft.measurementInputs,
+                            maintenanceActions = draft.actions.values.toList(),
+                            observation = draft.observation,
+                            incident = draft.incident,
+                        ),
+                    )
+                }
             }.onSuccess { recorded ->
-                mutableUiState.update { it.copy(rapidSession = null, latestSession = recorded) }
+                mutableUiState.update {
+                    it.copy(
+                        rapidSession = null,
+                        latestSession = recorded,
+                        sessionDetail = if (draft.editingSessionId == null) null else recorded,
+                    )
+                }
             }.onFailure {
                 updateRapidSession { it.copy(isSaving = false, saveError = true) }
             }
