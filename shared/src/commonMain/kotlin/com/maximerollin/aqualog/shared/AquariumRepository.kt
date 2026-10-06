@@ -235,6 +235,13 @@ class RoomAquariumRepository(
 
     override suspend fun hasRecordedSession(): Boolean = sessionDao.countAll() > 0
 
+    override suspend fun wasAccountInvitationOffered(): Boolean =
+        accountDao.wasInvitationOffered() == true
+
+    override suspend fun markAccountInvitationOffered() {
+        accountDao.upsertInvitation(AccountInvitationEntity(wasOffered = true))
+    }
+
     override suspend fun initialAccountCopy() = InitialAccountCopy(
         aquariums = aquariumDao.allAquariums().map(AquariumEntity::toDomain),
         parameterDefinitions = aquariumDao.allParameterDefinitions().map(ParameterDefinitionEntity::toDomain),

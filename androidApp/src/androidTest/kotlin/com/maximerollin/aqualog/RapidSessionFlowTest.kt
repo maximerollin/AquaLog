@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -62,6 +63,9 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithText("Water change").performClick()
         save.assertIsEnabled().performClick()
 
+        composeRule.onNodeWithText("Session saved").assertIsDisplayed()
+        composeRule.onNodeWithText("Keep this Aquarium on your devices").assertDoesNotExist()
+        composeRule.onNodeWithText("Continue").performClick()
         composeRule.onNodeWithText("Keep this Aquarium on your devices").assertIsDisplayed()
         composeRule.onNodeWithText("Not now").performClick()
         composeRule.onNodeWithText("Session saved").assertIsDisplayed()

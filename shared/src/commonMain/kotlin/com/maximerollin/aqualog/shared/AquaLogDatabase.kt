@@ -109,6 +109,12 @@ data class AccountStateEntity(
     val migrationStatus: String,
 )
 
+@Entity(tableName = "account_invitation")
+data class AccountInvitationEntity(
+    @PrimaryKey val singletonId: Int = 1,
+    val wasOffered: Boolean,
+)
+
 @Dao
 abstract class AquariumDao {
     @Query("SELECT * FROM aquariums ORDER BY createdAtEpochMillis ASC LIMIT 1")
@@ -227,6 +233,12 @@ abstract class AccountDao {
 
     @Upsert
     abstract suspend fun upsert(state: AccountStateEntity)
+
+    @Query("SELECT wasOffered FROM account_invitation WHERE singletonId = 1")
+    abstract suspend fun wasInvitationOffered(): Boolean?
+
+    @Upsert
+    abstract suspend fun upsertInvitation(invitation: AccountInvitationEntity)
 }
 
 @Database(
@@ -238,8 +250,9 @@ abstract class AccountDao {
         MaintenanceActionEntity::class,
         SessionEventEntity::class,
         AccountStateEntity::class,
+        AccountInvitationEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -259,7 +272,7 @@ fun createAquaLogDatabase(
 ): AquaLogDatabase = builder
     .setDriver(BundledSQLiteDriver())
     .setQueryCoroutineContext(Dispatchers.IO)
-    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
     .build()
 
 private val MIGRATION_1_2 = Migration(1, 2) { connection ->
@@ -304,5 +317,11 @@ private val MIGRATION_2_3 = Migration(2, 3) { connection ->
 private val MIGRATION_3_4 = Migration(3, 4) { connection ->
     connection.execSQL(
         "CREATE TABLE IF NOT EXISTS account_state (singletonId INTEGER NOT NULL PRIMARY KEY, accountId TEXT NOT NULL, migrationStatus TEXT NOT NULL)",
+    )
+}
+
+private val MIGRATION_4_5 = Migration(4, 5) { connection ->
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS account_invitation (singletonId INTEGER NOT NULL PRIMARY KEY, wasOffered INTEGER NOT NULL)",
     )
 }

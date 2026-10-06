@@ -30,13 +30,18 @@ class MainActivity : ComponentActivity() {
                 AquaLogApp(homeViewModel)
             }
         }
-        intent?.dataString?.let(homeViewModel::completeAccountCallback)
+        handleAuthenticationIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        setIntent(intent)
-        intent.dataString?.let(homeViewModel::completeAccountCallback)
+        handleAuthenticationIntent(intent)
+    }
+
+    private fun handleAuthenticationIntent(intent: Intent?) {
+        val callbackUrl = intent?.dataString ?: return
+        setIntent(Intent(this, MainActivity::class.java))
+        homeViewModel.completeAccountCallback(callbackUrl)
     }
 }
 

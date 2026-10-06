@@ -29,7 +29,7 @@ open class AquaLogApplication : Application() {
             val configuration = SupabaseConfiguration.fromBuildConfig()
             val tokenStorage = AndroidSecureTokenStorage(this)
             return AccountActivationCoordinator(
-                authGateway = SupabaseAuthGateway(this, configuration),
+                authGateway = SupabaseAuthGateway(this, configuration, tokenStorage),
                 cloudRepository = SupabaseInitialMigrationRepository(configuration, tokenStorage),
                 localData = localData,
                 tokenStorage = tokenStorage,

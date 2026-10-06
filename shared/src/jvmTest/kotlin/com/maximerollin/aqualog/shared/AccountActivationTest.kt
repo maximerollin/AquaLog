@@ -10,6 +10,64 @@ import kotlin.test.assertNull
 
 class AccountActivationTest {
     @Test
+    fun `authentication callback is accepted only for the pending PKCE attempt`() {
+        val pending = PendingAuthenticationAttempt(
+            state = "expected-state",
+            codeVerifier = "local-code-verifier",
+        )
+
+        assertIs<AuthenticationCallbackResult.Rejected>(
+            correlateAuthenticationCallback(
+                pendingAttempt = null,
+                callback = AuthenticationCallback(state = "expected-state", authorizationCode = "injected-code"),
+            ),
+        )
+        assertIs<AuthenticationCallbackResult.Rejected>(
+            correlateAuthenticationCallback(
+                pendingAttempt = pending,
+                callback = AuthenticationCallback(state = "attacker-state", authorizationCode = "injected-code"),
+            ),
+        )
+        assertIs<AuthenticationCallbackResult.Rejected>(
+            correlateAuthenticationCallback(
+                pendingAttempt = pending,
+                callback = AuthenticationCallback(
+                    state = "expected-state",
+                    accessToken = "implicit-token-must-not-be-accepted",
+                ),
+            ),
+        )
+
+        val accepted = assertIs<AuthenticationCallbackResult.AuthorizationCode>(
+            correlateAuthenticationCallback(
+                pendingAttempt = pending,
+                callback = AuthenticationCallback(state = "expected-state", authorizationCode = "one-time-code"),
+            ),
+        )
+        assertEquals("one-time-code", accepted.code)
+        assertEquals("local-code-verifier", accepted.codeVerifier)
+    }
+
+    @Test
+    fun `unexpected authentication callback is ignored without touching local data`() = runTest {
+        val fixture = populatedAccountFixture()
+        val coordinator = AccountActivationCoordinator(
+            authGateway = FakeAuthGateway(AuthenticationResult.IgnoredCallback),
+            cloudRepository = RecordingCloudRepository(),
+            localData = fixture.repository,
+            tokenStorage = RecordingTokenStorage(),
+        )
+
+        assertEquals(
+            AccountActivationResult.IgnoredCallback,
+            coordinator.completeMagicLink("aqualog://auth/callback?code=injected"),
+        )
+        assertNull(fixture.repository.accountMigrationState())
+        assertEquals(fixture.sessionId, fixture.repository.observeLatestSession(fixture.aquariumId).first()?.session?.id)
+        fixture.close()
+    }
+
+    @Test
     fun `account invitation becomes available only after the first local Session`() = runTest {
         val fixture = accountFixture()
         val setup = fixture.repository.createConfiguredAquarium(
@@ -37,7 +95,19 @@ class AccountActivationTest {
         )
 
         assertEquals(true, coordinator.shouldInviteToAccount())
+        coordinator.markInvitationOffered()
+        val databasePath = fixture.databasePath
         fixture.close()
+
+        val reopenedFixture = accountFixture(databasePath)
+        val coordinatorAfterRestart = AccountActivationCoordinator(
+            authGateway = FakeAuthGateway(AuthenticationResult.Cancelled),
+            cloudRepository = RecordingCloudRepository(),
+            localData = reopenedFixture.repository,
+            tokenStorage = RecordingTokenStorage(),
+        )
+        assertEquals(false, coordinatorAfterRestart.shouldInviteToAccount())
+        reopenedFixture.close()
     }
 
     @Test
@@ -74,6 +144,7 @@ class AccountActivationTest {
         val result = coordinator.signInWithGoogle()
 
         assertEquals(AccountActivationResult.Activated, result)
+        assertEquals(false, coordinator.shouldInviteToAccount())
         assertEquals(setup.aquarium.id, cloud.lastCopy?.aquariums?.single()?.id)
         assertEquals(recorded.session.id, cloud.lastCopy?.sessions?.single()?.id)
         assertEquals(recorded.session.id, fixture.repository.observeLatestSession(setup.aquarium.id).first()?.session?.id)
@@ -158,16 +229,18 @@ class AccountActivationTest {
         fixture.close()
     }
 
-    private fun accountFixture(): AccountFixture {
-        val path = Files.createTempDirectory("aqualog-account")
+    private fun accountFixture(
+        databasePath: String = Files.createTempDirectory("aqualog-account")
             .resolve("aqualog.db")
             .toAbsolutePath()
-            .toString()
-        val database = createAquaLogDatabase(createJvmDatabaseBuilder(path))
+            .toString(),
+    ): AccountFixture {
+        val database = createAquaLogDatabase(createJvmDatabaseBuilder(databasePath))
         val ids = generateSequence(1) { it + 1 }.map { "uuid-$it" }.iterator()
         return AccountFixture(
             database,
             RoomAquariumRepository(database, ids::next, { 1_700_000_000_000L }),
+            databasePath,
         )
     }
 
@@ -194,6 +267,7 @@ class AccountActivationTest {
     private class AccountFixture(
         private val database: AquaLogDatabase,
         val repository: RoomAquariumRepository,
+        val databasePath: String,
     ) {
         fun close() = database.close()
     }

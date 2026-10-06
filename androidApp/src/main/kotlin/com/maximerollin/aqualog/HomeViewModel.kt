@@ -136,6 +136,7 @@ data class HomeUiState(
     val showParameterValidationError: Boolean = false,
     val rapidSession: RapidSessionUiState? = null,
     val latestSession: RecordedSession? = null,
+    val hasPendingAccountInvitation: Boolean = false,
     val account: AccountUiState = AccountUiState(),
     val destination: MainDestination = MainDestination.HOME,
     val timeline: TimelineUiState = TimelineUiState(),
@@ -429,7 +430,6 @@ class HomeViewModel(
     fun saveRapidSession() {
         val draft = mutableUiState.value.rapidSession ?: return
         if (!draft.canSave) return
-        val isFirstSession = mutableUiState.value.latestSession == null
         mutableUiState.update { it.copy(rapidSession = draft.copy(isSaving = true, saveError = false)) }
         viewModelScope.launch {
             runCatching {
@@ -449,16 +449,31 @@ class HomeViewModel(
                     it.copy(
                         rapidSession = null,
                         latestSession = recorded,
-                        account = if (isFirstSession && accountCoordinator != null) {
-                            AccountUiState(AccountStep.INVITATION)
-                        } else {
-                            it.account
-                        },
                     )
+                }
+                if (accountCoordinator?.shouldInviteToAccount() == true) {
+                    mutableUiState.update { it.copy(hasPendingAccountInvitation = true) }
                 }
             }.onFailure {
                 updateRapidSession { it.copy(isSaving = false, saveError = true) }
             }
+        }
+    }
+
+    fun continueAfterSessionConfirmation() {
+        val coordinator = accountCoordinator ?: return
+        if (!mutableUiState.value.hasPendingAccountInvitation) return
+        mutableUiState.update { it.copy(hasPendingAccountInvitation = false) }
+        viewModelScope.launch {
+            runCatching { coordinator.markInvitationOffered() }
+                .onSuccess {
+                    mutableUiState.update {
+                        it.copy(account = AccountUiState(AccountStep.INVITATION))
+                    }
+                }
+                .onFailure {
+                    mutableUiState.update { it.copy(hasPendingAccountInvitation = true) }
+                }
         }
     }
 
@@ -511,6 +526,7 @@ class HomeViewModel(
                 AccountActivationResult.Cancelled -> current.copy(step = AccountStep.METHODS, error = null)
                 AccountActivationResult.ExpiredLink -> current.copy(step = AccountStep.ERROR, error = AccountError.EXPIRED_LINK)
                 AccountActivationResult.MagicLinkSent -> current.copy(step = AccountStep.MAGIC_SENT)
+                AccountActivationResult.IgnoredCallback -> AccountUiState()
                 is AccountActivationResult.Failed -> current.copy(step = AccountStep.ERROR, error = failure)
                 is AccountActivationResult.MigrationFailed -> current.copy(
                     step = AccountStep.ERROR,

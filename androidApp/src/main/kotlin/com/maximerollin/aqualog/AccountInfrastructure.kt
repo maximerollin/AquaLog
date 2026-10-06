@@ -7,13 +7,18 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import com.maximerollin.aqualog.shared.AuthGateway
+import com.maximerollin.aqualog.shared.AuthenticationAttemptStorage
+import com.maximerollin.aqualog.shared.AuthenticationCallback
+import com.maximerollin.aqualog.shared.AuthenticationCallbackResult
 import com.maximerollin.aqualog.shared.AuthTokens
 import com.maximerollin.aqualog.shared.AuthenticatedAccount
 import com.maximerollin.aqualog.shared.AuthenticationResult
 import com.maximerollin.aqualog.shared.CloudRepository
 import com.maximerollin.aqualog.shared.InitialAccountCopy
 import com.maximerollin.aqualog.shared.MagicLinkRequestResult
+import com.maximerollin.aqualog.shared.PendingAuthenticationAttempt
 import com.maximerollin.aqualog.shared.SecureTokenStorage
+import com.maximerollin.aqualog.shared.correlateAuthenticationCallback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -23,7 +28,9 @@ import java.net.URL
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.security.KeyStore
+import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -45,35 +52,69 @@ data class SupabaseConfiguration(
     }
 }
 
-class AndroidSecureTokenStorage(context: Context) : SecureTokenStorage {
+class AndroidSecureTokenStorage(context: Context) : SecureTokenStorage, AuthenticationAttemptStorage {
     private val preferences = context.getSharedPreferences("encrypted_account_tokens", Context.MODE_PRIVATE)
 
     override suspend fun save(tokens: AuthTokens) = withContext(Dispatchers.IO) {
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey())
         val plaintext = "${tokens.accessToken}\u0000${tokens.refreshToken}".toByteArray()
-        val ciphertext = cipher.doFinal(plaintext)
-        preferences.edit()
-            .putString(IV_KEY, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
-            .putString(TOKEN_KEY, Base64.encodeToString(ciphertext, Base64.NO_WRAP))
-            .apply()
+        saveEncrypted(TOKEN_IV_KEY, TOKEN_KEY, plaintext)
     }
 
     override suspend fun read(): AuthTokens? = withContext(Dispatchers.IO) {
-        val iv = preferences.getString(IV_KEY, null)?.let { Base64.decode(it, Base64.NO_WRAP) } ?: return@withContext null
-        val encrypted = preferences.getString(TOKEN_KEY, null)?.let { Base64.decode(it, Base64.NO_WRAP) }
-            ?: return@withContext null
-        runCatching {
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.DECRYPT_MODE, secretKey(), GCMParameterSpec(128, iv))
-            val parts = cipher.doFinal(encrypted).toString(Charsets.UTF_8).split('\u0000', limit = 2)
+        readEncrypted(TOKEN_IV_KEY, TOKEN_KEY)?.let { plaintext ->
+            val parts = plaintext.toString(Charsets.UTF_8).split('\u0000', limit = 2)
+            if (parts.size != 2) return@let null
             AuthTokens(parts[0], parts[1])
-        }.getOrNull()
+        }
     }
 
     override suspend fun clear() = withContext(Dispatchers.IO) {
-        preferences.edit().clear().apply()
+        check(preferences.edit().remove(TOKEN_IV_KEY).remove(TOKEN_KEY).commit()) {
+            "Secure account tokens could not be cleared"
+        }
     }
+
+    override suspend fun saveAttempt(attempt: PendingAuthenticationAttempt) = withContext(Dispatchers.IO) {
+        saveEncrypted(
+            ATTEMPT_IV_KEY,
+            ATTEMPT_KEY,
+            "${attempt.state}\u0000${attempt.codeVerifier}".toByteArray(),
+        )
+    }
+
+    override suspend fun readAttempt(): PendingAuthenticationAttempt? = withContext(Dispatchers.IO) {
+        readEncrypted(ATTEMPT_IV_KEY, ATTEMPT_KEY)?.let { plaintext ->
+            val parts = plaintext.toString(Charsets.UTF_8).split('\u0000', limit = 2)
+            if (parts.size != 2) return@let null
+            PendingAuthenticationAttempt(parts[0], parts[1])
+        }
+    }
+
+    override suspend fun clearAttempt() = withContext(Dispatchers.IO) {
+        check(preferences.edit().remove(ATTEMPT_IV_KEY).remove(ATTEMPT_KEY).commit()) {
+            "Pending authentication attempt could not be cleared"
+        }
+    }
+
+    private fun saveEncrypted(ivKey: String, valueKey: String, plaintext: ByteArray) {
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey())
+        val ciphertext = cipher.doFinal(plaintext)
+        check(preferences.edit()
+            .putString(ivKey, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
+            .putString(valueKey, Base64.encodeToString(ciphertext, Base64.NO_WRAP))
+            .commit()) { "Secure account state could not be persisted" }
+    }
+
+    private fun readEncrypted(ivKey: String, valueKey: String): ByteArray? = runCatching {
+        val iv = preferences.getString(ivKey, null)?.let { Base64.decode(it, Base64.NO_WRAP) }
+            ?: return@runCatching null
+        val encrypted = preferences.getString(valueKey, null)?.let { Base64.decode(it, Base64.NO_WRAP) }
+            ?: return@runCatching null
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.DECRYPT_MODE, secretKey(), GCMParameterSpec(128, iv))
+        cipher.doFinal(encrypted)
+    }.getOrNull()
 
     private fun secretKey(): SecretKey {
         val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
@@ -94,66 +135,149 @@ class AndroidSecureTokenStorage(context: Context) : SecureTokenStorage {
     private companion object {
         const val KEY_ALIAS = "aqualog-account-token-key"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
-        const val IV_KEY = "iv"
+        const val TOKEN_IV_KEY = "token_iv"
         const val TOKEN_KEY = "tokens"
+        const val ATTEMPT_IV_KEY = "attempt_iv"
+        const val ATTEMPT_KEY = "attempt"
     }
 }
 
 class SupabaseAuthGateway(
     private val context: Context,
     private val configuration: SupabaseConfiguration,
+    private val attemptStorage: AuthenticationAttemptStorage,
+    private val secureRandom: SecureRandom = SecureRandom(),
 ) : AuthGateway {
     override suspend fun signInWithGoogle(): AuthenticationResult {
         if (!configuration.isConfigured) return AuthenticationResult.Failed(CONFIGURATION_ERROR)
+        val attempt = createAttempt()
         val uri = Uri.parse("${configuration.projectUrl}/auth/v1/authorize").buildUpon()
             .appendQueryParameter("provider", "google")
-            .appendQueryParameter("redirect_to", configuration.redirectUrl)
+            .appendQueryParameter("scopes", "email profile")
+            .appendQueryParameter("redirect_to", callbackUrl(attempt.state))
+            .appendQueryParameter("code_challenge", codeChallenge(attempt.codeVerifier))
+            .appendQueryParameter("code_challenge_method", "s256")
             .build()
-        context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        return AuthenticationResult.AwaitingCallback
+        return runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            AuthenticationResult.AwaitingCallback
+        }.getOrElse {
+            attemptStorage.clearAttempt()
+            AuthenticationResult.Failed(it.message ?: "Unable to open authentication")
+        }
     }
 
     override suspend fun requestMagicLink(email: String): MagicLinkRequestResult {
         if (!configuration.isConfigured) return MagicLinkRequestResult.Failed(CONFIGURATION_ERROR)
+        val attempt = createAttempt()
         return withContext(Dispatchers.IO) {
             runCatching {
                 val body = JSONObject()
                     .put("email", email)
                     .put("create_user", true)
+                    .put("code_challenge", codeChallenge(attempt.codeVerifier))
+                    .put("code_challenge_method", "s256")
                 request(
-                    url = "${configuration.projectUrl}/auth/v1/otp?redirect_to=${encode(configuration.redirectUrl)}",
+                    url = "${configuration.projectUrl}/auth/v1/otp?redirect_to=${encode(callbackUrl(attempt.state))}",
                     method = "POST",
                     body = body.toString(),
                 )
                 MagicLinkRequestResult.Sent
-            }.getOrElse { MagicLinkRequestResult.Failed(it.message ?: "Magic link request failed") }
+            }.getOrElse {
+                attemptStorage.clearAttempt()
+                MagicLinkRequestResult.Failed(it.message ?: "Magic link request failed")
+            }
         }
     }
 
     override suspend fun completeMagicLink(callbackUrl: String): AuthenticationResult {
         if (!configuration.isConfigured) return AuthenticationResult.Failed(CONFIGURATION_ERROR)
+        val callbackUri = Uri.parse(callbackUrl)
+        if (
+            callbackUri.scheme != "aqualog" ||
+            callbackUri.host != "auth" ||
+            callbackUri.path != "/callback"
+        ) {
+            return AuthenticationResult.IgnoredCallback
+        }
         val values = callbackValues(callbackUrl)
-        return when {
-            values["error_code"] == "otp_expired" -> AuthenticationResult.ExpiredLink
-            values["error"] == "access_denied" -> AuthenticationResult.Cancelled
-            values["error_description"] != null -> AuthenticationResult.Failed(values.getValue("error_description"))
-            else -> {
-                val accessToken = values["access_token"]
-                    ?: return AuthenticationResult.Failed("The authentication callback contains no access token")
-                val refreshToken = values["refresh_token"]
-                    ?: return AuthenticationResult.Failed("The authentication callback contains no refresh token")
-                withContext(Dispatchers.IO) {
-                    runCatching {
-                        val user = JSONObject(
-                            request("${configuration.projectUrl}/auth/v1/user", bearerToken = accessToken),
-                        )
-                        AuthenticationResult.Authenticated(
-                            AuthenticatedAccount(user.getString("id"), accessToken, refreshToken),
-                        )
-                    }.getOrElse { AuthenticationResult.Failed(it.message ?: "Authentication validation failed") }
+        val correlated = correlateAuthenticationCallback(
+            pendingAttempt = attemptStorage.readAttempt(),
+            callback = AuthenticationCallback(
+                state = values["state"],
+                authorizationCode = values["code"],
+                accessToken = values["access_token"],
+                errorCode = values["error_code"] ?: values["error"],
+                errorDescription = values["error_description"],
+            ),
+        )
+        return when (correlated) {
+            AuthenticationCallbackResult.Cancelled -> {
+                attemptStorage.clearAttempt()
+                AuthenticationResult.Cancelled
+            }
+            AuthenticationCallbackResult.ExpiredLink -> {
+                attemptStorage.clearAttempt()
+                AuthenticationResult.ExpiredLink
+            }
+            is AuthenticationCallbackResult.Rejected -> AuthenticationResult.IgnoredCallback
+            is AuthenticationCallbackResult.Failed -> AuthenticationResult.Failed(correlated.reason)
+            is AuthenticationCallbackResult.AuthorizationCode -> {
+                exchangeAuthorizationCode(correlated).also { result ->
+                    if (result is AuthenticationResult.Authenticated) attemptStorage.clearAttempt()
                 }
             }
         }
+    }
+
+    private suspend fun createAttempt(): PendingAuthenticationAttempt {
+        val attempt = PendingAuthenticationAttempt(
+            state = randomUrlSafeValue(32),
+            codeVerifier = randomUrlSafeValue(64),
+        )
+        attemptStorage.saveAttempt(attempt)
+        return attempt
+    }
+
+    private fun callbackUrl(state: String): String = Uri.parse(configuration.redirectUrl).buildUpon()
+        .appendQueryParameter("state", state)
+        .build()
+        .toString()
+
+    private fun codeChallenge(verifier: String): String = urlSafeBase64(
+        MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(StandardCharsets.US_ASCII)),
+    )
+
+    private fun randomUrlSafeValue(size: Int): String = ByteArray(size)
+        .also(secureRandom::nextBytes)
+        .let(::urlSafeBase64)
+
+    private fun urlSafeBase64(value: ByteArray): String =
+        Base64.encodeToString(value, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+
+    private suspend fun exchangeAuthorizationCode(
+        callback: AuthenticationCallbackResult.AuthorizationCode,
+    ): AuthenticationResult = withContext(Dispatchers.IO) {
+        runCatching {
+            val tokenResponse = JSONObject(
+                request(
+                    url = "${configuration.projectUrl}/auth/v1/token?grant_type=pkce",
+                    method = "POST",
+                    body = JSONObject()
+                        .put("auth_code", callback.code)
+                        .put("code_verifier", callback.codeVerifier)
+                        .toString(),
+                ),
+            )
+            val accessToken = tokenResponse.getString("access_token")
+            val refreshToken = tokenResponse.getString("refresh_token")
+            val user = JSONObject(
+                request("${configuration.projectUrl}/auth/v1/user", bearerToken = accessToken),
+            )
+            AuthenticationResult.Authenticated(
+                AuthenticatedAccount(user.getString("id"), accessToken, refreshToken),
+            )
+        }.getOrElse { AuthenticationResult.Failed(it.message ?: "Authentication validation failed") }
     }
 
     private fun request(

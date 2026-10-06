@@ -11,11 +11,54 @@ data class AuthenticatedAccount(
     val refreshToken: String,
 )
 
+data class PendingAuthenticationAttempt(
+    val state: String,
+    val codeVerifier: String,
+)
+
+data class AuthenticationCallback(
+    val state: String?,
+    val authorizationCode: String? = null,
+    val accessToken: String? = null,
+    val errorCode: String? = null,
+    val errorDescription: String? = null,
+)
+
+sealed interface AuthenticationCallbackResult {
+    data class AuthorizationCode(val code: String, val codeVerifier: String) : AuthenticationCallbackResult
+    data object Cancelled : AuthenticationCallbackResult
+    data object ExpiredLink : AuthenticationCallbackResult
+    data class Rejected(val reason: String) : AuthenticationCallbackResult
+    data class Failed(val reason: String) : AuthenticationCallbackResult
+}
+
+fun correlateAuthenticationCallback(
+    pendingAttempt: PendingAuthenticationAttempt?,
+    callback: AuthenticationCallback,
+): AuthenticationCallbackResult {
+    if (pendingAttempt == null) {
+        return AuthenticationCallbackResult.Rejected("No authentication attempt is pending")
+    }
+    if (callback.state == null || callback.state != pendingAttempt.state) {
+        return AuthenticationCallbackResult.Rejected("Authentication callback does not match the pending attempt")
+    }
+    if (callback.accessToken != null) {
+        return AuthenticationCallbackResult.Rejected("Implicit authentication tokens are not accepted")
+    }
+    if (callback.errorCode == "otp_expired") return AuthenticationCallbackResult.ExpiredLink
+    if (callback.errorCode == "access_denied") return AuthenticationCallbackResult.Cancelled
+    callback.errorDescription?.let { return AuthenticationCallbackResult.Failed(it) }
+    val code = callback.authorizationCode
+        ?: return AuthenticationCallbackResult.Rejected("Authentication callback contains no authorization code")
+    return AuthenticationCallbackResult.AuthorizationCode(code, pendingAttempt.codeVerifier)
+}
+
 sealed interface AuthenticationResult {
     data class Authenticated(val account: AuthenticatedAccount) : AuthenticationResult
     data object AwaitingCallback : AuthenticationResult
     data object Cancelled : AuthenticationResult
     data object ExpiredLink : AuthenticationResult
+    data object IgnoredCallback : AuthenticationResult
     data class Failed(val reason: String) : AuthenticationResult
 }
 
@@ -39,6 +82,12 @@ interface SecureTokenStorage {
     suspend fun save(tokens: AuthTokens)
     suspend fun read(): AuthTokens?
     suspend fun clear()
+}
+
+interface AuthenticationAttemptStorage {
+    suspend fun saveAttempt(attempt: PendingAuthenticationAttempt)
+    suspend fun readAttempt(): PendingAuthenticationAttempt?
+    suspend fun clearAttempt()
 }
 
 data class InitialAccountCopy(
@@ -66,6 +115,8 @@ data class AccountMigrationState(
 
 interface AccountLocalDataSource {
     suspend fun hasRecordedSession(): Boolean
+    suspend fun wasAccountInvitationOffered(): Boolean
+    suspend fun markAccountInvitationOffered()
     suspend fun initialAccountCopy(): InitialAccountCopy
     suspend fun accountMigrationState(): AccountMigrationState?
     suspend fun beginAccountMigration(accountId: String)
@@ -78,6 +129,7 @@ sealed interface AccountActivationResult {
     data object Cancelled : AccountActivationResult
     data object ExpiredLink : AccountActivationResult
     data object MagicLinkSent : AccountActivationResult
+    data object IgnoredCallback : AccountActivationResult
     data class Failed(val reason: String) : AccountActivationResult
     data class MigrationFailed(val reason: String) : AccountActivationResult
 }
@@ -89,7 +141,11 @@ class AccountActivationCoordinator(
     private val tokenStorage: SecureTokenStorage,
 ) {
     suspend fun shouldInviteToAccount(): Boolean =
-        localData.hasRecordedSession() && localData.accountMigrationState() == null
+        localData.hasRecordedSession() &&
+            !localData.wasAccountInvitationOffered() &&
+            localData.accountMigrationState() == null
+
+    suspend fun markInvitationOffered() = localData.markAccountInvitationOffered()
 
     suspend fun hasPendingMigration(): Boolean =
         localData.accountMigrationState()?.status == InitialMigrationStatus.PENDING
@@ -124,6 +180,7 @@ class AccountActivationCoordinator(
         AuthenticationResult.AwaitingCallback -> AccountActivationResult.AwaitingAuthentication
         AuthenticationResult.Cancelled -> AccountActivationResult.Cancelled
         AuthenticationResult.ExpiredLink -> AccountActivationResult.ExpiredLink
+        AuthenticationResult.IgnoredCallback -> AccountActivationResult.IgnoredCallback
         is AuthenticationResult.Failed -> AccountActivationResult.Failed(result.reason)
     }
 

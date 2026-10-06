@@ -573,6 +573,9 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                 )
             }
         }
+        if (state.hasPendingAccountInvitation) {
+            PrimaryButton(R.string.continue_after_session, viewModel::continueAfterSessionConfirmation)
+        }
         Spacer(Modifier.weight(1f))
         PrimaryButton(R.string.new_session, viewModel::openRapidSession)
     }

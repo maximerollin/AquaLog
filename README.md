@@ -47,10 +47,11 @@ AQUALOG_SUPABASE_ANON_KEY=PUBLIC_ANON_KEY \
 ```
 
 Configure `aqualog://auth/callback` as an allowed Auth redirect in Supabase and
-enable Google plus email OTP providers. The application validates callback
-tokens against `/auth/v1/user` before accepting the account. Access and refresh
-tokens are encrypted with an Android Keystore AES-GCM key; they are never stored
-in plain preferences.
+enable Google plus email OTP providers. The application uses PKCE, correlates
+the callback with an encrypted pending attempt, rejects implicit callback
+tokens, and exchanges only the matching one-time authorization code. Access and
+refresh tokens and the temporary PKCE verifier are encrypted with an Android
+Keystore AES-GCM key; they are never stored in plain preferences.
 
 The initial account attachment calls an authenticated Edge Function named
 `migrate-initial-copy`. That function must authorize the bearer user, reject a
