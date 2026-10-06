@@ -19,11 +19,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,7 +55,7 @@ fun AquaLogContent(
             viewModel = viewModel,
             modifier = modifier,
         )
-        state.setup != null -> AquariumHome(state, viewModel, modifier)
+        state.setup != null -> AquariumShell(state, viewModel, modifier)
         state.step == OnboardingStep.WELCOME -> WelcomeScreen(viewModel::startOnboarding, modifier)
         state.step == OnboardingStep.PROFILE -> ProfileScreen(
             selected = state.profile,
@@ -81,6 +84,40 @@ fun AquaLogContent(
             onContinueForFree = viewModel::finishForFree,
             modifier = modifier,
         )
+    }
+}
+
+@Composable
+private fun AquariumShell(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
+    Scaffold(
+        modifier = modifier,
+        bottomBar = {
+            NavigationBar {
+                MainDestination.entries.forEach { destination ->
+                    val label = when (destination) {
+                        MainDestination.HOME -> stringResource(R.string.navigation_home)
+                        MainDestination.HISTORY -> stringResource(R.string.navigation_history)
+                        MainDestination.SETTINGS -> stringResource(R.string.navigation_settings)
+                    }
+                    NavigationBarItem(
+                        selected = state.destination == destination,
+                        onClick = { viewModel.selectDestination(destination) },
+                        icon = { Text(label.take(1)) },
+                        label = { Text(label) },
+                    )
+                }
+            }
+        },
+    ) { innerPadding ->
+        val contentModifier = Modifier.padding(innerPadding)
+        when (state.destination) {
+            MainDestination.HOME -> AquariumHome(state, viewModel, contentModifier)
+            MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
+            MainDestination.SETTINGS -> StandardScreen(contentModifier) {
+                Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium)
+                Text(stringResource(R.string.settings_placeholder))
+            }
+        }
     }
 }
 
