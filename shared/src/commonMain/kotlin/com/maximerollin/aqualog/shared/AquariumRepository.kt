@@ -30,6 +30,8 @@ interface AquariumRepository {
     fun observeLatestSession(aquariumId: String): Flow<RecordedSession?>
 
     fun observeTimeline(filter: TimelineFilter): Flow<List<TimelineSession>>
+
+    fun observeFreeTrends(aquariumId: String, period: TrendPeriod): Flow<TrendSnapshot>
 }
 
 class RoomAquariumRepository(
@@ -230,6 +232,58 @@ class RoomAquariumRepository(
             }
         }
 
+    override fun observeFreeTrends(aquariumId: String, period: TrendPeriod): Flow<TrendSnapshot> =
+        currentTimeMillis().let { now ->
+            combine(
+                aquariumDao.observeAllSetups(),
+                sessionDao.observeForAquariumBetween(
+                    aquariumId = aquariumId,
+                    sinceEpochMillisInclusive = now - period.days * DAY_MILLIS,
+                    untilEpochMillisInclusive = now,
+                ),
+            ) { setupEntities, recordedEntities ->
+                val setup = requireNotNull(
+                    setupEntities.firstOrNull { it.aquarium.id == aquariumId },
+                ) { "Aquarium does not exist" }.toDomain()
+                TrendSnapshot(
+                    aquarium = setup.aquarium,
+                    period = period,
+                    windowStartEpochMillis = now - period.days * DAY_MILLIS,
+                    windowEndEpochMillis = now,
+                    series = setup.parameters.filter(ParameterDefinition::isActive).map { definition ->
+                        ParameterTrendSeries(
+                            definition = definition,
+                            points = recordedEntities.mapNotNull { recorded ->
+                                recorded.measurements.firstOrNull {
+                                    it.parameterDefinitionId == definition.id
+                                }?.let { measurement ->
+                                    TrendPoint(
+                                        sessionId = recorded.session.id,
+                                        occurredAtEpochMillis = recorded.session.occurredAtEpochMillis,
+                                        value = measurement.value,
+                                    )
+                                }
+                            }.sortedBy(TrendPoint::occurredAtEpochMillis),
+                        )
+                    },
+                    events = recordedEntities.mapNotNull { recorded ->
+                        if (recorded.maintenanceActions.isEmpty() && recorded.events.isEmpty()) {
+                            return@mapNotNull null
+                        }
+                        TrendEventMarker(
+                            sessionId = recorded.session.id,
+                            occurredAtEpochMillis = recorded.session.occurredAtEpochMillis,
+                            maintenanceActionTypes = recorded.maintenanceActions
+                                .map { MaintenanceActionType.fromStorageValue(it.type) },
+                            events = recorded.events.map {
+                                TrendEvent(EventType.fromStorageValue(it.type), it.note)
+                            },
+                        )
+                    }.sortedBy(TrendEventMarker::occurredAtEpochMillis),
+                )
+            }
+        }
+
     suspend fun sessionCount(aquariumId: String): Int = sessionDao.count(aquariumId)
 }
 
@@ -322,3 +376,5 @@ private fun RecordedSessionEntity.toDomain() = RecordedSession(
     maintenanceActions = maintenanceActions.map(MaintenanceActionEntity::toDomain),
     events = events.map(SessionEventEntity::toDomain),
 )
+
+private const val DAY_MILLIS = 24L * 60L * 60L * 1_000L
