@@ -53,10 +53,20 @@ tokens, and exchanges only the matching one-time authorization code. Access and
 refresh tokens and the temporary PKCE verifier are encrypted with an Android
 Keystore AES-GCM key; they are never stored in plain preferences.
 
-The initial account attachment calls an authenticated Edge Function named
-`migrate-initial-copy`. That function must authorize the bearer user, reject a
-different `accountId`, and upsert every entity by its existing UUID in one
-idempotent operation under Row Level Security. Deploying that server contract is
-required before account creation is enabled in a release environment. No
-service-role or other privileged key belongs in the Android build. Ongoing
+The versioned backend lives under `supabase/`. Apply its migration and deploy the
+authenticated `migrate-initial-copy` Edge Function before enabling account
+creation in a release environment. The function uses the caller's bearer token
+and public anonymous key; the atomic database RPC derives ownership from
+`auth.uid()`, rejects a different `accountId`, and upserts every entity by its
+existing local UUID. No service-role or other privileged key belongs in the
+Android build. An expired access token is refreshed once before the migration is
+retried; an invalid refresh token returns the user to authentication. Ongoing
 multi-device synchronization is intentionally outside this slice.
+
+The local backend contract is verified with:
+
+```shell
+supabase start
+supabase test db
+npx --yes deno test supabase/functions/migrate-initial-copy/service_test.ts
+```

@@ -95,7 +95,6 @@ class AccountActivationTest {
         )
 
         assertEquals(true, coordinator.shouldInviteToAccount())
-        coordinator.markInvitationOffered()
         val databasePath = fixture.databasePath
         fixture.close()
 
@@ -106,8 +105,19 @@ class AccountActivationTest {
             localData = reopenedFixture.repository,
             tokenStorage = RecordingTokenStorage(),
         )
-        assertEquals(false, coordinatorAfterRestart.shouldInviteToAccount())
+        assertEquals(true, coordinatorAfterRestart.shouldInviteToAccount())
+        coordinatorAfterRestart.markInvitationOffered()
         reopenedFixture.close()
+
+        val offeredFixture = accountFixture(databasePath)
+        val coordinatorAfterOffer = AccountActivationCoordinator(
+            authGateway = FakeAuthGateway(AuthenticationResult.Cancelled),
+            cloudRepository = RecordingCloudRepository(),
+            localData = offeredFixture.repository,
+            tokenStorage = RecordingTokenStorage(),
+        )
+        assertEquals(false, coordinatorAfterOffer.shouldInviteToAccount())
+        offeredFixture.close()
     }
 
     @Test
@@ -229,6 +239,50 @@ class AccountActivationTest {
         fixture.close()
     }
 
+    @Test
+    fun `expired access token is refreshed once before replaying the pending migration`() = runTest {
+        val fixture = populatedAccountFixture()
+        fixture.repository.beginAccountMigration("account-1")
+        val cloud = RecordingCloudRepository(authenticationFailuresRemaining = 1)
+        val tokenStorage = RecordingTokenStorage(AuthTokens("expired-access", "refresh-token"))
+        val gateway = FakeAuthGateway(
+            googleResult = AuthenticationResult.Cancelled,
+            refreshResults = ArrayDeque(
+                listOf(
+                    AuthenticationResult.Authenticated(
+                        AuthenticatedAccount("account-1", "renewed-access", "rotated-refresh"),
+                    ),
+                ),
+            ),
+        )
+        val coordinator = AccountActivationCoordinator(gateway, cloud, fixture.repository, tokenStorage)
+
+        assertEquals(AccountActivationResult.Activated, coordinator.resumePendingMigration())
+        assertEquals(listOf("expired-access", "renewed-access"), cloud.attemptedAccessTokens)
+        assertEquals(AuthTokens("renewed-access", "rotated-refresh"), tokenStorage.read())
+        assertEquals(1, gateway.refreshAttempts)
+        fixture.close()
+    }
+
+    @Test
+    fun `failed token refresh asks for authentication without retrying forever`() = runTest {
+        val fixture = populatedAccountFixture()
+        fixture.repository.beginAccountMigration("account-1")
+        val cloud = RecordingCloudRepository(authenticationFailuresRemaining = 2)
+        val tokenStorage = RecordingTokenStorage(AuthTokens("expired-access", "invalid-refresh"))
+        val gateway = FakeAuthGateway(
+            googleResult = AuthenticationResult.Cancelled,
+            refreshResults = ArrayDeque(listOf(AuthenticationResult.Failed("refresh rejected"))),
+        )
+        val coordinator = AccountActivationCoordinator(gateway, cloud, fixture.repository, tokenStorage)
+
+        assertEquals(AccountActivationResult.ReauthenticationRequired, coordinator.resumePendingMigration())
+        assertEquals(listOf("expired-access"), cloud.attemptedAccessTokens)
+        assertNull(tokenStorage.read())
+        assertEquals(1, gateway.refreshAttempts)
+        fixture.close()
+    }
+
     private fun accountFixture(
         databasePath: String = Files.createTempDirectory("aqualog-account")
             .resolve("aqualog.db")
@@ -283,28 +337,44 @@ class AccountActivationTest {
 
     private class FakeAuthGateway(
         private val googleResult: AuthenticationResult,
+        private val refreshResults: ArrayDeque<AuthenticationResult> = ArrayDeque(),
     ) : AuthGateway {
+        var refreshAttempts = 0
+
         override suspend fun signInWithGoogle() = googleResult
         override suspend fun requestMagicLink(email: String) = MagicLinkRequestResult.Sent
         override suspend fun completeMagicLink(callbackUrl: String) = googleResult
+        override suspend fun refreshSession(refreshToken: String): AuthenticationResult {
+            refreshAttempts += 1
+            return refreshResults.removeFirstOrNull() ?: AuthenticationResult.Failed("refresh unavailable")
+        }
     }
 
     private class RecordingCloudRepository(
         private var failuresRemaining: Int = 0,
+        private var authenticationFailuresRemaining: Int = 0,
     ) : CloudRepository {
         var lastCopy: InitialAccountCopy? = null
         val attemptedSessionIds = mutableListOf<String>()
+        val attemptedAccessTokens = mutableListOf<String>()
 
-        override suspend fun upsertInitialCopy(accountId: String, copy: InitialAccountCopy) {
+        override suspend fun upsertInitialCopy(accountId: String, copy: InitialAccountCopy, accessToken: String) {
             lastCopy = copy
             attemptedSessionIds += copy.sessions.single().id
+            attemptedAccessTokens += accessToken
+            if (authenticationFailuresRemaining-- > 0) throw CloudAuthenticationExpiredException()
             if (failuresRemaining-- > 0) error("offline")
         }
     }
 
-    private class RecordingTokenStorage : SecureTokenStorage {
-        override suspend fun save(tokens: AuthTokens) = Unit
-        override suspend fun read(): AuthTokens? = null
-        override suspend fun clear() = Unit
+    private class RecordingTokenStorage(initialTokens: AuthTokens? = null) : SecureTokenStorage {
+        private var tokens = initialTokens
+        override suspend fun save(tokens: AuthTokens) {
+            this.tokens = tokens
+        }
+        override suspend fun read(): AuthTokens? = tokens
+        override suspend fun clear() {
+            tokens = null
+        }
     }
 }

@@ -71,12 +71,15 @@ interface AuthGateway {
     suspend fun signInWithGoogle(): AuthenticationResult
     suspend fun requestMagicLink(email: String): MagicLinkRequestResult
     suspend fun completeMagicLink(callbackUrl: String): AuthenticationResult
+    suspend fun refreshSession(refreshToken: String): AuthenticationResult
 }
 
 interface CloudRepository {
     /** Upserts every entity by its existing local UUID. Replaying the same copy must be idempotent. */
-    suspend fun upsertInitialCopy(accountId: String, copy: InitialAccountCopy)
+    suspend fun upsertInitialCopy(accountId: String, copy: InitialAccountCopy, accessToken: String)
 }
+
+class CloudAuthenticationExpiredException : Exception("Cloud authentication expired")
 
 interface SecureTokenStorage {
     suspend fun save(tokens: AuthTokens)
@@ -130,6 +133,7 @@ sealed interface AccountActivationResult {
     data object ExpiredLink : AccountActivationResult
     data object MagicLinkSent : AccountActivationResult
     data object IgnoredCallback : AccountActivationResult
+    data object ReauthenticationRequired : AccountActivationResult
     data class Failed(val reason: String) : AccountActivationResult
     data class MigrationFailed(val reason: String) : AccountActivationResult
 }
@@ -168,14 +172,18 @@ class AccountActivationCoordinator(
         val migration = localData.accountMigrationState()
             ?: return AccountActivationResult.Failed("No account migration is pending")
         if (migration.status == InitialMigrationStatus.COMPLETE) return AccountActivationResult.Activated
-        return migrate(migration.accountId)
+        val tokens = tokenStorage.read() ?: return AccountActivationResult.ReauthenticationRequired
+        return migrate(migration.accountId, tokens)
     }
 
     private suspend fun activate(result: AuthenticationResult): AccountActivationResult = when (result) {
         is AuthenticationResult.Authenticated -> {
             tokenStorage.save(AuthTokens(result.account.accessToken, result.account.refreshToken))
             localData.beginAccountMigration(result.account.accountId)
-            migrate(result.account.accountId)
+            migrate(
+                accountId = result.account.accountId,
+                tokens = AuthTokens(result.account.accessToken, result.account.refreshToken),
+            )
         }
         AuthenticationResult.AwaitingCallback -> AccountActivationResult.AwaitingAuthentication
         AuthenticationResult.Cancelled -> AccountActivationResult.Cancelled
@@ -184,11 +192,33 @@ class AccountActivationCoordinator(
         is AuthenticationResult.Failed -> AccountActivationResult.Failed(result.reason)
     }
 
-    private suspend fun migrate(accountId: String): AccountActivationResult = runCatching {
-        cloudRepository.upsertInitialCopy(accountId, localData.initialAccountCopy())
+    private suspend fun migrate(
+        accountId: String,
+        tokens: AuthTokens,
+        canRefresh: Boolean = true,
+    ): AccountActivationResult = try {
+        cloudRepository.upsertInitialCopy(accountId, localData.initialAccountCopy(), tokens.accessToken)
         localData.completeAccountMigration(accountId)
         AccountActivationResult.Activated
-    }.getOrElse { error ->
+    } catch (error: CloudAuthenticationExpiredException) {
+        if (!canRefresh) {
+            tokenStorage.clear()
+            AccountActivationResult.ReauthenticationRequired
+        } else {
+            refreshAndResume(accountId, tokens.refreshToken)
+        }
+    } catch (error: Exception) {
         AccountActivationResult.MigrationFailed(error.message ?: "Initial migration failed")
+    }
+
+    private suspend fun refreshAndResume(accountId: String, refreshToken: String): AccountActivationResult {
+        val refreshed = authGateway.refreshSession(refreshToken)
+        if (refreshed !is AuthenticationResult.Authenticated || refreshed.account.accountId != accountId) {
+            tokenStorage.clear()
+            return AccountActivationResult.ReauthenticationRequired
+        }
+        val tokens = AuthTokens(refreshed.account.accessToken, refreshed.account.refreshToken)
+        tokenStorage.save(tokens)
+        return migrate(accountId, tokens, canRefresh = false)
     }
 }

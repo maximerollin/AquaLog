@@ -248,8 +248,14 @@ class HomeViewModel(
         }
         if (accountCoordinator != null) {
             viewModelScope.launch {
-                if (accountCoordinator.hasPendingMigration()) {
-                    updateAccount { it.copy(step = AccountStep.ERROR, error = AccountError.MIGRATION) }
+                when {
+                    accountCoordinator.hasPendingMigration() -> {
+                        updateAccount { it.copy(step = AccountStep.ERROR, error = AccountError.MIGRATION) }
+                    }
+                    accountCoordinator.shouldInviteToAccount() -> {
+                        accountCoordinator.markInvitationOffered()
+                        updateAccount { AccountUiState(AccountStep.INVITATION) }
+                    }
                 }
             }
         }
@@ -685,6 +691,7 @@ class HomeViewModel(
                 AccountActivationResult.ExpiredLink -> current.copy(step = AccountStep.ERROR, error = AccountError.EXPIRED_LINK)
                 AccountActivationResult.MagicLinkSent -> current.copy(step = AccountStep.MAGIC_SENT)
                 AccountActivationResult.IgnoredCallback -> AccountUiState()
+                AccountActivationResult.ReauthenticationRequired -> AccountUiState(AccountStep.METHODS)
                 is AccountActivationResult.Failed -> current.copy(step = AccountStep.ERROR, error = failure)
                 is AccountActivationResult.MigrationFailed -> current.copy(
                     step = AccountStep.ERROR,

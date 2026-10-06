@@ -14,6 +14,7 @@ import com.maximerollin.aqualog.shared.AuthTokens
 import com.maximerollin.aqualog.shared.AuthenticatedAccount
 import com.maximerollin.aqualog.shared.AuthenticationResult
 import com.maximerollin.aqualog.shared.CloudRepository
+import com.maximerollin.aqualog.shared.CloudAuthenticationExpiredException
 import com.maximerollin.aqualog.shared.InitialAccountCopy
 import com.maximerollin.aqualog.shared.MagicLinkRequestResult
 import com.maximerollin.aqualog.shared.PendingAuthenticationAttempt
@@ -147,6 +148,9 @@ class SupabaseAuthGateway(
     private val configuration: SupabaseConfiguration,
     private val attemptStorage: AuthenticationAttemptStorage,
     private val secureRandom: SecureRandom = SecureRandom(),
+    private val openBrowser: (Uri) -> Unit = { uri ->
+        context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    },
 ) : AuthGateway {
     override suspend fun signInWithGoogle(): AuthenticationResult {
         if (!configuration.isConfigured) return AuthenticationResult.Failed(CONFIGURATION_ERROR)
@@ -159,7 +163,7 @@ class SupabaseAuthGateway(
             .appendQueryParameter("code_challenge_method", "s256")
             .build()
         return runCatching {
-            context.startActivity(Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            openBrowser(uri)
             AuthenticationResult.AwaitingCallback
         }.getOrElse {
             attemptStorage.clearAttempt()
@@ -227,6 +231,29 @@ class SupabaseAuthGateway(
                     if (result is AuthenticationResult.Authenticated) attemptStorage.clearAttempt()
                 }
             }
+        }
+    }
+
+    override suspend fun refreshSession(refreshToken: String): AuthenticationResult {
+        if (!configuration.isConfigured) return AuthenticationResult.Failed(CONFIGURATION_ERROR)
+        return withContext(Dispatchers.IO) {
+            runCatching {
+                val tokenResponse = JSONObject(
+                    request(
+                        url = "${configuration.projectUrl}/auth/v1/token?grant_type=refresh_token",
+                        method = "POST",
+                        body = JSONObject().put("refresh_token", refreshToken).toString(),
+                    ),
+                )
+                val accessToken = tokenResponse.getString("access_token")
+                val rotatedRefreshToken = tokenResponse.getString("refresh_token")
+                val user = JSONObject(
+                    request("${configuration.projectUrl}/auth/v1/user", bearerToken = accessToken),
+                )
+                AuthenticationResult.Authenticated(
+                    AuthenticatedAccount(user.getString("id"), accessToken, rotatedRefreshToken),
+                )
+            }.getOrElse { AuthenticationResult.Failed(it.message ?: "Session refresh failed") }
         }
     }
 
@@ -327,25 +354,32 @@ class SupabaseAuthGateway(
 
 class SupabaseInitialMigrationRepository(
     private val configuration: SupabaseConfiguration,
-    private val tokenStorage: SecureTokenStorage,
 ) : CloudRepository {
-    override suspend fun upsertInitialCopy(accountId: String, copy: InitialAccountCopy) = withContext(Dispatchers.IO) {
+    override suspend fun upsertInitialCopy(
+        accountId: String,
+        copy: InitialAccountCopy,
+        accessToken: String,
+    ) = withContext(Dispatchers.IO) {
         require(configuration.isConfigured) { "Supabase is not configured for this build" }
-        val accessToken = requireNotNull(tokenStorage.read()?.accessToken) { "No authenticated Supabase session" }
         val connection = URL("${configuration.projectUrl}/functions/v1/migrate-initial-copy").openConnection() as HttpURLConnection
-        connection.run {
-            requestMethod = "POST"
-            connectTimeout = 20_000
-            readTimeout = 20_000
-            doOutput = true
-            setRequestProperty("apikey", configuration.anonymousKey)
-            setRequestProperty("Authorization", "Bearer $accessToken")
-            setRequestProperty("Content-Type", "application/json")
-            outputStream.use { it.write(copy.toJson(accountId).toString().toByteArray()) }
-            val responseBody = (if (responseCode in 200..299) inputStream else errorStream)
-                ?.bufferedReader()?.use { it.readText() }.orEmpty()
-            if (responseCode !in 200..299) error("Initial migration failed with HTTP $responseCode: $responseBody")
-            disconnect()
+        try {
+            connection.run {
+                requestMethod = "POST"
+                connectTimeout = 20_000
+                readTimeout = 20_000
+                doOutput = true
+                setRequestProperty("apikey", configuration.anonymousKey)
+                setRequestProperty("Authorization", "Bearer $accessToken")
+                setRequestProperty("Content-Type", "application/json")
+                outputStream.use { it.write(copy.toJson(accountId).toString().toByteArray()) }
+                val status = responseCode
+                val responseBody = (if (status in 200..299) inputStream else errorStream)
+                    ?.bufferedReader()?.use { it.readText() }.orEmpty()
+                if (status == HttpURLConnection.HTTP_UNAUTHORIZED) throw CloudAuthenticationExpiredException()
+                if (status !in 200..299) error("Initial migration failed with HTTP $status: $responseBody")
+            }
+        } finally {
+            connection.disconnect()
         }
     }
 }
