@@ -545,51 +545,91 @@ private fun PlanCard(title: Int, description: Int) {
 @Composable
 private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
     val aquarium = requireNotNull(state.setup).aquarium
-    StandardScreen(modifier) {
-        Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
-        Text(
-            stringResource(R.string.aquarium_ready),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(aquarium.name, style = MaterialTheme.typography.titleLarge)
-                Text(aquarium.formattedVolume(), style = MaterialTheme.typography.bodyLarge)
+    Column(
+        modifier = modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        stringResource(R.string.aquarium_ready),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-        }
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    stringResource(
-                        if (state.latestSession == null) R.string.no_session_yet else R.string.session_saved,
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    stringResource(
-                        if (state.latestSession == null) {
-                            R.string.no_session_description
-                        } else {
-                            R.string.session_saved_description
-                        },
-                        state.latestSession?.measurements?.size ?: 0,
-                        state.latestSession?.maintenanceActions?.size ?: 0,
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (state.latestSession != null) {
-                    TextButton(onClick = viewModel::openSessionDetails) {
-                        Text(stringResource(R.string.view_session_details))
+            if (state.accountInvitationPrompt == AccountInvitationPrompt.REMINDER) {
+                item {
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                stringResource(R.string.account_invitation_title),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                stringResource(R.string.account_invitation_description),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            TextButton(
+                                onClick = viewModel::continueAfterSessionConfirmation,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                            ) {
+                                Text(stringResource(R.string.review_account_options))
+                            }
+                        }
                     }
                 }
             }
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(aquarium.name, style = MaterialTheme.typography.titleLarge)
+                        Text(aquarium.formattedVolume(), style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            stringResource(
+                                if (state.latestSession == null) R.string.no_session_yet else R.string.session_saved,
+                            ),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(
+                            stringResource(
+                                if (state.latestSession == null) {
+                                    R.string.no_session_description
+                                } else {
+                                    R.string.session_saved_description
+                                },
+                                state.latestSession?.measurements?.size ?: 0,
+                                state.latestSession?.maintenanceActions?.size ?: 0,
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (state.latestSession != null) {
+                            TextButton(onClick = viewModel::openSessionDetails) {
+                                Text(stringResource(R.string.view_session_details))
+                            }
+                        }
+                    }
+                }
+            }
+            if (state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION) {
+                item {
+                    PrimaryButton(R.string.continue_after_session, viewModel::continueAfterSessionConfirmation)
+                }
+            }
         }
-        if (state.hasPendingAccountInvitation) {
-            PrimaryButton(R.string.continue_after_session, viewModel::continueAfterSessionConfirmation)
-        }
-        Spacer(Modifier.weight(1f))
         PrimaryButton(R.string.new_session, viewModel::openRapidSession)
     }
 }

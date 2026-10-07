@@ -109,8 +109,9 @@
     <string name="session_saved_description">Chronology confirmation · %1$d Measurements · %2$d maintenance actions</string>
     <string name="continue_after_session">Continue</string>
 
-    <string name="account_invitation_title">Keep this Aquarium on your devices</string>
-    <string name="account_invitation_description">Your first Session is already saved locally. Create an account now to attach this unchanged local copy to secure synchronization.</string>
+    <string name="account_invitation_title">Secure your local Aquarium copy</string>
+    <string name="account_invitation_description">Your first Session is saved locally. Attach this unchanged copy to an account when you are ready.</string>
+    <string name="review_account_options">Review account options</string>
     <string name="create_account">Create an account</string>
     <string name="not_now">Not now</string>
     <string name="account_methods_title">Create your account</string>

@@ -60,6 +60,12 @@ enum class AccountStep {
 
 enum class AccountError { AUTHENTICATION, EXPIRED_LINK, MIGRATION }
 
+enum class AccountInvitationPrompt {
+    NONE,
+    AFTER_SESSION_CONFIRMATION,
+    REMINDER,
+}
+
 data class AccountUiState(
     val step: AccountStep = AccountStep.HIDDEN,
     val email: String = "",
@@ -158,7 +164,7 @@ data class HomeUiState(
     val showParameterValidationError: Boolean = false,
     val rapidSession: RapidSessionUiState? = null,
     val latestSession: RecordedSession? = null,
-    val hasPendingAccountInvitation: Boolean = false,
+    val accountInvitationPrompt: AccountInvitationPrompt = AccountInvitationPrompt.NONE,
     val account: AccountUiState = AccountUiState(),
     val sessionDetail: RecordedSession? = null,
     val sessionDetailReturnsToTimeline: Boolean = false,
@@ -271,8 +277,9 @@ class HomeViewModel(
                         updateAccount { it.copy(step = AccountStep.ERROR, error = AccountError.MIGRATION) }
                     }
                     accountCoordinator.shouldInviteToAccount() -> {
-                        accountCoordinator.markInvitationOffered()
-                        updateAccount { AccountUiState(AccountStep.INVITATION) }
+                        mutableUiState.update {
+                            it.copy(accountInvitationPrompt = AccountInvitationPrompt.REMINDER)
+                        }
                     }
                 }
             }
@@ -656,8 +663,13 @@ class HomeViewModel(
                         sessionDetail = if (draft.editingSessionId == null) null else recorded,
                     )
                 }
-                if (accountCoordinator?.shouldInviteToAccount() == true) {
-                    mutableUiState.update { it.copy(hasPendingAccountInvitation = true) }
+                if (
+                    draft.editingSessionId == null &&
+                    accountCoordinator?.shouldInviteToAccount() == true
+                ) {
+                    mutableUiState.update {
+                        it.copy(accountInvitationPrompt = AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION)
+                    }
                 }
             }.onFailure {
                 updateRapidSession { it.copy(isSaving = false, saveError = true) }
@@ -667,8 +679,9 @@ class HomeViewModel(
 
     fun continueAfterSessionConfirmation() {
         val coordinator = accountCoordinator ?: return
-        if (!mutableUiState.value.hasPendingAccountInvitation) return
-        mutableUiState.update { it.copy(hasPendingAccountInvitation = false) }
+        val prompt = mutableUiState.value.accountInvitationPrompt
+        if (prompt == AccountInvitationPrompt.NONE) return
+        mutableUiState.update { it.copy(accountInvitationPrompt = AccountInvitationPrompt.NONE) }
         viewModelScope.launch {
             runCatching { coordinator.markInvitationOffered() }
                 .onSuccess {
@@ -677,7 +690,7 @@ class HomeViewModel(
                     }
                 }
                 .onFailure {
-                    mutableUiState.update { it.copy(hasPendingAccountInvitation = true) }
+                    mutableUiState.update { it.copy(accountInvitationPrompt = prompt) }
                 }
         }
     }

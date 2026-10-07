@@ -64,9 +64,9 @@ class RapidSessionFlowTest {
         save.assertIsEnabled().performClick()
 
         composeRule.onNodeWithText("Session saved").assertIsDisplayed()
-        composeRule.onAllNodes(hasText("Keep this Aquarium on your devices")).assertCountEquals(0)
+        composeRule.onAllNodes(hasText("Secure your local Aquarium copy")).assertCountEquals(0)
         composeRule.onNodeWithText("Continue").performClick()
-        composeRule.onNodeWithText("Keep this Aquarium on your devices").assertIsDisplayed()
+        composeRule.onNodeWithText("Secure your local Aquarium copy").assertIsDisplayed()
         composeRule.onNodeWithText("Not now").performClick()
         composeRule.onNodeWithText("Session saved").assertIsDisplayed()
         composeRule.onNodeWithText("Chronology confirmation · 3 Measurements · 1 maintenance actions")
@@ -91,16 +91,26 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24.5")
         composeRule.onNodeWithText("Save Session").performClick()
         composeRule.onNodeWithText("Session saved").assertIsDisplayed()
-        composeRule.onAllNodes(hasText("Keep this Aquarium on your devices")).assertCountEquals(0)
+        composeRule.onAllNodes(hasText("Secure your local Aquarium copy")).assertCountEquals(0)
         firstScenario.close()
 
         val restartedScenario = ActivityScenario.launch(MainActivity::class.java)
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodes(hasText("Keep this Aquarium on your devices"))
+            composeRule.onAllNodes(hasText("Secure your local Aquarium copy"))
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
-        composeRule.onNodeWithText("Keep this Aquarium on your devices").assertIsDisplayed()
+        composeRule.onNodeWithText("Secure your local Aquarium copy").assertIsDisplayed()
+        composeRule.onNodeWithText("New Session").assertIsDisplayed()
+
+        composeRule.onNodeWithText("History").performClick()
+        composeRule.onNodeWithText("Chronology").assertIsDisplayed()
+        composeRule.onNodeWithText("Trends").performClick()
+        composeRule.onNodeWithText("Recent trends").assertIsDisplayed()
+
+        composeRule.onNodeWithText("Home").performClick()
+        composeRule.onNodeWithText("Review account options").performClick()
+        composeRule.onNodeWithText("Create an account").assertIsDisplayed()
         composeRule.onNodeWithText("Not now").performClick()
         restartedScenario.close()
 
@@ -108,7 +118,7 @@ class RapidSessionFlowTest {
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodes(hasText("New Session")).fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onAllNodes(hasText("Keep this Aquarium on your devices")).assertCountEquals(0)
+        composeRule.onAllNodes(hasText("Secure your local Aquarium copy")).assertCountEquals(0)
         acknowledgedScenario.close()
     }
 
