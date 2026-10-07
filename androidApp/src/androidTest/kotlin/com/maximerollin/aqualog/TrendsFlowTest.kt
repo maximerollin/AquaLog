@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import android.os.SystemClock
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
@@ -35,16 +36,20 @@ class TrendsFlowTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val application = context.applicationContext as TestAquaLogApplication
         application.resetRepository()
-        runBlocking {
+        val trendIds = runBlocking {
+            val parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED).map {
+                if (it.parameter == BuiltInParameter.TDS) it.copy(isActive = true) else it
+            }
             val setup = application.aquariumRepository.createConfiguredAquarium(
                 name = "Amazonien",
                 volume = 120.0,
                 volumeUnit = VolumeUnit.LITERS,
                 profile = AquariumProfile.ESTABLISHED,
-                parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+                parameters = parameters,
             )
             val temperature = setup.parameters.first { it.parameter == BuiltInParameter.TEMPERATURE }
             val ph = setup.parameters.first { it.parameter == BuiltInParameter.PH }
+            val tds = setup.parameters.first { it.parameter == BuiltInParameter.TDS }
             application.aquariumRepository.saveRapidSession(
                 RapidSessionInput(
                     aquariumId = setup.aquarium.id,
@@ -57,6 +62,7 @@ class TrendsFlowTest {
                     incident = "Heater stopped",
                 ),
             )
+            setup.aquarium.id to tds.id
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
@@ -87,6 +93,28 @@ class TrendsFlowTest {
         composeRule.onNodeWithText("pH").performClick().assertIsSelected()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription("Exact value 7.2 pH"))
         composeRule.onNodeWithContentDescription("Exact value 7.2 pH").assertIsDisplayed()
+
+        composeRule.onNodeWithText("Home").performClick()
+        SystemClock.sleep(10)
+        runBlocking {
+            application.aquariumRepository.saveRapidSession(
+                RapidSessionInput(
+                    aquariumId = trendIds.first,
+                    occurredAtEpochMillis = System.currentTimeMillis(),
+                    idempotencyKey = "trends-refresh-test",
+                    measurementInputs = mapOf(trendIds.second to "100"),
+                ),
+            )
+        }
+        composeRule.onNodeWithText("History").performClick()
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("TDS"))
+        composeRule.onNodeWithText("TDS").performClick().assertIsSelected()
+        composeRule.onNodeWithTag("trend-list")
+            .performScrollToNode(hasText("Indicative target 100–300 ppm · reference only, not a diagnosis"))
+        composeRule.onNodeWithText("Indicative target 100–300 ppm · reference only, not a diagnosis")
+            .assertIsDisplayed()
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription("Exact value 100 ppm"))
+        composeRule.onNodeWithContentDescription("Exact value 100 ppm").assertIsDisplayed()
         scenario.close()
     }
 }

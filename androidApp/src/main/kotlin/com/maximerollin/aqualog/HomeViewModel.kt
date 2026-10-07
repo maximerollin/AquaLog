@@ -454,8 +454,9 @@ class HomeViewModel(
 
     fun selectDestination(destination: MainDestination) {
         mutableUiState.update { it.copy(destination = destination) }
-        if (destination == MainDestination.HISTORY && timelineJob == null) {
-            observeTimeline()
+        if (destination == MainDestination.HISTORY) {
+            if (timelineJob == null) observeTimeline()
+            if (mutableUiState.value.historySection == HistorySection.TRENDS) observeTrends()
         }
     }
 
@@ -477,7 +478,7 @@ class HomeViewModel(
 
     fun selectHistorySection(section: HistorySection) {
         mutableUiState.update { it.copy(historySection = section) }
-        if (section == HistorySection.TRENDS && trendsJob == null) observeTrends()
+        if (section == HistorySection.TRENDS) observeTrends()
     }
 
     fun selectTrendPeriod(period: TrendPeriod) {
