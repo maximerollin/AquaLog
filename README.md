@@ -33,3 +33,17 @@ seam:
 ```
 
 The debug APK is generated under `androidApp/build/outputs/apk/debug/`.
+
+## Local Task reminders
+
+Task occurrences and their resolution history are stored in the local Room
+database. Android reminders use inexact `AlarmManager` alarms, so AquaLog does
+not request exact-alarm access. Android 13 and later require the user to grant
+the notification permission before a reminder can be displayed. The Tasks
+screen explains that declining the permission does not remove or block Tasks.
+
+Android battery optimization can delay an inexact reminder. AquaLog detects
+this state and explains it in the Tasks screen; it does not send the user to a
+privileged settings screen. Reboot, clock, time-zone and app-replacement
+broadcasts only reschedule the existing pending occurrence IDs. Receivers never
+create an occurrence, resolve a Task or create a maintenance Action.

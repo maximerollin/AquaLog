@@ -21,4 +21,8 @@ open class AquaLogApplication : Application() {
             currentTimeMillis = System::currentTimeMillis,
         )
     }
+
+    open val taskReminderScheduler: TaskReminderScheduler by lazy {
+        AndroidTaskReminderScheduler(this)
+    }
 }

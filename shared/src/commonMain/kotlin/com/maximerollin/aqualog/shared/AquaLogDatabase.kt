@@ -104,6 +104,35 @@ data class RecordedSessionEntity(
     val events: List<SessionEventEntity>,
 )
 
+@Entity(tableName = "tasks")
+data class TaskEntity(
+    @PrimaryKey val id: String,
+    val aquariumId: String,
+    val title: String,
+    val recurrence: String,
+    val monthlyAnchorDay: Int,
+)
+
+@Entity(
+    tableName = "task_occurrences",
+    indices = [
+        Index(value = ["taskId", "dueYear", "dueMonth", "dueDay", "dueMinuteOfDay", "timeZoneId"], unique = true),
+    ],
+)
+data class TaskOccurrenceEntity(
+    @PrimaryKey val id: String,
+    val taskId: String,
+    val aquariumId: String,
+    val title: String,
+    val dueYear: Int,
+    val dueMonth: Int,
+    val dueDay: Int,
+    val dueMinuteOfDay: Int,
+    val timeZoneId: String,
+    val resolution: String?,
+    val resolvedAtEpochMillis: Long?,
+)
+
 @Dao
 abstract class AquariumDao {
     @Query("SELECT * FROM aquariums ORDER BY createdAtEpochMillis ASC LIMIT 1")
@@ -263,6 +292,76 @@ abstract class SessionDao {
     }
 }
 
+@Dao
+abstract class TaskDao {
+    @Insert
+    protected abstract suspend fun insertTask(task: TaskEntity)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    protected abstract suspend fun insertOccurrence(occurrence: TaskOccurrenceEntity): Long
+
+    @Query("SELECT * FROM tasks WHERE id = :taskId")
+    protected abstract suspend fun getTask(taskId: String): TaskEntity?
+
+    @Query("SELECT * FROM task_occurrences WHERE id = :occurrenceId")
+    protected abstract suspend fun getOccurrence(occurrenceId: String): TaskOccurrenceEntity?
+
+    @Query("SELECT * FROM task_occurrences WHERE taskId = :taskId AND dueYear = :year AND dueMonth = :month AND dueDay = :day AND dueMinuteOfDay = :minute AND timeZoneId = :timeZoneId LIMIT 1")
+    protected abstract suspend fun getOccurrenceByDue(
+        taskId: String,
+        year: Int,
+        month: Int,
+        day: Int,
+        minute: Int,
+        timeZoneId: String,
+    ): TaskOccurrenceEntity?
+
+    @Query("UPDATE task_occurrences SET resolution = :resolution, resolvedAtEpochMillis = :resolvedAt WHERE id = :occurrenceId AND resolution IS NULL")
+    protected abstract suspend fun markResolved(occurrenceId: String, resolution: String, resolvedAt: Long): Int
+
+    @Query("SELECT * FROM task_occurrences WHERE resolution IS NULL ORDER BY dueYear, dueMonth, dueDay, dueMinuteOfDay")
+    abstract fun observePending(): Flow<List<TaskOccurrenceEntity>>
+
+    @Query("SELECT * FROM task_occurrences WHERE resolution IS NOT NULL ORDER BY resolvedAtEpochMillis DESC")
+    abstract fun observeResolved(): Flow<List<TaskOccurrenceEntity>>
+
+    @Transaction
+    open suspend fun create(task: TaskEntity, occurrence: TaskOccurrenceEntity) {
+        insertTask(task)
+        check(insertOccurrence(occurrence) != -1L)
+    }
+
+    @Transaction
+    open suspend fun resolve(
+        occurrenceId: String,
+        resolution: String,
+        resolvedAt: Long,
+        nextOccurrence: TaskOccurrenceEntity?,
+    ): Pair<TaskOccurrenceEntity, TaskOccurrenceEntity?> {
+        val current = requireNotNull(getOccurrence(occurrenceId)) { "Occurrence does not exist" }
+        require(current.resolution == null) { "Occurrence is already resolved" }
+        check(markResolved(occurrenceId, resolution, resolvedAt) == 1)
+        val resolved = requireNotNull(getOccurrence(occurrenceId))
+        val next = nextOccurrence?.let { candidate ->
+            insertOccurrence(candidate)
+            requireNotNull(
+                getOccurrenceByDue(
+                    candidate.taskId,
+                    candidate.dueYear,
+                    candidate.dueMonth,
+                    candidate.dueDay,
+                    candidate.dueMinuteOfDay,
+                    candidate.timeZoneId,
+                ),
+            )
+        }
+        return resolved to next
+    }
+
+    suspend fun taskForOccurrence(occurrenceId: String): TaskEntity =
+        requireNotNull(getTask(requireNotNull(getOccurrence(occurrenceId)).taskId))
+}
+
 @Database(
     entities = [
         AquariumEntity::class,
@@ -271,14 +370,17 @@ abstract class SessionDao {
         MeasurementEntity::class,
         MaintenanceActionEntity::class,
         SessionEventEntity::class,
+        TaskEntity::class,
+        TaskOccurrenceEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
 abstract class AquaLogDatabase : RoomDatabase() {
     abstract fun aquariumDao(): AquariumDao
     abstract fun sessionDao(): SessionDao
+    abstract fun taskDao(): TaskDao
 }
 
 @Suppress("NO_ACTUAL_FOR_EXPECT")
@@ -291,7 +393,7 @@ fun createAquaLogDatabase(
 ): AquaLogDatabase = builder
     .setDriver(BundledSQLiteDriver())
     .setQueryCoroutineContext(Dispatchers.IO)
-    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
     .build()
 
 private val MIGRATION_1_2 = Migration(1, 2) { connection ->
@@ -337,5 +439,17 @@ private val MIGRATION_3_4 = Migration(3, 4) { connection ->
     connection.execSQL(
         "CREATE INDEX IF NOT EXISTS index_sessions_aquariumId_occurredAtEpochMillis " +
             "ON sessions (aquariumId, occurredAtEpochMillis)",
+    )
+}
+
+private val MIGRATION_4_5 = Migration(4, 5) { connection ->
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS tasks (id TEXT NOT NULL PRIMARY KEY, aquariumId TEXT NOT NULL, title TEXT NOT NULL, recurrence TEXT NOT NULL, monthlyAnchorDay INTEGER NOT NULL)",
+    )
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS task_occurrences (id TEXT NOT NULL PRIMARY KEY, taskId TEXT NOT NULL, aquariumId TEXT NOT NULL, title TEXT NOT NULL, dueYear INTEGER NOT NULL, dueMonth INTEGER NOT NULL, dueDay INTEGER NOT NULL, dueMinuteOfDay INTEGER NOT NULL, timeZoneId TEXT NOT NULL, resolution TEXT, resolvedAtEpochMillis INTEGER)",
+    )
+    connection.execSQL(
+        "CREATE UNIQUE INDEX IF NOT EXISTS index_task_occurrences_taskId_dueYear_dueMonth_dueDay_dueMinuteOfDay_timeZoneId ON task_occurrences (taskId, dueYear, dueMonth, dueDay, dueMinuteOfDay, timeZoneId)",
     )
 }

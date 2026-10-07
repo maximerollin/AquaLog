@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -49,6 +51,11 @@ fun AquaLogContent(
 ) {
     when {
         state.isLoading -> LoadingContent(modifier)
+        state.tasks.isOpen && state.setup != null -> TaskScreen(
+            state = state.tasks,
+            viewModel = viewModel,
+            modifier = modifier,
+        )
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(
             state = state.rapidSession,
             aquarium = state.setup.aquarium,
@@ -509,6 +516,12 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
             }
         }
         Spacer(Modifier.weight(1f))
+        OutlinedButton(
+            onClick = viewModel::openTasks,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        ) {
+            Text(stringResource(R.string.open_tasks))
+        }
         PrimaryButton(R.string.new_session, viewModel::openRapidSession)
     }
 }
