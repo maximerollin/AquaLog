@@ -33,3 +33,40 @@ seam:
 ```
 
 The debug APK is generated under `androidApp/build/outputs/apk/debug/`.
+
+## Supabase account configuration
+
+Account creation is deliberately disabled unless the build receives the public
+Supabase project URL and anonymous client key. Supply them as Gradle properties
+or environment variables; never commit values to the repository:
+
+```shell
+AQUALOG_SUPABASE_URL=https://PROJECT.supabase.co \
+AQUALOG_SUPABASE_ANON_KEY=PUBLIC_ANON_KEY \
+./gradlew :androidApp:assembleDebug
+```
+
+Configure `aqualog://auth/callback` as an allowed Auth redirect in Supabase and
+enable Google plus email OTP providers. The application uses PKCE, correlates
+the callback with an encrypted pending attempt, rejects implicit callback
+tokens, and exchanges only the matching one-time authorization code. Access and
+refresh tokens and the temporary PKCE verifier are encrypted with an Android
+Keystore AES-GCM key; they are never stored in plain preferences.
+
+The versioned backend lives under `supabase/`. Apply its migration and deploy the
+authenticated `migrate-initial-copy` Edge Function before enabling account
+creation in a release environment. The function uses the caller's bearer token
+and public anonymous key; the atomic database RPC derives ownership from
+`auth.uid()`, rejects a different `accountId`, and upserts every entity by its
+existing local UUID. No service-role or other privileged key belongs in the
+Android build. An expired access token is refreshed once before the migration is
+retried; an invalid refresh token returns the user to authentication. Ongoing
+multi-device synchronization is intentionally outside this slice.
+
+The local backend contract is verified with:
+
+```shell
+supabase start
+supabase test db
+npx --yes deno test supabase/functions/migrate-initial-copy/service_test.ts
+```

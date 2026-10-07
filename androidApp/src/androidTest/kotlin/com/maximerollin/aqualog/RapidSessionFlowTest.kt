@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -63,9 +64,62 @@ class RapidSessionFlowTest {
         save.assertIsEnabled().performClick()
 
         composeRule.onNodeWithText("Session saved").assertIsDisplayed()
+        composeRule.onAllNodes(hasText("Secure your local Aquarium copy")).assertCountEquals(0)
+        composeRule.onNodeWithText("Continue").performClick()
+        composeRule.onNodeWithText("Secure your local Aquarium copy").assertIsDisplayed()
+        composeRule.onNodeWithText("Not now").performClick()
+        composeRule.onNodeWithText("Session saved").assertIsDisplayed()
         composeRule.onNodeWithText("Chronology confirmation · 3 Measurements · 1 maintenance actions")
             .assertIsDisplayed()
         scenario.close()
+    }
+
+    @Test
+    fun accountInvitation_returnsAfterActivityRestart_whenConfirmationWasShownButNotContinued() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        (context.applicationContext as TestAquaLogApplication).resetRepository()
+        val firstScenario = ActivityScenario.launch(MainActivity::class.java)
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasText("Get started")).fetchSemanticsNodes().isNotEmpty()
+        }
+        completeMinimalOnboarding()
+
+        composeRule.onNodeWithText("New Session").performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasText("Measurements")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24.5")
+        composeRule.onNodeWithText("Save Session").performClick()
+        composeRule.onNodeWithText("Session saved").assertIsDisplayed()
+        composeRule.onAllNodes(hasText("Secure your local Aquarium copy")).assertCountEquals(0)
+        firstScenario.close()
+
+        val restartedScenario = ActivityScenario.launch(MainActivity::class.java)
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasText("Secure your local Aquarium copy"))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+        composeRule.onNodeWithText("Secure your local Aquarium copy").assertIsDisplayed()
+        composeRule.onNodeWithText("New Session").assertIsDisplayed()
+
+        composeRule.onNodeWithText("History").performClick()
+        composeRule.onNodeWithText("Chronology").assertIsDisplayed()
+        composeRule.onNodeWithText("Trends").performClick()
+        composeRule.onNodeWithText("Recent trends").assertIsDisplayed()
+
+        composeRule.onNodeWithText("Home").performClick()
+        composeRule.onNodeWithText("Review account options").performClick()
+        composeRule.onNodeWithText("Create an account").assertIsDisplayed()
+        composeRule.onNodeWithText("Not now").performClick()
+        restartedScenario.close()
+
+        val acknowledgedScenario = ActivityScenario.launch(MainActivity::class.java)
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasText("New Session")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onAllNodes(hasText("Secure your local Aquarium copy")).assertCountEquals(0)
+        acknowledgedScenario.close()
     }
 
     private fun completeMinimalOnboarding() {

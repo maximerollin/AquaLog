@@ -107,6 +107,32 @@
     <string name="session_save_error">The Session could not be saved. Your entries are still here; try again.</string>
     <string name="session_saved">Session saved</string>
     <string name="session_saved_description">Chronology confirmation · %1$d Measurements · %2$d maintenance actions</string>
+    <string name="continue_after_session">Continue</string>
+
+    <string name="account_invitation_title">Secure your local Aquarium copy</string>
+    <string name="account_invitation_description">Your first Session is saved locally. Attach this unchanged copy to an account when you are ready.</string>
+    <string name="review_account_options">Review account options</string>
+    <string name="create_account">Create an account</string>
+    <string name="not_now">Not now</string>
+    <string name="account_methods_title">Create your account</string>
+    <string name="account_methods_description">Choose Google or a magic link. Your local Aquarium and Chronology stay available if you cancel.</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="continue_with_email">Continue with email</string>
+    <string name="magic_link_title">Email magic link</string>
+    <string name="magic_link_description">We will send a one-time sign-in link. Opening it returns you to AquaLog.</string>
+    <string name="email_address">Email address</string>
+    <string name="send_magic_link">Send magic link</string>
+    <string name="back">Back</string>
+    <string name="magic_link_sent_title">Check your email</string>
+    <string name="magic_link_sent_description">Open the AquaLog sign-in link on this device to finish attaching your local copy.</string>
+    <string name="authentication_waiting_title">Finish in your browser</string>
+    <string name="authentication_waiting_description">Return to AquaLog after Google completes authentication.</string>
+    <string name="account_error_title">Your local data is safe</string>
+    <string name="magic_link_expired">This link has expired. Request a new magic link and try again.</string>
+    <string name="authentication_failed">Authentication did not complete. You can try again without losing local data.</string>
+    <string name="account_migration_failed">The account is connected, but the initial upload did not finish. Retry when you are online.</string>
+    <string name="try_again">Try again</string>
+    <string name="back_to_aquarium">Back to Aquarium</string>
     <string name="view_session_details">View Session details</string>
     <string name="session_details">Session details</string>
     <string name="session_date">Recorded on %1$s</string>
@@ -119,7 +145,6 @@
     <string name="delete_session_title">Delete this Session?</string>
     <string name="delete_session_description">Its Measurements, maintenance actions and Events will also be removed from this device.</string>
     <string name="delete">Delete</string>
-    <string name="back">Back</string>
 
     <string name="navigation_home">Home</string>
     <string name="navigation_history">History</string>

@@ -44,9 +44,10 @@ class RoomAquariumRepository(
     database: AquaLogDatabase,
     private val generateId: () -> String,
     private val currentTimeMillis: () -> Long,
-) : AquariumRepository {
+) : AquariumRepository, AccountLocalDataSource {
     private val aquariumDao = database.aquariumDao()
     private val sessionDao = database.sessionDao()
+    private val accountDao = database.accountDao()
 
     override fun observeCurrentAquarium(): Flow<Aquarium?> =
         aquariumDao.observeCurrent().map { it?.toDomain() }
@@ -346,6 +347,38 @@ class RoomAquariumRepository(
         }
 
     suspend fun sessionCount(aquariumId: String): Int = sessionDao.count(aquariumId)
+
+    override suspend fun hasRecordedSession(): Boolean = sessionDao.countAll() > 0
+
+    override suspend fun wasAccountInvitationOffered(): Boolean =
+        accountDao.wasInvitationOffered() == true
+
+    override suspend fun markAccountInvitationOffered() {
+        accountDao.upsertInvitation(AccountInvitationEntity(wasOffered = true))
+    }
+
+    override suspend fun initialAccountCopy() = InitialAccountCopy(
+        aquariums = aquariumDao.allAquariums().map(AquariumEntity::toDomain),
+        parameterDefinitions = aquariumDao.allParameterDefinitions().map(ParameterDefinitionEntity::toDomain),
+        sessions = sessionDao.allSessions().map(SessionEntity::toDomain),
+        measurements = sessionDao.allMeasurements().map(MeasurementEntity::toDomain),
+        maintenanceActions = sessionDao.allMaintenanceActions().map(MaintenanceActionEntity::toDomain),
+        events = sessionDao.allEvents().map(SessionEventEntity::toDomain),
+    )
+
+    override suspend fun accountMigrationState(): AccountMigrationState? = accountDao.get()?.let {
+        AccountMigrationState(it.accountId, InitialMigrationStatus.fromStorageValue(it.migrationStatus))
+    }
+
+    override suspend fun beginAccountMigration(accountId: String) {
+        val current = accountDao.get()
+        if (current?.accountId == accountId && current.migrationStatus == InitialMigrationStatus.COMPLETE.storageValue) return
+        accountDao.upsert(AccountStateEntity(accountId = accountId, migrationStatus = InitialMigrationStatus.PENDING.storageValue))
+    }
+
+    override suspend fun completeAccountMigration(accountId: String) {
+        accountDao.upsert(AccountStateEntity(accountId = accountId, migrationStatus = InitialMigrationStatus.COMPLETE.storageValue))
+    }
 }
 
 private fun AquariumEntity.toDomain() = Aquarium(

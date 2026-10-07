@@ -7,6 +7,8 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.maximerollin.aqualog.shared.AquariumProfile
+import com.maximerollin.aqualog.shared.AccountActivationCoordinator
+import com.maximerollin.aqualog.shared.AccountActivationResult
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
@@ -44,6 +46,31 @@ enum class OnboardingStep {
     PRACTICE,
     PAYWALL,
 }
+
+enum class AccountStep {
+    HIDDEN,
+    INVITATION,
+    METHODS,
+    MAGIC_EMAIL,
+    MAGIC_SENT,
+    WAITING_BROWSER,
+    WORKING,
+    ERROR,
+}
+
+enum class AccountError { AUTHENTICATION, EXPIRED_LINK, MIGRATION }
+
+enum class AccountInvitationPrompt {
+    NONE,
+    AFTER_SESSION_CONFIRMATION,
+    REMINDER,
+}
+
+data class AccountUiState(
+    val step: AccountStep = AccountStep.HIDDEN,
+    val email: String = "",
+    val error: AccountError? = null,
+)
 
 enum class MainDestination {
     HOME,
@@ -137,6 +164,8 @@ data class HomeUiState(
     val showParameterValidationError: Boolean = false,
     val rapidSession: RapidSessionUiState? = null,
     val latestSession: RecordedSession? = null,
+    val accountInvitationPrompt: AccountInvitationPrompt = AccountInvitationPrompt.NONE,
+    val account: AccountUiState = AccountUiState(),
     val sessionDetail: RecordedSession? = null,
     val sessionDetailReturnsToTimeline: Boolean = false,
     val showDeleteConfirmation: Boolean = false,
@@ -197,6 +226,7 @@ private data class MaintenanceActionDraftSnapshot(
 
 class HomeViewModel(
     private val aquariumRepository: AquariumRepository,
+    private val accountCoordinator: AccountActivationCoordinator? = null,
     private val currentTimeMillis: () -> Long = System::currentTimeMillis,
     private val generateInteractionId: () -> String = { UUID.randomUUID().toString() },
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
@@ -235,6 +265,20 @@ class HomeViewModel(
                                     state.sessionDetail
                                 },
                             )
+                        }
+                    }
+                }
+            }
+        }
+        if (accountCoordinator != null) {
+            viewModelScope.launch {
+                when {
+                    accountCoordinator.hasPendingMigration() -> {
+                        updateAccount { it.copy(step = AccountStep.ERROR, error = AccountError.MIGRATION) }
+                    }
+                    accountCoordinator.shouldInviteToAccount() -> {
+                        mutableUiState.update {
+                            it.copy(accountInvitationPrompt = AccountInvitationPrompt.REMINDER)
                         }
                     }
                 }
@@ -619,10 +663,100 @@ class HomeViewModel(
                         sessionDetail = if (draft.editingSessionId == null) null else recorded,
                     )
                 }
+                if (
+                    draft.editingSessionId == null &&
+                    accountCoordinator?.shouldInviteToAccount() == true
+                ) {
+                    mutableUiState.update {
+                        it.copy(accountInvitationPrompt = AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION)
+                    }
+                }
             }.onFailure {
                 updateRapidSession { it.copy(isSaving = false, saveError = true) }
             }
         }
+    }
+
+    fun continueAfterSessionConfirmation() {
+        val coordinator = accountCoordinator ?: return
+        val prompt = mutableUiState.value.accountInvitationPrompt
+        if (prompt == AccountInvitationPrompt.NONE) return
+        mutableUiState.update { it.copy(accountInvitationPrompt = AccountInvitationPrompt.NONE) }
+        viewModelScope.launch {
+            runCatching { coordinator.markInvitationOffered() }
+                .onSuccess {
+                    mutableUiState.update {
+                        it.copy(account = AccountUiState(AccountStep.INVITATION))
+                    }
+                }
+                .onFailure {
+                    mutableUiState.update { it.copy(accountInvitationPrompt = prompt) }
+                }
+        }
+    }
+
+    fun openAccountMethods() = updateAccount { it.copy(step = AccountStep.METHODS, error = null) }
+
+    fun dismissAccount() = updateAccount { AccountUiState() }
+
+    fun openMagicEmail() = updateAccount { it.copy(step = AccountStep.MAGIC_EMAIL, error = null) }
+
+    fun updateAccountEmail(value: String) = updateAccount { it.copy(email = value, error = null) }
+
+    fun signInWithGoogle() = launchAccountAction(AccountError.AUTHENTICATION) {
+        requireNotNull(accountCoordinator).signInWithGoogle()
+    }
+
+    fun requestMagicLink() {
+        val email = mutableUiState.value.account.email
+        launchAccountAction(AccountError.AUTHENTICATION) {
+            requireNotNull(accountCoordinator).requestMagicLink(email)
+        }
+    }
+
+    fun completeAccountCallback(callbackUrl: String) = launchAccountAction(AccountError.AUTHENTICATION) {
+        requireNotNull(accountCoordinator).completeMagicLink(callbackUrl)
+    }
+
+    fun retryAccountMigration() = launchAccountAction(AccountError.MIGRATION) {
+        requireNotNull(accountCoordinator).resumePendingMigration()
+    }
+
+    private fun launchAccountAction(
+        failure: AccountError,
+        action: suspend () -> AccountActivationResult,
+    ) {
+        if (accountCoordinator == null) return
+        updateAccount { it.copy(step = AccountStep.WORKING, error = null) }
+        viewModelScope.launch {
+            handleAccountResult(
+                result = runCatching { action() }.getOrElse { AccountActivationResult.Failed("failed") },
+                failure = failure,
+            )
+        }
+    }
+
+    private fun handleAccountResult(result: AccountActivationResult, failure: AccountError) {
+        updateAccount { current ->
+            when (result) {
+                AccountActivationResult.Activated -> AccountUiState()
+                AccountActivationResult.AwaitingAuthentication -> current.copy(step = AccountStep.WAITING_BROWSER)
+                AccountActivationResult.Cancelled -> current.copy(step = AccountStep.METHODS, error = null)
+                AccountActivationResult.ExpiredLink -> current.copy(step = AccountStep.ERROR, error = AccountError.EXPIRED_LINK)
+                AccountActivationResult.MagicLinkSent -> current.copy(step = AccountStep.MAGIC_SENT)
+                AccountActivationResult.IgnoredCallback -> AccountUiState()
+                AccountActivationResult.ReauthenticationRequired -> AccountUiState(AccountStep.METHODS)
+                is AccountActivationResult.Failed -> current.copy(step = AccountStep.ERROR, error = failure)
+                is AccountActivationResult.MigrationFailed -> current.copy(
+                    step = AccountStep.ERROR,
+                    error = AccountError.MIGRATION,
+                )
+            }
+        }
+    }
+
+    private fun updateAccount(transform: (AccountUiState) -> AccountUiState) {
+        mutableUiState.update { it.copy(account = transform(it.account)) }
     }
 
     private fun updateAction(
@@ -785,12 +919,16 @@ class HomeViewModel(
     companion object {
         private const val rapidSessionDraftKey = "rapid-session-draft"
 
-        fun factory(repository: AquariumRepository): ViewModelProvider.Factory =
+        fun factory(
+            repository: AquariumRepository,
+            accountCoordinator: AccountActivationCoordinator? = null,
+        ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T =
                     HomeViewModel(
                         aquariumRepository = repository,
+                        accountCoordinator = accountCoordinator,
                         savedStateHandle = extras.createSavedStateHandle(),
                     ) as T
             }
