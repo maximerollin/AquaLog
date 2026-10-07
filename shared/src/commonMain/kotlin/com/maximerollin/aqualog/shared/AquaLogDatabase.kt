@@ -55,7 +55,10 @@ data class AquariumSetupEntity(
 
 @Entity(
     tableName = "sessions",
-    indices = [Index(value = ["idempotencyKey"], unique = true)],
+    indices = [
+        Index(value = ["idempotencyKey"], unique = true),
+        Index(value = ["aquariumId", "occurredAtEpochMillis"]),
+    ],
 )
 data class SessionEntity(
     @PrimaryKey val id: String,
@@ -173,6 +176,18 @@ abstract class SessionDao {
     @Query("SELECT * FROM sessions ORDER BY occurredAtEpochMillis DESC, createdAtEpochMillis DESC")
     abstract fun observeAll(): Flow<List<RecordedSessionEntity>>
 
+    @Transaction
+    @Query(
+        "SELECT * FROM sessions WHERE aquariumId = :aquariumId " +
+            "AND occurredAtEpochMillis BETWEEN :sinceEpochMillisInclusive AND :untilEpochMillisInclusive " +
+            "ORDER BY occurredAtEpochMillis ASC, createdAtEpochMillis ASC",
+    )
+    abstract fun observeForAquariumBetween(
+        aquariumId: String,
+        sinceEpochMillisInclusive: Long,
+        untilEpochMillisInclusive: Long,
+    ): Flow<List<RecordedSessionEntity>>
+
     @Query("SELECT COUNT(*) FROM sessions WHERE aquariumId = :aquariumId")
     abstract suspend fun count(aquariumId: String): Int
 
@@ -257,7 +272,7 @@ abstract class SessionDao {
         MaintenanceActionEntity::class,
         SessionEventEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -276,7 +291,7 @@ fun createAquaLogDatabase(
 ): AquaLogDatabase = builder
     .setDriver(BundledSQLiteDriver())
     .setQueryCoroutineContext(Dispatchers.IO)
-    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
     .build()
 
 private val MIGRATION_1_2 = Migration(1, 2) { connection ->
@@ -315,5 +330,12 @@ private val MIGRATION_2_3 = Migration(2, 3) { connection ->
     )
     connection.execSQL(
         "CREATE TABLE IF NOT EXISTS session_events (id TEXT NOT NULL PRIMARY KEY, sessionId TEXT NOT NULL, type TEXT NOT NULL, note TEXT NOT NULL)",
+    )
+}
+
+private val MIGRATION_3_4 = Migration(3, 4) { connection ->
+    connection.execSQL(
+        "CREATE INDEX IF NOT EXISTS index_sessions_aquariumId_occurredAtEpochMillis " +
+            "ON sessions (aquariumId, occurredAtEpochMillis)",
     )
 }
