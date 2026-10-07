@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 4,
-    "identityHash": "dac35b8981c6843368633b1319bf9d8b",
+    "identityHash": "a7029149f58a56c93af3b28b3f722cfc",
     "entities": [
       {
         "tableName": "aquariums",
@@ -167,6 +167,16 @@
             ],
             "orders": [],
             "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_sessions_idempotencyKey` ON `${TABLE_NAME}` (`idempotencyKey`)"
+          },
+          {
+            "name": "index_sessions_aquariumId_occurredAtEpochMillis",
+            "unique": false,
+            "columnNames": [
+              "aquariumId",
+              "occurredAtEpochMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sessions_aquariumId_occurredAtEpochMillis` ON `${TABLE_NAME}` (`aquariumId`, `occurredAtEpochMillis`)"
           }
         ]
       },
@@ -286,41 +296,11 @@
             "id"
           ]
         }
-      },
-      {
-        "tableName": "account_state",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`singletonId` INTEGER NOT NULL, `accountId` TEXT NOT NULL, `migrationStatus` TEXT NOT NULL, PRIMARY KEY(`singletonId`))",
-        "fields": [
-          {
-            "fieldPath": "singletonId",
-            "columnName": "singletonId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "accountId",
-            "columnName": "accountId",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "migrationStatus",
-            "columnName": "migrationStatus",
-            "affinity": "TEXT",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "singletonId"
-          ]
-        }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'dac35b8981c6843368633b1319bf9d8b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a7029149f58a56c93af3b28b3f722cfc')"
     ]
   }
 }

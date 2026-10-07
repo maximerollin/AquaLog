@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 5,
-    "identityHash": "a5f672708ebd24c1cf589083d488b5f7",
+    "identityHash": "45e5f3398f2186be65a25798fca272d5",
     "entities": [
       {
         "tableName": "aquariums",
@@ -167,6 +167,16 @@
             ],
             "orders": [],
             "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_sessions_idempotencyKey` ON `${TABLE_NAME}` (`idempotencyKey`)"
+          },
+          {
+            "name": "index_sessions_aquariumId_occurredAtEpochMillis",
+            "unique": false,
+            "columnNames": [
+              "aquariumId",
+              "occurredAtEpochMillis"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_sessions_aquariumId_occurredAtEpochMillis` ON `${TABLE_NAME}` (`aquariumId`, `occurredAtEpochMillis`)"
           }
         ]
       },
@@ -344,7 +354,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a5f672708ebd24c1cf589083d488b5f7')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '45e5f3398f2186be65a25798fca272d5')"
     ]
   }
 }

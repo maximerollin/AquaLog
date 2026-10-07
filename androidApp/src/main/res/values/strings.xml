@@ -181,4 +181,19 @@
         <item quantity="one">%d Event</item>
         <item quantity="other">%d Events</item>
     </plurals>
+
+    <string name="trends_title">Trends</string>
+    <string name="trends_heading">Recent trends</string>
+    <string name="trends_free_limit">Free trends show up to 90 days. Older data stays saved.</string>
+    <string name="trends_parameter_heading">%1$s trend</string>
+    <string name="trends_indicative_target">Indicative target %1$s–%2$s %3$s · reference only, not a diagnosis</string>
+    <string name="trends_chart_description">%1$s trend chart · solid line and circle point markers · hatched indicative target · diamond Event markers</string>
+    <string name="trends_legend">● Measurements · ▧ hatched indicative target · ◆ Events</string>
+    <string name="trends_exact_values">Exact values</string>
+    <string name="trends_exact_value_description">Exact value %1$s %2$s</string>
+    <string name="trends_events">Context Events</string>
+    <string name="trends_no_measurements">No Measurements for this Parameter in the selected period.</string>
+    <string name="trends_no_events">No maintenance or Events in the selected period.</string>
+    <string name="trends_loading">Loading local trends…</string>
+    <string name="trends_error">Local trends could not be read. Your saved data is still on this device.</string>
 </resources>

@@ -52,11 +52,42 @@ fun TimelineScreen(
     }
 
     Column(modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilterChip(
+                selected = state.historySection == HistorySection.CHRONOLOGY,
+                onClick = { viewModel.selectHistorySection(HistorySection.CHRONOLOGY) },
+                label = { Text(stringResource(R.string.timeline_title)) },
+                modifier = Modifier.heightIn(min = 48.dp),
+            )
+            FilterChip(
+                selected = state.historySection == HistorySection.TRENDS,
+                onClick = { viewModel.selectHistorySection(HistorySection.TRENDS) },
+                label = { Text(stringResource(R.string.trends_title)) },
+                modifier = Modifier.heightIn(min = 48.dp),
+            )
+        }
+        if (state.historySection == HistorySection.TRENDS) {
+            TrendsScreen(state, viewModel, Modifier.weight(1f))
+        } else {
+            TimelineContent(state, viewModel, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun TimelineContent(
+    state: HomeUiState,
+    viewModel: HomeViewModel,
+    modifier: Modifier,
+) {
+    Column(modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(stringResource(R.string.timeline_title), style = MaterialTheme.typography.headlineMedium)
             if (state.timeline.isOffline) {
                 Text(
                     stringResource(R.string.timeline_offline_status),
