@@ -2,6 +2,7 @@ package com.maximerollin.aqualog
 
 import android.app.Application
 import com.maximerollin.aqualog.shared.AQUA_LOG_DATABASE_NAME
+import com.maximerollin.aqualog.shared.AccountActivationCoordinator
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
@@ -25,4 +26,17 @@ open class AquaLogApplication : Application() {
     open val taskReminderScheduler: TaskReminderScheduler by lazy {
         AndroidTaskReminderScheduler(this)
     }
+
+    open val accountCoordinator: AccountActivationCoordinator
+        get() {
+            val localData = aquariumRepository as RoomAquariumRepository
+            val configuration = SupabaseConfiguration.fromBuildConfig()
+            val tokenStorage = AndroidSecureTokenStorage(this)
+            return AccountActivationCoordinator(
+                authGateway = SupabaseAuthGateway(this, configuration, tokenStorage),
+                cloudRepository = SupabaseInitialMigrationRepository(configuration),
+                localData = localData,
+                tokenStorage = tokenStorage,
+            )
+        }
 }

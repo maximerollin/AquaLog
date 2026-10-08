@@ -15,6 +15,7 @@ import androidx.room3.Relation
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomDatabaseConstructor
 import androidx.room3.Transaction
+import androidx.room3.Upsert
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.room3.migration.Migration
 import androidx.sqlite.execSQL
@@ -133,6 +134,19 @@ data class TaskOccurrenceEntity(
     val resolvedAtEpochMillis: Long?,
 )
 
+@Entity(tableName = "account_state")
+data class AccountStateEntity(
+    @PrimaryKey val singletonId: Int = 1,
+    val accountId: String,
+    val migrationStatus: String,
+)
+
+@Entity(tableName = "account_invitation")
+data class AccountInvitationEntity(
+    @PrimaryKey val singletonId: Int = 1,
+    val wasOffered: Boolean,
+)
+
 @Dao
 abstract class AquariumDao {
     @Query("SELECT * FROM aquariums ORDER BY createdAtEpochMillis ASC LIMIT 1")
@@ -149,6 +163,12 @@ abstract class AquariumDao {
     @Transaction
     @Query("SELECT * FROM aquariums WHERE id = :aquariumId")
     abstract suspend fun getSetup(aquariumId: String): AquariumSetupEntity?
+
+    @Query("SELECT * FROM aquariums ORDER BY createdAtEpochMillis ASC")
+    abstract suspend fun allAquariums(): List<AquariumEntity>
+
+    @Query("SELECT * FROM parameter_definitions ORDER BY aquariumId, position ASC")
+    abstract suspend fun allParameterDefinitions(): List<ParameterDefinitionEntity>
 
     @Insert
     protected abstract suspend fun insert(aquarium: AquariumEntity)
@@ -219,6 +239,21 @@ abstract class SessionDao {
 
     @Query("SELECT COUNT(*) FROM sessions WHERE aquariumId = :aquariumId")
     abstract suspend fun count(aquariumId: String): Int
+
+    @Query("SELECT COUNT(*) FROM sessions")
+    abstract suspend fun countAll(): Int
+
+    @Query("SELECT * FROM sessions ORDER BY createdAtEpochMillis ASC")
+    abstract suspend fun allSessions(): List<SessionEntity>
+
+    @Query("SELECT * FROM measurements ORDER BY sessionId, id")
+    abstract suspend fun allMeasurements(): List<MeasurementEntity>
+
+    @Query("SELECT * FROM maintenance_actions ORDER BY sessionId, id")
+    abstract suspend fun allMaintenanceActions(): List<MaintenanceActionEntity>
+
+    @Query("SELECT * FROM session_events ORDER BY sessionId, id")
+    abstract suspend fun allEvents(): List<SessionEventEntity>
 
     @Query("SELECT m.* FROM measurements m INNER JOIN sessions s ON s.id = m.sessionId WHERE s.aquariumId = :aquariumId ORDER BY s.occurredAtEpochMillis DESC, s.createdAtEpochMillis DESC")
     abstract suspend fun measurementsForAquarium(aquariumId: String): List<MeasurementEntity>
@@ -362,6 +397,21 @@ abstract class TaskDao {
         requireNotNull(getTask(requireNotNull(getOccurrence(occurrenceId)).taskId))
 }
 
+@Dao
+abstract class AccountDao {
+    @Query("SELECT * FROM account_state WHERE singletonId = 1")
+    abstract suspend fun get(): AccountStateEntity?
+
+    @Upsert
+    abstract suspend fun upsert(state: AccountStateEntity)
+
+    @Query("SELECT wasOffered FROM account_invitation WHERE singletonId = 1")
+    abstract suspend fun wasInvitationOffered(): Boolean?
+
+    @Upsert
+    abstract suspend fun upsertInvitation(invitation: AccountInvitationEntity)
+}
+
 @Database(
     entities = [
         AquariumEntity::class,
@@ -372,8 +422,10 @@ abstract class TaskDao {
         SessionEventEntity::class,
         TaskEntity::class,
         TaskOccurrenceEntity::class,
+        AccountStateEntity::class,
+        AccountInvitationEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -381,6 +433,7 @@ abstract class AquaLogDatabase : RoomDatabase() {
     abstract fun aquariumDao(): AquariumDao
     abstract fun sessionDao(): SessionDao
     abstract fun taskDao(): TaskDao
+    abstract fun accountDao(): AccountDao
 }
 
 @Suppress("NO_ACTUAL_FOR_EXPECT")
@@ -393,7 +446,7 @@ fun createAquaLogDatabase(
 ): AquaLogDatabase = builder
     .setDriver(BundledSQLiteDriver())
     .setQueryCoroutineContext(Dispatchers.IO)
-    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
     .build()
 
 private val MIGRATION_1_2 = Migration(1, 2) { connection ->
@@ -443,6 +496,15 @@ private val MIGRATION_3_4 = Migration(3, 4) { connection ->
 }
 
 private val MIGRATION_4_5 = Migration(4, 5) { connection ->
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS account_state (singletonId INTEGER NOT NULL PRIMARY KEY, accountId TEXT NOT NULL, migrationStatus TEXT NOT NULL)",
+    )
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS account_invitation (singletonId INTEGER NOT NULL PRIMARY KEY, wasOffered INTEGER NOT NULL)",
+    )
+}
+
+private val MIGRATION_5_6 = Migration(5, 6) { connection ->
     connection.execSQL(
         "CREATE TABLE IF NOT EXISTS tasks (id TEXT NOT NULL PRIMARY KEY, aquariumId TEXT NOT NULL, title TEXT NOT NULL, recurrence TEXT NOT NULL, monthlyAnchorDay INTEGER NOT NULL)",
     )

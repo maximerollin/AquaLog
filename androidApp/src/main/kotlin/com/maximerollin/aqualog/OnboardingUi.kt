@@ -51,6 +51,7 @@ fun AquaLogContent(
 ) {
     when {
         state.isLoading -> LoadingContent(modifier)
+        state.account.step != AccountStep.HIDDEN -> AccountScreen(state.account, viewModel, modifier)
         state.tasks.isOpen && state.setup != null -> TaskScreen(
             state = state.tasks,
             viewModel = viewModel,
@@ -103,6 +104,83 @@ fun AquaLogContent(
 }
 
 @Composable
+private fun AccountScreen(state: AccountUiState, viewModel: HomeViewModel, modifier: Modifier) {
+    StandardScreen(modifier) {
+        when (state.step) {
+            AccountStep.INVITATION -> {
+                ScreenHeading(R.string.account_invitation_title, R.string.account_invitation_description)
+                Spacer(Modifier.weight(1f))
+                PrimaryButton(R.string.create_account, viewModel::openAccountMethods)
+                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.not_now))
+                }
+            }
+            AccountStep.METHODS -> {
+                ScreenHeading(R.string.account_methods_title, R.string.account_methods_description)
+                PrimaryButton(R.string.continue_with_google, viewModel::signInWithGoogle)
+                PrimaryButton(R.string.continue_with_email, viewModel::openMagicEmail)
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+            AccountStep.MAGIC_EMAIL -> {
+                ScreenHeading(R.string.magic_link_title, R.string.magic_link_description)
+                OutlinedTextField(
+                    value = state.email,
+                    onValueChange = viewModel::updateAccountEmail,
+                    label = { Text(stringResource(R.string.email_address)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                PrimaryButton(R.string.send_magic_link, viewModel::requestMagicLink)
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = viewModel::openAccountMethods, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.back))
+                }
+            }
+            AccountStep.MAGIC_SENT -> {
+                ScreenHeading(R.string.magic_link_sent_title, R.string.magic_link_sent_description)
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.back_to_aquarium))
+                }
+            }
+            AccountStep.WAITING_BROWSER -> {
+                ScreenHeading(R.string.authentication_waiting_title, R.string.authentication_waiting_description)
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.back_to_aquarium))
+                }
+            }
+            AccountStep.WORKING -> LoadingContent(Modifier.fillMaxSize())
+            AccountStep.ERROR -> {
+                val message = when (state.error) {
+                    AccountError.EXPIRED_LINK -> R.string.magic_link_expired
+                    AccountError.AUTHENTICATION -> R.string.authentication_failed
+                    AccountError.MIGRATION, null -> R.string.account_migration_failed
+                }
+                ScreenHeading(R.string.account_error_title, message)
+                PrimaryButton(
+                    R.string.try_again,
+                    if (state.error == AccountError.MIGRATION) {
+                        viewModel::retryAccountMigration
+                    } else {
+                        viewModel::openAccountMethods
+                    },
+                )
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.back_to_aquarium))
+                }
+            }
+            AccountStep.HIDDEN -> Unit
+        }
+    }
+}
+
+@Composable
 private fun AquariumShell(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
     Scaffold(
         modifier = modifier,
@@ -128,13 +206,13 @@ private fun AquariumShell(state: HomeUiState, viewModel: HomeViewModel, modifier
         when (state.destination) {
             MainDestination.HOME -> AquariumHome(state, viewModel, contentModifier)
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
-            MainDestination.SETTINGS -> StandardScreen(contentModifier) {
-                Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium)
-                Text(stringResource(R.string.settings_placeholder))
-            }
-        }
-    }
-}
+             MainDestination.SETTINGS -> StandardScreen(contentModifier) {
+                 Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium)
+                 Text(stringResource(R.string.settings_placeholder))
+             }
+         }
+     }
+ }
 
 @Composable
 private fun LoadingContent(modifier: Modifier) {
@@ -474,48 +552,91 @@ private fun PlanCard(title: Int, description: Int) {
 @Composable
 private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
     val aquarium = requireNotNull(state.setup).aquarium
-    StandardScreen(modifier) {
-        Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
-        Text(
-            stringResource(R.string.aquarium_ready),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(aquarium.name, style = MaterialTheme.typography.titleLarge)
-                Text(aquarium.formattedVolume(), style = MaterialTheme.typography.bodyLarge)
+    Column(
+        modifier = modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        stringResource(R.string.aquarium_ready),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-        }
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    stringResource(
-                        if (state.latestSession == null) R.string.no_session_yet else R.string.session_saved,
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    stringResource(
-                        if (state.latestSession == null) {
-                            R.string.no_session_description
-                        } else {
-                            R.string.session_saved_description
-                        },
-                        state.latestSession?.measurements?.size ?: 0,
-                        state.latestSession?.maintenanceActions?.size ?: 0,
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (state.latestSession != null) {
-                    TextButton(onClick = viewModel::openSessionDetails) {
-                        Text(stringResource(R.string.view_session_details))
+            if (state.accountInvitationPrompt == AccountInvitationPrompt.REMINDER) {
+                item {
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                stringResource(R.string.account_invitation_title),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                stringResource(R.string.account_invitation_description),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            TextButton(
+                                onClick = viewModel::continueAfterSessionConfirmation,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                            ) {
+                                Text(stringResource(R.string.review_account_options))
+                            }
+                        }
                     }
                 }
             }
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(aquarium.name, style = MaterialTheme.typography.titleLarge)
+                        Text(aquarium.formattedVolume(), style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            stringResource(
+                                if (state.latestSession == null) R.string.no_session_yet else R.string.session_saved,
+                            ),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(
+                            stringResource(
+                                if (state.latestSession == null) {
+                                    R.string.no_session_description
+                                } else {
+                                    R.string.session_saved_description
+                                },
+                                state.latestSession?.measurements?.size ?: 0,
+                                state.latestSession?.maintenanceActions?.size ?: 0,
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (state.latestSession != null) {
+                            TextButton(onClick = viewModel::openSessionDetails) {
+                                Text(stringResource(R.string.view_session_details))
+                            }
+                        }
+                    }
+                }
+            }
+            if (state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION) {
+                item {
+                    PrimaryButton(R.string.continue_after_session, viewModel::continueAfterSessionConfirmation)
+                }
+            }
         }
-        Spacer(Modifier.weight(1f))
         OutlinedButton(
             onClick = viewModel::openTasks,
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),

@@ -3,6 +3,14 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val supabaseUrl = providers.gradleProperty("AQUALOG_SUPABASE_URL")
+    .orElse(providers.environmentVariable("AQUALOG_SUPABASE_URL"))
+    .getOrElse("")
+val supabaseAnonKey = providers.gradleProperty("AQUALOG_SUPABASE_ANON_KEY")
+    .orElse(providers.environmentVariable("AQUALOG_SUPABASE_ANON_KEY"))
+    .getOrElse("")
+fun String.asBuildConfigString(): String = "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
+
 android {
     namespace = "com.maximerollin.aqualog"
     compileSdk = 37
@@ -14,10 +22,13 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "com.maximerollin.aqualog.AquaLogTestRunner"
+        buildConfigField("String", "SUPABASE_URL", supabaseUrl.asBuildConfigString())
+        buildConfigField("String", "SUPABASE_ANON_KEY", supabaseAnonKey.asBuildConfigString())
     }
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     compileOptions {

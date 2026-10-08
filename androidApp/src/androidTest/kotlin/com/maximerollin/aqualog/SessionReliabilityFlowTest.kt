@@ -80,6 +80,7 @@ class SessionReliabilityFlowTest {
         composeRule.onNodeWithText("Save changes").performClick()
 
         waitForText("Session details")
+        waitForText("Temperature · 25.1 °C")
         composeRule.onNodeWithText("Temperature · 25.1 °C").assertIsDisplayed()
         composeRule.onNodeWithText("Fertilization · 1 mL").assertIsDisplayed()
         composeRule.onNodeWithText("Incident · Filtre corrigé").assertIsDisplayed()
@@ -87,7 +88,9 @@ class SessionReliabilityFlowTest {
 
         scenario = ActivityScenario.launch(MainActivity::class.java)
         waitForText("Session saved")
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("View Session details"))
         composeRule.onNodeWithText("View Session details").performClick()
+        waitForText("Temperature · 25.1 °C")
         composeRule.onNodeWithText("Temperature · 25.1 °C").assertIsDisplayed()
         composeRule.onNodeWithText("Delete Session").performClick()
         composeRule.onNodeWithText("Delete this Session?").assertIsDisplayed()
