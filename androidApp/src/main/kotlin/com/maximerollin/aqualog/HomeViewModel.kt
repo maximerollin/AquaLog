@@ -125,6 +125,7 @@ enum class ProPurchaseStatus {
 
 data class ProUiState(
     val showPaywall: Boolean = false,
+    val openedFromOnboarding: Boolean = false,
     val isLoadingOffer: Boolean = false,
     val offer: AnnualProOffer? = null,
     val purchaseStatus: ProPurchaseStatus = ProPurchaseStatus.IDLE,
@@ -404,18 +405,24 @@ class HomeViewModel(
 
     fun continueToPaywall() {
         moveTo(OnboardingStep.PAYWALL)
-        mutableUiState.update { it.copy(pro = it.pro.copy(showPaywall = true)) }
+        mutableUiState.update {
+            it.copy(pro = it.pro.copy(showPaywall = true, openedFromOnboarding = true))
+        }
         loadProOffer()
     }
 
     fun openProPaywall() {
-        mutableUiState.update { it.copy(pro = it.pro.copy(showPaywall = true)) }
+        mutableUiState.update {
+            it.copy(pro = it.pro.copy(showPaywall = true, openedFromOnboarding = false))
+        }
         loadProOffer()
     }
 
     fun closeProPaywall() {
         if (mutableUiState.value.setup == null) return
-        mutableUiState.update { it.copy(pro = it.pro.copy(showPaywall = false)) }
+        mutableUiState.update {
+            it.copy(pro = it.pro.copy(showPaywall = false, openedFromOnboarding = false))
+        }
     }
 
     fun loadProOffer() {
@@ -483,7 +490,7 @@ class HomeViewModel(
     }
 
     fun finishForFree() {
-        viewModelScope.launch { persistOnboardingAquarium() }
+        viewModelScope.launch { persistOnboardingAquarium(keepPaywallOpen = false) }
     }
 
     fun openRapidSession() {
@@ -871,7 +878,7 @@ class HomeViewModel(
                         ),
                     )
                 }
-                if (accountCoordinator != null && persistOnboardingAquarium()) {
+                if (accountCoordinator != null && persistOnboardingAquarium(keepPaywallOpen = true)) {
                     updateAccount { it.copy(step = AccountStep.METHODS, error = null) }
                 }
             }
@@ -892,9 +899,12 @@ class HomeViewModel(
         }
     }
 
-    private suspend fun persistOnboardingAquarium(): Boolean {
+    private suspend fun persistOnboardingAquarium(keepPaywallOpen: Boolean): Boolean {
         val state = mutableUiState.value
-        if (state.setup != null) return true
+        if (state.setup != null) {
+            if (!keepPaywallOpen) hideProPaywall()
+            return true
+        }
         if (state.isSaving) return false
         val volume = state.volumeInput.toDecimalOrNull() ?: return false
         val parameters = configuredParameters() ?: return false
@@ -908,7 +918,10 @@ class HomeViewModel(
                 parameters = parameters,
             )
         }.fold(
-            onSuccess = { true },
+            onSuccess = {
+                if (!keepPaywallOpen) hideProPaywall()
+                true
+            },
             onFailure = {
                 mutableUiState.update { current ->
                     current.copy(
@@ -922,6 +935,17 @@ class HomeViewModel(
                 false
             },
         )
+    }
+
+    private fun hideProPaywall() {
+        mutableUiState.update { current ->
+            current.copy(
+                pro = current.pro.copy(
+                    showPaywall = false,
+                    openedFromOnboarding = false,
+                ),
+            )
+        }
     }
 
     private fun updateAccount(transform: (AccountUiState) -> AccountUiState) {

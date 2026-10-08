@@ -67,7 +67,7 @@ fun AquaLogContent(
         state.setup != null && state.pro.showPaywall -> PaywallScreen(
             pro = state.pro,
             isSaving = state.isSaving,
-            onboarding = false,
+            onboarding = state.pro.openedFromOnboarding,
             onStartPurchase = viewModel::startProPurchase,
             onRestore = viewModel::restoreProPurchase,
             onRetryOffer = viewModel::loadProOffer,
