@@ -39,6 +39,21 @@ import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
 
+private sealed interface TimelineListItem {
+    val timestamp: Long
+    val key: String
+
+    data class SessionItem(val entry: TimelineSession) : TimelineListItem {
+        override val timestamp = entry.session.occurredAtEpochMillis
+        override val key = "session-${entry.session.id}"
+    }
+
+    data class TaskItem(val occurrence: TaskOccurrence) : TimelineListItem {
+        override val timestamp = requireNotNull(occurrence.resolvedAtEpochMillis)
+        override val key = "task-${occurrence.id}"
+    }
+}
+
 @Composable
 fun TimelineScreen(
     state: HomeUiState,
@@ -118,6 +133,10 @@ private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel) {
             state.timeline.maintenanceActionType == null &&
             (periodStart == null || (occurrence.resolvedAtEpochMillis ?: Long.MIN_VALUE) >= periodStart)
     }
+    val items = (
+        state.timeline.entries.map(TimelineListItem::SessionItem) +
+            resolvedTasks.map(TimelineListItem::TaskItem)
+        ).sortedWith(compareByDescending<TimelineListItem> { it.timestamp }.thenBy { it.key })
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 24.dp),
@@ -137,11 +156,14 @@ private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel) {
                 }
             }
         } else {
-            items(resolvedTasks, key = { "task-${it.id}" }) { occurrence ->
-                TimelineTaskCard(occurrence)
-            }
-            items(state.timeline.entries, key = { it.session.id }) { entry ->
-                TimelineSessionCard(entry, onClick = { viewModel.openTimelineSession(entry.session.id) })
+            items(items, key = TimelineListItem::key) { item ->
+                when (item) {
+                    is TimelineListItem.TaskItem -> TimelineTaskCard(item.occurrence)
+                    is TimelineListItem.SessionItem -> TimelineSessionCard(
+                        item.entry,
+                        onClick = { viewModel.openTimelineSession(item.entry.session.id) },
+                    )
+                }
             }
         }
     }

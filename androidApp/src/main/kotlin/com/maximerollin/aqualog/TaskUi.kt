@@ -1,6 +1,8 @@
 package com.maximerollin.aqualog
 
 import android.Manifest
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,7 +19,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
@@ -31,11 +32,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.TaskRecurrence
 import com.maximerollin.aqualog.shared.TaskResolution
+import java.time.LocalDate
+import java.time.LocalTime
 
 @Composable
 fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier = Modifier) {
@@ -86,24 +88,61 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                     )
-                    OutlinedTextField(
-                        value = state.dueDate,
-                        onValueChange = viewModel::updateTaskDueDate,
-                        label = { Text(stringResource(R.string.task_due_date_label)) },
-                        supportingText = { Text(stringResource(R.string.task_due_date_hint)) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
-                    OutlinedTextField(
-                        value = state.time,
-                        onValueChange = viewModel::updateTaskTime,
-                        label = { Text(stringResource(R.string.task_time_label)) },
-                        supportingText = { Text(stringResource(R.string.task_time_hint)) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
+                    val selectedDate = runCatching { LocalDate.parse(state.dueDate) }
+                        .getOrElse { LocalDate.now() }
+                    OutlinedButton(
+                        onClick = {
+                            DatePickerDialog(
+                                context,
+                                { _, year, month, day ->
+                                    viewModel.updateTaskDueDate(
+                                        "%04d-%02d-%02d".format(year, month + 1, day),
+                                    )
+                                },
+                                selectedDate.year,
+                                selectedDate.monthValue - 1,
+                                selectedDate.dayOfMonth,
+                            ).show()
+                        },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                    ) {
+                        Column {
+                            Text(stringResource(R.string.task_due_date_label))
+                            Text(state.dueDate, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    val selectedTime = runCatching { LocalTime.parse(state.time) }
+                        .getOrElse { LocalTime.of(9, 0) }
+                    OutlinedButton(
+                        onClick = {
+                            TimePickerDialog(
+                                context,
+                                { _, hour, minute ->
+                                    viewModel.updateTaskTime("%02d:%02d".format(hour, minute))
+                                },
+                                selectedTime.hour,
+                                selectedTime.minute,
+                                true,
+                            ).show()
+                        },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                    ) {
+                        Column {
+                            Text(stringResource(R.string.task_time_label))
+                            Text(
+                                state.time.ifBlank { stringResource(R.string.task_no_time) },
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
+                    if (state.time.isNotBlank()) {
+                        TextButton(
+                            onClick = { viewModel.updateTaskTime("") },
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        ) {
+                            Text(stringResource(R.string.clear_task_time))
+                        }
+                    }
                     Row(
                         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),

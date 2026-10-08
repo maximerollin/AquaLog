@@ -207,6 +207,7 @@
     <string name="task_due_date_hint">YYYY-MM-DD</string>
     <string name="task_time_label">Time (optional)</string>
     <string name="task_time_hint">HH:MM · reminders without a time use 09:00</string>
+    <string name="clear_task_time">Clear time</string>
     <string name="task_once">Once</string>
     <string name="task_daily">Daily</string>
     <string name="task_weekly">Weekly</string>
