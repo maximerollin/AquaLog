@@ -129,6 +129,7 @@ data class ProUiState(
     val offer: AnnualProOffer? = null,
     val purchaseStatus: ProPurchaseStatus = ProPurchaseStatus.IDLE,
     val message: String? = null,
+    val restoreAfterAuthentication: Boolean = false,
 )
 
 data class ParameterEditorState(
@@ -429,12 +430,32 @@ class HomeViewModel(
             runCatching { coordinator.loadOffer() }
                 .onSuccess { offer ->
                     mutableUiState.update { state ->
-                        state.copy(pro = state.pro.copy(isLoadingOffer = false, offer = offer, purchaseStatus = ProPurchaseStatus.IDLE))
+                        state.copy(
+                            pro = state.pro.copy(
+                                isLoadingOffer = false,
+                                offer = offer,
+                                purchaseStatus = if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
+                                    ProPurchaseStatus.ACTIVE
+                                } else {
+                                    ProPurchaseStatus.IDLE
+                                },
+                            ),
+                        )
                     }
                 }
                 .onFailure {
                     mutableUiState.update { state ->
-                        state.copy(pro = state.pro.copy(isLoadingOffer = false, purchaseStatus = ProPurchaseStatus.ERROR, message = "Google Play offer unavailable. Try again."))
+                        state.copy(
+                            pro = state.pro.copy(
+                                isLoadingOffer = false,
+                                purchaseStatus = if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
+                                    ProPurchaseStatus.ACTIVE
+                                } else {
+                                    ProPurchaseStatus.ERROR
+                                },
+                                message = "Google Play offer unavailable. Try again.",
+                            ),
+                        )
                     }
                 }
         }
@@ -442,13 +463,22 @@ class HomeViewModel(
 
     fun startProPurchase() {
         val coordinator = proPurchaseCoordinator ?: return
-        mutableUiState.update { it.copy(pro = it.pro.copy(message = null)) }
+        if (
+            mutableUiState.value.pro.purchaseStatus in setOf(
+                ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION,
+                ProPurchaseStatus.PENDING,
+                ProPurchaseStatus.VERIFYING,
+                ProPurchaseStatus.ACTIVE,
+            )
+        ) return
+        updatePro(ProPurchaseStatus.VERIFYING)
         viewModelScope.launch { handleProOutcome(coordinator.startPurchase()) }
     }
 
     fun restoreProPurchase() {
         val coordinator = proPurchaseCoordinator ?: return
-        mutableUiState.update { it.copy(pro = it.pro.copy(purchaseStatus = ProPurchaseStatus.VERIFYING, message = null)) }
+        if (mutableUiState.value.pro.purchaseStatus == ProPurchaseStatus.VERIFYING) return
+        updatePro(ProPurchaseStatus.VERIFYING)
         viewModelScope.launch { handleProOutcome(coordinator.restorePurchase()) }
     }
 
@@ -820,7 +850,7 @@ class HomeViewModel(
         }
         if (
             result == AccountActivationResult.Activated &&
-            mutableUiState.value.pro.purchaseStatus == ProPurchaseStatus.ERROR
+            mutableUiState.value.pro.restoreAfterAuthentication
         ) {
             restoreProPurchase()
         }
@@ -832,7 +862,15 @@ class HomeViewModel(
             ProPurchaseOutcome.Pending -> updatePro(ProPurchaseStatus.PENDING, "Google Play is still processing this purchase. You can restore it later.")
             ProPurchaseOutcome.Cancelled -> updatePro(ProPurchaseStatus.CANCELLED, "Purchase cancelled. You can continue free or try again.")
             ProPurchaseOutcome.AuthenticationRequired -> {
-                updatePro(ProPurchaseStatus.ERROR, "Sign in to verify this purchase, then it will be restored.")
+                mutableUiState.update { state ->
+                    state.copy(
+                        pro = state.pro.copy(
+                            purchaseStatus = ProPurchaseStatus.ERROR,
+                            message = "Sign in to verify this purchase, then it will be restored.",
+                            restoreAfterAuthentication = true,
+                        ),
+                    )
+                }
                 if (accountCoordinator != null && persistOnboardingAquarium()) {
                     updateAccount { it.copy(step = AccountStep.METHODS, error = null) }
                 }
@@ -843,7 +881,15 @@ class HomeViewModel(
     }
 
     private fun updatePro(status: ProPurchaseStatus, message: String? = null) {
-        mutableUiState.update { state -> state.copy(pro = state.pro.copy(purchaseStatus = status, message = message)) }
+        mutableUiState.update { state ->
+            state.copy(
+                pro = state.pro.copy(
+                    purchaseStatus = status,
+                    message = message,
+                    restoreAfterAuthentication = false,
+                ),
+            )
+        }
     }
 
     private suspend fun persistOnboardingAquarium(): Boolean {
