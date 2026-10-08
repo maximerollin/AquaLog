@@ -44,10 +44,12 @@ class RoomAquariumRepository(
     database: AquaLogDatabase,
     private val generateId: () -> String,
     private val currentTimeMillis: () -> Long,
-) : AquariumRepository, AccountLocalDataSource {
+    private val onSyncNeeded: () -> Unit = {},
+) : AquariumRepository, AccountLocalDataSource, SyncLocalDataSource {
     private val aquariumDao = database.aquariumDao()
     private val sessionDao = database.sessionDao()
     private val accountDao = database.accountDao()
+    private val syncDao = database.syncDao()
 
     override fun observeCurrentAquarium(): Flow<Aquarium?> =
         aquariumDao.observeCurrent().map { it?.toDomain() }
@@ -70,7 +72,11 @@ class RoomAquariumRepository(
             volumeUnit = volumeUnit,
             createdAtEpochMillis = currentTimeMillis(),
         )
-        aquariumDao.create(aquarium.toEntity())
+        aquariumDao.create(
+            aquarium = aquarium.toEntity(),
+            syncOperation = aquarium.syncOperation(),
+        )
+        onSyncNeeded()
         return aquarium
     }
 
@@ -129,7 +135,9 @@ class RoomAquariumRepository(
         aquariumDao.createConfigured(
             aquarium = aquarium.toEntity(),
             parameters = definitions.map(ParameterDefinition::toEntity),
+            syncOperations = listOf(aquarium.syncOperation()) + definitions.map(ParameterDefinition::syncOperation),
         )
+        onSyncNeeded()
         return AquariumSetup(aquarium, definitions)
     }
 
@@ -202,7 +210,11 @@ class RoomAquariumRepository(
             measurements = measurements.map(Measurement::toEntity),
             actions = actions.map(MaintenanceAction::toEntity),
             events = events.map(SessionEvent::toEntity),
-        ).toDomain()
+            syncOperations = listOf(session.syncOperation()) +
+                measurements.map(Measurement::syncOperation) +
+                actions.map(MaintenanceAction::syncOperation) +
+                events.map(SessionEvent::syncOperation),
+        ).toDomain().also { onSyncNeeded() }
     }
 
     override fun observeLatestSession(aquariumId: String): Flow<RecordedSession?> =
@@ -213,14 +225,18 @@ class RoomAquariumRepository(
 
     override suspend fun updateSession(input: SessionEditInput): RecordedSession {
         val setup = requireNotNull(aquariumDao.getSetup(input.aquariumId)) { "Aquarium does not exist" }.toDomain()
+        val existing = requireNotNull(sessionDao.getById(input.sessionId)) { "Session does not exist" }.toDomain()
         val activeParameters = setup.parameters.filter(ParameterDefinition::isActive).associateBy(ParameterDefinition::id)
+        val existingMeasurements = existing.measurements.associateBy(Measurement::parameterDefinitionId)
+        val existingActions = existing.maintenanceActions.associateBy(MaintenanceAction::type)
+        val existingEvents = existing.events.associateBy(SessionEvent::type)
         val measurements = input.measurementInputs.mapNotNull { (parameterId, rawValue) ->
             if (rawValue.isBlank()) return@mapNotNull null
             val definition = requireNotNull(activeParameters[parameterId]) { "Measure must target an active Parameter" }
             val feedback = evaluateMeasurement(rawValue, definition)
             require(feedback.isValid) { "Measure must be a decimal value" }
             Measurement(
-                id = generateId(),
+                id = existingMeasurements[parameterId]?.id ?: generateId(),
                 sessionId = input.sessionId,
                 parameterDefinitionId = parameterId,
                 value = requireNotNull(feedback.value),
@@ -230,7 +246,7 @@ class RoomAquariumRepository(
             val quantity = if (draft.quantity.isBlank()) null else draft.quantity.normalizedDecimalOrNull()
             require(draft.quantity.isBlank() || quantity?.isFinite() == true) { "Action quantity must be a decimal value" }
             MaintenanceAction(
-                id = generateId(),
+                id = existingActions[draft.type]?.id ?: generateId(),
                 sessionId = input.sessionId,
                 type = draft.type,
                 quantity = quantity,
@@ -240,15 +256,30 @@ class RoomAquariumRepository(
         }
         val events = buildList {
             input.observation.trim().takeIf(String::isNotEmpty)?.let { note ->
-                add(SessionEvent(generateId(), input.sessionId, EventType.OBSERVATION, note))
+                add(
+                    SessionEvent(
+                        existingEvents[EventType.OBSERVATION]?.id ?: generateId(),
+                        input.sessionId,
+                        EventType.OBSERVATION,
+                        note,
+                    ),
+                )
             }
             input.incident.trim().takeIf(String::isNotEmpty)?.let { note ->
-                add(SessionEvent(generateId(), input.sessionId, EventType.INCIDENT, note))
+                add(
+                    SessionEvent(
+                        existingEvents[EventType.INCIDENT]?.id ?: generateId(),
+                        input.sessionId,
+                        EventType.INCIDENT,
+                        note,
+                    ),
+                )
             }
         }
         require(measurements.isNotEmpty() || actions.isNotEmpty() || events.isNotEmpty()) {
             "An empty Session cannot be recorded"
         }
+        val updatedSession = existing.session.copy(occurredAtEpochMillis = input.occurredAtEpochMillis)
         return sessionDao.update(
             sessionId = input.sessionId,
             aquariumId = input.aquariumId,
@@ -256,7 +287,11 @@ class RoomAquariumRepository(
             measurements = measurements.map(Measurement::toEntity),
             actions = actions.map(MaintenanceAction::toEntity),
             events = events.map(SessionEvent::toEntity),
-        ).toDomain()
+            syncOperations = listOf(updatedSession.syncOperation()) +
+                measurements.map(Measurement::syncOperation) +
+                actions.map(MaintenanceAction::syncOperation) +
+                events.map(SessionEvent::syncOperation),
+        ).toDomain().also { onSyncNeeded() }
     }
 
     override suspend fun deleteSession(sessionId: String) {
@@ -378,8 +413,95 @@ class RoomAquariumRepository(
 
     override suspend fun completeAccountMigration(accountId: String) {
         accountDao.upsert(AccountStateEntity(accountId = accountId, migrationStatus = InitialMigrationStatus.COMPLETE.storageValue))
+        onSyncNeeded()
+    }
+
+    override fun observeSyncState(): Flow<SyncState> = syncDao.observePendingCount().map { count ->
+        SyncState(
+            status = if (count == 0) SyncStatus.SYNCED else SyncStatus.PENDING,
+            pendingOperationCount = count,
+        )
+    }
+
+    override suspend fun pendingSyncBatch(limit: Int): PendingSyncBatch {
+        val operations = syncDao.pending(limit).map(SyncOperationEntity::toDomain)
+        val idsByType = operations.groupBy(SyncOperation::entityType)
+            .mapValues { (_, values) -> values.map(SyncOperation::entityId).toSet() }
+        return PendingSyncBatch(
+            operations = operations,
+            aquariums = aquariumDao.allAquariums().filter { it.id in idsByType[SyncEntityType.AQUARIUM].orEmpty() }
+                .map(AquariumEntity::toDomain),
+            parameterDefinitions = aquariumDao.allParameterDefinitions()
+                .filter { it.id in idsByType[SyncEntityType.PARAMETER_DEFINITION].orEmpty() }
+                .map(ParameterDefinitionEntity::toDomain),
+            sessions = sessionDao.allSessions().filter { it.id in idsByType[SyncEntityType.SESSION].orEmpty() }
+                .map(SessionEntity::toDomain),
+            measurements = sessionDao.allMeasurements().filter { it.id in idsByType[SyncEntityType.MEASUREMENT].orEmpty() }
+                .map(MeasurementEntity::toDomain),
+            maintenanceActions = sessionDao.allMaintenanceActions()
+                .filter { it.id in idsByType[SyncEntityType.MAINTENANCE_ACTION].orEmpty() }
+                .map(MaintenanceActionEntity::toDomain),
+            events = sessionDao.allEvents().filter { it.id in idsByType[SyncEntityType.EVENT].orEmpty() }
+                .map(SessionEventEntity::toDomain),
+        )
+    }
+
+    override suspend fun acknowledgeSyncOperations(operationIds: List<Long>) {
+        if (operationIds.isNotEmpty()) syncDao.acknowledge(operationIds)
+    }
+
+    override suspend fun recordSyncFailure(operationIds: List<Long>) {
+        if (operationIds.isNotEmpty()) syncDao.recordFailure(operationIds)
+    }
+
+    override suspend fun applyRemoteCopy(copy: InitialAccountCopy) {
+        syncDao.applyRemoteCopy(
+            aquariums = copy.aquariums.map(Aquarium::toEntity),
+            parameters = copy.parameterDefinitions.map(ParameterDefinition::toEntity),
+            sessions = copy.sessions.map { it.toEntity(idempotencyKey = "remote:${it.id}") },
+            measurements = copy.measurements.map(Measurement::toEntity),
+            actions = copy.maintenanceActions.map(MaintenanceAction::toEntity),
+            events = copy.events.map(SessionEvent::toEntity),
+        )
     }
 }
+
+private fun Aquarium.syncOperation() = SyncOperationEntity(
+    entityType = SyncEntityType.AQUARIUM.storageValue,
+    entityId = id,
+)
+
+private fun ParameterDefinition.syncOperation() = SyncOperationEntity(
+    entityType = SyncEntityType.PARAMETER_DEFINITION.storageValue,
+    entityId = id,
+)
+
+private fun Session.syncOperation() = SyncOperationEntity(
+    entityType = SyncEntityType.SESSION.storageValue,
+    entityId = id,
+)
+
+private fun Measurement.syncOperation() = SyncOperationEntity(
+    entityType = SyncEntityType.MEASUREMENT.storageValue,
+    entityId = id,
+)
+
+private fun MaintenanceAction.syncOperation() = SyncOperationEntity(
+    entityType = SyncEntityType.MAINTENANCE_ACTION.storageValue,
+    entityId = id,
+)
+
+private fun SessionEvent.syncOperation() = SyncOperationEntity(
+    entityType = SyncEntityType.EVENT.storageValue,
+    entityId = id,
+)
+
+private fun SyncOperationEntity.toDomain() = SyncOperation(
+    id = id,
+    entityType = SyncEntityType.fromStorageValue(entityType),
+    entityId = entityId,
+    attemptCount = attemptCount,
+)
 
 private fun AquariumEntity.toDomain() = Aquarium(
     id = id,

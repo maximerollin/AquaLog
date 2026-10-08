@@ -40,6 +40,7 @@ import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.SyncStatus
 
 @Composable
 fun AquaLogContent(
@@ -560,6 +561,21 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                         stringResource(R.string.aquarium_ready),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        stringResource(
+                            if (state.syncState.status == SyncStatus.SYNCED) {
+                                R.string.sync_status_synced
+                            } else {
+                                R.string.sync_status_pending
+                            },
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (state.syncState.status == SyncStatus.SYNCED) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        },
                     )
                 }
             }

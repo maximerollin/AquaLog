@@ -118,6 +118,14 @@ data class AccountInvitationEntity(
     val wasOffered: Boolean,
 )
 
+@Entity(tableName = "sync_operations")
+data class SyncOperationEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val entityType: String,
+    val entityId: String,
+    val attemptCount: Int = 0,
+)
+
 @Dao
 abstract class AquariumDao {
     @Query("SELECT * FROM aquariums ORDER BY createdAtEpochMillis ASC LIMIT 1")
@@ -147,18 +155,24 @@ abstract class AquariumDao {
     @Insert
     protected abstract suspend fun insertParameters(parameters: List<ParameterDefinitionEntity>)
 
+    @Insert
+    protected abstract suspend fun insertSyncOperations(operations: List<SyncOperationEntity>)
+
     @Transaction
-    open suspend fun create(aquarium: AquariumEntity) {
+    open suspend fun create(aquarium: AquariumEntity, syncOperation: SyncOperationEntity) {
         insert(aquarium)
+        insertSyncOperations(listOf(syncOperation))
     }
 
     @Transaction
     open suspend fun createConfigured(
         aquarium: AquariumEntity,
         parameters: List<ParameterDefinitionEntity>,
+        syncOperations: List<SyncOperationEntity>,
     ) {
         insert(aquarium)
         insertParameters(parameters)
+        insertSyncOperations(syncOperations)
     }
 }
 
@@ -176,13 +190,16 @@ abstract class SessionDao {
     @Insert
     protected abstract suspend fun insertEvents(events: List<SessionEventEntity>)
 
+    @Insert
+    protected abstract suspend fun insertSyncOperations(operations: List<SyncOperationEntity>)
+
     @Transaction
     @Query("SELECT * FROM sessions WHERE idempotencyKey = :idempotencyKey LIMIT 1")
     protected abstract suspend fun getByIdempotencyKey(idempotencyKey: String): RecordedSessionEntity?
 
     @Transaction
     @Query("SELECT * FROM sessions WHERE id = :sessionId LIMIT 1")
-    protected abstract suspend fun getById(sessionId: String): RecordedSessionEntity?
+    abstract suspend fun getById(sessionId: String): RecordedSessionEntity?
 
     @Transaction
     @Query("SELECT * FROM sessions WHERE id = :sessionId LIMIT 1")
@@ -257,12 +274,14 @@ abstract class SessionDao {
         measurements: List<MeasurementEntity>,
         actions: List<MaintenanceActionEntity>,
         events: List<SessionEventEntity>,
+        syncOperations: List<SyncOperationEntity>,
     ): RecordedSessionEntity {
         val inserted = insertSession(session) != -1L
         if (inserted) {
             if (measurements.isNotEmpty()) insertMeasurements(measurements)
             if (actions.isNotEmpty()) insertMaintenanceActions(actions)
             if (events.isNotEmpty()) insertEvents(events)
+            insertSyncOperations(syncOperations)
         }
         return requireNotNull(getByIdempotencyKey(session.idempotencyKey))
     }
@@ -275,6 +294,7 @@ abstract class SessionDao {
         measurements: List<MeasurementEntity>,
         actions: List<MaintenanceActionEntity>,
         events: List<SessionEventEntity>,
+        syncOperations: List<SyncOperationEntity>,
     ): RecordedSessionEntity {
         require(updateOccurredAt(sessionId, aquariumId, occurredAtEpochMillis) == 1) {
             "Session does not exist in this Aquarium"
@@ -285,6 +305,7 @@ abstract class SessionDao {
         if (measurements.isNotEmpty()) insertMeasurements(measurements)
         if (actions.isNotEmpty()) insertMaintenanceActions(actions)
         if (events.isNotEmpty()) insertEvents(events)
+        insertSyncOperations(syncOperations)
         return requireNotNull(getById(sessionId))
     }
 
@@ -313,6 +334,77 @@ abstract class AccountDao {
     abstract suspend fun upsertInvitation(invitation: AccountInvitationEntity)
 }
 
+@Dao
+abstract class SyncDao {
+    @Query("SELECT COUNT(*) FROM sync_operations")
+    abstract fun observePendingCount(): Flow<Int>
+
+    @Query("SELECT * FROM sync_operations ORDER BY id ASC LIMIT :limit")
+    abstract suspend fun pending(limit: Int): List<SyncOperationEntity>
+
+    @Query("DELETE FROM sync_operations WHERE id IN (:operationIds)")
+    abstract suspend fun acknowledge(operationIds: List<Long>)
+
+    @Query("UPDATE sync_operations SET attemptCount = attemptCount + 1 WHERE id IN (:operationIds)")
+    abstract suspend fun recordFailure(operationIds: List<Long>)
+
+    @Upsert
+    protected abstract suspend fun upsertAquariums(aquariums: List<AquariumEntity>)
+
+    @Upsert
+    protected abstract suspend fun upsertParameterDefinitions(parameters: List<ParameterDefinitionEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    protected abstract suspend fun insertRemoteSessions(sessions: List<SessionEntity>)
+
+    @Query(
+        "UPDATE sessions SET aquariumId = :aquariumId, occurredAtEpochMillis = :occurredAtEpochMillis, " +
+            "createdAtEpochMillis = :createdAtEpochMillis WHERE id = :id",
+    )
+    protected abstract suspend fun updateRemoteSession(
+        id: String,
+        aquariumId: String,
+        occurredAtEpochMillis: Long,
+        createdAtEpochMillis: Long,
+    )
+
+    @Upsert
+    protected abstract suspend fun upsertMeasurements(measurements: List<MeasurementEntity>)
+
+    @Upsert
+    protected abstract suspend fun upsertMaintenanceActions(actions: List<MaintenanceActionEntity>)
+
+    @Upsert
+    protected abstract suspend fun upsertEvents(events: List<SessionEventEntity>)
+
+    @Transaction
+    open suspend fun applyRemoteCopy(
+        aquariums: List<AquariumEntity>,
+        parameters: List<ParameterDefinitionEntity>,
+        sessions: List<SessionEntity>,
+        measurements: List<MeasurementEntity>,
+        actions: List<MaintenanceActionEntity>,
+        events: List<SessionEventEntity>,
+    ) {
+        if (aquariums.isNotEmpty()) upsertAquariums(aquariums)
+        if (parameters.isNotEmpty()) upsertParameterDefinitions(parameters)
+        if (sessions.isNotEmpty()) {
+            insertRemoteSessions(sessions)
+            sessions.forEach { session ->
+                updateRemoteSession(
+                    session.id,
+                    session.aquariumId,
+                    session.occurredAtEpochMillis,
+                    session.createdAtEpochMillis,
+                )
+            }
+        }
+        if (measurements.isNotEmpty()) upsertMeasurements(measurements)
+        if (actions.isNotEmpty()) upsertMaintenanceActions(actions)
+        if (events.isNotEmpty()) upsertEvents(events)
+    }
+}
+
 @Database(
     entities = [
         AquariumEntity::class,
@@ -323,8 +415,9 @@ abstract class AccountDao {
         SessionEventEntity::class,
         AccountStateEntity::class,
         AccountInvitationEntity::class,
+        SyncOperationEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -332,6 +425,7 @@ abstract class AquaLogDatabase : RoomDatabase() {
     abstract fun aquariumDao(): AquariumDao
     abstract fun sessionDao(): SessionDao
     abstract fun accountDao(): AccountDao
+    abstract fun syncDao(): SyncDao
 }
 
 @Suppress("NO_ACTUAL_FOR_EXPECT")
@@ -344,7 +438,7 @@ fun createAquaLogDatabase(
 ): AquaLogDatabase = builder
     .setDriver(BundledSQLiteDriver())
     .setQueryCoroutineContext(Dispatchers.IO)
-    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
     .build()
 
 private val MIGRATION_1_2 = Migration(1, 2) { connection ->
@@ -399,5 +493,11 @@ private val MIGRATION_4_5 = Migration(4, 5) { connection ->
     )
     connection.execSQL(
         "CREATE TABLE IF NOT EXISTS account_invitation (singletonId INTEGER NOT NULL PRIMARY KEY, wasOffered INTEGER NOT NULL)",
+    )
+}
+
+private val MIGRATION_5_6 = Migration(5, 6) { connection ->
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS sync_operations (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, entityType TEXT NOT NULL, entityId TEXT NOT NULL, attemptCount INTEGER NOT NULL)",
     )
 }

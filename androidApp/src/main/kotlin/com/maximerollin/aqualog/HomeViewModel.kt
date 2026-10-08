@@ -21,6 +21,9 @@ import com.maximerollin.aqualog.shared.RapidSessionContext
 import com.maximerollin.aqualog.shared.RapidSessionInput
 import com.maximerollin.aqualog.shared.RecordedSession
 import com.maximerollin.aqualog.shared.SessionEditInput
+import com.maximerollin.aqualog.shared.SyncLocalDataSource
+import com.maximerollin.aqualog.shared.SyncState
+import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.TimelineFilter
 import com.maximerollin.aqualog.shared.TimelineSession
 import com.maximerollin.aqualog.shared.TrendPeriod
@@ -173,6 +176,7 @@ data class HomeUiState(
     val historySection: HistorySection = HistorySection.CHRONOLOGY,
     val timeline: TimelineUiState = TimelineUiState(),
     val trends: TrendsUiState = TrendsUiState(),
+    val syncState: SyncState = SyncState(SyncStatus.SYNCED, 0),
 )
 
 data class RapidSessionUiState(
@@ -281,6 +285,13 @@ class HomeViewModel(
                             it.copy(accountInvitationPrompt = AccountInvitationPrompt.REMINDER)
                         }
                     }
+                }
+            }
+        }
+        (aquariumRepository as? SyncLocalDataSource)?.let { syncLocalData ->
+            viewModelScope.launch {
+                syncLocalData.observeSyncState().collect { syncState ->
+                    mutableUiState.update { it.copy(syncState = syncState) }
                 }
             }
         }
