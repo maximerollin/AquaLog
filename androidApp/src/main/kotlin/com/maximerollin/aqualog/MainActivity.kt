@@ -18,13 +18,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maximerollin.aqualog.ui.theme.AquaLogTheme
 
 class MainActivity : ComponentActivity() {
+    private val proPurchaseCoordinator by lazy {
+        (application as AquaLogApplication).proPurchaseCoordinator(this)
+    }
     private val homeViewModel: HomeViewModel by viewModels {
         val application = application as AquaLogApplication
-        HomeViewModel.factory(application.aquariumRepository, application.accountCoordinator)
+        HomeViewModel.factory(
+            application.aquariumRepository,
+            application.accountCoordinator,
+            proPurchaseCoordinator,
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        proPurchaseCoordinator
         setContent {
             AquaLogTheme {
                 AquaLogApp(homeViewModel)

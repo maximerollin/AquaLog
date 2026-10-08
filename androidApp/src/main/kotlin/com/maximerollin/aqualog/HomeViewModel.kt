@@ -17,6 +17,9 @@ import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinitionDraft
+import com.maximerollin.aqualog.shared.AnnualProOffer
+import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
+import com.maximerollin.aqualog.shared.ProPurchaseOutcome
 import com.maximerollin.aqualog.shared.RapidSessionContext
 import com.maximerollin.aqualog.shared.RapidSessionInput
 import com.maximerollin.aqualog.shared.RecordedSession
@@ -110,6 +113,24 @@ data class TrendsUiState(
     val hasRecoverableError: Boolean = false,
 )
 
+enum class ProPurchaseStatus {
+    IDLE,
+    AWAITING_PLAY_CONFIRMATION,
+    PENDING,
+    VERIFYING,
+    ACTIVE,
+    CANCELLED,
+    ERROR,
+}
+
+data class ProUiState(
+    val showPaywall: Boolean = false,
+    val isLoadingOffer: Boolean = false,
+    val offer: AnnualProOffer? = null,
+    val purchaseStatus: ProPurchaseStatus = ProPurchaseStatus.IDLE,
+    val message: String? = null,
+)
+
 data class ParameterEditorState(
     val parameter: BuiltInParameter,
     val isActive: Boolean,
@@ -173,6 +194,7 @@ data class HomeUiState(
     val historySection: HistorySection = HistorySection.CHRONOLOGY,
     val timeline: TimelineUiState = TimelineUiState(),
     val trends: TrendsUiState = TrendsUiState(),
+    val pro: ProUiState = ProUiState(),
 )
 
 data class RapidSessionUiState(
@@ -227,6 +249,7 @@ private data class MaintenanceActionDraftSnapshot(
 class HomeViewModel(
     private val aquariumRepository: AquariumRepository,
     private val accountCoordinator: AccountActivationCoordinator? = null,
+    private val proPurchaseCoordinator: ProPurchaseCoordinator? = null,
     private val currentTimeMillis: () -> Long = System::currentTimeMillis,
     private val generateInteractionId: () -> String = { UUID.randomUUID().toString() },
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
@@ -281,6 +304,16 @@ class HomeViewModel(
                             it.copy(accountInvitationPrompt = AccountInvitationPrompt.REMINDER)
                         }
                     }
+                }
+            }
+        }
+        if (proPurchaseCoordinator != null) {
+            viewModelScope.launch {
+                proPurchaseCoordinator.purchaseUpdates.collect { update ->
+                    mutableUiState.update { state ->
+                        state.copy(pro = state.pro.copy(purchaseStatus = ProPurchaseStatus.VERIFYING, message = null))
+                    }
+                    handleProOutcome(proPurchaseCoordinator.resolve(update))
                 }
             }
         }
@@ -368,27 +401,59 @@ class HomeViewModel(
         }
     }
 
-    fun continueToPaywall() = moveTo(OnboardingStep.PAYWALL)
+    fun continueToPaywall() {
+        moveTo(OnboardingStep.PAYWALL)
+        mutableUiState.update { it.copy(pro = it.pro.copy(showPaywall = true)) }
+        loadProOffer()
+    }
+
+    fun openProPaywall() {
+        mutableUiState.update { it.copy(pro = it.pro.copy(showPaywall = true)) }
+        loadProOffer()
+    }
+
+    fun closeProPaywall() {
+        if (mutableUiState.value.setup == null) return
+        mutableUiState.update { it.copy(pro = it.pro.copy(showPaywall = false)) }
+    }
+
+    fun loadProOffer() {
+        val coordinator = proPurchaseCoordinator ?: run {
+            mutableUiState.update {
+                it.copy(pro = it.pro.copy(isLoadingOffer = false, purchaseStatus = ProPurchaseStatus.ERROR, message = "Google Play is unavailable"))
+            }
+            return
+        }
+        mutableUiState.update { it.copy(pro = it.pro.copy(isLoadingOffer = true, message = null)) }
+        viewModelScope.launch {
+            runCatching { coordinator.loadOffer() }
+                .onSuccess { offer ->
+                    mutableUiState.update { state ->
+                        state.copy(pro = state.pro.copy(isLoadingOffer = false, offer = offer, purchaseStatus = ProPurchaseStatus.IDLE))
+                    }
+                }
+                .onFailure {
+                    mutableUiState.update { state ->
+                        state.copy(pro = state.pro.copy(isLoadingOffer = false, purchaseStatus = ProPurchaseStatus.ERROR, message = "Google Play offer unavailable. Try again."))
+                    }
+                }
+        }
+    }
+
+    fun startProPurchase() {
+        val coordinator = proPurchaseCoordinator ?: return
+        mutableUiState.update { it.copy(pro = it.pro.copy(message = null)) }
+        viewModelScope.launch { handleProOutcome(coordinator.startPurchase()) }
+    }
+
+    fun restoreProPurchase() {
+        val coordinator = proPurchaseCoordinator ?: return
+        mutableUiState.update { it.copy(pro = it.pro.copy(purchaseStatus = ProPurchaseStatus.VERIFYING, message = null)) }
+        viewModelScope.launch { handleProOutcome(coordinator.restorePurchase()) }
+    }
 
     fun finishForFree() {
-        val state = mutableUiState.value
-        if (state.isSaving) return
-        val volume = state.volumeInput.toDecimalOrNull() ?: return
-        val parameters = configuredParameters() ?: return
-        mutableUiState.update { it.copy(isSaving = true) }
-        viewModelScope.launch {
-            runCatching {
-                aquariumRepository.createConfiguredAquarium(
-                    name = state.aquariumName,
-                    volume = volume,
-                    volumeUnit = state.volumeUnit,
-                    profile = state.profile,
-                    parameters = parameters,
-                )
-            }.onFailure {
-                mutableUiState.update { current -> current.copy(isSaving = false) }
-            }
-        }
+        viewModelScope.launch { persistOnboardingAquarium() }
     }
 
     fun openRapidSession() {
@@ -753,6 +818,64 @@ class HomeViewModel(
                 )
             }
         }
+        if (
+            result == AccountActivationResult.Activated &&
+            mutableUiState.value.pro.purchaseStatus == ProPurchaseStatus.ERROR
+        ) {
+            restoreProPurchase()
+        }
+    }
+
+    private suspend fun handleProOutcome(outcome: ProPurchaseOutcome) {
+        when (outcome) {
+            ProPurchaseOutcome.AwaitingPlayConfirmation -> updatePro(ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION)
+            ProPurchaseOutcome.Pending -> updatePro(ProPurchaseStatus.PENDING, "Google Play is still processing this purchase. You can restore it later.")
+            ProPurchaseOutcome.Cancelled -> updatePro(ProPurchaseStatus.CANCELLED, "Purchase cancelled. You can continue free or try again.")
+            ProPurchaseOutcome.AuthenticationRequired -> {
+                updatePro(ProPurchaseStatus.ERROR, "Sign in to verify this purchase, then it will be restored.")
+                if (accountCoordinator != null && persistOnboardingAquarium()) {
+                    updateAccount { it.copy(step = AccountStep.METHODS, error = null) }
+                }
+            }
+            is ProPurchaseOutcome.Entitled -> updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
+            is ProPurchaseOutcome.Failed -> updatePro(ProPurchaseStatus.ERROR, outcome.reason)
+        }
+    }
+
+    private fun updatePro(status: ProPurchaseStatus, message: String? = null) {
+        mutableUiState.update { state -> state.copy(pro = state.pro.copy(purchaseStatus = status, message = message)) }
+    }
+
+    private suspend fun persistOnboardingAquarium(): Boolean {
+        val state = mutableUiState.value
+        if (state.setup != null) return true
+        if (state.isSaving) return false
+        val volume = state.volumeInput.toDecimalOrNull() ?: return false
+        val parameters = configuredParameters() ?: return false
+        mutableUiState.update { it.copy(isSaving = true) }
+        return runCatching {
+            aquariumRepository.createConfiguredAquarium(
+                name = state.aquariumName,
+                volume = volume,
+                volumeUnit = state.volumeUnit,
+                profile = state.profile,
+                parameters = parameters,
+            )
+        }.fold(
+            onSuccess = { true },
+            onFailure = {
+                mutableUiState.update { current ->
+                    current.copy(
+                        isSaving = false,
+                        pro = current.pro.copy(
+                            purchaseStatus = ProPurchaseStatus.ERROR,
+                            message = "Purchase confirmed, but the Aquarium could not be saved. Try restoring later.",
+                        ),
+                    )
+                }
+                false
+            },
+        )
     }
 
     private fun updateAccount(transform: (AccountUiState) -> AccountUiState) {
@@ -922,6 +1045,7 @@ class HomeViewModel(
         fun factory(
             repository: AquariumRepository,
             accountCoordinator: AccountActivationCoordinator? = null,
+            proPurchaseCoordinator: ProPurchaseCoordinator? = null,
         ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -929,6 +1053,7 @@ class HomeViewModel(
                     HomeViewModel(
                         aquariumRepository = repository,
                         accountCoordinator = accountCoordinator,
+                        proPurchaseCoordinator = proPurchaseCoordinator,
                         savedStateHandle = extras.createSavedStateHandle(),
                     ) as T
             }

@@ -64,6 +64,16 @@ fun AquaLogContent(
             viewModel = viewModel,
             modifier = modifier,
         )
+        state.setup != null && state.pro.showPaywall -> PaywallScreen(
+            pro = state.pro,
+            isSaving = state.isSaving,
+            onboarding = false,
+            onStartPurchase = viewModel::startProPurchase,
+            onRestore = viewModel::restoreProPurchase,
+            onRetryOffer = viewModel::loadProOffer,
+            onContinue = viewModel::closeProPaywall,
+            modifier = modifier,
+        )
         state.setup != null -> AquariumShell(state, viewModel, modifier)
         state.step == OnboardingStep.WELCOME -> WelcomeScreen(viewModel::startOnboarding, modifier)
         state.step == OnboardingStep.PROFILE -> ProfileScreen(
@@ -89,8 +99,13 @@ fun AquaLogContent(
             modifier = modifier,
         )
         else -> PaywallScreen(
+            pro = state.pro,
             isSaving = state.isSaving,
-            onContinueForFree = viewModel::finishForFree,
+            onboarding = true,
+            onStartPurchase = viewModel::startProPurchase,
+            onRestore = viewModel::restoreProPurchase,
+            onRetryOffer = viewModel::loadProOffer,
+            onContinue = viewModel::finishForFree,
             modifier = modifier,
         )
     }
@@ -199,10 +214,7 @@ private fun AquariumShell(state: HomeUiState, viewModel: HomeViewModel, modifier
         when (state.destination) {
             MainDestination.HOME -> AquariumHome(state, viewModel, contentModifier)
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
-             MainDestination.SETTINGS -> StandardScreen(contentModifier) {
-                 Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium)
-                 Text(stringResource(R.string.settings_placeholder))
-             }
+             MainDestination.SETTINGS -> SettingsScreen(state, viewModel, contentModifier)
          }
      }
  }
@@ -509,22 +521,123 @@ private fun PracticeScreen(
 
 @Composable
 private fun PaywallScreen(
+    pro: ProUiState,
     isSaving: Boolean,
-    onContinueForFree: () -> Unit,
+    onboarding: Boolean,
+    onStartPurchase: () -> Unit,
+    onRestore: () -> Unit,
+    onRetryOffer: () -> Unit,
+    onContinue: () -> Unit,
     modifier: Modifier,
 ) {
     StandardScreen(modifier) {
         ScreenHeading(R.string.paywall_title, R.string.paywall_description)
         PlanCard(R.string.free_plan, R.string.free_plan_description)
         PlanCard(R.string.pro_plan, R.string.pro_plan_description)
+        when {
+            pro.isLoadingOffer -> {
+                CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
+                Text(stringResource(R.string.loading_google_play_offer))
+            }
+            pro.offer != null -> {
+                Text(
+                    stringResource(
+                        R.string.pro_offer_summary,
+                        pro.offer.formattedPrice,
+                        pro.offer.trialDays,
+                        pro.offer.formattedBillingDate,
+                    ),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Button(
+                    onClick = onStartPurchase,
+                    enabled = pro.purchaseStatus !in setOf(
+                        ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION,
+                        ProPurchaseStatus.PENDING,
+                        ProPurchaseStatus.VERIFYING,
+                        ProPurchaseStatus.ACTIVE,
+                    ),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                ) {
+                    Text(stringResource(R.string.start_trial_in_google_play))
+                }
+            }
+            else -> {
+                Text(stringResource(R.string.google_play_offer_unavailable), color = MaterialTheme.colorScheme.error)
+                TextButton(onClick = onRetryOffer, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Text(stringResource(R.string.try_again))
+                }
+            }
+        }
+        pro.message?.let { message ->
+            Text(
+                message,
+                color = if (pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
+        TextButton(
+            onClick = onRestore,
+            enabled = pro.purchaseStatus != ProPurchaseStatus.VERIFYING,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+        ) {
+            Text(stringResource(R.string.restore_purchase))
+        }
         Spacer(Modifier.weight(1f))
         Button(
-            onClick = onContinueForFree,
+            onClick = onContinue,
             enabled = !isSaving,
             modifier = Modifier.fillMaxWidth().height(48.dp),
         ) {
-            if (isSaving) CircularProgressIndicator() else Text(stringResource(R.string.continue_for_free))
+            if (isSaving) {
+                CircularProgressIndicator()
+            } else {
+                Text(
+                    stringResource(
+                        when {
+                            !onboarding -> R.string.back_to_settings
+                            pro.purchaseStatus == ProPurchaseStatus.ACTIVE -> R.string.continue_with_pro
+                            else -> R.string.continue_for_free
+                        },
+                    ),
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun SettingsScreen(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
+    StandardScreen(modifier) {
+        Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium)
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    stringResource(
+                        if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
+                            R.string.pro_active
+                        } else {
+                            R.string.free_plan
+                        },
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    stringResource(R.string.subscription_settings_description),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(
+                    onClick = viewModel::openProPaywall,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                ) {
+                    Text(stringResource(R.string.view_free_and_pro))
+                }
+            }
+        }
+        Text(stringResource(R.string.settings_placeholder))
     }
 }
 

@@ -1,10 +1,12 @@
 package com.maximerollin.aqualog
 
 import android.app.Application
+import android.app.Activity
 import com.maximerollin.aqualog.shared.AQUA_LOG_DATABASE_NAME
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
+import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
 import java.util.UUID
@@ -35,4 +37,21 @@ open class AquaLogApplication : Application() {
                 tokenStorage = tokenStorage,
             )
         }
+
+    private val googlePlayBillingGateway by lazy { GooglePlayBillingGateway(this) }
+    private val defaultProPurchaseCoordinator by lazy {
+        val tokenStorage = AndroidSecureTokenStorage(this)
+        ProPurchaseCoordinator(
+            billingGateway = googlePlayBillingGateway,
+            purchaseVerifier = SupabaseProPurchaseVerifier(
+                configuration = SupabaseConfiguration.fromBuildConfig(),
+                tokenStorage = tokenStorage,
+            ),
+        )
+    }
+
+    open fun proPurchaseCoordinator(activity: Activity): ProPurchaseCoordinator {
+        googlePlayBillingGateway.attach(activity)
+        return defaultProPurchaseCoordinator
+    }
 }
