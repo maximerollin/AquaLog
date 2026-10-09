@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Rule
@@ -74,9 +75,11 @@ class SessionReliabilityFlowTest {
         composeRule.onNodeWithText("Fertilization").performClick()
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Hide observation"))
         composeRule.onNodeWithText("Observation").performTextClearance()
+        closeSoftKeyboard()
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Add incident"))
         composeRule.onNodeWithText("Add incident").performClick()
-        waitForText("Hide incident")
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Hide incident"))
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Incident"))
         composeRule.onNodeWithText("Incident").performTextInput("Filtre corrigé")
         composeRule.onNodeWithText("Save changes").performClick()
 
