@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -82,7 +83,7 @@ class SessionReliabilityFlowTest {
         waitForText("Session details")
         waitForText("Temperature · 25.1 °C")
         composeRule.onNodeWithText("Temperature · 25.1 °C").assertIsDisplayed()
-        composeRule.onNodeWithText("Fertilization · 1 mL").assertIsDisplayed()
+        composeRule.onNodeWithText("Fertilization · 1 mL").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Incident · Filtre corrigé").assertIsDisplayed()
         scenario.close()
 

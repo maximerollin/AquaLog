@@ -38,30 +38,27 @@ class TaskFlowTest {
     val composeRule = createEmptyComposeRule()
 
     @Test
-    fun taskDateAndOptionalTime_areChosenWithTouchFriendlyPickers() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val application = context.applicationContext as TestAquaLogApplication
-        application.resetRepository()
-        runBlocking {
-            application.aquariumRepository.createConfiguredAquarium(
-                name = "Amazonien",
-                volume = 120.0,
-                volumeUnit = VolumeUnit.LITERS,
-                profile = AquariumProfile.ESTABLISHED,
-                parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
-            )
+    fun taskDate_isChosenWithTouchFriendlyPicker() {
+        val scenario = launchTaskScreen()
+        try {
+            composeRule.onNodeWithText("First due date").performClick()
+            onView(isAssignableFrom(DatePicker::class.java)).check(matches(isDisplayed()))
+            pressBack()
+        } finally {
+            scenario.close()
         }
-        val scenario = ActivityScenario.launch(MainActivity::class.java)
+    }
 
-        composeRule.onNodeWithText("Tasks & reminders").performClick()
-        composeRule.onNodeWithText("First due date").performClick()
-        onView(isAssignableFrom(DatePicker::class.java)).check(matches(isDisplayed()))
-        pressBack()
-        composeRule.onNodeWithText("Time (optional)").performClick()
-        onView(isAssignableFrom(TimePicker::class.java)).check(matches(isDisplayed()))
-        pressBack()
-
-        scenario.close()
+    @Test
+    fun optionalTaskTime_isChosenWithTouchFriendlyPicker() {
+        val scenario = launchTaskScreen()
+        try {
+            composeRule.onNodeWithText("Time (optional)").performClick()
+            onView(isAssignableFrom(TimePicker::class.java)).check(matches(isDisplayed()))
+            pressBack()
+        } finally {
+            scenario.close()
+        }
     }
 
     @Test
@@ -89,50 +86,70 @@ class TaskFlowTest {
             ).occurrence
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
-
-        composeRule.onNodeWithText("Tasks & reminders").performClick()
-        composeRule.onNodeWithText("Change filter wool").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText("Done").performScrollTo().assertIsDisplayed().performClick()
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            runBlocking {
-                application.aquariumRepository.observeResolvedTaskOccurrences().first()
-                    .any { it.id == firstOccurrence.id }
+        try {
+            composeRule.onNodeWithText("Tasks & reminders").performClick()
+            composeRule.onNodeWithText("Change filter wool").performScrollTo().assertIsDisplayed()
+            composeRule.onNodeWithText("Done").performScrollTo().assertIsDisplayed().performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                runBlocking {
+                    application.aquariumRepository.observeResolvedTaskOccurrences().first()
+                        .any { it.id == firstOccurrence.id }
+                }
             }
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                application.recordingTaskReminderScheduler.canceledOccurrenceIds.contains(firstOccurrence.id)
+            }
+            runBlocking {
+                application.aquariumRepository.saveRapidSession(
+                    RapidSessionInput(
+                        aquariumId = firstOccurrence.aquariumId,
+                        occurredAtEpochMillis = System.currentTimeMillis() + 60_000L,
+                        idempotencyKey = "newer-than-task-resolution",
+                        observation = "Newer Session",
+                    ),
+                )
+            }
+            composeRule.onNodeWithTag("task-list").performScrollToIndex(0)
+            composeRule.onNodeWithText("Back").performClick()
+            composeRule.onNodeWithText("History").performClick()
+            composeRule.onNodeWithText("Task occurrence").assertIsDisplayed()
+            composeRule.onNodeWithText("Change filter wool").assertIsDisplayed()
+            composeRule.onNodeWithText("Session").assertIsDisplayed()
+            val sessionTop = composeRule.onNodeWithText("Session").fetchSemanticsNode().boundsInRoot.top
+            val taskTop = composeRule.onNodeWithText("Task occurrence").fetchSemanticsNode().boundsInRoot.top
+            assertTrue("Newer Session should appear above the older resolved Task", sessionTop < taskTop)
+
+            runBlocking {
+                val pending = application.aquariumRepository.observePendingTaskOccurrences().first()
+                val resolved = application.aquariumRepository.observeResolvedTaskOccurrences().first()
+                val timeline = application.aquariumRepository.observeTimeline(
+                    com.maximerollin.aqualog.shared.TimelineFilter(),
+                ).first()
+                assertEquals(TaskDate(2026, 10, 14), pending.single().dueDate)
+                assertTrue(application.recordingTaskReminderScheduler.scheduledOccurrenceIds.contains(pending.single().id))
+                assertEquals(firstOccurrence.id, resolved.single().id)
+                assertEquals(1, timeline.size)
+            }
+        } finally {
+            scenario.close()
         }
-        composeRule.waitUntil(timeoutMillis = 5_000) {
-            application.recordingTaskReminderScheduler.canceledOccurrenceIds.contains(firstOccurrence.id)
-        }
+    }
+
+    private fun launchTaskScreen(): ActivityScenario<MainActivity> {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val application = context.applicationContext as TestAquaLogApplication
+        application.resetRepository()
         runBlocking {
-            application.aquariumRepository.saveRapidSession(
-                RapidSessionInput(
-                    aquariumId = firstOccurrence.aquariumId,
-                    occurredAtEpochMillis = System.currentTimeMillis() + 60_000L,
-                    idempotencyKey = "newer-than-task-resolution",
-                    observation = "Newer Session",
-                ),
+            application.aquariumRepository.createConfiguredAquarium(
+                name = "Amazonien",
+                volume = 120.0,
+                volumeUnit = VolumeUnit.LITERS,
+                profile = AquariumProfile.ESTABLISHED,
+                parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
             )
         }
-        composeRule.onNodeWithTag("task-list").performScrollToIndex(0)
-        composeRule.onNodeWithText("Back").performClick()
-        composeRule.onNodeWithText("History").performClick()
-        composeRule.onNodeWithText("Task occurrence").assertIsDisplayed()
-        composeRule.onNodeWithText("Change filter wool").assertIsDisplayed()
-        composeRule.onNodeWithText("Session").assertIsDisplayed()
-        val sessionTop = composeRule.onNodeWithText("Session").fetchSemanticsNode().boundsInRoot.top
-        val taskTop = composeRule.onNodeWithText("Task occurrence").fetchSemanticsNode().boundsInRoot.top
-        assertTrue("Newer Session should appear above the older resolved Task", sessionTop < taskTop)
-
-        runBlocking {
-            val pending = application.aquariumRepository.observePendingTaskOccurrences().first()
-            val resolved = application.aquariumRepository.observeResolvedTaskOccurrences().first()
-            val timeline = application.aquariumRepository.observeTimeline(
-                com.maximerollin.aqualog.shared.TimelineFilter(),
-            ).first()
-            assertEquals(TaskDate(2026, 10, 14), pending.single().dueDate)
-            assertTrue(application.recordingTaskReminderScheduler.scheduledOccurrenceIds.contains(pending.single().id))
-            assertEquals(firstOccurrence.id, resolved.single().id)
-            assertEquals(1, timeline.size)
+        return ActivityScenario.launch<MainActivity>(MainActivity::class.java).also {
+            composeRule.onNodeWithText("Tasks & reminders").performClick()
         }
-        scenario.close()
     }
 }
