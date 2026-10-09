@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.closeSoftKeyboard
@@ -33,10 +34,11 @@ class SessionReliabilityFlowTest {
         waitForText("Measurements")
 
         val temperature = composeRule.onNodeWithContentDescription("Measurement for Temperature")
-        temperature.performTextInput("24,5")
+        temperature.performTextReplacement("24,5")
         scenario.moveToState(Lifecycle.State.CREATED)
         scenario.moveToState(Lifecycle.State.RESUMED)
-        temperature.assertTextContains("24,5")
+        composeRule.onNodeWithContentDescription("Measurement for Temperature")
+            .assertTextContains("24,5")
 
         scenario.recreate()
         waitForText("Measurements")
