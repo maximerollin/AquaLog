@@ -26,6 +26,12 @@ import com.maximerollin.aqualog.shared.RecordedSession
 import com.maximerollin.aqualog.shared.SessionEditInput
 import com.maximerollin.aqualog.shared.TimelineFilter
 import com.maximerollin.aqualog.shared.TimelineSession
+import com.maximerollin.aqualog.shared.TaskDate
+import com.maximerollin.aqualog.shared.TaskInput
+import com.maximerollin.aqualog.shared.TaskOccurrence
+import com.maximerollin.aqualog.shared.TaskRecurrence
+import com.maximerollin.aqualog.shared.TaskResolution
+import com.maximerollin.aqualog.shared.TaskResolutionInput
 import com.maximerollin.aqualog.shared.TrendPeriod
 import com.maximerollin.aqualog.shared.TrendSnapshot
 import com.maximerollin.aqualog.shared.VolumeUnit
@@ -39,6 +45,9 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.Serializable
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 import java.util.UUID
 
 enum class OnboardingStep {
@@ -97,12 +106,25 @@ data class TimelineUiState(
     val isLoading: Boolean = false,
     val isOffline: Boolean = true,
     val entries: List<TimelineSession> = emptyList(),
+    val resolvedTaskOccurrences: List<TaskOccurrence> = emptyList(),
     val period: TimelinePeriod = TimelinePeriod.ALL,
     val aquariumId: String? = null,
     val parameterDefinitionId: String? = null,
     val maintenanceActionType: MaintenanceActionType? = null,
     val selectedSessionId: String? = null,
     val hasRecoverableError: Boolean = false,
+)
+
+data class TaskUiState(
+    val isOpen: Boolean = false,
+    val title: String = "",
+    val dueDate: String = "",
+    val time: String = "",
+    val recurrence: TaskRecurrence = TaskRecurrence.ONCE,
+    val pendingOccurrences: List<TaskOccurrence> = emptyList(),
+    val showValidationError: Boolean = false,
+    val isSaving: Boolean = false,
+    val batteryOptimizationActive: Boolean = false,
 )
 
 data class TrendsUiState(
@@ -197,6 +219,7 @@ data class HomeUiState(
     val timeline: TimelineUiState = TimelineUiState(),
     val trends: TrendsUiState = TrendsUiState(),
     val pro: ProUiState = ProUiState(),
+    val tasks: TaskUiState = TaskUiState(),
 )
 
 data class RapidSessionUiState(
@@ -250,9 +273,11 @@ private data class MaintenanceActionDraftSnapshot(
 
 class HomeViewModel(
     private val aquariumRepository: AquariumRepository,
+    private val taskReminderScheduler: TaskReminderScheduler = NoOpTaskReminderScheduler,
     private val accountCoordinator: AccountActivationCoordinator? = null,
     private val proPurchaseCoordinator: ProPurchaseCoordinator? = null,
     private val currentTimeMillis: () -> Long = System::currentTimeMillis,
+    private val currentTimeZoneId: () -> String = { ZoneId.systemDefault().id },
     private val generateInteractionId: () -> String = { UUID.randomUUID().toString() },
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
@@ -292,6 +317,23 @@ class HomeViewModel(
                             )
                         }
                     }
+                }
+            }
+        }
+        viewModelScope.launch {
+            aquariumRepository.observePendingTaskOccurrences().collectLatest { occurrences ->
+                taskReminderScheduler.reconcile(occurrences)
+                mutableUiState.update { state ->
+                    state.copy(tasks = state.tasks.copy(pendingOccurrences = occurrences))
+                }
+            }
+        }
+        viewModelScope.launch {
+            aquariumRepository.observeResolvedTaskOccurrences().collectLatest { occurrences ->
+                mutableUiState.update { state ->
+                    state.copy(
+                        timeline = state.timeline.copy(resolvedTaskOccurrences = occurrences),
+                    )
                 }
             }
         }
@@ -513,6 +555,99 @@ class HomeViewModel(
                     savedStateHandle[rapidSessionDraftKey] = hydrated.toSnapshot()
                     state.copy(rapidSession = hydrated)
                 }
+            }
+        }
+    }
+
+    fun openTasks() {
+        val today = LocalDate.now(ZoneId.of(currentTimeZoneId()))
+        mutableUiState.update { state ->
+            state.copy(
+                tasks = state.tasks.copy(
+                    isOpen = true,
+                    dueDate = state.tasks.dueDate.ifBlank { today.toString() },
+                    batteryOptimizationActive = taskReminderScheduler.isBatteryOptimizationActive(),
+                ),
+            )
+        }
+    }
+
+    fun closeTasks() {
+        mutableUiState.update { it.copy(tasks = it.tasks.copy(isOpen = false)) }
+    }
+
+    fun updateTaskTitle(value: String) = updateTasks { it.copy(title = value, showValidationError = false) }
+
+    fun updateTaskDueDate(value: String) = updateTasks { it.copy(dueDate = value, showValidationError = false) }
+
+    fun updateTaskTime(value: String) = updateTasks { it.copy(time = value, showValidationError = false) }
+
+    fun selectTaskRecurrence(value: TaskRecurrence) = updateTasks {
+        it.copy(recurrence = value, showValidationError = false)
+    }
+
+    fun createTask() {
+        val aquariumId = mutableUiState.value.setup?.aquarium?.id ?: return
+        val form = mutableUiState.value.tasks
+        val date = runCatching { LocalDate.parse(form.dueDate.trim()) }.getOrNull()
+        val time = form.time.trim().takeIf(String::isNotEmpty)?.let {
+            runCatching { LocalTime.parse(it) }.getOrNull()
+        }
+        if (form.title.isBlank() || date == null || (form.time.isNotBlank() && time == null)) {
+            updateTasks { it.copy(showValidationError = true) }
+            return
+        }
+        updateTasks { it.copy(isSaving = true, showValidationError = false) }
+        viewModelScope.launch {
+            runCatching {
+                aquariumRepository.createTask(
+                    TaskInput(
+                        aquariumId = aquariumId,
+                        title = form.title,
+                        recurrence = form.recurrence,
+                        firstDueDate = TaskDate(date.year, date.monthValue, date.dayOfMonth),
+                        minuteOfDay = time?.let { it.hour * 60 + it.minute },
+                        timeZoneId = currentTimeZoneId(),
+                    ),
+                )
+            }.onSuccess { created ->
+                taskReminderScheduler.schedule(created.occurrence)
+                updateTasks {
+                    it.copy(title = "", time = "", isSaving = false, showValidationError = false)
+                }
+            }.onFailure {
+                updateTasks { it.copy(isSaving = false, showValidationError = true) }
+            }
+        }
+    }
+
+    fun resolveTask(occurrence: TaskOccurrence, resolution: TaskResolution) {
+        viewModelScope.launch {
+            val postponed = if (resolution == TaskResolution.POSTPONED) {
+                LocalDate.of(
+                    occurrence.dueDate.year,
+                    occurrence.dueDate.month,
+                    occurrence.dueDate.day,
+                ).plusDays(1)
+            } else {
+                null
+            }
+            runCatching {
+                aquariumRepository.resolveTaskOccurrence(
+                    TaskResolutionInput(
+                        occurrenceId = occurrence.id,
+                        resolution = resolution,
+                        resolvedAtEpochMillis = currentTimeMillis(),
+                        postponedUntil = postponed?.let {
+                            TaskDate(it.year, it.monthValue, it.dayOfMonth)
+                        },
+                        postponedMinuteOfDay = occurrence.minuteOfDay,
+                        postponedTimeZoneId = occurrence.timeZoneId,
+                    ),
+                )
+            }.onSuccess { result ->
+                taskReminderScheduler.cancel(occurrence.id)
+                result.nextOccurrence?.let(taskReminderScheduler::schedule)
             }
         }
     }
@@ -999,6 +1134,10 @@ class HomeViewModel(
         observeTimeline()
     }
 
+    private fun updateTasks(transform: (TaskUiState) -> TaskUiState) {
+        mutableUiState.update { it.copy(tasks = transform(it.tasks)) }
+    }
+
     private fun observeTimeline() {
         timelineJob?.cancel()
         val timeline = mutableUiState.value.timeline
@@ -1114,6 +1253,7 @@ class HomeViewModel(
 
         fun factory(
             repository: AquariumRepository,
+            taskReminderScheduler: TaskReminderScheduler = NoOpTaskReminderScheduler,
             accountCoordinator: AccountActivationCoordinator? = null,
             proPurchaseCoordinator: ProPurchaseCoordinator? = null,
         ): ViewModelProvider.Factory =
@@ -1122,12 +1262,20 @@ class HomeViewModel(
                 override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T =
                     HomeViewModel(
                         aquariumRepository = repository,
+                        taskReminderScheduler = taskReminderScheduler,
                         accountCoordinator = accountCoordinator,
                         proPurchaseCoordinator = proPurchaseCoordinator,
                         savedStateHandle = extras.createSavedStateHandle(),
                     ) as T
             }
     }
+}
+
+private object NoOpTaskReminderScheduler : TaskReminderScheduler {
+    override fun schedule(occurrence: TaskOccurrence) = Unit
+    override fun cancel(occurrenceId: String) = Unit
+    override fun reconcile(occurrences: List<TaskOccurrence>) = Unit
+    override fun isBatteryOptimizationActive(): Boolean = false
 }
 
 private fun RapidSessionUiState.toSnapshot() = RapidSessionDraftSnapshot(

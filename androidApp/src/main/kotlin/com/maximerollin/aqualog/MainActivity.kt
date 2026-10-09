@@ -24,9 +24,10 @@ class MainActivity : ComponentActivity() {
     private val homeViewModel: HomeViewModel by viewModels {
         val application = application as AquaLogApplication
         HomeViewModel.factory(
-            application.aquariumRepository,
-            application.accountCoordinator,
-            proPurchaseCoordinator,
+            repository = application.aquariumRepository,
+            taskReminderScheduler = application.taskReminderScheduler,
+            accountCoordinator = application.accountCoordinator,
+            proPurchaseCoordinator = proPurchaseCoordinator,
         )
     }
 
