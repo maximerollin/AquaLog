@@ -20,7 +20,11 @@ import com.maximerollin.aqualog.ui.theme.AquaLogTheme
 class MainActivity : ComponentActivity() {
     private val homeViewModel: HomeViewModel by viewModels {
         val application = application as AquaLogApplication
-        HomeViewModel.factory(application.aquariumRepository, application.accountCoordinator)
+        HomeViewModel.factory(
+            repository = application.aquariumRepository,
+            taskReminderScheduler = application.taskReminderScheduler,
+            accountCoordinator = application.accountCoordinator,
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

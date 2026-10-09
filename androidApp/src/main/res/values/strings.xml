@@ -73,6 +73,7 @@
     <string name="no_session_yet">No Session yet</string>
     <string name="no_session_description">Your practice values were not saved. Start when you have real measurements or maintenance to log.</string>
     <string name="new_session">New Session</string>
+    <string name="open_tasks">Tasks &amp; reminders</string>
     <string name="volume_liters_format">%1$s L</string>
     <string name="volume_us_gallons_format">%1$s US gal</string>
 
@@ -167,6 +168,7 @@
     <string name="timeline_error">Local history could not be read. Your saved data is still on this device.</string>
     <string name="retry">Retry</string>
     <string name="timeline_session">Session</string>
+    <string name="timeline_task">Task occurrence</string>
     <string name="open_session_details">Open Session details</string>
     <string name="back_to_timeline">Back to Chronology</string>
     <string name="timeline_events">Events</string>
@@ -197,4 +199,35 @@
     <string name="trends_no_events">No maintenance or Events in the selected period.</string>
     <string name="trends_loading">Loading local trends…</string>
     <string name="trends_error">Local trends could not be read. Your saved data is still on this device.</string>
+
+    <string name="tasks_title">Tasks &amp; reminders</string>
+    <string name="new_task">New Task</string>
+    <string name="task_title_label">Task title</string>
+    <string name="task_due_date_label">First due date</string>
+    <string name="task_due_date_hint">YYYY-MM-DD</string>
+    <string name="task_time_label">Time (optional)</string>
+    <string name="task_time_hint">HH:MM · reminders without a time use 09:00</string>
+    <string name="clear_task_time">Clear time</string>
+    <string name="task_once">Once</string>
+    <string name="task_daily">Daily</string>
+    <string name="task_weekly">Weekly</string>
+    <string name="task_monthly">Monthly</string>
+    <string name="task_validation_error">Enter a title, a valid date and an optional valid time.</string>
+    <string name="save_task">Save Task</string>
+    <string name="pending_tasks">Next occurrences</string>
+    <string name="no_pending_tasks">No pending Task.</string>
+    <string name="task_due_value">Due %1$s · %2$s</string>
+    <string name="task_no_time">no chosen time</string>
+    <string name="task_complete">Done</string>
+    <string name="task_postpone">+1 day</string>
+    <string name="task_ignore">Ignore</string>
+    <string name="task_completed">Completed</string>
+    <string name="task_postponed">Postponed</string>
+    <string name="task_ignored">Ignored</string>
+    <string name="task_resolved_value">%1$s · resolved on %2$s</string>
+    <string name="allow_notifications">Allow notifications</string>
+    <string name="notification_permission_explanation">Android notification permission is required to show Task reminders. Tasks remain available in AquaLog if you decline.</string>
+    <string name="battery_optimization_explanation">Android battery optimization is active. It can delay reminders; Tasks and their due dates remain stored locally.</string>
+    <string name="task_notification_channel">Task reminders</string>
+    <string name="task_notification_text">Open AquaLog to complete, postpone or ignore this occurrence.</string>
 </resources>

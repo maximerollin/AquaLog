@@ -23,6 +23,10 @@ open class AquaLogApplication : Application() {
         )
     }
 
+    open val taskReminderScheduler: TaskReminderScheduler by lazy {
+        AndroidTaskReminderScheduler(this)
+    }
+
     open val accountCoordinator: AccountActivationCoordinator
         get() {
             val localData = aquariumRepository as RoomAquariumRepository

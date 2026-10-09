@@ -2,6 +2,7 @@ package com.maximerollin.aqualog.shared
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 interface AquariumRepository {
@@ -38,6 +39,14 @@ interface AquariumRepository {
     fun observeTimeline(filter: TimelineFilter): Flow<List<TimelineSession>>
 
     fun observeFreeTrends(aquariumId: String, period: TrendPeriod): Flow<TrendSnapshot>
+
+    suspend fun createTask(input: TaskInput): CreatedTask
+
+    suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult
+
+    fun observePendingTaskOccurrences(): Flow<List<TaskOccurrence>>
+
+    fun observeResolvedTaskOccurrences(): Flow<List<TaskOccurrence>>
 }
 
 class RoomAquariumRepository(
@@ -47,6 +56,7 @@ class RoomAquariumRepository(
 ) : AquariumRepository, AccountLocalDataSource {
     private val aquariumDao = database.aquariumDao()
     private val sessionDao = database.sessionDao()
+    private val taskDao = database.taskDao()
     private val accountDao = database.accountDao()
 
     override fun observeCurrentAquarium(): Flow<Aquarium?> =
@@ -346,6 +356,71 @@ class RoomAquariumRepository(
             }
         }
 
+    override suspend fun createTask(input: TaskInput): CreatedTask {
+        requireNotNull(aquariumDao.getSetup(input.aquariumId)) { "Aquarium does not exist" }
+        require(input.title.isNotBlank()) { "Task title must not be blank" }
+        require(input.minuteOfDay == null || input.minuteOfDay in 0 until 24 * 60)
+        require(input.timeZoneId.isNotBlank())
+        val task = AquariumTask(
+            id = generateId(),
+            aquariumId = input.aquariumId,
+            title = input.title.trim(),
+            recurrence = input.recurrence,
+            monthlyAnchorDay = input.firstDueDate.day,
+        )
+        val occurrence = TaskOccurrence(
+            id = generateId(),
+            taskId = task.id,
+            aquariumId = input.aquariumId,
+            title = task.title,
+            dueDate = input.firstDueDate,
+            minuteOfDay = input.minuteOfDay,
+            timeZoneId = input.timeZoneId,
+            resolution = null,
+            resolvedAtEpochMillis = null,
+        )
+        taskDao.create(task.toEntity(), occurrence.toEntity())
+        return CreatedTask(task, occurrence)
+    }
+
+    override suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult {
+        require(input.resolvedAtEpochMillis > 0)
+        val task = taskDao.taskForOccurrence(input.occurrenceId).toDomain()
+        val pending = observePendingTaskOccurrences().first().firstOrNull { it.id == input.occurrenceId }
+            ?: error("Occurrence is not pending")
+        val next = when (input.resolution) {
+            TaskResolution.POSTPONED -> pending.next(
+                id = generateId(),
+                date = requireNotNull(input.postponedUntil) { "A postponed date is required" },
+                minute = input.postponedMinuteOfDay ?: pending.minuteOfDay,
+                zone = input.postponedTimeZoneId ?: pending.timeZoneId,
+            )
+            TaskResolution.COMPLETED, TaskResolution.IGNORED -> if (task.recurrence == TaskRecurrence.ONCE) {
+                null
+            } else {
+                pending.next(
+                    id = generateId(),
+                    date = nextTaskDate(pending.dueDate, task.recurrence, task.monthlyAnchorDay),
+                    minute = pending.minuteOfDay,
+                    zone = pending.timeZoneId,
+                )
+            }
+        }
+        val (resolvedEntity, nextEntity) = taskDao.resolve(
+            occurrenceId = input.occurrenceId,
+            resolution = input.resolution.storageValue,
+            resolvedAt = input.resolvedAtEpochMillis,
+            nextOccurrence = next?.toEntity(),
+        )
+        return TaskResolutionResult(resolvedEntity.toDomain(), nextEntity?.toDomain())
+    }
+
+    override fun observePendingTaskOccurrences(): Flow<List<TaskOccurrence>> =
+        taskDao.observePending().map { occurrences -> occurrences.map(TaskOccurrenceEntity::toDomain) }
+
+    override fun observeResolvedTaskOccurrences(): Flow<List<TaskOccurrence>> =
+        taskDao.observeResolved().map { occurrences -> occurrences.map(TaskOccurrenceEntity::toDomain) }
+
     suspend fun sessionCount(aquariumId: String): Int = sessionDao.count(aquariumId)
 
     override suspend fun hasRecordedSession(): Boolean = sessionDao.countAll() > 0
@@ -380,6 +455,51 @@ class RoomAquariumRepository(
         accountDao.upsert(AccountStateEntity(accountId = accountId, migrationStatus = InitialMigrationStatus.COMPLETE.storageValue))
     }
 }
+
+private fun AquariumTask.toEntity() = TaskEntity(id, aquariumId, title, recurrence.storageValue, monthlyAnchorDay)
+
+private fun TaskEntity.toDomain() = AquariumTask(
+    id,
+    aquariumId,
+    title,
+    TaskRecurrence.fromStorageValue(recurrence),
+    monthlyAnchorDay,
+)
+
+private fun TaskOccurrence.toEntity() = TaskOccurrenceEntity(
+    id = id,
+    taskId = taskId,
+    aquariumId = aquariumId,
+    title = title,
+    dueYear = dueDate.year,
+    dueMonth = dueDate.month,
+    dueDay = dueDate.day,
+    dueMinuteOfDay = minuteOfDay ?: -1,
+    timeZoneId = timeZoneId,
+    resolution = resolution?.storageValue,
+    resolvedAtEpochMillis = resolvedAtEpochMillis,
+)
+
+private fun TaskOccurrenceEntity.toDomain() = TaskOccurrence(
+    id = id,
+    taskId = taskId,
+    aquariumId = aquariumId,
+    title = title,
+    dueDate = TaskDate(dueYear, dueMonth, dueDay),
+    minuteOfDay = dueMinuteOfDay.takeIf { it >= 0 },
+    timeZoneId = timeZoneId,
+    resolution = resolution?.let(TaskResolution::fromStorageValue),
+    resolvedAtEpochMillis = resolvedAtEpochMillis,
+)
+
+private fun TaskOccurrence.next(id: String, date: TaskDate, minute: Int?, zone: String) = copy(
+    id = id,
+    dueDate = date,
+    minuteOfDay = minute,
+    timeZoneId = zone,
+    resolution = null,
+    resolvedAtEpochMillis = null,
+)
 
 private fun AquariumEntity.toDomain() = Aquarium(
     id = id,

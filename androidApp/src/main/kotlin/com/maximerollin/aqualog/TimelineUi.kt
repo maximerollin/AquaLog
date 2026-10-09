@@ -33,9 +33,26 @@ import com.maximerollin.aqualog.shared.MaintenanceAction
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.SessionEvent
 import com.maximerollin.aqualog.shared.TimelineSession
+import com.maximerollin.aqualog.shared.TaskOccurrence
+import com.maximerollin.aqualog.shared.TaskResolution
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
+
+private sealed interface TimelineListItem {
+    val timestamp: Long
+    val key: String
+
+    data class SessionItem(val entry: TimelineSession) : TimelineListItem {
+        override val timestamp = entry.session.occurredAtEpochMillis
+        override val key = "session-${entry.session.id}"
+    }
+
+    data class TaskItem(val occurrence: TaskOccurrence) : TimelineListItem {
+        override val timestamp = requireNotNull(occurrence.resolvedAtEpochMillis)
+        override val key = "task-${occurrence.id}"
+    }
+}
 
 @Composable
 fun TimelineScreen(
@@ -107,13 +124,26 @@ private fun TimelineContent(
 
 @Composable
 private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel) {
+    val resolvedTasks = state.timeline.resolvedTaskOccurrences.filter { occurrence ->
+        val periodStart = state.timeline.period.days?.let { days ->
+            System.currentTimeMillis() - days * 24L * 60L * 60L * 1_000L
+        }
+        (state.timeline.aquariumId == null || occurrence.aquariumId == state.timeline.aquariumId) &&
+            state.timeline.parameterDefinitionId == null &&
+            state.timeline.maintenanceActionType == null &&
+            (periodStart == null || (occurrence.resolvedAtEpochMillis ?: Long.MIN_VALUE) >= periodStart)
+    }
+    val items = (
+        state.timeline.entries.map(TimelineListItem::SessionItem) +
+            resolvedTasks.map(TimelineListItem::TaskItem)
+        ).sortedWith(compareByDescending<TimelineListItem> { it.timestamp }.thenBy { it.key })
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item { TimelineFilters(state, viewModel) }
-        if (state.timeline.entries.isEmpty()) {
+        if (state.timeline.entries.isEmpty() && resolvedTasks.isEmpty()) {
             item {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -126,9 +156,39 @@ private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel) {
                 }
             }
         } else {
-            items(state.timeline.entries, key = { it.session.id }) { entry ->
-                TimelineSessionCard(entry, onClick = { viewModel.openTimelineSession(entry.session.id) })
+            items(items, key = TimelineListItem::key) { item ->
+                when (item) {
+                    is TimelineListItem.TaskItem -> TimelineTaskCard(item.occurrence)
+                    is TimelineListItem.SessionItem -> TimelineSessionCard(
+                        item.entry,
+                        onClick = { viewModel.openTimelineSession(item.entry.session.id) },
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun TimelineTaskCard(occurrence: TaskOccurrence) {
+    val resolutionLabel = when (occurrence.resolution) {
+        TaskResolution.COMPLETED -> stringResource(R.string.task_completed)
+        TaskResolution.POSTPONED -> stringResource(R.string.task_postponed)
+        TaskResolution.IGNORED -> stringResource(R.string.task_ignored)
+        null -> return
+    }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(stringResource(R.string.timeline_task), style = MaterialTheme.typography.titleMedium)
+            Text(occurrence.title)
+            Text(
+                stringResource(
+                    R.string.task_resolved_value,
+                    resolutionLabel,
+                    DateFormat.getDateTimeInstance().format(Date(requireNotNull(occurrence.resolvedAtEpochMillis))),
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
