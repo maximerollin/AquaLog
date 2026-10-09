@@ -412,6 +412,125 @@ abstract class AccountDao {
     abstract suspend fun upsertInvitation(invitation: AccountInvitationEntity)
 }
 
+data class PortableDatabaseSnapshot(
+    val aquariums: List<AquariumEntity>,
+    val parameterDefinitions: List<ParameterDefinitionEntity>,
+    val sessions: List<SessionEntity>,
+    val measurements: List<MeasurementEntity>,
+    val maintenanceActions: List<MaintenanceActionEntity>,
+    val events: List<SessionEventEntity>,
+    val tasks: List<TaskEntity>,
+    val taskOccurrences: List<TaskOccurrenceEntity>,
+)
+
+@Dao
+abstract class PortableDataDao {
+    @Query("SELECT * FROM aquariums")
+    protected abstract suspend fun allAquariums(): List<AquariumEntity>
+
+    @Query("SELECT * FROM parameter_definitions")
+    protected abstract suspend fun allParameterDefinitions(): List<ParameterDefinitionEntity>
+
+    @Query("SELECT * FROM sessions")
+    protected abstract suspend fun allSessions(): List<SessionEntity>
+
+    @Query("SELECT * FROM measurements")
+    protected abstract suspend fun allMeasurements(): List<MeasurementEntity>
+
+    @Query("SELECT * FROM maintenance_actions")
+    protected abstract suspend fun allMaintenanceActions(): List<MaintenanceActionEntity>
+
+    @Query("SELECT * FROM session_events")
+    protected abstract suspend fun allEvents(): List<SessionEventEntity>
+
+    @Query("SELECT * FROM tasks")
+    protected abstract suspend fun allTasks(): List<TaskEntity>
+
+    @Query("SELECT * FROM task_occurrences")
+    protected abstract suspend fun allTaskOccurrences(): List<TaskOccurrenceEntity>
+
+    @Insert
+    protected abstract suspend fun insertAquariums(values: List<AquariumEntity>)
+
+    @Insert
+    protected abstract suspend fun insertParameterDefinitions(values: List<ParameterDefinitionEntity>)
+
+    @Insert
+    protected abstract suspend fun insertSessions(values: List<SessionEntity>)
+
+    @Insert
+    protected abstract suspend fun insertMeasurements(values: List<MeasurementEntity>)
+
+    @Insert
+    protected abstract suspend fun insertMaintenanceActions(values: List<MaintenanceActionEntity>)
+
+    @Insert
+    protected abstract suspend fun insertEvents(values: List<SessionEventEntity>)
+
+    @Insert
+    protected abstract suspend fun insertTasks(values: List<TaskEntity>)
+
+    @Insert
+    protected abstract suspend fun insertTaskOccurrences(values: List<TaskOccurrenceEntity>)
+
+    @Query("DELETE FROM measurements")
+    protected abstract suspend fun deleteMeasurements()
+
+    @Query("DELETE FROM maintenance_actions")
+    protected abstract suspend fun deleteMaintenanceActions()
+
+    @Query("DELETE FROM session_events")
+    protected abstract suspend fun deleteEvents()
+
+    @Query("DELETE FROM sessions")
+    protected abstract suspend fun deleteSessions()
+
+    @Query("DELETE FROM task_occurrences")
+    protected abstract suspend fun deleteTaskOccurrences()
+
+    @Query("DELETE FROM tasks")
+    protected abstract suspend fun deleteTasks()
+
+    @Query("DELETE FROM parameter_definitions")
+    protected abstract suspend fun deleteParameterDefinitions()
+
+    @Query("DELETE FROM aquariums")
+    protected abstract suspend fun deleteAquariums()
+
+    @Transaction
+    open suspend fun snapshot() = PortableDatabaseSnapshot(
+        aquariums = allAquariums(),
+        parameterDefinitions = allParameterDefinitions(),
+        sessions = allSessions(),
+        measurements = allMeasurements(),
+        maintenanceActions = allMaintenanceActions(),
+        events = allEvents(),
+        tasks = allTasks(),
+        taskOccurrences = allTaskOccurrences(),
+    )
+
+    @Transaction
+    open suspend fun replaceAll(snapshot: PortableDatabaseSnapshot) {
+        deleteMeasurements()
+        deleteMaintenanceActions()
+        deleteEvents()
+        deleteSessions()
+        deleteTaskOccurrences()
+        deleteTasks()
+        deleteParameterDefinitions()
+        deleteAquariums()
+
+        if (snapshot.aquariums.isNotEmpty()) insertAquariums(snapshot.aquariums)
+        if (snapshot.parameterDefinitions.isNotEmpty()) insertParameterDefinitions(snapshot.parameterDefinitions)
+        if (snapshot.sessions.isNotEmpty()) insertSessions(snapshot.sessions)
+        if (snapshot.measurements.isNotEmpty()) insertMeasurements(snapshot.measurements)
+        if (snapshot.maintenanceActions.isNotEmpty()) insertMaintenanceActions(snapshot.maintenanceActions)
+        if (snapshot.events.isNotEmpty()) insertEvents(snapshot.events)
+        if (snapshot.tasks.isNotEmpty()) insertTasks(snapshot.tasks)
+        if (snapshot.taskOccurrences.isNotEmpty()) insertTaskOccurrences(snapshot.taskOccurrences)
+    }
+}
+
 @Database(
     entities = [
         AquariumEntity::class,
@@ -434,6 +553,7 @@ abstract class AquaLogDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
     abstract fun taskDao(): TaskDao
     abstract fun accountDao(): AccountDao
+    abstract fun portableDataDao(): PortableDataDao
 }
 
 @Suppress("NO_ACTUAL_FOR_EXPECT")
