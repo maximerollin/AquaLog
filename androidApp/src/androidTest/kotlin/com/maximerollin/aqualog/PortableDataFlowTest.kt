@@ -16,6 +16,7 @@ import androidx.test.espresso.intent.Intents.intending
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasType
+import androidx.test.espresso.intent.VerificationModes.times
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximerollin.aqualog.shared.AquariumProfile
@@ -85,6 +86,13 @@ class PortableDataFlowTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
             composeRule.onNodeWithText("Restore from export").performClick()
+            composeRule.onNodeWithText("Replace local Aquarium data?").assertIsDisplayed()
+            composeRule.onNodeWithText(
+                "Your account sign-in and secure tokens stay on this device.",
+                substring = true,
+            ).assertIsDisplayed()
+            intended(hasAction(Intent.ACTION_OPEN_DOCUMENT), times(0))
+            composeRule.onNodeWithText("Choose export file").performClick()
 
             intended(
                 allOf(

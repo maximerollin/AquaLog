@@ -147,6 +147,7 @@ enum class PortableDataMessage {
 data class PortableDataUiState(
     val isWorking: Boolean = false,
     val message: PortableDataMessage? = null,
+    val showImportConfirmation: Boolean = false,
 )
 
 data class ParameterEditorState(
@@ -350,6 +351,22 @@ class HomeViewModel(
 
     fun startPortableDataOperation() {
         mutableUiState.update { it.copy(portableData = PortableDataUiState(isWorking = true)) }
+    }
+
+    fun requestPortableImport() {
+        mutableUiState.update { state ->
+            state.copy(
+                portableData = state.portableData.copy(showImportConfirmation = true),
+            )
+        }
+    }
+
+    fun dismissPortableImportConfirmation() {
+        mutableUiState.update { state ->
+            state.copy(
+                portableData = state.portableData.copy(showImportConfirmation = false),
+            )
+        }
     }
 
     fun cancelPortableDataOperation() {

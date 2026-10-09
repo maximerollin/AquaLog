@@ -156,6 +156,9 @@
     <string name="portable_data_replace_explanation">Restore validates the whole file first, then atomically replaces Aquarium data on this device. Stable IDs prevent duplicates. Account credentials and billing data are never included.</string>
     <string name="export_data">Export data</string>
     <string name="restore_from_export">Restore from export</string>
+    <string name="portable_import_confirmation_title">Replace local Aquarium data?</string>
+    <string name="portable_import_confirmation_description">AquaLog validates the entire export first. If it is valid, Aquariums, Parameters, Sessions, Measurements, maintenance Actions, Events, Tasks and Occurrences are replaced together. Your account sign-in and secure tokens stay on this device.</string>
+    <string name="choose_export_file">Choose export file</string>
     <string name="portable_export_ready">Export ready</string>
     <string name="portable_import_complete">Restore complete</string>
     <string name="portable_invalid_file">This file is incomplete or is not an AquaLog export. Your local data was not changed.</string>

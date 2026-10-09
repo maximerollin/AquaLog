@@ -17,6 +17,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -73,11 +74,11 @@ fun AquaLogContent(
             viewModel = viewModel,
             modifier = modifier,
         )
-        state.setup != null -> AquariumShell(state, viewModel, onExportData, onImportData, modifier)
+        state.setup != null -> AquariumShell(state, viewModel, onExportData, modifier)
         state.step == OnboardingStep.WELCOME -> WelcomeScreen(
             state = state.portableData,
             onContinue = viewModel::startOnboarding,
-            onImportData = onImportData,
+            onRequestImport = viewModel::requestPortableImport,
             modifier = modifier,
         )
         state.step == OnboardingStep.PROFILE -> ProfileScreen(
@@ -106,6 +107,15 @@ fun AquaLogContent(
             isSaving = state.isSaving,
             onContinueForFree = viewModel::finishForFree,
             modifier = modifier,
+        )
+    }
+    if (state.portableData.showImportConfirmation) {
+        PortableImportConfirmation(
+            onConfirm = {
+                viewModel.dismissPortableImportConfirmation()
+                onImportData()
+            },
+            onDismiss = viewModel::dismissPortableImportConfirmation,
         )
     }
 }
@@ -192,7 +202,6 @@ private fun AquariumShell(
     state: HomeUiState,
     viewModel: HomeViewModel,
     onExportData: () -> Unit,
-    onImportData: () -> Unit,
     modifier: Modifier,
 ) {
     Scaffold(
@@ -222,7 +231,7 @@ private fun AquariumShell(
             MainDestination.SETTINGS -> PortableDataSettings(
                 state = state.portableData,
                 onExportData = onExportData,
-                onImportData = onImportData,
+                onRequestImport = viewModel::requestPortableImport,
                 modifier = contentModifier,
             )
         }
@@ -244,7 +253,7 @@ private fun LoadingContent(modifier: Modifier) {
 private fun WelcomeScreen(
     state: PortableDataUiState,
     onContinue: () -> Unit,
-    onImportData: () -> Unit,
+    onRequestImport: () -> Unit,
     modifier: Modifier,
 ) {
     StandardScreen(modifier) {
@@ -254,7 +263,7 @@ private fun WelcomeScreen(
         Spacer(Modifier.weight(1f))
         PrimaryButton(R.string.get_started, onContinue)
         OutlinedButton(
-            onClick = onImportData,
+            onClick = onRequestImport,
             enabled = !state.isWorking,
             modifier = Modifier.fillMaxWidth().height(48.dp),
         ) {
@@ -267,7 +276,7 @@ private fun WelcomeScreen(
 private fun PortableDataSettings(
     state: PortableDataUiState,
     onExportData: () -> Unit,
-    onImportData: () -> Unit,
+    onRequestImport: () -> Unit,
     modifier: Modifier,
 ) {
     StandardScreen(modifier) {
@@ -288,7 +297,7 @@ private fun PortableDataSettings(
                     Text(stringResource(R.string.export_data))
                 }
                 OutlinedButton(
-                    onClick = onImportData,
+                    onClick = onRequestImport,
                     enabled = !state.isWorking,
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                 ) {
@@ -299,6 +308,28 @@ private fun PortableDataSettings(
         if (state.isWorking) CircularProgressIndicator()
         PortableDataMessage(state.message)
     }
+}
+
+@Composable
+private fun PortableImportConfirmation(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.portable_import_confirmation_title)) },
+        text = { Text(stringResource(R.string.portable_import_confirmation_description)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.choose_export_file))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
 }
 
 @Composable
