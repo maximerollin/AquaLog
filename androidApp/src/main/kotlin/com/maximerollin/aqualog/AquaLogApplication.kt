@@ -34,7 +34,11 @@ open class AquaLogApplication : Application() {
         SyncCoordinator(
             localData = localData,
             backend = SupabaseSyncBackend(SupabaseConfiguration.fromBuildConfig()),
-            sessionProvider = LocalAccountSyncSessionProvider(localData, secureTokenStorage),
+            sessionProvider = LocalAccountSyncSessionProvider(
+                localData,
+                secureTokenStorage,
+                SupabaseAuthGateway(this, SupabaseConfiguration.fromBuildConfig(), secureTokenStorage),
+            ),
         )
     }
 

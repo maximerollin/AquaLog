@@ -24,6 +24,10 @@ interface AquariumRepository {
         parameters: List<ParameterDefinitionDraft>,
     ): AquariumSetup
 
+    suspend fun updateAquarium(aquarium: Aquarium): Aquarium
+
+    suspend fun updateParameterDefinition(parameter: ParameterDefinition): ParameterDefinition
+
     suspend fun loadRapidSessionContext(aquariumId: String): RapidSessionContext
 
     suspend fun saveRapidSession(input: RapidSessionInput): RecordedSession
@@ -149,6 +153,28 @@ class RoomAquariumRepository(
         )
         onSyncNeeded()
         return AquariumSetup(aquarium, definitions)
+    }
+
+    override suspend fun updateAquarium(aquarium: Aquarium): Aquarium {
+        require(aquarium.name.isNotBlank()) { "Aquarium name must not be blank" }
+        require(aquarium.volume > 0.0 && aquarium.volume.isFinite()) { "Aquarium volume must be positive" }
+        val normalized = aquarium.copy(name = aquarium.name.trim())
+        aquariumDao.updateAquarium(normalized.toEntity(), normalized.syncOperation())
+        onSyncNeeded()
+        return normalized
+    }
+
+    override suspend fun updateParameterDefinition(parameter: ParameterDefinition): ParameterDefinition {
+        require(parameter.unit.isNotBlank()) { "Parameter unit must not be blank" }
+        require(parameter.precision in 0..3) { "Parameter precision must be between zero and three" }
+        require(
+            parameter.indicativeMinimum == null || parameter.indicativeMaximum == null ||
+                parameter.indicativeMinimum <= parameter.indicativeMaximum,
+        ) { "Parameter indicative range must be ordered" }
+        val normalized = parameter.copy(unit = parameter.unit.trim())
+        aquariumDao.updateParameter(normalized.toEntity(), normalized.syncOperation())
+        onSyncNeeded()
+        return normalized
     }
 
     override suspend fun loadRapidSessionContext(aquariumId: String): RapidSessionContext {
@@ -290,6 +316,9 @@ class RoomAquariumRepository(
             "An empty Session cannot be recorded"
         }
         val updatedSession = existing.session.copy(occurredAtEpochMillis = input.occurredAtEpochMillis)
+        val removedMeasurements = existing.measurements.filter { old -> measurements.none { it.id == old.id } }
+        val removedActions = existing.maintenanceActions.filter { old -> actions.none { it.id == old.id } }
+        val removedEvents = existing.events.filter { old -> events.none { it.id == old.id } }
         return sessionDao.update(
             sessionId = input.sessionId,
             aquariumId = input.aquariumId,
@@ -300,7 +329,10 @@ class RoomAquariumRepository(
             syncOperations = listOf(updatedSession.syncOperation()) +
                 measurements.map(Measurement::syncOperation) +
                 actions.map(MaintenanceAction::syncOperation) +
-                events.map(SessionEvent::syncOperation),
+                events.map(SessionEvent::syncOperation) +
+                removedMeasurements.map { it.deleteSyncOperation() } +
+                removedActions.map { it.deleteSyncOperation() } +
+                removedEvents.map { it.deleteSyncOperation() },
         ).toDomain().also { onSyncNeeded() }
     }
 
@@ -529,7 +561,7 @@ class RoomAquariumRepository(
         if (operationIds.isNotEmpty()) syncDao.recordFailure(operationIds)
     }
 
-    override suspend fun applyRemoteCopy(copy: InitialAccountCopy) {
+    override suspend fun commitRemoteCopy(copy: InitialAccountCopy, acknowledgedOperationIds: List<Long>) {
         syncDao.applyRemoteCopy(
             aquariums = copy.aquariums.map(Aquarium::toEntity),
             parameters = copy.parameterDefinitions.map(ParameterDefinition::toEntity),
@@ -537,6 +569,7 @@ class RoomAquariumRepository(
             measurements = copy.measurements.map(Measurement::toEntity),
             actions = copy.maintenanceActions.map(MaintenanceAction::toEntity),
             events = copy.events.map(SessionEvent::toEntity),
+            acknowledgedOperationIds = acknowledgedOperationIds,
         )
     }
 }
@@ -571,10 +604,29 @@ private fun SessionEvent.syncOperation() = SyncOperationEntity(
     entityId = id,
 )
 
+private fun Measurement.deleteSyncOperation() = SyncOperationEntity(
+    entityType = SyncEntityType.MEASUREMENT.storageValue,
+    entityId = id,
+    kind = SyncOperationKind.DELETE.storageValue,
+)
+
+private fun MaintenanceAction.deleteSyncOperation() = SyncOperationEntity(
+    entityType = SyncEntityType.MAINTENANCE_ACTION.storageValue,
+    entityId = id,
+    kind = SyncOperationKind.DELETE.storageValue,
+)
+
+private fun SessionEvent.deleteSyncOperation() = SyncOperationEntity(
+    entityType = SyncEntityType.EVENT.storageValue,
+    entityId = id,
+    kind = SyncOperationKind.DELETE.storageValue,
+)
+
 private fun SyncOperationEntity.toDomain() = SyncOperation(
     id = id,
     entityType = SyncEntityType.fromStorageValue(entityType),
     entityId = entityId,
+    kind = SyncOperationKind.fromStorageValue(kind),
     attemptCount = attemptCount,
 )
 

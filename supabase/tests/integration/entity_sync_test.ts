@@ -136,6 +136,30 @@ Deno.test("two devices share entity sync while another account remains isolated"
         throw new Error(`other account could read ${table}`);
       }
     }
+
+    const aquariumUpdate = await firstDevice.from("aquariums")
+      .update({ name: "Amazonien planté", volume: 180 })
+      .eq("id", aquariumId);
+    if (aquariumUpdate.error) throw aquariumUpdate.error;
+    const parameterUpdate = await firstDevice.from("parameter_definitions")
+      .update({ unit: "C", precision: 2 })
+      .eq("id", parameterId);
+    if (parameterUpdate.error) throw parameterUpdate.error;
+    for (const table of ["measurements", "maintenance_actions", "session_events"]) {
+      const removed = await firstDevice.from(table).delete().eq("account_id", ownerId);
+      if (removed.error) throw removed.error;
+      const downloaded = await secondDevice.from(table).select("id");
+      if (downloaded.error) throw downloaded.error;
+      if (downloaded.data.length !== 0) throw new Error(`second device retained deleted ${table}`);
+    }
+    const updatedAquarium = await secondDevice.from("aquariums").select("name,volume").single();
+    if (updatedAquarium.error || updatedAquarium.data.name !== "Amazonien planté" || updatedAquarium.data.volume !== 180) {
+      throw updatedAquarium.error ?? new Error("second device did not observe Aquarium update");
+    }
+    const updatedParameter = await secondDevice.from("parameter_definitions").select("unit,precision").single();
+    if (updatedParameter.error || updatedParameter.data.unit !== "C" || updatedParameter.data.precision !== 2) {
+      throw updatedParameter.error ?? new Error("second device did not observe Parameter update");
+    }
   } finally {
     for (
       const table of [

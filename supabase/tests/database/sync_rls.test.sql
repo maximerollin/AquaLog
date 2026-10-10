@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(18);
+select plan(24);
 
 insert into auth.users (id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -33,6 +33,16 @@ select is_empty($$update public.sessions set occurred_at_epoch_millis = 1 where 
 select is_empty($$update public.measurements set value = 99 where id = '51000000-0000-0000-0000-000000000001' returning id$$, 'other account cannot update Measurement');
 select is_empty($$update public.maintenance_actions set quantity = 99 where id = '61000000-0000-0000-0000-000000000001' returning id$$, 'other account cannot update Action');
 select is_empty($$update public.session_events set note = 'Intrusion' where id = '71000000-0000-0000-0000-000000000001' returning id$$, 'other account cannot update Event');
+
+select is_empty($$delete from public.measurements where id = '51000000-0000-0000-0000-000000000001' returning id$$, 'other account cannot delete Measure');
+select is_empty($$delete from public.maintenance_actions where id = '61000000-0000-0000-0000-000000000001' returning id$$, 'other account cannot delete Action');
+select is_empty($$delete from public.session_events where id = '71000000-0000-0000-0000-000000000001' returning id$$, 'other account cannot delete Event');
+
+set local request.jwt.claims = '{"sub":"11000000-0000-0000-0000-000000000001","role":"authenticated"}';
+
+select lives_ok($$delete from public.measurements where id = '51000000-0000-0000-0000-000000000001'$$, 'owner deletes Measure');
+select lives_ok($$delete from public.maintenance_actions where id = '61000000-0000-0000-0000-000000000001'$$, 'owner deletes Action');
+select lives_ok($$delete from public.session_events where id = '71000000-0000-0000-0000-000000000001'$$, 'owner deletes Event');
 
 select * from finish();
 rollback;

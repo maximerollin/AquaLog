@@ -6,8 +6,150 @@ import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class SyncCoordinatorTest {
+    @Test
+    fun `a local edit created during push survives the stale pull and is drained before success`() = runTest {
+        val fixture = fixture()
+        val aquarium = fixture.repository.createAquarium("Amazonien", 120.0, VolumeUnit.LITERS)
+        val cloud = InMemorySyncBackend(failAfterFirstAcceptedPush = false)
+        cloud.afterNextPush = {
+            fixture.repository.updateAquarium(aquarium.copy(name = "Amazonien planté"))
+        }
+
+        val result = SyncCoordinator(
+            fixture.repository,
+            cloud,
+            FixedSyncSessionProvider(SyncSession("account-1", "access-token")),
+        ).runOnce()
+
+        assertIs<SyncRunResult.Synchronized>(result)
+        assertEquals("Amazonien planté", fixture.repository.observeCurrentAquarium().first()?.name)
+        assertEquals("Amazonien planté", cloud.copy.aquariums.single().name)
+        assertEquals(SyncStatus.SYNCED, fixture.repository.observeSyncState().first().status)
+        assertEquals(2, cloud.pushCount)
+        fixture.database.close()
+    }
+
+    @Test
+    fun `Aquarium and Parameter updates enqueue their current values`() = runTest {
+        val fixture = fixture()
+        val setup = fixture.repository.createConfiguredAquarium(
+            "Amazonien", 120.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+            OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+        )
+        fixture.repository.acknowledgeSyncOperations(fixture.repository.pendingSyncBatch().operations.map { it.id })
+
+        fixture.repository.updateAquarium(setup.aquarium.copy(name = "Bac salon", volume = 180.0))
+        fixture.repository.updateParameterDefinition(setup.parameters.first().copy(unit = "C", precision = 2))
+
+        val batch = fixture.repository.pendingSyncBatch()
+        assertEquals("Bac salon", batch.aquariums.single().name)
+        assertEquals("C", batch.parameterDefinitions.single().unit)
+        assertEquals(
+            listOf(SyncEntityType.AQUARIUM, SyncEntityType.PARAMETER_DEFINITION),
+            batch.operations.map { it.entityType },
+        )
+        fixture.database.close()
+    }
+
+    @Test
+    fun `removing Session children queues remote deletions that do not resurrect on another device`() = runTest {
+        val first = fixture()
+        val second = fixture()
+        val setup = first.repository.createConfiguredAquarium(
+            "Amazonien", 120.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+            OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+        )
+        val parameter = setup.parameters.first { it.parameter == BuiltInParameter.TEMPERATURE }
+        val recorded = first.repository.saveRapidSession(
+            RapidSessionInput(
+                setup.aquarium.id, 1_700_000_100_000L, "children-delete",
+                mapOf(parameter.id to "24.5"),
+                listOf(MaintenanceActionInput(MaintenanceActionType.WATER_CHANGE, "20", "%")),
+                observation = "Eau claire",
+            ),
+        )
+        val cloud = InMemorySyncBackend(false)
+        val provider = FixedSyncSessionProvider(SyncSession("account-1", "access-token"))
+        assertIs<SyncRunResult.Synchronized>(SyncCoordinator(first.repository, cloud, provider).runOnce())
+        assertIs<SyncRunResult.Synchronized>(SyncCoordinator(second.repository, cloud, provider).runOnce())
+
+        first.repository.updateSession(
+            SessionEditInput(
+                recorded.session.id, setup.aquarium.id, recorded.session.occurredAtEpochMillis,
+                emptyMap(), emptyList(), observation = "", incident = "Fuite",
+            ),
+        )
+        val deletions = first.repository.pendingSyncBatch().operations.filter { it.kind == SyncOperationKind.DELETE }
+        assertTrue(deletions.any { it.entityType == SyncEntityType.MEASUREMENT })
+        assertTrue(deletions.any { it.entityType == SyncEntityType.MAINTENANCE_ACTION })
+        assertTrue(deletions.any { it.entityType == SyncEntityType.EVENT })
+        assertIs<SyncRunResult.Synchronized>(SyncCoordinator(first.repository, cloud, provider).runOnce())
+        assertIs<SyncRunResult.Synchronized>(SyncCoordinator(second.repository, cloud, provider).runOnce())
+
+        val downloaded = second.repository.observeSession(recorded.session.id).first()!!
+        assertTrue(downloaded.measurements.isEmpty())
+        assertTrue(downloaded.maintenanceActions.isEmpty())
+        assertEquals(listOf("Fuite"), downloaded.events.map { it.note })
+        first.database.close()
+        second.database.close()
+    }
+
+    @Test
+    fun `an unauthorized sync refreshes once then requires authentication without a loop`() = runTest {
+        val local = fixture()
+        local.repository.createAquarium("Amazonien", 120.0, VolumeUnit.LITERS)
+        val backend = object : SyncBackend {
+            var calls = 0
+            override suspend fun push(session: SyncSession, batch: PendingSyncBatch) {
+                calls++
+                throw CloudAuthenticationExpiredException()
+            }
+            override suspend fun pull(session: SyncSession) = InitialAccountCopy(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        }
+        val provider = object : SyncSessionProvider {
+            var refreshes = 0
+            override suspend fun currentSession() = SyncSession("account-1", "expired")
+            override suspend fun refreshSession(expiredSession: SyncSession): SyncSession? {
+                refreshes++
+                return SyncSession("account-1", "also-expired")
+            }
+            override suspend fun requireReauthentication() = Unit
+        }
+
+        assertEquals(SyncRunResult.SignedOut, SyncCoordinator(local.repository, backend, provider).runOnce())
+        assertEquals(2, backend.calls)
+        assertEquals(1, provider.refreshes)
+        local.database.close()
+    }
+
+    @Test
+    fun `an unauthorized sync replays once with the refreshed access token`() = runTest {
+        val local = fixture()
+        local.repository.createAquarium("Amazonien", 120.0, VolumeUnit.LITERS)
+        val usedTokens = mutableListOf<String>()
+        val backend = object : SyncBackend {
+            override suspend fun push(session: SyncSession, batch: PendingSyncBatch) {
+                usedTokens += session.accessToken
+                if (session.accessToken == "expired") throw CloudAuthenticationExpiredException()
+            }
+            override suspend fun pull(session: SyncSession) = InitialAccountCopy(
+                local.repository.pendingSyncBatch().aquariums,
+                emptyList(), emptyList(), emptyList(), emptyList(), emptyList(),
+            )
+        }
+        val provider = object : SyncSessionProvider {
+            override suspend fun currentSession() = SyncSession("account-1", "expired")
+            override suspend fun refreshSession(expiredSession: SyncSession) = SyncSession("account-1", "fresh")
+        }
+
+        assertIs<SyncRunResult.Synchronized>(SyncCoordinator(local.repository, backend, provider).runOnce())
+        assertEquals(listOf("expired", "fresh"), usedTokens)
+        assertEquals(SyncStatus.SYNCED, local.repository.observeSyncState().first().status)
+        local.database.close()
+    }
     @Test
     fun `a local Aquarium creation leaves replayable entity operations after restart`() = runTest {
         val databasePath = Files.createTempDirectory("aqualog-sync-outbox")
@@ -217,6 +359,8 @@ class SyncCoordinatorTest {
     private class InMemorySyncBackend(
         private var failAfterFirstAcceptedPush: Boolean,
     ) : SyncBackend {
+        var afterNextPush: (suspend () -> Unit)? = null
+        var pushCount = 0
         private val aquariums = linkedMapOf<String, Aquarium>()
         private val parameters = linkedMapOf<String, ParameterDefinition>()
         private val sessions = linkedMapOf<String, Session>()
@@ -235,12 +379,30 @@ class SyncCoordinatorTest {
             )
 
         override suspend fun push(session: SyncSession, batch: PendingSyncBatch) {
+            pushCount++
+            val latestOperations = batch.operations.groupBy { it.entityType to it.entityId }
+                .mapValues { (_, operations) -> operations.maxBy { it.id } }
+                .values
+            latestOperations.filter { it.kind == SyncOperationKind.DELETE }.forEach { operation ->
+                when (operation.entityType) {
+                    SyncEntityType.AQUARIUM -> aquariums.remove(operation.entityId)
+                    SyncEntityType.PARAMETER_DEFINITION -> parameters.remove(operation.entityId)
+                    SyncEntityType.SESSION -> sessions.remove(operation.entityId)
+                    SyncEntityType.MEASUREMENT -> measurements.remove(operation.entityId)
+                    SyncEntityType.MAINTENANCE_ACTION -> actions.remove(operation.entityId)
+                    SyncEntityType.EVENT -> events.remove(operation.entityId)
+                }
+            }
             batch.aquariums.forEach { aquariums[it.id] = it }
             batch.parameterDefinitions.forEach { parameters[it.id] = it }
             batch.sessions.forEach { sessions[it.id] = it }
             batch.measurements.forEach { measurements[it.id] = it }
             batch.maintenanceActions.forEach { actions[it.id] = it }
             batch.events.forEach { events[it.id] = it }
+            afterNextPush?.also { callback ->
+                afterNextPush = null
+                callback()
+            }
             if (failAfterFirstAcceptedPush) {
                 failAfterFirstAcceptedPush = false
                 error("connection lost after server acceptance")

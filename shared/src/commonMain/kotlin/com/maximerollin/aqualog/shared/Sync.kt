@@ -19,8 +19,18 @@ data class SyncOperation(
     val id: Long,
     val entityType: SyncEntityType,
     val entityId: String,
+    val kind: SyncOperationKind,
     val attemptCount: Int,
 )
+
+enum class SyncOperationKind(val storageValue: String) {
+    UPSERT("upsert"),
+    DELETE("delete");
+
+    companion object {
+        fun fromStorageValue(value: String) = entries.first { it.storageValue == value }
+    }
+}
 
 enum class SyncStatus {
     SYNCED,
@@ -47,7 +57,7 @@ interface SyncLocalDataSource {
     suspend fun pendingSyncBatch(limit: Int = 100): PendingSyncBatch
     suspend fun acknowledgeSyncOperations(operationIds: List<Long>)
     suspend fun recordSyncFailure(operationIds: List<Long>)
-    suspend fun applyRemoteCopy(copy: InitialAccountCopy)
+    suspend fun commitRemoteCopy(copy: InitialAccountCopy, acknowledgedOperationIds: List<Long>)
 }
 
 data class SyncSession(
@@ -57,6 +67,8 @@ data class SyncSession(
 
 interface SyncSessionProvider {
     suspend fun currentSession(): SyncSession?
+    suspend fun refreshSession(expiredSession: SyncSession): SyncSession? = null
+    suspend fun requireReauthentication() = Unit
 }
 
 interface SyncBackend {
@@ -87,21 +99,44 @@ class SyncCoordinator(
     private val retryPolicy: SyncRetryPolicy = SyncRetryPolicy(),
 ) {
     suspend fun runOnce(): SyncRunResult {
-        val session = sessionProvider.currentSession() ?: return SyncRunResult.SignedOut
-        val batch = localData.pendingSyncBatch()
-        return try {
-            if (batch.operations.isNotEmpty()) backend.push(session, batch)
-            val remoteCopy = backend.pull(session)
-            localData.applyRemoteCopy(remoteCopy)
-            localData.acknowledgeSyncOperations(batch.operations.map(SyncOperation::id))
-            SyncRunResult.Synchronized(remoteCopy.sessions.size)
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (_: Exception) {
-            val operationIds = batch.operations.map(SyncOperation::id)
-            localData.recordSyncFailure(operationIds)
-            val attempt = (batch.operations.maxOfOrNull(SyncOperation::attemptCount) ?: 0) + 1
-            SyncRunResult.Retry(retryPolicy.delayMillis(attempt))
+        var session = sessionProvider.currentSession() ?: return SyncRunResult.SignedOut
+        var refreshed = false
+        var hasPulled = false
+        var downloadedSessionCount = 0
+        repeat(MAX_BATCHES_PER_RUN) {
+            val batch = localData.pendingSyncBatch()
+            if (batch.operations.isEmpty() && hasPulled) {
+                return SyncRunResult.Synchronized(downloadedSessionCount)
+            }
+            try {
+                if (batch.operations.isNotEmpty()) backend.push(session, batch)
+                val remoteCopy = backend.pull(session)
+                localData.commitRemoteCopy(remoteCopy, batch.operations.map(SyncOperation::id))
+                downloadedSessionCount = remoteCopy.sessions.size
+                hasPulled = true
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: CloudAuthenticationExpiredException) {
+                if (refreshed) {
+                    sessionProvider.requireReauthentication()
+                    return SyncRunResult.SignedOut
+                }
+                session = sessionProvider.refreshSession(session) ?: run {
+                    sessionProvider.requireReauthentication()
+                    return SyncRunResult.SignedOut
+                }
+                refreshed = true
+            } catch (_: Exception) {
+                val operationIds = batch.operations.map(SyncOperation::id)
+                localData.recordSyncFailure(operationIds)
+                val attempt = (batch.operations.maxOfOrNull(SyncOperation::attemptCount) ?: 0) + 1
+                return SyncRunResult.Retry(retryPolicy.delayMillis(attempt))
+            }
         }
+        return SyncRunResult.Retry(retryPolicy.delayMillis(1))
+    }
+
+    private companion object {
+        const val MAX_BATCHES_PER_RUN = 20
     }
 }

@@ -10,9 +10,13 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.maximerollin.aqualog.shared.AccountLocalDataSource
+import com.maximerollin.aqualog.shared.AuthGateway
+import com.maximerollin.aqualog.shared.AuthTokens
+import com.maximerollin.aqualog.shared.AuthenticationResult
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.CloudAuthenticationExpiredException
 import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.InitialAccountCopy
 import com.maximerollin.aqualog.shared.InitialMigrationStatus
@@ -29,6 +33,7 @@ import com.maximerollin.aqualog.shared.SyncCoordinator
 import com.maximerollin.aqualog.shared.SyncRunResult
 import com.maximerollin.aqualog.shared.SyncSession
 import com.maximerollin.aqualog.shared.SyncSessionProvider
+import com.maximerollin.aqualog.shared.SyncOperationKind
 import com.maximerollin.aqualog.shared.VolumeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -41,6 +46,7 @@ import java.util.concurrent.TimeUnit
 class LocalAccountSyncSessionProvider(
     private val localData: AccountLocalDataSource,
     private val tokenStorage: SecureTokenStorage,
+    private val authGateway: AuthGateway,
 ) : SyncSessionProvider {
     override suspend fun currentSession(): SyncSession? {
         val account = localData.accountMigrationState()
@@ -49,6 +55,18 @@ class LocalAccountSyncSessionProvider(
         val tokens = tokenStorage.read() ?: return null
         return SyncSession(account.accountId, tokens.accessToken)
     }
+
+    override suspend fun refreshSession(expiredSession: SyncSession): SyncSession? {
+        val refreshToken = tokenStorage.read()?.refreshToken ?: return null
+        val refreshed = authGateway.refreshSession(refreshToken) as? AuthenticationResult.Authenticated ?: return null
+        if (refreshed.account.accountId != expiredSession.accountId) return null
+        tokenStorage.save(AuthTokens(refreshed.account.accessToken, refreshed.account.refreshToken))
+        return SyncSession(refreshed.account.accountId, refreshed.account.accessToken)
+    }
+
+    override suspend fun requireReauthentication() {
+        tokenStorage.clear()
+    }
 }
 
 class SupabaseSyncBackend(
@@ -56,6 +74,11 @@ class SupabaseSyncBackend(
 ) : SyncBackend {
     override suspend fun push(session: SyncSession, batch: PendingSyncBatch) = withContext(Dispatchers.IO) {
         require(configuration.isConfigured) { "Supabase is not configured for this build" }
+        batch.operations.groupBy { it.entityType to it.entityId }
+            .mapValues { (_, operations) -> operations.maxBy { it.id } }
+            .values
+            .filter { it.kind == SyncOperationKind.DELETE }
+            .forEach { operation -> delete(operation.entityType.remoteTable, operation.entityId, session.accessToken) }
         upsert("aquariums", batch.aquariums.map { it.toRemoteJson(session.accountId) }, session.accessToken)
         upsert(
             "parameter_definitions",
@@ -157,6 +180,15 @@ class SupabaseSyncBackend(
         return List(values.length()) { index -> values.getJSONObject(index) }
     }
 
+    private fun delete(table: String, entityId: String, accessToken: String) {
+        request(
+            path = "/rest/v1/$table?id=eq.$entityId",
+            method = "DELETE",
+            accessToken = accessToken,
+            prefer = "return=minimal",
+        )
+    }
+
     private fun request(
         path: String,
         method: String,
@@ -180,6 +212,7 @@ class SupabaseSyncBackend(
             val status = connection.responseCode
             val response = (if (status in 200..299) connection.inputStream else connection.errorStream)
                 ?.bufferedReader()?.use { it.readText() }.orEmpty()
+            if (status == HttpURLConnection.HTTP_UNAUTHORIZED) throw CloudAuthenticationExpiredException()
             if (status !in 200..299) error("Supabase sync returned HTTP $status: $response")
             response
         } finally {
@@ -211,7 +244,7 @@ object AndroidSyncScheduler {
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, TimeUnit.SECONDS)
             .build()
-        WorkManager.getInstance(context).enqueueUniqueWork(workName, ExistingWorkPolicy.KEEP, request)
+        WorkManager.getInstance(context).enqueueUniqueWork(workName, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
     }
 }
 
@@ -245,3 +278,13 @@ private fun SessionEvent.toRemoteJson(accountId: String) = JSONObject()
 private fun JSONObject.putNullable(name: String, value: Any?): JSONObject = put(name, value ?: JSONObject.NULL)
 private fun JSONObject.nullableDouble(name: String): Double? = if (isNull(name)) null else getDouble(name)
 private fun JSONObject.nullableString(name: String): String? = if (isNull(name)) null else getString(name)
+
+private val com.maximerollin.aqualog.shared.SyncEntityType.remoteTable: String
+    get() = when (this) {
+        com.maximerollin.aqualog.shared.SyncEntityType.AQUARIUM -> "aquariums"
+        com.maximerollin.aqualog.shared.SyncEntityType.PARAMETER_DEFINITION -> "parameter_definitions"
+        com.maximerollin.aqualog.shared.SyncEntityType.SESSION -> "sessions"
+        com.maximerollin.aqualog.shared.SyncEntityType.MEASUREMENT -> "measurements"
+        com.maximerollin.aqualog.shared.SyncEntityType.MAINTENANCE_ACTION -> "maintenance_actions"
+        com.maximerollin.aqualog.shared.SyncEntityType.EVENT -> "session_events"
+    }
