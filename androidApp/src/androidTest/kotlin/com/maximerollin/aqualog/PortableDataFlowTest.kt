@@ -110,6 +110,45 @@ class PortableDataFlowTest {
         }
     }
 
+    @Test
+    fun rejectedImport_explainsTheInvalidSection_withoutDisplayingRawData() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val application = context.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        runBlocking { application.createPortableAquarium("Private Aquarium Name") }
+        val validPayload = runBlocking { application.portableDataService.export() }
+        val invalidPayload = validPayload.replace(
+            Regex("\"isActive\"\\s*:\\s*true"),
+            "\"isActive\":false",
+        )
+        check(invalidPayload != validPayload)
+        application.resetRepository()
+        val input = File(context.cacheDir, "portable-invalid-parameters.json").apply {
+            writeText(invalidPayload)
+        }
+        intending(hasAction(Intent.ACTION_OPEN_DOCUMENT)).respondWith(
+            ActivityResult(Activity.RESULT_OK, Intent().setData(Uri.fromFile(input))),
+        )
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.onNodeWithText("Restore from export").performClick()
+            composeRule.onNodeWithText("Choose export file").performClick()
+
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodesWithText(
+                    "The export must contain every built-in Parameter in order, with at least one active. " +
+                        "Your local data was not changed.",
+                ).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeRule.onNodeWithText(
+                "The export must contain every built-in Parameter in order, with at least one active. " +
+                    "Your local data was not changed.",
+            ).assertIsDisplayed()
+        } finally {
+            scenario.close()
+        }
+    }
+
     private suspend fun TestAquaLogApplication.createPortableAquarium(name: String) {
         aquariumRepository.createConfiguredAquarium(
             name = name,

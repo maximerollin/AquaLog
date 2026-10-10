@@ -17,7 +17,7 @@ import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinitionDraft
-import com.maximerollin.aqualog.shared.PortableImportRejection
+import com.maximerollin.aqualog.shared.PortableImportProblem
 import com.maximerollin.aqualog.shared.PortableImportResult
 import com.maximerollin.aqualog.shared.RapidSessionContext
 import com.maximerollin.aqualog.shared.RapidSessionInput
@@ -137,16 +137,13 @@ data class TrendsUiState(
 enum class PortableDataMessage {
     EXPORT_READY,
     IMPORT_COMPLETE,
-    INVALID_FILE,
-    UNSUPPORTED_VERSION,
-    INVALID_DATA,
-    IMPORT_FAILED,
     STORAGE_ERROR,
 }
 
 data class PortableDataUiState(
     val isWorking: Boolean = false,
     val message: PortableDataMessage? = null,
+    val importProblem: PortableImportProblem? = null,
     val showImportConfirmation: Boolean = false,
 )
 
@@ -380,16 +377,15 @@ class HomeViewModel(
     }
 
     fun completePortableImport(result: PortableImportResult) {
-        val message = when (result) {
-            is PortableImportResult.Imported -> PortableDataMessage.IMPORT_COMPLETE
-            is PortableImportResult.Rejected -> when (result.reason) {
-                PortableImportRejection.INVALID_FORMAT -> PortableDataMessage.INVALID_FILE
-                PortableImportRejection.UNSUPPORTED_VERSION -> PortableDataMessage.UNSUPPORTED_VERSION
-                PortableImportRejection.INVALID_DATA -> PortableDataMessage.INVALID_DATA
-                PortableImportRejection.IMPORT_FAILED -> PortableDataMessage.IMPORT_FAILED
+        val portableData = when (result) {
+            is PortableImportResult.Imported -> {
+                PortableDataUiState(message = PortableDataMessage.IMPORT_COMPLETE)
+            }
+            is PortableImportResult.Rejected -> {
+                PortableDataUiState(importProblem = result.problem)
             }
         }
-        mutableUiState.update { it.copy(portableData = PortableDataUiState(message = message)) }
+        mutableUiState.update { it.copy(portableData = portableData) }
     }
 
     fun failPortableDataAccess() {

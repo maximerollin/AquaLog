@@ -25,6 +25,24 @@ enum class PortableImportRejection {
     IMPORT_FAILED,
 }
 
+enum class PortableImportProblem(val safeExplanation: String) {
+    INVALID_DOCUMENT("The selected file is not a complete AquaLog JSON export."),
+    MISSING_VERSION("The selected file has no numeric format version."),
+    UNSUPPORTED_VERSION("This AquaLog export version is not supported."),
+    SCHEMA_MISMATCH("The selected file does not match its AquaLog format version."),
+    UNSUPPORTED_DUPLICATE_STRATEGY("The export uses an unsupported duplicate strategy."),
+    DUPLICATE_IDENTIFIERS("Stable identifiers must be non-empty and unique."),
+    INVALID_AQUARIUMS("An Aquarium record is invalid."),
+    INVALID_PARAMETERS("Parameters are incomplete, unordered, inactive, or reference a missing Aquarium."),
+    INVALID_SESSIONS("A Session is empty, duplicated, or references a missing Aquarium."),
+    INVALID_MEASUREMENTS("A Measurement is invalid or has broken Session and Parameter relations."),
+    INVALID_ACTIONS("A maintenance Action is invalid or references a missing Session."),
+    INVALID_EVENTS("An Event is invalid or references a missing Session."),
+    INVALID_TASKS("A Task is invalid or references a missing Aquarium."),
+    INVALID_OCCURRENCES("A Task Occurrence is invalid, duplicated, or has broken relations."),
+    DATABASE_WRITE_FAILED("The local copy could not be replaced; no imported data was kept."),
+}
+
 sealed interface PortableImportResult {
     data class Imported(
         val duplicateStrategy: PortableDuplicateStrategy,
@@ -32,7 +50,8 @@ sealed interface PortableImportResult {
 
     data class Rejected(
         val reason: PortableImportRejection,
-        val explanation: String,
+        val problem: PortableImportProblem,
+        val explanation: String = problem.safeExplanation,
     ) : PortableImportResult
 }
 
@@ -155,13 +174,13 @@ class PortableDataService(
             is PortableDecodeResult.Accepted -> decoded.document
             is PortableDecodeResult.Rejected -> return PortableImportResult.Rejected(
                 reason = decoded.reason,
-                explanation = decoded.explanation,
+                problem = decoded.problem,
             )
         }
-        document.validationError()?.let { explanation ->
+        document.validationProblem()?.let { problem ->
             return PortableImportResult.Rejected(
                 reason = PortableImportRejection.INVALID_DATA,
-                explanation = explanation,
+                problem = problem,
             )
         }
         return try {
@@ -172,7 +191,7 @@ class PortableDataService(
         } catch (_: Exception) {
             PortableImportResult.Rejected(
                 reason = PortableImportRejection.IMPORT_FAILED,
-                explanation = "The local copy could not be replaced; no imported data was kept.",
+                problem = PortableImportProblem.DATABASE_WRITE_FAILED,
             )
         }
     }
@@ -190,7 +209,7 @@ private sealed interface PortableDecodeResult {
     data class Accepted(val document: PortableDataDocument) : PortableDecodeResult
     data class Rejected(
         val reason: PortableImportRejection,
-        val explanation: String,
+        val problem: PortableImportProblem,
     ) : PortableDecodeResult
 }
 
@@ -200,18 +219,18 @@ private fun decodeAndMigrate(payload: String): PortableDecodeResult {
     } catch (_: Exception) {
         return PortableDecodeResult.Rejected(
             PortableImportRejection.INVALID_FORMAT,
-            "The selected file is not a complete AquaLog JSON export.",
+            PortableImportProblem.INVALID_DOCUMENT,
         )
     }
     val version = root["formatVersion"]?.jsonPrimitive?.intOrNull
         ?: return PortableDecodeResult.Rejected(
             PortableImportRejection.INVALID_FORMAT,
-            "The selected file has no numeric formatVersion.",
+            PortableImportProblem.MISSING_VERSION,
         )
     if (version != PORTABLE_DATA_FORMAT_VERSION) {
         return PortableDecodeResult.Rejected(
             PortableImportRejection.UNSUPPORTED_VERSION,
-            "AquaLog export version $version is not supported by this app.",
+            PortableImportProblem.UNSUPPORTED_VERSION,
         )
     }
     val document = try {
@@ -222,15 +241,15 @@ private fun decodeAndMigrate(payload: String): PortableDecodeResult {
     } catch (_: Exception) {
         return PortableDecodeResult.Rejected(
             PortableImportRejection.INVALID_FORMAT,
-            "The selected file does not match the AquaLog version $version schema.",
+            PortableImportProblem.SCHEMA_MISMATCH,
         )
     }
     return PortableDecodeResult.Accepted(document)
 }
 
-private fun PortableDataDocument.validationError(): String? {
+private fun PortableDataDocument.validationProblem(): PortableImportProblem? {
     if (duplicateStrategy != PORTABLE_DATA_DUPLICATE_STRATEGY) {
-        return "The export uses an unsupported duplicate strategy."
+        return PortableImportProblem.UNSUPPORTED_DUPLICATE_STRATEGY
     }
     val idLists = listOf(
         "Aquarium" to aquariums.map(PortableAquarium::id),
@@ -243,7 +262,7 @@ private fun PortableDataDocument.validationError(): String? {
         "Occurrence" to taskOccurrences.map(PortableTaskOccurrence::id),
     )
     idLists.firstOrNull { (_, ids) -> ids.any(String::isBlank) || ids.distinct().size != ids.size }
-        ?.let { (kind) -> return "$kind identifiers must be non-empty and unique." }
+        ?.let { return PortableImportProblem.DUPLICATE_IDENTIFIERS }
 
     if (aquariums.any {
             it.name.isBlank() || !it.volume.isFinite() || it.volume <= 0.0 ||
@@ -251,7 +270,7 @@ private fun PortableDataDocument.validationError(): String? {
                 runCatching { AquariumProfile.fromStorageValue(it.profile) }.isFailure
         }
     ) {
-        return "An Aquarium record is invalid."
+        return PortableImportProblem.INVALID_AQUARIUMS
     }
     val aquariumsById = aquariums.associateBy(PortableAquarium::id)
     if (parameterDefinitions.any {
@@ -262,19 +281,31 @@ private fun PortableDataDocument.validationError(): String? {
                 runCatching { BuiltInParameter.fromStorageValue(it.parameter) }.isFailure
         }
     ) {
-        return "A Parameter record is invalid or references a missing Aquarium."
+        return PortableImportProblem.INVALID_PARAMETERS
     }
     if (parameterDefinitions.hasDuplicateBy { it.aquariumId to it.parameter }) {
-        return "Each built-in Parameter may appear only once per Aquarium."
+        return PortableImportProblem.INVALID_PARAMETERS
+    }
+    val expectedParameters = BuiltInParameter.entries.map(BuiltInParameter::storageValue).toSet()
+    if (aquariums.any { aquarium ->
+            val definitions = parameterDefinitions.filter { it.aquariumId == aquarium.id }
+            definitions.map(PortableParameterDefinition::parameter).toSet() != expectedParameters ||
+                definitions.map(PortableParameterDefinition::position).toSet() != definitions.indices.toSet() ||
+                definitions.none(PortableParameterDefinition::isActive)
+        }
+    ) {
+        return PortableImportProblem.INVALID_PARAMETERS
     }
     if (sessions.any {
             it.aquariumId !in aquariumsById || it.idempotencyKey.isBlank()
         } || sessions.hasDuplicateBy(PortableSession::idempotencyKey)
     ) {
-        return "A Session record is invalid, duplicated, or references a missing Aquarium."
+        return PortableImportProblem.INVALID_SESSIONS
     }
     val sessionsById = sessions.associateBy(PortableSession::id)
     val parametersById = parameterDefinitions.associateBy(PortableParameterDefinition::id)
+    // A Parameter can be disabled after a Measurement was recorded. Preserve that valid history;
+    // only the stable relation to a Parameter in the Session's Aquarium is required here.
     if (measurements.any { measurement ->
             val session = sessionsById[measurement.sessionId]
             val parameter = parametersById[measurement.parameterDefinitionId]
@@ -282,28 +313,36 @@ private fun PortableDataDocument.validationError(): String? {
                 session.aquariumId != parameter.aquariumId
         }
     ) {
-        return "A Measurement record is invalid or has broken Session and Parameter relations."
+        return PortableImportProblem.INVALID_MEASUREMENTS
     }
     if (maintenanceActions.any {
             it.sessionId !in sessionsById || it.quantity?.isFinite() == false ||
                 runCatching { MaintenanceActionType.fromStorageValue(it.type) }.isFailure
         }
     ) {
-        return "A maintenance Action record is invalid or references a missing Session."
+        return PortableImportProblem.INVALID_ACTIONS
     }
     if (events.any {
             it.sessionId !in sessionsById || it.note.isBlank() ||
                 runCatching { EventType.fromStorageValue(it.type) }.isFailure
         }
     ) {
-        return "An Event record is invalid or references a missing Session."
+        return PortableImportProblem.INVALID_EVENTS
+    }
+    val sessionsWithContent = buildSet {
+        measurements.mapTo(this, PortableMeasurement::sessionId)
+        maintenanceActions.mapTo(this, PortableMaintenanceAction::sessionId)
+        events.mapTo(this, PortableEvent::sessionId)
+    }
+    if (sessions.any { it.id !in sessionsWithContent }) {
+        return PortableImportProblem.INVALID_SESSIONS
     }
     if (tasks.any {
             it.aquariumId !in aquariumsById || it.title.isBlank() || it.monthlyAnchorDay !in 1..31 ||
                 runCatching { TaskRecurrence.fromStorageValue(it.recurrence) }.isFailure
         }
     ) {
-        return "A Task record is invalid or references a missing Aquarium."
+        return PortableImportProblem.INVALID_TASKS
     }
     val tasksById = tasks.associateBy(PortableTask::id)
     if (taskOccurrences.any { occurrence ->
@@ -315,13 +354,13 @@ private fun PortableDataDocument.validationError(): String? {
                 (occurrence.resolution == null) != (occurrence.resolvedAtEpochMillis == null)
         }
     ) {
-        return "A Task Occurrence is invalid or has broken Task and Aquarium relations."
+        return PortableImportProblem.INVALID_OCCURRENCES
     }
     if (taskOccurrences.hasDuplicateBy {
             listOf(it.taskId, it.dueYear, it.dueMonth, it.dueDay, it.dueMinuteOfDay, it.timeZoneId)
         }
     ) {
-        return "A Task Occurrence due date is duplicated."
+        return PortableImportProblem.INVALID_OCCURRENCES
     }
     return null
 }

@@ -161,10 +161,21 @@
     <string name="choose_export_file">Choose export file</string>
     <string name="portable_export_ready">Export ready</string>
     <string name="portable_import_complete">Restore complete</string>
-    <string name="portable_invalid_file">This file is incomplete or is not an AquaLog export. Your local data was not changed.</string>
-    <string name="portable_unsupported_version">This AquaLog export version is not supported. Your local data was not changed.</string>
-    <string name="portable_invalid_data">This export contains invalid or inconsistent data. Your local data was not changed.</string>
-    <string name="portable_import_failed">Restore failed. Your local data was not changed.</string>
+    <string name="portable_problem_invalid_document">This file is incomplete or is not an AquaLog JSON export. Your local data was not changed.</string>
+    <string name="portable_problem_missing_version">This export has no valid format version. Your local data was not changed.</string>
+    <string name="portable_problem_unsupported_version">This AquaLog export version is not supported. Your local data was not changed.</string>
+    <string name="portable_problem_schema_mismatch">This file does not match the declared AquaLog format version. Your local data was not changed.</string>
+    <string name="portable_problem_duplicate_strategy">This export uses an unsupported duplicate strategy. Your local data was not changed.</string>
+    <string name="portable_problem_duplicate_ids">This export contains empty or duplicate stable IDs. Your local data was not changed.</string>
+    <string name="portable_problem_aquariums">This export contains an invalid Aquarium. Your local data was not changed.</string>
+    <string name="portable_problem_parameters">The export must contain every built-in Parameter in order, with at least one active. Your local data was not changed.</string>
+    <string name="portable_problem_sessions">This export contains an empty Session or an invalid Aquarium relation. Your local data was not changed.</string>
+    <string name="portable_problem_measurements">This export contains an invalid Measurement or broken Session and Parameter relations. Your local data was not changed.</string>
+    <string name="portable_problem_actions">This export contains an invalid maintenance Action or Session relation. Your local data was not changed.</string>
+    <string name="portable_problem_events">This export contains an invalid Event or Session relation. Your local data was not changed.</string>
+    <string name="portable_problem_tasks">This export contains an invalid Task or Aquarium relation. Your local data was not changed.</string>
+    <string name="portable_problem_occurrences">This export contains an invalid Task Occurrence or broken relation. Your local data was not changed.</string>
+    <string name="portable_problem_database">Restore failed while replacing the local copy. No imported data was kept.</string>
     <string name="portable_storage_error">Android could not read or write this document. Try another location.</string>
 
     <string name="timeline_title">Chronology</string>

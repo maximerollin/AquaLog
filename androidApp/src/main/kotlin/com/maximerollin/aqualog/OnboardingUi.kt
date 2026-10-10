@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.PortableImportProblem
 import com.maximerollin.aqualog.shared.VolumeUnit
 
 @Composable
@@ -259,7 +260,7 @@ private fun WelcomeScreen(
     StandardScreen(modifier) {
         Spacer(Modifier.weight(1f))
         ScreenHeading(R.string.welcome_title, R.string.welcome_description)
-        PortableDataMessage(state.message)
+        PortableDataMessage(state)
         Spacer(Modifier.weight(1f))
         PrimaryButton(R.string.get_started, onContinue)
         OutlinedButton(
@@ -306,7 +307,7 @@ private fun PortableDataSettings(
             }
         }
         if (state.isWorking) CircularProgressIndicator()
-        PortableDataMessage(state.message)
+        PortableDataMessage(state)
     }
 }
 
@@ -333,22 +334,38 @@ private fun PortableImportConfirmation(
 }
 
 @Composable
-private fun PortableDataMessage(message: PortableDataMessage?) {
-    val string = when (message) {
-        PortableDataMessage.EXPORT_READY -> R.string.portable_export_ready
-        PortableDataMessage.IMPORT_COMPLETE -> R.string.portable_import_complete
-        PortableDataMessage.INVALID_FILE -> R.string.portable_invalid_file
-        PortableDataMessage.UNSUPPORTED_VERSION -> R.string.portable_unsupported_version
-        PortableDataMessage.INVALID_DATA -> R.string.portable_invalid_data
-        PortableDataMessage.IMPORT_FAILED -> R.string.portable_import_failed
-        PortableDataMessage.STORAGE_ERROR -> R.string.portable_storage_error
-        null -> return
+private fun PortableDataMessage(state: PortableDataUiState) {
+    val string = when (state.importProblem) {
+        PortableImportProblem.INVALID_DOCUMENT -> R.string.portable_problem_invalid_document
+        PortableImportProblem.MISSING_VERSION -> R.string.portable_problem_missing_version
+        PortableImportProblem.UNSUPPORTED_VERSION -> R.string.portable_problem_unsupported_version
+        PortableImportProblem.SCHEMA_MISMATCH -> R.string.portable_problem_schema_mismatch
+        PortableImportProblem.UNSUPPORTED_DUPLICATE_STRATEGY -> {
+            R.string.portable_problem_duplicate_strategy
+        }
+        PortableImportProblem.DUPLICATE_IDENTIFIERS -> R.string.portable_problem_duplicate_ids
+        PortableImportProblem.INVALID_AQUARIUMS -> R.string.portable_problem_aquariums
+        PortableImportProblem.INVALID_PARAMETERS -> R.string.portable_problem_parameters
+        PortableImportProblem.INVALID_SESSIONS -> R.string.portable_problem_sessions
+        PortableImportProblem.INVALID_MEASUREMENTS -> R.string.portable_problem_measurements
+        PortableImportProblem.INVALID_ACTIONS -> R.string.portable_problem_actions
+        PortableImportProblem.INVALID_EVENTS -> R.string.portable_problem_events
+        PortableImportProblem.INVALID_TASKS -> R.string.portable_problem_tasks
+        PortableImportProblem.INVALID_OCCURRENCES -> R.string.portable_problem_occurrences
+        PortableImportProblem.DATABASE_WRITE_FAILED -> R.string.portable_problem_database
+        null -> when (state.message) {
+            PortableDataMessage.EXPORT_READY -> R.string.portable_export_ready
+            PortableDataMessage.IMPORT_COMPLETE -> R.string.portable_import_complete
+            PortableDataMessage.STORAGE_ERROR -> R.string.portable_storage_error
+            null -> return
+        }
     }
     Text(
         stringResource(string),
         style = MaterialTheme.typography.bodyMedium,
         color = if (
-            message == PortableDataMessage.EXPORT_READY || message == PortableDataMessage.IMPORT_COMPLETE
+            state.message == PortableDataMessage.EXPORT_READY ||
+            state.message == PortableDataMessage.IMPORT_COMPLETE
         ) {
             MaterialTheme.colorScheme.primary
         } else {
