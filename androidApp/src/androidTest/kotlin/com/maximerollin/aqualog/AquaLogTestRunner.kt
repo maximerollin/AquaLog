@@ -15,6 +15,7 @@ import com.maximerollin.aqualog.shared.ProBillingGateway
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.ProPurchaseVerifier
 import com.maximerollin.aqualog.shared.PurchaseVerificationResult
+import com.maximerollin.aqualog.shared.PortableDataService
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
 import kotlinx.coroutines.flow.Flow
@@ -34,6 +35,7 @@ class AquaLogTestRunner : AndroidJUnitRunner() {
 class TestAquaLogApplication : AquaLogApplication() {
     private var database: AquaLogDatabase? = null
     private var repository: AquariumRepository? = null
+    private var portableService: PortableDataService? = null
     private var databaseSequence = 0
     val recordingTaskReminderScheduler = RecordingTaskReminderScheduler()
 
@@ -61,6 +63,9 @@ class TestAquaLogApplication : AquaLogApplication() {
         },
     )
 
+    override val portableDataService: PortableDataService
+        get() = requireNotNull(portableService) { "resetRepository() must run before launching MainActivity" }
+
     fun resetRepository() {
         database?.close()
         val databaseName = "aqualog-test-${databaseSequence++}.db"
@@ -72,6 +77,7 @@ class TestAquaLogApplication : AquaLogApplication() {
             generateId = { UUID.randomUUID().toString() },
             currentTimeMillis = System::currentTimeMillis,
         )
+        portableService = PortableDataService(newDatabase)
         recordingTaskReminderScheduler.reset()
     }
 

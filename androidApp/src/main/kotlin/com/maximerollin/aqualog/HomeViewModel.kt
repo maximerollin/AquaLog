@@ -20,6 +20,8 @@ import com.maximerollin.aqualog.shared.ParameterDefinitionDraft
 import com.maximerollin.aqualog.shared.AnnualProOffer
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.ProPurchaseOutcome
+import com.maximerollin.aqualog.shared.PortableImportProblem
+import com.maximerollin.aqualog.shared.PortableImportResult
 import com.maximerollin.aqualog.shared.RapidSessionContext
 import com.maximerollin.aqualog.shared.RapidSessionInput
 import com.maximerollin.aqualog.shared.RecordedSession
@@ -155,6 +157,19 @@ data class ProUiState(
     val restoreAfterAuthentication: Boolean = false,
 )
 
+enum class PortableDataMessage {
+    EXPORT_READY,
+    IMPORT_COMPLETE,
+    STORAGE_ERROR,
+}
+
+data class PortableDataUiState(
+    val isWorking: Boolean = false,
+    val message: PortableDataMessage? = null,
+    val importProblem: PortableImportProblem? = null,
+    val showImportConfirmation: Boolean = false,
+)
+
 data class ParameterEditorState(
     val parameter: BuiltInParameter,
     val isActive: Boolean,
@@ -220,6 +235,7 @@ data class HomeUiState(
     val trends: TrendsUiState = TrendsUiState(),
     val pro: ProUiState = ProUiState(),
     val tasks: TaskUiState = TaskUiState(),
+    val portableData: PortableDataUiState = PortableDataUiState(),
 )
 
 data class RapidSessionUiState(
@@ -364,6 +380,54 @@ class HomeViewModel(
     }
 
     fun startOnboarding() = moveTo(OnboardingStep.PROFILE)
+
+    fun startPortableDataOperation() {
+        mutableUiState.update { it.copy(portableData = PortableDataUiState(isWorking = true)) }
+    }
+
+    fun requestPortableImport() {
+        mutableUiState.update { state ->
+            state.copy(
+                portableData = state.portableData.copy(showImportConfirmation = true),
+            )
+        }
+    }
+
+    fun dismissPortableImportConfirmation() {
+        mutableUiState.update { state ->
+            state.copy(
+                portableData = state.portableData.copy(showImportConfirmation = false),
+            )
+        }
+    }
+
+    fun cancelPortableDataOperation() {
+        mutableUiState.update { it.copy(portableData = PortableDataUiState()) }
+    }
+
+    fun completePortableExport() {
+        mutableUiState.update {
+            it.copy(portableData = PortableDataUiState(message = PortableDataMessage.EXPORT_READY))
+        }
+    }
+
+    fun completePortableImport(result: PortableImportResult) {
+        val portableData = when (result) {
+            is PortableImportResult.Imported -> {
+                PortableDataUiState(message = PortableDataMessage.IMPORT_COMPLETE)
+            }
+            is PortableImportResult.Rejected -> {
+                PortableDataUiState(importProblem = result.problem)
+            }
+        }
+        mutableUiState.update { it.copy(portableData = portableData) }
+    }
+
+    fun failPortableDataAccess() {
+        mutableUiState.update {
+            it.copy(portableData = PortableDataUiState(message = PortableDataMessage.STORAGE_ERROR))
+        }
+    }
 
     fun selectProfile(profile: AquariumProfile) {
         mutableUiState.update {
