@@ -22,6 +22,7 @@ enum class PortableImportRejection {
     INVALID_FORMAT,
     UNSUPPORTED_VERSION,
     INVALID_DATA,
+    ACCOUNT_LINKED,
     IMPORT_FAILED,
 }
 
@@ -40,6 +41,7 @@ enum class PortableImportProblem(val safeExplanation: String) {
     INVALID_EVENTS("An Event is invalid or references a missing Session."),
     INVALID_TASKS("A Task is invalid or references a missing Aquarium."),
     INVALID_OCCURRENCES("A Task Occurrence is invalid, duplicated, or has broken relations."),
+    ACCOUNT_LINKED("Disconnect the linked account before restoring a portable local copy."),
     DATABASE_WRITE_FAILED("The local copy could not be replaced; no imported data was kept."),
 }
 
@@ -184,8 +186,14 @@ class PortableDataService(
             )
         }
         return try {
-            portableDataDao.replaceAll(document.toSnapshot())
-            PortableImportResult.Imported(PortableDuplicateStrategy.REPLACE_LOCAL_PORTABLE_DATA)
+            if (portableDataDao.replaceAll(document.toSnapshot())) {
+                PortableImportResult.Imported(PortableDuplicateStrategy.REPLACE_LOCAL_PORTABLE_DATA)
+            } else {
+                PortableImportResult.Rejected(
+                    reason = PortableImportRejection.ACCOUNT_LINKED,
+                    problem = PortableImportProblem.ACCOUNT_LINKED,
+                )
+            }
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {

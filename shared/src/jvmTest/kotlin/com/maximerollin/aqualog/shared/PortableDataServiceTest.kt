@@ -10,6 +10,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class PortableDataServiceTest {
@@ -101,12 +102,12 @@ class PortableDataServiceTest {
             profile = AquariumProfile.CYCLING,
             parameters = OnboardingPresets.parametersFor(AquariumProfile.CYCLING),
         )
-        restored.repository.beginAccountMigration("local-account-state")
         restored.repository.markAccountInvitationOffered()
         val firstImport = assertIs<PortableImportResult.Imported>(restored.service.importData(exported))
         assertEquals(PortableDuplicateStrategy.REPLACE_LOCAL_PORTABLE_DATA, firstImport.duplicateStrategy)
         assertEquals(exported, restored.service.export())
-        assertEquals("local-account-state", restored.repository.accountMigrationState()?.accountId)
+        assertNull(restored.repository.accountMigrationState())
+        assertEquals(SyncStatus.SYNCED, restored.repository.observeSyncState().first().status)
         assertTrue(restored.repository.wasAccountInvitationOffered())
 
         val restoredSetup = restored.repository.observeCurrentSetup().first()
@@ -125,6 +126,44 @@ class PortableDataServiceTest {
 
         source.close()
         restored.close()
+    }
+
+    @Test
+    fun `restore is rejected atomically while account migration is pending or linked`() = runTest {
+        val incoming = portableFixture()
+        incoming.repository.createConfiguredAquarium(
+            name = "Incoming",
+            volume = 80.0,
+            volumeUnit = VolumeUnit.LITERS,
+            profile = AquariumProfile.ESTABLISHED,
+            parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+        )
+        val payload = incoming.service.export()
+
+        listOf(false, true).forEach { migrationComplete ->
+            val existing = portableFixture()
+            existing.repository.createConfiguredAquarium(
+                name = "Must stay local",
+                volume = 45.0,
+                volumeUnit = VolumeUnit.LITERS,
+                profile = AquariumProfile.CYCLING,
+                parameters = OnboardingPresets.parametersFor(AquariumProfile.CYCLING),
+            )
+            existing.repository.beginAccountMigration("linked-account")
+            if (migrationComplete) existing.repository.completeAccountMigration("linked-account")
+            val before = existing.service.export()
+            val pendingBefore = existing.repository.observeSyncState().first().pendingOperationCount
+
+            val rejected = assertIs<PortableImportResult.Rejected>(existing.service.importData(payload))
+
+            assertEquals(PortableImportRejection.ACCOUNT_LINKED, rejected.reason)
+            assertEquals(PortableImportProblem.ACCOUNT_LINKED, rejected.problem)
+            assertEquals(before, existing.service.export())
+            assertEquals("linked-account", existing.repository.accountMigrationState()?.accountId)
+            assertEquals(pendingBefore, existing.repository.observeSyncState().first().pendingOperationCount)
+            existing.close()
+        }
+        incoming.close()
     }
 
     @Test
@@ -347,6 +386,7 @@ class PortableDataServiceTest {
             parameters = OnboardingPresets.parametersFor(AquariumProfile.CYCLING),
         )
         val before = existing.service.export()
+        val pendingBefore = existing.repository.observeSyncState().first().pendingOperationCount
         existing.rejectAquariumInserts()
 
         val rejected = assertIs<PortableImportResult.Rejected>(existing.service.importData(payload))
@@ -355,6 +395,8 @@ class PortableDataServiceTest {
         assertEquals(PortableImportProblem.DATABASE_WRITE_FAILED, rejected.problem)
         assertEquals(before, existing.service.export())
         assertEquals("Must survive rollback", existing.repository.observeCurrentSetup().first()?.aquarium?.name)
+        assertNull(existing.repository.accountMigrationState())
+        assertEquals(pendingBefore, existing.repository.observeSyncState().first().pendingOperationCount)
 
         incoming.close()
         existing.close()

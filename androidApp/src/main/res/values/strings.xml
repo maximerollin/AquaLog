@@ -162,6 +162,9 @@
     <string name="navigation_history">History</string>
     <string name="navigation_settings">Settings</string>
     <string name="settings_title">Settings</string>
+    <string name="settings_placeholder">Account, units and appearance settings will be added in their dedicated slices.</string>
+    <string name="sync_status_synced">✓ Synced</string>
+    <string name="sync_status_pending">○ Sync pending</string>
     <string name="portable_data_title">Portable local data</string>
     <string name="portable_data_description">Save or restore your local AquaLog copy with Android document storage.</string>
     <string name="portable_data_replace_explanation">Restore validates the whole file first, then atomically replaces Aquarium data on this device. Stable IDs prevent duplicates. Account credentials and billing data are never included.</string>
@@ -186,6 +189,7 @@
     <string name="portable_problem_events">This export contains an invalid Event or Session relation. Your local data was not changed.</string>
     <string name="portable_problem_tasks">This export contains an invalid Task or Aquarium relation. Your local data was not changed.</string>
     <string name="portable_problem_occurrences">This export contains an invalid Task Occurrence or broken relation. Your local data was not changed.</string>
+    <string name="portable_problem_account_linked">Disconnect your linked account before restoring a portable local copy. Your local data and account were not changed.</string>
     <string name="portable_problem_database">Restore failed while replacing the local copy. No imported data was kept.</string>
     <string name="portable_storage_error">Android could not read or write this document. Try another location.</string>
 

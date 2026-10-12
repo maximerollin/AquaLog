@@ -44,6 +44,7 @@ import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.PortableImportProblem
 import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.SyncStatus
 
 @Composable
 fun AquaLogContent(
@@ -329,6 +330,7 @@ private fun PortableDataMessage(state: PortableDataUiState) {
         PortableImportProblem.INVALID_EVENTS -> R.string.portable_problem_events
         PortableImportProblem.INVALID_TASKS -> R.string.portable_problem_tasks
         PortableImportProblem.INVALID_OCCURRENCES -> R.string.portable_problem_occurrences
+        PortableImportProblem.ACCOUNT_LINKED -> R.string.portable_problem_account_linked
         PortableImportProblem.DATABASE_WRITE_FAILED -> R.string.portable_problem_database
         null -> when (state.message) {
             PortableDataMessage.EXPORT_READY -> R.string.portable_export_ready
@@ -814,6 +816,21 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                         stringResource(R.string.aquarium_ready),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        stringResource(
+                            if (state.syncState.status == SyncStatus.SYNCED) {
+                                R.string.sync_status_synced
+                            } else {
+                                R.string.sync_status_pending
+                            },
+                        ),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (state.syncState.status == SyncStatus.SYNCED) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        },
                     )
                 }
             }

@@ -5,9 +5,10 @@ import android.app.Activity
 import com.maximerollin.aqualog.shared.AQUA_LOG_DATABASE_NAME
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
 import com.maximerollin.aqualog.shared.AquariumRepository
-import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.PortableDataService
+import com.maximerollin.aqualog.shared.RoomAquariumRepository
+import com.maximerollin.aqualog.shared.SyncCoordinator
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
 import java.util.UUID
@@ -24,6 +25,24 @@ open class AquaLogApplication : Application() {
             database = database,
             generateId = { UUID.randomUUID().toString() },
             currentTimeMillis = System::currentTimeMillis,
+            onSyncNeeded = { AndroidSyncScheduler.enqueue(this) },
+        )
+    }
+
+    protected open val secureTokenStorage: AndroidSecureTokenStorage by lazy {
+        AndroidSecureTokenStorage(this)
+    }
+
+    open val syncCoordinator: SyncCoordinator by lazy {
+        val localData = aquariumRepository as RoomAquariumRepository
+        SyncCoordinator(
+            localData = localData,
+            backend = SupabaseSyncBackend(SupabaseConfiguration.fromBuildConfig()),
+            sessionProvider = LocalAccountSyncSessionProvider(
+                localData,
+                secureTokenStorage,
+                SupabaseAuthGateway(this, SupabaseConfiguration.fromBuildConfig(), secureTokenStorage),
+            ),
         )
     }
 
@@ -39,23 +58,21 @@ open class AquaLogApplication : Application() {
         get() {
             val localData = aquariumRepository as RoomAquariumRepository
             val configuration = SupabaseConfiguration.fromBuildConfig()
-            val tokenStorage = AndroidSecureTokenStorage(this)
             return AccountActivationCoordinator(
-                authGateway = SupabaseAuthGateway(this, configuration, tokenStorage),
+                authGateway = SupabaseAuthGateway(this, configuration, secureTokenStorage),
                 cloudRepository = SupabaseInitialMigrationRepository(configuration),
                 localData = localData,
-                tokenStorage = tokenStorage,
+                tokenStorage = secureTokenStorage,
             )
         }
 
     private val googlePlayBillingGateway by lazy { GooglePlayBillingGateway(this) }
     private val defaultProPurchaseCoordinator by lazy {
-        val tokenStorage = AndroidSecureTokenStorage(this)
         ProPurchaseCoordinator(
             billingGateway = googlePlayBillingGateway,
             purchaseVerifier = SupabaseProPurchaseVerifier(
                 configuration = SupabaseConfiguration.fromBuildConfig(),
-                tokenStorage = tokenStorage,
+                tokenStorage = secureTokenStorage,
             ),
         )
     }
