@@ -52,6 +52,13 @@ class TestAquaLogApplication : AquaLogApplication() {
         recordingTaskReminderScheduler.reset()
     }
 
+    fun installRepository(value: AquariumRepository) {
+        database?.close()
+        database = null
+        repository = value
+        recordingTaskReminderScheduler.reset()
+    }
+
     override fun onTerminate() {
         database?.close()
         super.onTerminate()

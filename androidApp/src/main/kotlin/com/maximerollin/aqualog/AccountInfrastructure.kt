@@ -43,7 +43,8 @@ data class SupabaseConfiguration(
     val redirectUrl: String = "aqualog://auth/callback",
 ) {
     val isConfigured: Boolean
-        get() = projectUrl.startsWith("https://") && anonymousKey.isNotBlank()
+        get() = (projectUrl.startsWith("https://") || projectUrl.startsWith("http://10.0.2.2")) &&
+            anonymousKey.isNotBlank()
 
     companion object {
         fun fromBuildConfig() = SupabaseConfiguration(

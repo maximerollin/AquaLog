@@ -75,7 +75,10 @@ and public anonymous key; the atomic database RPC derives ownership from
 existing local UUID. No service-role or other privileged key belongs in the
 Android build. An expired access token is refreshed once before the migration is
 retried; an invalid refresh token returns the user to authentication. Ongoing
-multi-device synchronization is intentionally outside this slice.
+multi-device synchronization uses a persistent Room outbox and authenticated
+PostgREST calls. Local edits remain available immediately; a unique WorkManager
+chain drains pending operations when connectivity returns and downloads the
+account copy into the device Timeline.
 
 The local backend contract is verified with:
 
@@ -83,4 +86,14 @@ The local backend contract is verified with:
 supabase start
 supabase test db
 npx --yes deno test supabase/functions/migrate-initial-copy/service_test.ts
+```
+
+The production Android adapter/two-store Chronology integration test runs against
+the local backend from an emulator. Use the emulator host alias when building it:
+
+```shell
+AQUALOG_SUPABASE_URL=http://10.0.2.2:54321 \
+AQUALOG_SUPABASE_ANON_KEY=LOCAL_PUBLIC_ANON_KEY \
+./gradlew :androidApp:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.maximerollin.aqualog.SupabaseTwoDeviceSyncTest
 ```

@@ -147,6 +147,15 @@ data class AccountInvitationEntity(
     val wasOffered: Boolean,
 )
 
+@Entity(tableName = "sync_operations")
+data class SyncOperationEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val entityType: String,
+    val entityId: String,
+    @ColumnInfo(defaultValue = "'upsert'") val kind: String = "upsert",
+    val attemptCount: Int = 0,
+)
+
 @Dao
 abstract class AquariumDao {
     @Query("SELECT * FROM aquariums ORDER BY createdAtEpochMillis ASC LIMIT 1")
@@ -176,18 +185,44 @@ abstract class AquariumDao {
     @Insert
     protected abstract suspend fun insertParameters(parameters: List<ParameterDefinitionEntity>)
 
+    @Insert
+    protected abstract suspend fun insertSyncOperations(operations: List<SyncOperationEntity>)
+
+    @Upsert
+    protected abstract suspend fun upsertAquarium(aquarium: AquariumEntity)
+
+    @Upsert
+    protected abstract suspend fun upsertParameter(parameter: ParameterDefinitionEntity)
+
     @Transaction
-    open suspend fun create(aquarium: AquariumEntity) {
+    open suspend fun create(aquarium: AquariumEntity, syncOperation: SyncOperationEntity) {
         insert(aquarium)
+        insertSyncOperations(listOf(syncOperation))
     }
 
     @Transaction
     open suspend fun createConfigured(
         aquarium: AquariumEntity,
         parameters: List<ParameterDefinitionEntity>,
+        syncOperations: List<SyncOperationEntity>,
     ) {
         insert(aquarium)
         insertParameters(parameters)
+        insertSyncOperations(syncOperations)
+    }
+
+    @Transaction
+    open suspend fun updateAquarium(aquarium: AquariumEntity, syncOperation: SyncOperationEntity) {
+        requireNotNull(getSetup(aquarium.id)) { "Aquarium does not exist" }
+        upsertAquarium(aquarium)
+        insertSyncOperations(listOf(syncOperation))
+    }
+
+    @Transaction
+    open suspend fun updateParameter(parameter: ParameterDefinitionEntity, syncOperation: SyncOperationEntity) {
+        requireNotNull(getSetup(parameter.aquariumId)) { "Aquarium does not exist" }
+        upsertParameter(parameter)
+        insertSyncOperations(listOf(syncOperation))
     }
 }
 
@@ -205,13 +240,16 @@ abstract class SessionDao {
     @Insert
     protected abstract suspend fun insertEvents(events: List<SessionEventEntity>)
 
+    @Insert
+    protected abstract suspend fun insertSyncOperations(operations: List<SyncOperationEntity>)
+
     @Transaction
     @Query("SELECT * FROM sessions WHERE idempotencyKey = :idempotencyKey LIMIT 1")
     protected abstract suspend fun getByIdempotencyKey(idempotencyKey: String): RecordedSessionEntity?
 
     @Transaction
     @Query("SELECT * FROM sessions WHERE id = :sessionId LIMIT 1")
-    protected abstract suspend fun getById(sessionId: String): RecordedSessionEntity?
+    abstract suspend fun getById(sessionId: String): RecordedSessionEntity?
 
     @Transaction
     @Query("SELECT * FROM sessions WHERE id = :sessionId LIMIT 1")
@@ -286,12 +324,14 @@ abstract class SessionDao {
         measurements: List<MeasurementEntity>,
         actions: List<MaintenanceActionEntity>,
         events: List<SessionEventEntity>,
+        syncOperations: List<SyncOperationEntity>,
     ): RecordedSessionEntity {
         val inserted = insertSession(session) != -1L
         if (inserted) {
             if (measurements.isNotEmpty()) insertMeasurements(measurements)
             if (actions.isNotEmpty()) insertMaintenanceActions(actions)
             if (events.isNotEmpty()) insertEvents(events)
+            insertSyncOperations(syncOperations)
         }
         return requireNotNull(getByIdempotencyKey(session.idempotencyKey))
     }
@@ -304,6 +344,7 @@ abstract class SessionDao {
         measurements: List<MeasurementEntity>,
         actions: List<MaintenanceActionEntity>,
         events: List<SessionEventEntity>,
+        syncOperations: List<SyncOperationEntity>,
     ): RecordedSessionEntity {
         require(updateOccurredAt(sessionId, aquariumId, occurredAtEpochMillis) == 1) {
             "Session does not exist in this Aquarium"
@@ -314,6 +355,7 @@ abstract class SessionDao {
         if (measurements.isNotEmpty()) insertMeasurements(measurements)
         if (actions.isNotEmpty()) insertMaintenanceActions(actions)
         if (events.isNotEmpty()) insertEvents(events)
+        insertSyncOperations(syncOperations)
         return requireNotNull(getById(sessionId))
     }
 
@@ -497,6 +539,12 @@ abstract class PortableDataDao {
     @Query("DELETE FROM aquariums")
     protected abstract suspend fun deleteAquariums()
 
+    @Query("DELETE FROM sync_operations")
+    protected abstract suspend fun deleteSyncOperations()
+
+    @Query("SELECT COUNT(*) FROM account_state")
+    protected abstract suspend fun accountStateCount(): Int
+
     @Transaction
     open suspend fun snapshot() = PortableDatabaseSnapshot(
         aquariums = allAquariums(),
@@ -510,7 +558,9 @@ abstract class PortableDataDao {
     )
 
     @Transaction
-    open suspend fun replaceAll(snapshot: PortableDatabaseSnapshot) {
+    open suspend fun replaceAll(snapshot: PortableDatabaseSnapshot): Boolean {
+        if (accountStateCount() != 0) return false
+        deleteSyncOperations()
         deleteMeasurements()
         deleteMaintenanceActions()
         deleteEvents()
@@ -528,6 +578,118 @@ abstract class PortableDataDao {
         if (snapshot.events.isNotEmpty()) insertEvents(snapshot.events)
         if (snapshot.tasks.isNotEmpty()) insertTasks(snapshot.tasks)
         if (snapshot.taskOccurrences.isNotEmpty()) insertTaskOccurrences(snapshot.taskOccurrences)
+        return true
+    }
+}
+
+@Dao
+abstract class SyncDao {
+    @Query("SELECT COUNT(*) FROM sync_operations")
+    abstract fun observePendingCount(): Flow<Int>
+
+    @Query("SELECT * FROM sync_operations ORDER BY id ASC LIMIT :limit")
+    abstract suspend fun pending(limit: Int): List<SyncOperationEntity>
+
+    @Query("DELETE FROM sync_operations WHERE id IN (:operationIds)")
+    abstract suspend fun acknowledge(operationIds: List<Long>)
+
+    @Query("UPDATE sync_operations SET attemptCount = attemptCount + 1 WHERE id IN (:operationIds)")
+    abstract suspend fun recordFailure(operationIds: List<Long>)
+
+    @Upsert
+    protected abstract suspend fun upsertAquariums(aquariums: List<AquariumEntity>)
+
+    @Upsert
+    protected abstract suspend fun upsertParameterDefinitions(parameters: List<ParameterDefinitionEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    protected abstract suspend fun insertRemoteSessions(sessions: List<SessionEntity>)
+
+    @Query(
+        "UPDATE sessions SET aquariumId = :aquariumId, occurredAtEpochMillis = :occurredAtEpochMillis, " +
+            "createdAtEpochMillis = :createdAtEpochMillis WHERE id = :id",
+    )
+    protected abstract suspend fun updateRemoteSession(
+        id: String,
+        aquariumId: String,
+        occurredAtEpochMillis: Long,
+        createdAtEpochMillis: Long,
+    )
+
+    @Upsert
+    protected abstract suspend fun upsertMeasurements(measurements: List<MeasurementEntity>)
+
+    @Upsert
+    protected abstract suspend fun upsertMaintenanceActions(actions: List<MaintenanceActionEntity>)
+
+    @Upsert
+    protected abstract suspend fun upsertEvents(events: List<SessionEventEntity>)
+
+    @Query("SELECT * FROM measurements")
+    protected abstract suspend fun allMeasurements(): List<MeasurementEntity>
+
+    @Query("SELECT * FROM maintenance_actions")
+    protected abstract suspend fun allActions(): List<MaintenanceActionEntity>
+
+    @Query("SELECT * FROM session_events")
+    protected abstract suspend fun allEvents(): List<SessionEventEntity>
+
+    @Query("DELETE FROM measurements WHERE id IN (:ids)")
+    protected abstract suspend fun deleteMeasurements(ids: List<String>)
+
+    @Query("DELETE FROM maintenance_actions WHERE id IN (:ids)")
+    protected abstract suspend fun deleteActions(ids: List<String>)
+
+    @Query("DELETE FROM session_events WHERE id IN (:ids)")
+    protected abstract suspend fun deleteEvents(ids: List<String>)
+
+    @Transaction
+    open suspend fun applyRemoteCopy(
+        aquariums: List<AquariumEntity>,
+        parameters: List<ParameterDefinitionEntity>,
+        sessions: List<SessionEntity>,
+        measurements: List<MeasurementEntity>,
+        actions: List<MaintenanceActionEntity>,
+        events: List<SessionEventEntity>,
+        acknowledgedOperationIds: List<Long>,
+    ) {
+        if (acknowledgedOperationIds.isNotEmpty()) acknowledge(acknowledgedOperationIds)
+        val dirty = pending(Int.MAX_VALUE).map { it.entityType to it.entityId }.toSet()
+        val cleanAquariums = aquariums.filterNot { SyncEntityType.AQUARIUM.storageValue to it.id in dirty }
+        val cleanParameters = parameters.filterNot { SyncEntityType.PARAMETER_DEFINITION.storageValue to it.id in dirty }
+        val cleanSessions = sessions.filterNot { SyncEntityType.SESSION.storageValue to it.id in dirty }
+        val cleanMeasurements = measurements.filterNot { SyncEntityType.MEASUREMENT.storageValue to it.id in dirty }
+        val cleanActions = actions.filterNot { SyncEntityType.MAINTENANCE_ACTION.storageValue to it.id in dirty }
+        val cleanEvents = events.filterNot { SyncEntityType.EVENT.storageValue to it.id in dirty }
+        if (cleanAquariums.isNotEmpty()) upsertAquariums(cleanAquariums)
+        if (cleanParameters.isNotEmpty()) upsertParameterDefinitions(cleanParameters)
+        if (cleanSessions.isNotEmpty()) {
+            insertRemoteSessions(cleanSessions)
+            cleanSessions.forEach { session ->
+                updateRemoteSession(
+                    session.id,
+                    session.aquariumId,
+                    session.occurredAtEpochMillis,
+                    session.createdAtEpochMillis,
+                )
+            }
+        }
+        if (cleanMeasurements.isNotEmpty()) upsertMeasurements(cleanMeasurements)
+        if (cleanActions.isNotEmpty()) upsertMaintenanceActions(cleanActions)
+        if (cleanEvents.isNotEmpty()) upsertEvents(cleanEvents)
+
+        val remoteMeasurementIds = measurements.mapTo(mutableSetOf(), MeasurementEntity::id)
+        val remoteActionIds = actions.mapTo(mutableSetOf(), MaintenanceActionEntity::id)
+        val remoteEventIds = events.mapTo(mutableSetOf(), SessionEventEntity::id)
+        allMeasurements().map(MeasurementEntity::id)
+            .filter { it !in remoteMeasurementIds && SyncEntityType.MEASUREMENT.storageValue to it !in dirty }
+            .takeIf(List<String>::isNotEmpty)?.let { deleteMeasurements(it) }
+        allActions().map(MaintenanceActionEntity::id)
+            .filter { it !in remoteActionIds && SyncEntityType.MAINTENANCE_ACTION.storageValue to it !in dirty }
+            .takeIf(List<String>::isNotEmpty)?.let { deleteActions(it) }
+        allEvents().map(SessionEventEntity::id)
+            .filter { it !in remoteEventIds && SyncEntityType.EVENT.storageValue to it !in dirty }
+            .takeIf(List<String>::isNotEmpty)?.let { deleteEvents(it) }
     }
 }
 
@@ -543,8 +705,9 @@ abstract class PortableDataDao {
         TaskOccurrenceEntity::class,
         AccountStateEntity::class,
         AccountInvitationEntity::class,
+        SyncOperationEntity::class,
     ],
-    version = 6,
+    version = 8,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -553,6 +716,7 @@ abstract class AquaLogDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
     abstract fun taskDao(): TaskDao
     abstract fun accountDao(): AccountDao
+    abstract fun syncDao(): SyncDao
     abstract fun portableDataDao(): PortableDataDao
 }
 
@@ -566,7 +730,7 @@ fun createAquaLogDatabase(
 ): AquaLogDatabase = builder
     .setDriver(BundledSQLiteDriver())
     .setQueryCoroutineContext(Dispatchers.IO)
-    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
     .build()
 
 private val MIGRATION_1_2 = Migration(1, 2) { connection ->
@@ -633,5 +797,17 @@ private val MIGRATION_5_6 = Migration(5, 6) { connection ->
     )
     connection.execSQL(
         "CREATE UNIQUE INDEX IF NOT EXISTS index_task_occurrences_taskId_dueYear_dueMonth_dueDay_dueMinuteOfDay_timeZoneId ON task_occurrences (taskId, dueYear, dueMonth, dueDay, dueMinuteOfDay, timeZoneId)",
+    )
+}
+
+private val MIGRATION_6_7 = Migration(6, 7) { connection ->
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS sync_operations (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, entityType TEXT NOT NULL, entityId TEXT NOT NULL, attemptCount INTEGER NOT NULL)",
+    )
+}
+
+private val MIGRATION_7_8 = Migration(7, 8) { connection ->
+    connection.execSQL(
+        "ALTER TABLE sync_operations ADD COLUMN kind TEXT NOT NULL DEFAULT 'upsert'",
     )
 }
