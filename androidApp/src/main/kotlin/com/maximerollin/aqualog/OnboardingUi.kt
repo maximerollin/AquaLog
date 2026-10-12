@@ -17,6 +17,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.PortableImportProblem
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.SyncStatus
 
@@ -48,6 +50,8 @@ import com.maximerollin.aqualog.shared.SyncStatus
 fun AquaLogContent(
     state: HomeUiState,
     viewModel: HomeViewModel,
+    onExportData: () -> Unit = {},
+    onImportData: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     when {
@@ -72,8 +76,13 @@ fun AquaLogContent(
             viewModel = viewModel,
             modifier = modifier,
         )
-        state.setup != null -> AquariumShell(state, viewModel, modifier)
-        state.step == OnboardingStep.WELCOME -> WelcomeScreen(viewModel::startOnboarding, modifier)
+        state.setup != null -> AquariumShell(state, viewModel, onExportData, modifier)
+        state.step == OnboardingStep.WELCOME -> WelcomeScreen(
+            state = state.portableData,
+            onContinue = viewModel::startOnboarding,
+            onRequestImport = viewModel::requestPortableImport,
+            modifier = modifier,
+        )
         state.step == OnboardingStep.PROFILE -> ProfileScreen(
             selected = state.profile,
             onSelected = viewModel::selectProfile,
@@ -100,6 +109,15 @@ fun AquaLogContent(
             isSaving = state.isSaving,
             onContinueForFree = viewModel::finishForFree,
             modifier = modifier,
+        )
+    }
+    if (state.portableData.showImportConfirmation) {
+        PortableImportConfirmation(
+            onConfirm = {
+                viewModel.dismissPortableImportConfirmation()
+                onImportData()
+            },
+            onDismiss = viewModel::dismissPortableImportConfirmation,
         )
     }
 }
@@ -182,7 +200,12 @@ private fun AccountScreen(state: AccountUiState, viewModel: HomeViewModel, modif
 }
 
 @Composable
-private fun AquariumShell(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
+private fun AquariumShell(
+    state: HomeUiState,
+    viewModel: HomeViewModel,
+    onExportData: () -> Unit,
+    modifier: Modifier,
+) {
     Scaffold(
         modifier = modifier,
         bottomBar = {
@@ -207,13 +230,15 @@ private fun AquariumShell(state: HomeUiState, viewModel: HomeViewModel, modifier
         when (state.destination) {
             MainDestination.HOME -> AquariumHome(state, viewModel, contentModifier)
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
-             MainDestination.SETTINGS -> StandardScreen(contentModifier) {
-                 Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium)
-                 Text(stringResource(R.string.settings_placeholder))
-             }
-         }
-     }
- }
+            MainDestination.SETTINGS -> PortableDataSettings(
+                state = state.portableData,
+                onExportData = onExportData,
+                onRequestImport = viewModel::requestPortableImport,
+                modifier = contentModifier,
+            )
+        }
+    }
+}
 
 @Composable
 private fun LoadingContent(modifier: Modifier) {
@@ -227,13 +252,128 @@ private fun LoadingContent(modifier: Modifier) {
 }
 
 @Composable
-private fun WelcomeScreen(onContinue: () -> Unit, modifier: Modifier) {
+private fun WelcomeScreen(
+    state: PortableDataUiState,
+    onContinue: () -> Unit,
+    onRequestImport: () -> Unit,
+    modifier: Modifier,
+) {
     StandardScreen(modifier) {
         Spacer(Modifier.weight(1f))
         ScreenHeading(R.string.welcome_title, R.string.welcome_description)
+        PortableDataMessage(state)
         Spacer(Modifier.weight(1f))
         PrimaryButton(R.string.get_started, onContinue)
+        OutlinedButton(
+            onClick = onRequestImport,
+            enabled = !state.isWorking,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+        ) {
+            Text(stringResource(R.string.restore_from_export))
+        }
     }
+}
+
+@Composable
+private fun PortableDataSettings(
+    state: PortableDataUiState,
+    onExportData: () -> Unit,
+    onRequestImport: () -> Unit,
+    modifier: Modifier,
+) {
+    StandardScreen(modifier) {
+        ScreenHeading(R.string.settings_title, R.string.portable_data_description)
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.portable_data_title), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.portable_data_replace_explanation),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(
+                    onClick = onExportData,
+                    enabled = !state.isWorking,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                ) {
+                    Text(stringResource(R.string.export_data))
+                }
+                OutlinedButton(
+                    onClick = onRequestImport,
+                    enabled = !state.isWorking,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                ) {
+                    Text(stringResource(R.string.restore_from_export))
+                }
+            }
+        }
+        if (state.isWorking) CircularProgressIndicator()
+        PortableDataMessage(state)
+    }
+}
+
+@Composable
+private fun PortableImportConfirmation(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.portable_import_confirmation_title)) },
+        text = { Text(stringResource(R.string.portable_import_confirmation_description)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.choose_export_file))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun PortableDataMessage(state: PortableDataUiState) {
+    val string = when (state.importProblem) {
+        PortableImportProblem.INVALID_DOCUMENT -> R.string.portable_problem_invalid_document
+        PortableImportProblem.MISSING_VERSION -> R.string.portable_problem_missing_version
+        PortableImportProblem.UNSUPPORTED_VERSION -> R.string.portable_problem_unsupported_version
+        PortableImportProblem.SCHEMA_MISMATCH -> R.string.portable_problem_schema_mismatch
+        PortableImportProblem.UNSUPPORTED_DUPLICATE_STRATEGY -> {
+            R.string.portable_problem_duplicate_strategy
+        }
+        PortableImportProblem.DUPLICATE_IDENTIFIERS -> R.string.portable_problem_duplicate_ids
+        PortableImportProblem.INVALID_AQUARIUMS -> R.string.portable_problem_aquariums
+        PortableImportProblem.INVALID_PARAMETERS -> R.string.portable_problem_parameters
+        PortableImportProblem.INVALID_SESSIONS -> R.string.portable_problem_sessions
+        PortableImportProblem.INVALID_MEASUREMENTS -> R.string.portable_problem_measurements
+        PortableImportProblem.INVALID_ACTIONS -> R.string.portable_problem_actions
+        PortableImportProblem.INVALID_EVENTS -> R.string.portable_problem_events
+        PortableImportProblem.INVALID_TASKS -> R.string.portable_problem_tasks
+        PortableImportProblem.INVALID_OCCURRENCES -> R.string.portable_problem_occurrences
+        PortableImportProblem.ACCOUNT_LINKED -> R.string.portable_problem_account_linked
+        PortableImportProblem.DATABASE_WRITE_FAILED -> R.string.portable_problem_database
+        null -> when (state.message) {
+            PortableDataMessage.EXPORT_READY -> R.string.portable_export_ready
+            PortableDataMessage.IMPORT_COMPLETE -> R.string.portable_import_complete
+            PortableDataMessage.STORAGE_ERROR -> R.string.portable_storage_error
+            null -> return
+        }
+    }
+    Text(
+        stringResource(string),
+        style = MaterialTheme.typography.bodyMedium,
+        color = if (
+            state.message == PortableDataMessage.EXPORT_READY ||
+            state.message == PortableDataMessage.IMPORT_COMPLETE
+        ) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.error
+        },
+    )
 }
 
 @Composable

@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room3)
@@ -19,6 +20,7 @@ kotlin {
             api(libs.androidx.room3.runtime)
             implementation(libs.androidx.sqlite.bundled)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
