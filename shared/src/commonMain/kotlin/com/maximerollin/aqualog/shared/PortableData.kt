@@ -7,9 +7,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 const val PORTABLE_DATA_FORMAT_VERSION = 1
 const val PORTABLE_DATA_DUPLICATE_STRATEGY = "replace_local_portable_data"
@@ -222,7 +222,8 @@ private fun decodeAndMigrate(payload: String): PortableDecodeResult {
             PortableImportProblem.INVALID_DOCUMENT,
         )
     }
-    val version = root["formatVersion"]?.jsonPrimitive?.intOrNull
+    val versionPrimitive = root["formatVersion"] as? JsonPrimitive
+    val version = versionPrimitive?.takeUnless { it.isString }?.intOrNull
         ?: return PortableDecodeResult.Rejected(
             PortableImportRejection.INVALID_FORMAT,
             PortableImportProblem.MISSING_VERSION,

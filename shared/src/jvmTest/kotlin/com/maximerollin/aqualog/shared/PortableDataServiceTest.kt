@@ -205,6 +205,34 @@ class PortableDataServiceTest {
     }
 
     @Test
+    fun `non numeric format versions are rejected without changing existing data`() = runTest {
+        val existing = portableFixture()
+        existing.repository.createConfiguredAquarium(
+            name = "Must survive malformed versions",
+            volume = 45.0,
+            volumeUnit = VolumeUnit.LITERS,
+            profile = AquariumProfile.CYCLING,
+            parameters = OnboardingPresets.parametersFor(AquariumProfile.CYCLING),
+        )
+        val before = existing.service.export()
+        val malformedVersions = listOf(
+            """{"formatVersion": {}}""",
+            """{"formatVersion": []}""",
+            """{"formatVersion": true}""",
+            """{"formatVersion": "1"}""",
+        )
+
+        malformedVersions.forEach { payload ->
+            val rejected = assertIs<PortableImportResult.Rejected>(existing.service.importData(payload))
+            assertEquals(PortableImportRejection.INVALID_FORMAT, rejected.reason)
+            assertEquals(PortableImportProblem.MISSING_VERSION, rejected.problem)
+            assertEquals(before, existing.service.export())
+        }
+
+        existing.close()
+    }
+
+    @Test
     fun `import rejects incomplete unordered inactive Parameter sets and empty Sessions`() = runTest {
         val incoming = portableFixture()
         val setup = incoming.repository.createConfiguredAquarium(
