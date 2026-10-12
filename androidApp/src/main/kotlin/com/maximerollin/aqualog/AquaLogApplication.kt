@@ -5,6 +5,7 @@ import com.maximerollin.aqualog.shared.AQUA_LOG_DATABASE_NAME
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
+import com.maximerollin.aqualog.shared.PortableDataService
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
 import java.util.UUID
@@ -12,15 +13,20 @@ import java.util.UUID
 open class AquaLogApplication : Application() {
     protected open val databaseName: String = AQUA_LOG_DATABASE_NAME
 
+    private val database by lazy {
+        createAquaLogDatabase(createAndroidDatabaseBuilder(this, databaseName))
+    }
+
     open val aquariumRepository: AquariumRepository by lazy {
-        val database = createAquaLogDatabase(
-            createAndroidDatabaseBuilder(this, databaseName),
-        )
         RoomAquariumRepository(
             database = database,
             generateId = { UUID.randomUUID().toString() },
             currentTimeMillis = System::currentTimeMillis,
         )
+    }
+
+    open val portableDataService: PortableDataService by lazy {
+        PortableDataService(database)
     }
 
     open val taskReminderScheduler: TaskReminderScheduler by lazy {

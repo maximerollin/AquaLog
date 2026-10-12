@@ -6,6 +6,7 @@ import androidx.test.runner.AndroidJUnitRunner
 import com.maximerollin.aqualog.shared.AquaLogDatabase
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
+import com.maximerollin.aqualog.shared.PortableDataService
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
 import java.util.UUID
@@ -23,6 +24,7 @@ class AquaLogTestRunner : AndroidJUnitRunner() {
 class TestAquaLogApplication : AquaLogApplication() {
     private var database: AquaLogDatabase? = null
     private var repository: AquariumRepository? = null
+    private var portableService: PortableDataService? = null
     private var databaseSequence = 0
     val recordingTaskReminderScheduler = RecordingTaskReminderScheduler()
 
@@ -31,6 +33,9 @@ class TestAquaLogApplication : AquaLogApplication() {
 
     override val aquariumRepository: AquariumRepository
         get() = requireNotNull(repository) { "resetRepository() must run before launching MainActivity" }
+
+    override val portableDataService: PortableDataService
+        get() = requireNotNull(portableService) { "resetRepository() must run before launching MainActivity" }
 
     fun resetRepository() {
         database?.close()
@@ -43,6 +48,7 @@ class TestAquaLogApplication : AquaLogApplication() {
             generateId = { UUID.randomUUID().toString() },
             currentTimeMillis = System::currentTimeMillis,
         )
+        portableService = PortableDataService(newDatabase)
         recordingTaskReminderScheduler.reset()
     }
 
