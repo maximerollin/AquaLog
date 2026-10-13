@@ -32,6 +32,7 @@ class MainActivity : ComponentActivity() {
             repository = application.aquariumRepository,
             taskReminderScheduler = application.taskReminderScheduler,
             accountCoordinator = application.accountCoordinator,
+            onSyncRetryRequested = { AndroidSyncScheduler.requestImmediate(application) },
         )
     }
 

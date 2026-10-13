@@ -45,6 +45,7 @@ import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.PortableImportProblem
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.SyncStatus
+import com.maximerollin.aqualog.shared.SyncFailureCategory
 
 @Composable
 fun AquaLogContent(
@@ -711,10 +712,10 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                     )
                     Text(
                         stringResource(
-                            if (state.syncState.status == SyncStatus.SYNCED) {
-                                R.string.sync_status_synced
-                            } else {
-                                R.string.sync_status_pending
+                            when (state.syncState.status) {
+                                SyncStatus.SYNCED -> R.string.sync_status_synced
+                                SyncStatus.PENDING -> R.string.sync_status_pending
+                                SyncStatus.FAILED -> R.string.sync_status_failed
                             },
                         ),
                         style = MaterialTheme.typography.labelMedium,
@@ -724,6 +725,40 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                             MaterialTheme.colorScheme.primary
                         },
                     )
+                }
+            }
+            if (state.syncState.status == SyncStatus.FAILED) {
+                item {
+                    Card(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(
+                                stringResource(
+                                    when (state.syncState.failure?.category) {
+                                        SyncFailureCategory.NETWORK -> R.string.sync_failure_network
+                                        SyncFailureCategory.CONFLICT -> R.string.sync_failure_conflict
+                                        SyncFailureCategory.SERVER -> R.string.sync_failure_server
+                                        SyncFailureCategory.UNKNOWN, null -> R.string.sync_failure_unknown
+                                    },
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            state.syncState.failure?.technicalDetail
+                                ?.takeIf(String::isNotBlank)
+                                ?.let { detail ->
+                                    Text(
+                                        detail,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            TextButton(
+                                onClick = viewModel::retrySynchronization,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                            ) {
+                                Text(stringResource(R.string.sync_retry))
+                            }
+                        }
+                    }
                 }
             }
             if (state.accountInvitationPrompt == AccountInvitationPrompt.REMINDER) {
