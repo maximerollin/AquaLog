@@ -23,7 +23,7 @@ open class AquaLogApplication : Application() {
             database = database,
             generateId = { UUID.randomUUID().toString() },
             currentTimeMillis = System::currentTimeMillis,
-            onSyncNeeded = { AndroidSyncScheduler.enqueue(this) },
+            onSyncNeeded = { AndroidSyncScheduler.requestImmediate(this) },
         )
     }
 

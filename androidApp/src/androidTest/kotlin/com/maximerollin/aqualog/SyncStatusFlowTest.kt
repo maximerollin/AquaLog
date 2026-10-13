@@ -70,6 +70,7 @@ class SyncStatusFlowTest {
                 operationIds,
                 SyncFailure(SyncFailureCategory.NETWORK, "Connection timed out"),
                 nextRetryAtEpochMillis = Long.MAX_VALUE,
+                expectedGeneration = syncLocalData.syncGeneration(),
             )
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)

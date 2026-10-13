@@ -99,10 +99,53 @@ class SyncRecoveryTest {
     }
 
     @Test
-    fun `server last write wins per Aquarium without replacing unrelated local entities`() = runTest {
+    fun `server acceptance order wins across devices regardless of client clocks`() = runTest {
+        var firstClock = 100L
+        var secondClock = 100L
+        val first = fixture(
+            Files.createTempDirectory("aqualog-sync-lww-first").resolve("aqualog.db").toString(),
+        ) { firstClock }
+        val second = fixture(
+            Files.createTempDirectory("aqualog-sync-lww-second").resolve("aqualog.db").toString(),
+        ) { secondClock }
+        val aquarium = first.repository.createAquarium("Original", 80.0, VolumeUnit.LITERS)
+        val backend = VersionedAquariumBackend()
+        val firstCoordinator = SyncCoordinator(
+            first.repository,
+            backend,
+            FixedSessionProvider(),
+            currentTimeMillis = { firstClock },
+        )
+        val secondCoordinator = SyncCoordinator(
+            second.repository,
+            backend,
+            FixedSessionProvider(),
+            currentTimeMillis = { secondClock },
+        )
+        assertIs<SyncRunResult.Synchronized>(firstCoordinator.runOnce())
+        assertIs<SyncRunResult.Synchronized>(secondCoordinator.runOnce())
+
+        firstClock = 9_999_999_999_999L
+        first.repository.updateAquarium(aquarium.copy(name = "Future clock accepted first"))
+        second.repository.updateAquarium(aquarium.copy(name = "Normal clock accepted second"))
+        assertEquals(1L, first.repository.pendingSyncBatch().operations.single().baseServerVersion)
+        assertEquals(1L, second.repository.pendingSyncBatch().operations.single().baseServerVersion)
+
+        assertIs<SyncRunResult.Synchronized>(firstCoordinator.runOnce())
+        assertIs<SyncRunResult.Synchronized>(secondCoordinator.runOnce())
+        assertIs<SyncRunResult.Synchronized>(firstCoordinator.runOnce())
+
+        assertEquals("Normal clock accepted second", first.repository.observeCurrentAquarium().first()?.name)
+        assertEquals("Normal clock accepted second", second.repository.observeCurrentAquarium().first()?.name)
+        first.database.close()
+        second.database.close()
+    }
+
+    @Test
+    fun `an offline edit carries the last downloaded server version as its conflict base`() = runTest {
         var now = 100L
         val local = fixture(
-            Files.createTempDirectory("aqualog-sync-lww").resolve("aqualog.db").toString(),
+            Files.createTempDirectory("aqualog-sync-base-version").resolve("aqualog.db").toString(),
         ) { now }
         val aquarium = local.repository.createAquarium("Original", 80.0, VolumeUnit.LITERS)
         val backend = VersionedAquariumBackend()
@@ -115,12 +158,9 @@ class SyncRecoveryTest {
         assertIs<SyncRunResult.Synchronized>(coordinator.runOnce())
 
         now = 200L
-        local.repository.updateAquarium(aquarium.copy(name = "Older offline edit"))
-        backend.forceServerAquarium(aquarium.copy(name = "Newer server edit"), updatedAtEpochMillis = 300L)
+        local.repository.updateAquarium(aquarium.copy(name = "Offline edit"))
 
-        assertIs<SyncRunResult.Synchronized>(coordinator.runOnce())
-        assertEquals("Newer server edit", local.repository.observeCurrentAquarium().first()?.name)
-        assertEquals(SyncStatus.SYNCED, local.repository.observeSyncState().first().status)
+        assertEquals(1L, local.repository.pendingSyncBatch().operations.single().baseServerVersion)
         local.database.close()
     }
 
@@ -140,9 +180,10 @@ class SyncRecoveryTest {
         )
         assertIs<SyncRunResult.Synchronized>(coordinator.runOnce())
 
-        now = 200L
+        now = 9_999_999_999_999L
         local.repository.updateAquarium(aquarium.copy(name = "Older offline edit"))
-        backend.forceServerDeletion(aquarium.id, updatedAtEpochMillis = 300L)
+        assertIs<SyncRunResult.Synchronized>(coordinator.runOnce())
+        backend.forceServerDeletion(aquarium.id)
 
         assertIs<SyncRunResult.Synchronized>(coordinator.runOnce())
         assertEquals(null, local.repository.observeCurrentAquarium().first())
@@ -196,37 +237,27 @@ class SyncRecoveryTest {
 
     private class VersionedAquariumBackend : SyncBackend {
         private var aquarium: Aquarium? = null
-        private var updatedAtEpochMillis = Long.MIN_VALUE
+        private var serverUpdatedAtEpochMillis = 0L
         private var version = 0L
         private val acceptedOperations = mutableSetOf<String>()
 
-        fun forceServerAquarium(value: Aquarium, updatedAtEpochMillis: Long) {
-            aquarium = value
-            entityId = value.id
-            this.updatedAtEpochMillis = updatedAtEpochMillis
-            deletedAtEpochMillis = null
-            version++
-        }
-
-        fun forceServerDeletion(entityId: String, updatedAtEpochMillis: Long) {
+        fun forceServerDeletion(entityId: String) {
             aquarium = null
             this.entityId = entityId
-            this.updatedAtEpochMillis = updatedAtEpochMillis
-            deletedAtEpochMillis = updatedAtEpochMillis
+            serverUpdatedAtEpochMillis++
+            deletedAtEpochMillis = serverUpdatedAtEpochMillis
             version++
         }
 
         override suspend fun push(session: SyncSession, batch: PendingSyncBatch) {
             batch.operations.forEach { operation ->
                 if (!acceptedOperations.add(operation.operationKey)) return@forEach
-                if (operation.clientUpdatedAtEpochMillis >= updatedAtEpochMillis) {
-                    aquarium = batch.aquariums.firstOrNull { it.id == operation.entityId }
-                    entityId = operation.entityId
-                    updatedAtEpochMillis = operation.clientUpdatedAtEpochMillis
-                    deletedAtEpochMillis = operation.clientUpdatedAtEpochMillis
-                        .takeIf { operation.kind == SyncOperationKind.DELETE }
-                    version++
-                }
+                aquarium = batch.aquariums.firstOrNull { it.id == operation.entityId }
+                entityId = operation.entityId
+                serverUpdatedAtEpochMillis++
+                deletedAtEpochMillis = serverUpdatedAtEpochMillis
+                    .takeIf { operation.kind == SyncOperationKind.DELETE }
+                version++
             }
         }
 
@@ -247,7 +278,7 @@ class SyncRecoveryTest {
                         entityType = SyncEntityType.AQUARIUM,
                         entityId = remoteEntityId,
                         serverVersion = version,
-                        serverUpdatedAtEpochMillis = updatedAtEpochMillis,
+                        serverUpdatedAtEpochMillis = serverUpdatedAtEpochMillis,
                         deletedAtEpochMillis = deletedAtEpochMillis,
                     ),
                 )

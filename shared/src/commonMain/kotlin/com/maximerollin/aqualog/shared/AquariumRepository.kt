@@ -599,6 +599,8 @@ class RoomAquariumRepository(
 
     override suspend fun syncAttemptCount(): Int = syncDao.runtimeState()?.attemptCount ?: 0
 
+    override suspend fun syncGeneration(): Long = syncDao.syncGeneration() ?: 0L
+
     override suspend fun acknowledgeSyncOperations(operationIds: List<Long>) {
         if (operationIds.isNotEmpty()) syncDao.acknowledge(operationIds)
     }
@@ -607,14 +609,14 @@ class RoomAquariumRepository(
         operationIds: List<Long>,
         failure: SyncFailure,
         nextRetryAtEpochMillis: Long,
-    ) {
-        syncDao.recordFailure(
+        expectedGeneration: Long,
+    ): Boolean = syncDao.recordFailure(
             operationIds,
             failure.category.name,
             failure.technicalDetail,
             nextRetryAtEpochMillis,
+            expectedGeneration,
         )
-    }
 
     override suspend fun retrySyncNow() = syncDao.retryNow()
 
@@ -658,7 +660,7 @@ class RoomAquariumRepository(
         )
     }
 
-    private fun newSyncOperation(
+    private suspend fun newSyncOperation(
         entityType: SyncEntityType,
         entityId: String,
         kind: SyncOperationKind = SyncOperationKind.UPSERT,
@@ -668,6 +670,7 @@ class RoomAquariumRepository(
         entityId = entityId,
         kind = kind.storageValue,
         clientUpdatedAtEpochMillis = currentTimeMillis(),
+        baseServerVersion = syncDao.serverVersion(entityType.storageValue, entityId) ?: 0L,
     )
 }
 
@@ -680,6 +683,7 @@ private fun SyncOperationEntity.toDomain() = SyncOperation(
     attemptCount = attemptCount,
     nextAttemptAtEpochMillis = nextAttemptAtEpochMillis,
     clientUpdatedAtEpochMillis = clientUpdatedAtEpochMillis,
+    baseServerVersion = baseServerVersion,
 )
 
 private fun randomSyncOperationKey(): String = Random.nextBytes(16).joinToString(separator = "") { byte ->

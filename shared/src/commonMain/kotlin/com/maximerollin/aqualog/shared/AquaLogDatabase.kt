@@ -159,6 +159,7 @@ data class SyncOperationEntity(
     val failureCategory: String? = null,
     val failureDetail: String? = null,
     val clientUpdatedAtEpochMillis: Long = 0L,
+    val baseServerVersion: Long = 0L,
 )
 
 @Entity(
@@ -180,6 +181,12 @@ data class SyncRuntimeStateEntity(
     val nextAttemptAtEpochMillis: Long,
     val failureCategory: String,
     val failureDetail: String?,
+)
+
+@Entity(tableName = "sync_schedule_state")
+data class SyncScheduleStateEntity(
+    @PrimaryKey val singletonId: Int = 1,
+    val generation: Long = 0L,
 )
 
 @Dao
@@ -632,11 +639,20 @@ abstract class SyncDao {
     @Query("SELECT * FROM sync_runtime_state WHERE singletonId = 1")
     abstract suspend fun runtimeState(): SyncRuntimeStateEntity?
 
+    @Query("SELECT generation FROM sync_schedule_state WHERE singletonId = 1")
+    abstract suspend fun syncGeneration(): Long?
+
     @Upsert
     protected abstract suspend fun upsertRuntimeState(state: SyncRuntimeStateEntity)
 
     @Query("DELETE FROM sync_runtime_state")
     protected abstract suspend fun clearRuntimeState()
+
+    @Query(
+        "INSERT INTO sync_schedule_state(singletonId, generation) VALUES(1, 1) " +
+            "ON CONFLICT(singletonId) DO UPDATE SET generation = generation + 1",
+    )
+    protected abstract suspend fun advanceSyncGeneration()
 
     @Query("DELETE FROM sync_operations WHERE id IN (:operationIds)")
     abstract suspend fun acknowledge(operationIds: List<Long>)
@@ -665,7 +681,9 @@ abstract class SyncDao {
         category: String,
         detail: String?,
         nextRetryAtEpochMillis: Long,
-    ) {
+        expectedGeneration: Long,
+    ): Boolean {
+        if ((syncGeneration() ?: 0L) != expectedGeneration) return false
         if (operationIds.isNotEmpty()) {
             updateOperationFailures(operationIds, category, detail, nextRetryAtEpochMillis)
         }
@@ -677,12 +695,14 @@ abstract class SyncDao {
                 failureDetail = detail,
             ),
         )
+        return true
     }
 
     @Transaction
     open suspend fun retryNow() {
         resetOperationRetries()
         clearRuntimeState()
+        advanceSyncGeneration()
     }
 
     @Upsert
@@ -716,6 +736,12 @@ abstract class SyncDao {
 
     @Query("SELECT * FROM sync_entity_versions")
     protected abstract suspend fun allVersions(): List<SyncEntityVersionEntity>
+
+    @Query(
+        "SELECT serverVersion FROM sync_entity_versions " +
+            "WHERE entityType = :entityType AND entityId = :entityId",
+    )
+    abstract suspend fun serverVersion(entityType: String, entityId: String): Long?
 
     @Upsert
     protected abstract suspend fun upsertVersions(versions: List<SyncEntityVersionEntity>)
@@ -860,8 +886,9 @@ abstract class SyncDao {
         SyncOperationEntity::class,
         SyncEntityVersionEntity::class,
         SyncRuntimeStateEntity::class,
+        SyncScheduleStateEntity::class,
     ],
-    version = 9,
+    version = 11,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -893,6 +920,8 @@ fun createAquaLogDatabase(
         MIGRATION_6_7,
         MIGRATION_7_8,
         MIGRATION_8_9,
+        MIGRATION_9_10,
+        MIGRATION_10_11,
     )
     .build()
 
@@ -1012,5 +1041,17 @@ private val MIGRATION_8_9 = Migration(8, 9) { connection ->
             failureDetail TEXT
         )
         """.trimIndent(),
+    )
+}
+
+private val MIGRATION_9_10 = Migration(9, 10) { connection ->
+    connection.execSQL(
+        "ALTER TABLE sync_operations ADD COLUMN baseServerVersion INTEGER NOT NULL DEFAULT 0",
+    )
+}
+
+private val MIGRATION_10_11 = Migration(10, 11) { connection ->
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS sync_schedule_state (singletonId INTEGER NOT NULL PRIMARY KEY, generation INTEGER NOT NULL)",
     )
 }

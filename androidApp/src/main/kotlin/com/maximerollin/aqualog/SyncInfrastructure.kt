@@ -1,7 +1,6 @@
 package com.maximerollin.aqualog
 
 import android.content.Context
-import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
@@ -35,11 +34,12 @@ import com.maximerollin.aqualog.shared.SyncEntityType
 import com.maximerollin.aqualog.shared.SyncNetworkException
 import com.maximerollin.aqualog.shared.RemoteEntityVersion
 import com.maximerollin.aqualog.shared.RemoteSyncSnapshot
-import com.maximerollin.aqualog.shared.SyncRunResult
+import com.maximerollin.aqualog.shared.ScheduledSyncExecution
 import com.maximerollin.aqualog.shared.SyncServerException
 import com.maximerollin.aqualog.shared.SyncSession
 import com.maximerollin.aqualog.shared.SyncSessionProvider
 import com.maximerollin.aqualog.shared.SyncOperationKind
+import com.maximerollin.aqualog.shared.SyncWorkScheduler
 import com.maximerollin.aqualog.shared.VolumeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -113,6 +113,7 @@ class SupabaseSyncBackend(
                         .put("p_entity_id", operation.entityId)
                         .put("p_kind", operation.kind.storageValue)
                         .put("p_client_updated_at_epoch_millis", operation.clientUpdatedAtEpochMillis)
+                        .put("p_base_server_version", operation.baseServerVersion)
                         .put("p_payload", payload ?: JSONObject.NULL)
                         .toString(),
                     prefer = "return=minimal",
@@ -255,24 +256,62 @@ class AquaLogSyncWorker(
 ) : CoroutineWorker(context, parameters) {
     override suspend fun doWork(): Result {
         val application = applicationContext as AquaLogApplication
-        return when (application.syncCoordinator.runOnce()) {
-            is SyncRunResult.Retry -> Result.retry()
-            SyncRunResult.SignedOut,
-            is SyncRunResult.Synchronized,
-            -> Result.success()
-        }
+        ScheduledSyncExecution(
+            coordinator = application.syncCoordinator,
+            scheduler = AndroidSyncWorkScheduler(applicationContext),
+            currentTimeMillis = System::currentTimeMillis,
+        ).runOnce()
+        return Result.success()
     }
 }
 
-object AndroidSyncScheduler {
-    private const val workName = "aqualog-entity-sync"
+class AquaLogSyncDeadlineWorker(
+    context: Context,
+    parameters: WorkerParameters,
+) : CoroutineWorker(context, parameters) {
+    override suspend fun doWork(): Result {
+        AndroidSyncScheduler.appendDrain(applicationContext)
+        return Result.success()
+    }
+}
 
-    fun enqueue(context: Context) {
+private class AndroidSyncWorkScheduler(
+    private val context: Context,
+) : SyncWorkScheduler {
+    override fun appendImmediate() = AndroidSyncScheduler.appendDrain(context)
+
+    override fun replaceDeadline(deadlineEpochMillis: Long) =
+        AndroidSyncScheduler.replaceDeadline(context, deadlineEpochMillis)
+
+    override fun cancelDeadline() = AndroidSyncScheduler.cancelDeadline(context)
+}
+
+object AndroidSyncScheduler {
+    private const val drainWorkName = "aqualog-entity-sync-drain"
+    private const val deadlineWorkName = "aqualog-entity-sync-deadline"
+
+    fun requestImmediate(context: Context) {
+        cancelDeadline(context)
+        appendDrain(context)
+    }
+
+    internal fun appendDrain(context: Context) {
         val request = OneTimeWorkRequestBuilder<AquaLogSyncWorker>()
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, TimeUnit.SECONDS)
             .build()
-        WorkManager.getInstance(context).enqueueUniqueWork(workName, ExistingWorkPolicy.APPEND_OR_REPLACE, request)
+        WorkManager.getInstance(context).enqueueUniqueWork(drainWorkName, ExistingWorkPolicy.APPEND, request)
+    }
+
+    internal fun replaceDeadline(context: Context, deadlineEpochMillis: Long) {
+        val delayMillis = (deadlineEpochMillis - System.currentTimeMillis()).coerceAtLeast(0L)
+        val request = OneTimeWorkRequestBuilder<AquaLogSyncDeadlineWorker>()
+            .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
+            .build()
+        WorkManager.getInstance(context).enqueueUniqueWork(deadlineWorkName, ExistingWorkPolicy.REPLACE, request)
+    }
+
+    internal fun cancelDeadline(context: Context) {
+        WorkManager.getInstance(context).cancelUniqueWork(deadlineWorkName)
     }
 }
 

@@ -24,6 +24,7 @@ data class SyncOperation(
     val attemptCount: Int,
     val nextAttemptAtEpochMillis: Long,
     val clientUpdatedAtEpochMillis: Long,
+    val baseServerVersion: Long,
 )
 
 enum class SyncOperationKind(val storageValue: String) {
@@ -88,12 +89,14 @@ interface SyncLocalDataSource {
     suspend fun pendingSyncBatch(limit: Int = 100, eligibleAtEpochMillis: Long = Long.MAX_VALUE): PendingSyncBatch
     suspend fun nextRetryAtEpochMillis(): Long?
     suspend fun syncAttemptCount(): Int
+    suspend fun syncGeneration(): Long
     suspend fun acknowledgeSyncOperations(operationIds: List<Long>)
     suspend fun recordSyncFailure(
         operationIds: List<Long>,
         failure: SyncFailure,
         nextRetryAtEpochMillis: Long,
-    )
+        expectedGeneration: Long,
+    ): Boolean
     suspend fun retrySyncNow()
     suspend fun commitRemoteCopy(copy: InitialAccountCopy, acknowledgedOperationIds: List<Long>)
     suspend fun commitRemoteSnapshot(snapshot: RemoteSyncSnapshot, acknowledgedOperationIds: List<Long>) {
@@ -150,6 +153,7 @@ class SyncCoordinator(
 ) {
     suspend fun runOnce(): SyncRunResult {
         var session = sessionProvider.currentSession() ?: return SyncRunResult.SignedOut
+        val generation = localData.syncGeneration()
         var refreshed = false
         var hasPulled = false
         var downloadedSessionCount = 0
@@ -189,12 +193,13 @@ class SyncCoordinator(
                     localData.syncAttemptCount(),
                 ) + 1
                 val delay = retryPolicy.delayMillis(attempt)
-                localData.recordSyncFailure(
+                val recorded = localData.recordSyncFailure(
                     operationIds = operationIds,
                     failure = error.toSyncFailure(),
                     nextRetryAtEpochMillis = (currentTimeMillis?.invoke() ?: 0L) + delay,
+                    expectedGeneration = generation,
                 )
-                return SyncRunResult.Retry(delay)
+                return SyncRunResult.Retry(if (recorded) delay else 0L)
             }
         }
         return SyncRunResult.Retry(retryPolicy.delayMillis(1))
@@ -202,6 +207,37 @@ class SyncCoordinator(
 
     private companion object {
         const val MAX_BATCHES_PER_RUN = 20
+    }
+}
+
+interface SyncWorkScheduler {
+    fun appendImmediate()
+    fun replaceDeadline(deadlineEpochMillis: Long)
+    fun cancelDeadline()
+}
+
+class ScheduledSyncExecution(
+    private val coordinator: SyncCoordinator,
+    private val scheduler: SyncWorkScheduler,
+    private val currentTimeMillis: () -> Long,
+) {
+    suspend fun runOnce(): SyncRunResult = coordinator.runOnce().also { result ->
+        when (result) {
+            is SyncRunResult.Retry -> if (result.afterMillis > 0L) {
+                scheduler.replaceDeadline(currentTimeMillis() + result.afterMillis)
+            } else {
+                scheduler.cancelDeadline()
+                scheduler.appendImmediate()
+            }
+            SyncRunResult.SignedOut,
+            is SyncRunResult.Synchronized,
+            -> scheduler.cancelDeadline()
+        }
+    }
+
+    fun requestImmediate() {
+        scheduler.cancelDeadline()
+        scheduler.appendImmediate()
     }
 }
 
