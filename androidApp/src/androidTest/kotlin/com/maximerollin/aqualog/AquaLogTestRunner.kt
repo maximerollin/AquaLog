@@ -14,6 +14,7 @@ import com.maximerollin.aqualog.shared.PlayPurchaseUpdate
 import com.maximerollin.aqualog.shared.ProBillingGateway
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.ProPurchaseVerifier
+import com.maximerollin.aqualog.shared.PurchaseAccountIdentityResult
 import com.maximerollin.aqualog.shared.PurchaseVerificationResult
 import com.maximerollin.aqualog.shared.PortableDataService
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
@@ -54,10 +55,14 @@ class TestAquaLogApplication : AquaLogApplication() {
                 trialDays = 14,
                 formattedBillingDate = "October 21, 2026",
             )
-            override suspend fun launchAnnualPurchase() = BillingLaunchResult.Started
+            override suspend fun launchAnnualPurchase(obfuscatedAccountId: String) = BillingLaunchResult.Started
             override suspend fun restoreAnnualPurchase(): PlayPurchaseUpdate? = null
         },
         purchaseVerifier = object : ProPurchaseVerifier {
+            override suspend fun loadPurchaseAccountIdentity() =
+                PurchaseAccountIdentityResult.Available("instrumented-test-account")
+            override suspend fun loadEntitlement() =
+                PurchaseVerificationResult.Rejected("No instrumented entitlement")
             override suspend fun verify(productId: String, purchaseToken: String) =
                 PurchaseVerificationResult.Rejected("Test purchases require an explicit test")
         },

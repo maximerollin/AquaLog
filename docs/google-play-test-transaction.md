@@ -13,8 +13,11 @@ Prerequisites:
 4. Sign in to AquaLog on that device so encrypted Supabase tokens exist, and configure the build
    with `AQUALOG_SUPABASE_URL` and `AQUALOG_SUPABASE_ANON_KEY`.
 5. Configure the deployed `verify-pro-purchase` function with
-   `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `GOOGLE_PLAY_PACKAGE_NAME`, and Supabase service-role
-   secrets. Never put these values in the APK or repository.
+   `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `GOOGLE_PLAY_PACKAGE_NAME`,
+   `GOOGLE_PLAY_ACCOUNT_HMAC_SECRET`, and Supabase service-role secrets. The HMAC secret must be a
+   high-entropy server-only value shared by every deployed instance of the function; rotating it
+   invalidates in-flight purchases that were launched with the previous opaque account identifier.
+   Never put any of these values in the APK or repository.
 
 Run only against that prepared device:
 

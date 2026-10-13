@@ -150,6 +150,11 @@ enum class ProPurchaseStatus {
     ERROR,
 }
 
+enum class ProAuthenticationContinuation {
+    START_PURCHASE,
+    RESTORE_PURCHASE,
+}
+
 data class ProUiState(
     val showPaywall: Boolean = false,
     val openedFromOnboarding: Boolean = false,
@@ -157,7 +162,7 @@ data class ProUiState(
     val offer: AnnualProOffer? = null,
     val purchaseStatus: ProPurchaseStatus = ProPurchaseStatus.IDLE,
     val message: String? = null,
-    val restoreAfterAuthentication: Boolean = false,
+    val actionAfterAuthentication: ProAuthenticationContinuation? = null,
 )
 
 enum class PortableDataMessage {
@@ -372,12 +377,13 @@ class HomeViewModel(
             }
         }
         if (proPurchaseCoordinator != null) {
+            viewModelScope.launch { refreshProEntitlement() }
             viewModelScope.launch {
                 proPurchaseCoordinator.purchaseUpdates.collect { update ->
                     mutableUiState.update { state ->
                         state.copy(pro = state.pro.copy(purchaseStatus = ProPurchaseStatus.VERIFYING, message = null))
                     }
-                    handleProOutcome(proPurchaseCoordinator.resolve(update))
+                    handleProOutcome(proPurchaseCoordinator.resolve(update), continuation = null)
                 }
             }
         }
@@ -596,14 +602,24 @@ class HomeViewModel(
             )
         ) return
         updatePro(ProPurchaseStatus.VERIFYING)
-        viewModelScope.launch { handleProOutcome(coordinator.startPurchase()) }
+        viewModelScope.launch {
+            handleProOutcome(
+                coordinator.startPurchase(),
+                continuation = ProAuthenticationContinuation.START_PURCHASE,
+            )
+        }
     }
 
     fun restoreProPurchase() {
         val coordinator = proPurchaseCoordinator ?: return
         if (mutableUiState.value.pro.purchaseStatus == ProPurchaseStatus.VERIFYING) return
         updatePro(ProPurchaseStatus.VERIFYING)
-        viewModelScope.launch { handleProOutcome(coordinator.restorePurchase()) }
+        viewModelScope.launch {
+            handleProOutcome(
+                coordinator.restorePurchase(),
+                continuation = ProAuthenticationContinuation.RESTORE_PURCHASE,
+            )
+        }
     }
 
     fun finishForFree() {
@@ -1065,26 +1081,35 @@ class HomeViewModel(
                 )
             }
         }
-        if (
-            result == AccountActivationResult.Activated &&
-            mutableUiState.value.pro.restoreAfterAuthentication
-        ) {
-            restoreProPurchase()
+        if (result == AccountActivationResult.Activated) {
+            val continuation = mutableUiState.value.pro.actionAfterAuthentication
+            viewModelScope.launch {
+                refreshProEntitlement()
+                when (continuation) {
+                    ProAuthenticationContinuation.START_PURCHASE -> startProPurchase()
+                    ProAuthenticationContinuation.RESTORE_PURCHASE -> restoreProPurchase()
+                    null -> Unit
+                }
+            }
         }
     }
 
-    private suspend fun handleProOutcome(outcome: ProPurchaseOutcome) {
+    private suspend fun handleProOutcome(
+        outcome: ProPurchaseOutcome,
+        continuation: ProAuthenticationContinuation?,
+    ) {
         when (outcome) {
             ProPurchaseOutcome.AwaitingPlayConfirmation -> updatePro(ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION)
             ProPurchaseOutcome.Pending -> updatePro(ProPurchaseStatus.PENDING, "Google Play is still processing this purchase. You can restore it later.")
             ProPurchaseOutcome.Cancelled -> updatePro(ProPurchaseStatus.CANCELLED, "Purchase cancelled. You can continue free or try again.")
+            ProPurchaseOutcome.NotEntitled -> updatePro(ProPurchaseStatus.IDLE)
             ProPurchaseOutcome.AuthenticationRequired -> {
                 mutableUiState.update { state ->
                     state.copy(
                         pro = state.pro.copy(
                             purchaseStatus = ProPurchaseStatus.ERROR,
-                            message = "Sign in to verify this purchase, then it will be restored.",
-                            restoreAfterAuthentication = true,
+                            message = "Sign in to bind this Google Play purchase to your AquaLog account.",
+                            actionAfterAuthentication = continuation,
                         ),
                     )
                 }
@@ -1097,13 +1122,28 @@ class HomeViewModel(
         }
     }
 
+    private suspend fun refreshProEntitlement() {
+        val coordinator = proPurchaseCoordinator ?: return
+        when (val outcome = coordinator.refreshEntitlement()) {
+            is ProPurchaseOutcome.Entitled -> updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
+            ProPurchaseOutcome.NotEntitled,
+            ProPurchaseOutcome.AuthenticationRequired,
+            -> updatePro(ProPurchaseStatus.IDLE)
+            is ProPurchaseOutcome.Failed -> updatePro(
+                ProPurchaseStatus.ERROR,
+                "Pro status could not be refreshed. Pro features stay locked until verification succeeds.",
+            )
+            else -> Unit
+        }
+    }
+
     private fun updatePro(status: ProPurchaseStatus, message: String? = null) {
         mutableUiState.update { state ->
             state.copy(
                 pro = state.pro.copy(
                     purchaseStatus = status,
                     message = message,
-                    restoreAfterAuthentication = false,
+                    actionAfterAuthentication = null,
                 ),
             )
         }

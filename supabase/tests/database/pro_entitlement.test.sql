@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(11);
 
 insert into auth.users (id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -10,26 +10,49 @@ values
 
 set local role service_role;
 select lives_ok(
-  $$select public.record_verified_pro_purchase(
+  $$select public.claim_verified_pro_purchase(
     '10000000-0000-0000-0000-000000000011',
     'aqualog_pro_annual',
     'sha256-token',
-    'active',
     '2027-10-21T12:00:00Z',
     'GPA.1234'
   )$$,
-  'the server can record a verified Play purchase'
+  'the server can claim a Google-bound Play purchase'
 );
 select lives_ok(
-  $$select public.record_verified_pro_purchase(
+  $$select public.claim_verified_pro_purchase(
     '10000000-0000-0000-0000-000000000011',
     'aqualog_pro_annual',
     'sha256-token',
-    'active',
     '2027-10-21T12:00:00Z',
     'GPA.1234'
   )$$,
-  'replaying the same verified token is idempotent'
+  'replaying the same claim for its owner is idempotent'
+);
+select throws_ok(
+  $$select public.claim_verified_pro_purchase(
+    '10000000-0000-0000-0000-000000000012',
+    'aqualog_pro_annual',
+    'sha256-token',
+    '2027-10-21T12:00:00Z',
+    'GPA.1234'
+  )$$,
+  '42501',
+  'purchase token belongs to another account',
+  'another account cannot steal an existing claim'
+);
+reset role;
+select is((select count(*) from public.pro_entitlements), 0::bigint, 'a claim alone grants no entitlement');
+set local role service_role;
+select lives_ok(
+  $$select public.activate_claimed_pro_purchase(
+    '10000000-0000-0000-0000-000000000011',
+    'aqualog_pro_annual',
+    'sha256-token',
+    '2027-10-21T12:00:00Z',
+    'GPA.1234'
+  )$$,
+  'the owner activates Pro only after Google acknowledgement'
 );
 reset role;
 select is((select count(*) from public.play_purchase_verifications), 1::bigint, 'one verification row remains');

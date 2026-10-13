@@ -9,6 +9,73 @@ import kotlin.test.assertIs
 
 class ProPurchaseCoordinatorTest {
     @Test
+    fun `purchase launches with the opaque account identity verified by the server`() = runTest {
+        val billing = DeterministicBillingGateway()
+        val verifier = DeterministicPurchaseVerifier(
+            result = PurchaseVerificationResult.Rejected("not purchased yet"),
+            accountIdentity = PurchaseAccountIdentityResult.Available("opaque-account-id"),
+        )
+        val coordinator = ProPurchaseCoordinator(billing, verifier)
+
+        assertEquals(ProPurchaseOutcome.AwaitingPlayConfirmation, coordinator.startPurchase())
+
+        assertEquals("opaque-account-id", billing.lastAccountIdentifier)
+    }
+
+    @Test
+    fun `restart reloads the server verified entitlement before enabling Pro`() = runTest {
+        val entitlement = ProEntitlement(
+            productId = ANNUAL_PRO_PRODUCT_ID,
+            validUntilEpochMillis = 1_800_000_000_000L,
+        )
+        val coordinator = ProPurchaseCoordinator(
+            DeterministicBillingGateway(),
+            DeterministicPurchaseVerifier(
+                result = PurchaseVerificationResult.Rejected("unused"),
+                loadedEntitlement = PurchaseVerificationResult.Verified(entitlement),
+            ),
+        )
+
+        val outcome = coordinator.refreshEntitlement()
+
+        assertEquals(ProPurchaseOutcome.Entitled(entitlement), outcome)
+        assertEquals(entitlement, coordinator.entitlement)
+    }
+
+    @Test
+    fun `server revocation clears a previously loaded Pro entitlement`() = runTest {
+        val entitlement = ProEntitlement(
+            productId = ANNUAL_PRO_PRODUCT_ID,
+            validUntilEpochMillis = 1_800_000_000_000L,
+        )
+        val verifier = DeterministicPurchaseVerifier(
+            result = PurchaseVerificationResult.Rejected("unused"),
+            loadedEntitlement = PurchaseVerificationResult.Verified(entitlement),
+        )
+        val coordinator = ProPurchaseCoordinator(DeterministicBillingGateway(), verifier)
+        assertIs<ProPurchaseOutcome.Entitled>(coordinator.refreshEntitlement())
+
+        verifier.loadedEntitlement = PurchaseVerificationResult.Rejected("revoked")
+
+        assertEquals(ProPurchaseOutcome.NotEntitled, coordinator.refreshEntitlement())
+        assertEquals(false, coordinator.hasProEntitlement)
+    }
+
+    @Test
+    fun `offline entitlement reload fails closed without restoring cached Pro`() = runTest {
+        val coordinator = ProPurchaseCoordinator(
+            DeterministicBillingGateway(),
+            DeterministicPurchaseVerifier(
+                result = PurchaseVerificationResult.Rejected("unused"),
+                loadedEntitlement = PurchaseVerificationResult.Failed("offline"),
+            ),
+        )
+
+        assertEquals(ProPurchaseOutcome.Failed("offline"), coordinator.refreshEntitlement())
+        assertEquals(false, coordinator.hasProEntitlement)
+    }
+
+    @Test
     fun `a purchased Play transaction grants Pro only after server verification`() = runTest {
         val billing = DeterministicBillingGateway()
         val verifier = DeterministicPurchaseVerifier(
@@ -76,6 +143,7 @@ private class DeterministicBillingGateway(
 ) : ProBillingGateway {
     override val purchaseUpdates: Flow<PlayPurchaseUpdate> = emptyFlow()
     var launchCount = 0
+    var lastAccountIdentifier: String? = null
 
     override suspend fun loadAnnualOffer(): AnnualProOffer = AnnualProOffer(
         productId = ANNUAL_PRO_PRODUCT_ID,
@@ -84,8 +152,9 @@ private class DeterministicBillingGateway(
         formattedBillingDate = "21 octobre 2026",
     )
 
-    override suspend fun launchAnnualPurchase(): BillingLaunchResult {
+    override suspend fun launchAnnualPurchase(obfuscatedAccountId: String): BillingLaunchResult {
         launchCount += 1
+        lastAccountIdentifier = obfuscatedAccountId
         return BillingLaunchResult.Started
     }
 
@@ -94,6 +163,9 @@ private class DeterministicBillingGateway(
 
 private class DeterministicPurchaseVerifier(
     private val result: PurchaseVerificationResult,
+    private val accountIdentity: PurchaseAccountIdentityResult =
+        PurchaseAccountIdentityResult.Available("default-test-account"),
+    var loadedEntitlement: PurchaseVerificationResult = PurchaseVerificationResult.Rejected("not active"),
 ) : ProPurchaseVerifier {
     var lastPurchaseToken: String? = null
 
@@ -101,4 +173,8 @@ private class DeterministicPurchaseVerifier(
         lastPurchaseToken = purchaseToken
         return result
     }
+
+    override suspend fun loadPurchaseAccountIdentity(): PurchaseAccountIdentityResult = accountIdentity
+
+    override suspend fun loadEntitlement(): PurchaseVerificationResult = loadedEntitlement
 }

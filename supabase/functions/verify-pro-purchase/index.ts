@@ -1,8 +1,9 @@
 import {
   annualProProductId,
-  interpretSubscription,
-  sha256,
+  playAccountIdentifier,
+  ProPurchaseClaim,
   validateVerificationRequest,
+  verifyAndClaimSubscription,
 } from "./service.ts";
 
 const jsonHeaders = { "content-type": "application/json" };
@@ -17,50 +18,56 @@ Deno.serve(async (request) => {
     if (!authorization?.startsWith("Bearer ")) return response(401, { error: "authentication required" });
 
     const accountId = await authenticatedAccountId(supabaseUrl, anonKey, authorization);
-    const verificationRequest = validateVerificationRequest(await request.json());
+    const requestBody = await request.json();
+    const hmacSecret = requiredEnv("GOOGLE_PLAY_ACCOUNT_HMAC_SECRET");
+    if (isPurchaseIdentityRequest(requestBody)) {
+      return response(200, {
+        obfuscatedAccountId: await playAccountIdentifier(accountId, hmacSecret),
+      });
+    }
+    const verificationRequest = validateVerificationRequest(requestBody);
     const serviceAccount = JSON.parse(requiredEnv("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"));
     const packageName = requiredEnv("GOOGLE_PLAY_PACKAGE_NAME");
     const googleAccessToken = await googleServiceAccessToken(serviceAccount);
-    const purchaseResponse = await fetch(
-      `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(packageName)}/purchases/subscriptionsv2/tokens/${encodeURIComponent(verificationRequest.purchaseToken)}`,
-      { headers: { authorization: `Bearer ${googleAccessToken}` } },
-    );
-    if (!purchaseResponse.ok) return response(422, { error: "Google Play did not verify this purchase" });
-
-    const verified = interpretSubscription(await purchaseResponse.json(), verificationRequest.productId);
-    if (!verified.active) return response(422, { active: false, error: "subscription is not active" });
-
-    if (verified.requiresAcknowledgement) {
-      const acknowledgement = await fetch(
-        `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(packageName)}/purchases/subscriptions/${encodeURIComponent(annualProProductId)}/tokens/${encodeURIComponent(verificationRequest.purchaseToken)}:acknowledge`,
-        {
-          method: "POST",
-          headers: { ...jsonHeaders, authorization: `Bearer ${googleAccessToken}` },
-          body: "{}",
-        },
-      );
-      if (!acknowledgement.ok) return response(502, { error: "Google Play acknowledgement failed" });
-    }
-
-    const tokenHash = await sha256(verificationRequest.purchaseToken);
-    const stored = await fetch(`${supabaseUrl}/rest/v1/rpc/record_verified_pro_purchase`, {
-      method: "POST",
-      headers: {
-        ...jsonHeaders,
-        apikey: serviceRoleKey,
-        authorization: `Bearer ${serviceRoleKey}`,
+    const outcome = await verifyAndClaimSubscription(accountId, verificationRequest, {
+      hmacSecret,
+      loadGoogleSubscription: async (purchaseToken) => {
+        const purchaseResponse = await fetch(
+          `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(packageName)}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`,
+          { headers: { authorization: `Bearer ${googleAccessToken}` } },
+        );
+        if (!purchaseResponse.ok) throw new GooglePurchaseRejectedError();
+        return purchaseResponse.json();
       },
-      body: JSON.stringify({
-        p_account_id: accountId,
-        p_product_id: verificationRequest.productId,
-        p_purchase_token_hash: tokenHash,
-        p_status: "active",
-        p_valid_until: verified.validUntil,
-        p_latest_order_id: verified.latestOrderId,
-      }),
+      claimPurchase: (claim) => callPurchaseRpc(
+        supabaseUrl,
+        serviceRoleKey,
+        "claim_verified_pro_purchase",
+        claim,
+      ),
+      acknowledgePurchase: async (claim) => {
+        const acknowledgement = await fetch(
+          `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(packageName)}/purchases/subscriptions/${encodeURIComponent(annualProProductId)}/tokens/${encodeURIComponent(claim.purchaseToken)}:acknowledge`,
+          {
+            method: "POST",
+            headers: { ...jsonHeaders, authorization: `Bearer ${googleAccessToken}` },
+            body: "{}",
+          },
+        );
+        return acknowledgement.ok;
+      },
+      activateEntitlement: (claim) => callPurchaseRpc(
+        supabaseUrl,
+        serviceRoleKey,
+        "activate_claimed_pro_purchase",
+        claim,
+      ),
     });
-    if (!stored.ok) return response(502, { error: "verified entitlement could not be stored" });
-
+    if (outcome.kind === "rejected") return response(422, { active: false, error: outcome.reason });
+    if (outcome.kind === "acknowledgement_failed") {
+      return response(502, { error: "Google Play acknowledgement failed; retry verification" });
+    }
+    const verified = outcome.subscription;
     return response(200, {
       active: true,
       productId: verified.productId,
@@ -68,10 +75,42 @@ Deno.serve(async (request) => {
     });
   } catch (error) {
     if (error instanceof AuthenticationError) return response(401, { error: "authentication required" });
+    if (error instanceof GooglePurchaseRejectedError) {
+      return response(422, { error: "Google Play did not verify this purchase" });
+    }
     if (error instanceof TypeError) return response(400, { error: error.message });
     return response(500, { error: "purchase verification unavailable" });
   }
 });
+
+function isPurchaseIdentityRequest(value: unknown): boolean {
+  return value !== null && typeof value === "object" && !Array.isArray(value) &&
+    (value as Record<string, unknown>).action === "purchaseIdentity";
+}
+
+async function callPurchaseRpc(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  functionName: string,
+  claim: ProPurchaseClaim,
+): Promise<void> {
+  const stored = await fetch(`${supabaseUrl}/rest/v1/rpc/${functionName}`, {
+    method: "POST",
+    headers: {
+      ...jsonHeaders,
+      apikey: serviceRoleKey,
+      authorization: `Bearer ${serviceRoleKey}`,
+    },
+    body: JSON.stringify({
+      p_account_id: claim.accountId,
+      p_product_id: claim.productId,
+      p_purchase_token_hash: claim.purchaseTokenHash,
+      p_valid_until: claim.validUntil,
+      p_latest_order_id: claim.latestOrderId,
+    }),
+  });
+  if (!stored.ok) throw new Error("verified purchase ownership could not be stored");
+}
 
 async function authenticatedAccountId(
   supabaseUrl: string,
@@ -149,6 +188,7 @@ function requiredEnv(name: string): string {
 }
 
 class AuthenticationError extends Error {}
+class GooglePurchaseRejectedError extends Error {}
 
 function response(status: number, body: Record<string, unknown>): Response {
   if (body.error === "authentication required") status = 401;

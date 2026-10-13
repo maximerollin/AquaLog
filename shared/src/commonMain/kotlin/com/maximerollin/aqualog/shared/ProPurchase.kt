@@ -26,8 +26,14 @@ sealed interface PlayPurchaseUpdate {
 interface ProBillingGateway {
     val purchaseUpdates: Flow<PlayPurchaseUpdate>
     suspend fun loadAnnualOffer(): AnnualProOffer
-    suspend fun launchAnnualPurchase(): BillingLaunchResult
+    suspend fun launchAnnualPurchase(obfuscatedAccountId: String): BillingLaunchResult
     suspend fun restoreAnnualPurchase(): PlayPurchaseUpdate?
+}
+
+sealed interface PurchaseAccountIdentityResult {
+    data class Available(val obfuscatedAccountId: String) : PurchaseAccountIdentityResult
+    data object AuthenticationRequired : PurchaseAccountIdentityResult
+    data class Failed(val reason: String) : PurchaseAccountIdentityResult
 }
 
 data class ProEntitlement(
@@ -43,6 +49,8 @@ sealed interface PurchaseVerificationResult {
 }
 
 interface ProPurchaseVerifier {
+    suspend fun loadPurchaseAccountIdentity(): PurchaseAccountIdentityResult
+    suspend fun loadEntitlement(): PurchaseVerificationResult
     suspend fun verify(productId: String, purchaseToken: String): PurchaseVerificationResult
 }
 
@@ -50,6 +58,7 @@ sealed interface ProPurchaseOutcome {
     data object AwaitingPlayConfirmation : ProPurchaseOutcome
     data object Pending : ProPurchaseOutcome
     data object Cancelled : ProPurchaseOutcome
+    data object NotEntitled : ProPurchaseOutcome
     data object AuthenticationRequired : ProPurchaseOutcome
     data class Entitled(val entitlement: ProEntitlement) : ProPurchaseOutcome
     data class Failed(val reason: String) : ProPurchaseOutcome
@@ -68,9 +77,20 @@ class ProPurchaseCoordinator(
 
     suspend fun loadOffer(): AnnualProOffer = billingGateway.loadAnnualOffer()
 
-    suspend fun startPurchase(): ProPurchaseOutcome = when (val launch = billingGateway.launchAnnualPurchase()) {
-        BillingLaunchResult.Started -> ProPurchaseOutcome.AwaitingPlayConfirmation
-        is BillingLaunchResult.Failed -> ProPurchaseOutcome.Failed(launch.reason)
+    suspend fun refreshEntitlement(): ProPurchaseOutcome = applyVerification(
+        purchaseVerifier.loadEntitlement(),
+        rejectionIsFailure = false,
+    )
+
+    suspend fun startPurchase(): ProPurchaseOutcome = when (val identity = purchaseVerifier.loadPurchaseAccountIdentity()) {
+        is PurchaseAccountIdentityResult.Available -> {
+            when (val launch = billingGateway.launchAnnualPurchase(identity.obfuscatedAccountId)) {
+                BillingLaunchResult.Started -> ProPurchaseOutcome.AwaitingPlayConfirmation
+                is BillingLaunchResult.Failed -> ProPurchaseOutcome.Failed(launch.reason)
+            }
+        }
+        PurchaseAccountIdentityResult.AuthenticationRequired -> ProPurchaseOutcome.AuthenticationRequired
+        is PurchaseAccountIdentityResult.Failed -> ProPurchaseOutcome.Failed(identity.reason)
     }
 
     suspend fun restorePurchase(): ProPurchaseOutcome {
@@ -90,14 +110,35 @@ class ProPurchaseCoordinator(
         if (update.productId != ANNUAL_PRO_PRODUCT_ID) {
             return ProPurchaseOutcome.Failed("Unexpected Google Play product")
         }
-        return when (val result = purchaseVerifier.verify(update.productId, update.purchaseToken)) {
+        return applyVerification(
+            purchaseVerifier.verify(update.productId, update.purchaseToken),
+            rejectionIsFailure = true,
+        )
+    }
+
+    private fun applyVerification(
+        result: PurchaseVerificationResult,
+        rejectionIsFailure: Boolean,
+    ): ProPurchaseOutcome = when (result) {
             is PurchaseVerificationResult.Verified -> {
                 entitlement = result.entitlement
                 ProPurchaseOutcome.Entitled(result.entitlement)
             }
-            is PurchaseVerificationResult.Rejected -> ProPurchaseOutcome.Failed(result.reason)
-            PurchaseVerificationResult.AuthenticationRequired -> ProPurchaseOutcome.AuthenticationRequired
-            is PurchaseVerificationResult.Failed -> ProPurchaseOutcome.Failed(result.reason)
+            is PurchaseVerificationResult.Rejected -> {
+                entitlement = null
+                if (rejectionIsFailure) {
+                    ProPurchaseOutcome.Failed(result.reason)
+                } else {
+                    ProPurchaseOutcome.NotEntitled
+                }
+            }
+            PurchaseVerificationResult.AuthenticationRequired -> {
+                entitlement = null
+                ProPurchaseOutcome.AuthenticationRequired
+            }
+            is PurchaseVerificationResult.Failed -> {
+                entitlement = null
+                ProPurchaseOutcome.Failed(result.reason)
+            }
         }
-    }
 }
