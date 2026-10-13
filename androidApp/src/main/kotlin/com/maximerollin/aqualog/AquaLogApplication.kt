@@ -41,6 +41,7 @@ open class AquaLogApplication : Application() {
                 secureTokenStorage,
                 SupabaseAuthGateway(this, SupabaseConfiguration.fromBuildConfig(), secureTokenStorage),
             ),
+            currentTimeMillis = System::currentTimeMillis,
         )
     }
 

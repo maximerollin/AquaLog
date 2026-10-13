@@ -98,6 +98,42 @@ class SyncCoordinatorTest {
     }
 
     @Test
+    fun `deleting a Session persists tombstones for the aggregate until synchronization acknowledges them`() = runTest {
+        val fixture = fixture()
+        val setup = fixture.repository.createConfiguredAquarium(
+            "Amazonien", 120.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+            OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+        )
+        val parameter = setup.parameters.first { it.parameter == BuiltInParameter.TEMPERATURE }
+        val recorded = fixture.repository.saveRapidSession(
+            RapidSessionInput(
+                setup.aquarium.id, 1_700_000_100_000L, "delete-session",
+                mapOf(parameter.id to "24.5"),
+                listOf(MaintenanceActionInput(MaintenanceActionType.WATER_CHANGE, "20", "%")),
+                observation = "Eau claire",
+            ),
+        )
+        fixture.repository.acknowledgeSyncOperations(
+            fixture.repository.pendingSyncBatch().operations.map(SyncOperation::id),
+        )
+
+        fixture.repository.deleteSession(recorded.session.id)
+
+        assertEquals(null, fixture.repository.observeSession(recorded.session.id).first())
+        val tombstones = fixture.repository.pendingSyncBatch().operations
+        assertEquals(
+            setOf(
+                SyncEntityType.SESSION,
+                SyncEntityType.MEASUREMENT,
+                SyncEntityType.MAINTENANCE_ACTION,
+                SyncEntityType.EVENT,
+            ),
+            tombstones.filter { it.kind == SyncOperationKind.DELETE }.map { it.entityType }.toSet(),
+        )
+        fixture.database.close()
+    }
+
+    @Test
     fun `an unauthorized sync refreshes once then requires authentication without a loop`() = runTest {
         val local = fixture()
         local.repository.createAquarium("Amazonien", 120.0, VolumeUnit.LITERS)
@@ -302,7 +338,7 @@ class SyncCoordinatorTest {
 
         val retry = assertIs<SyncRunResult.Retry>(firstCoordinator.runOnce())
         assertEquals(1_000L, retry.afterMillis)
-        assertEquals(SyncStatus.PENDING, firstDevice.repository.observeSyncState().first().status)
+        assertEquals(SyncStatus.FAILED, firstDevice.repository.observeSyncState().first().status)
         assertIs<SyncRunResult.Synchronized>(firstCoordinator.runOnce())
         assertEquals(SyncStatus.SYNCED, firstDevice.repository.observeSyncState().first().status)
         assertEquals(1, cloud.copy.sessions.size)
@@ -367,6 +403,8 @@ class SyncCoordinatorTest {
         private val measurements = linkedMapOf<String, Measurement>()
         private val actions = linkedMapOf<String, MaintenanceAction>()
         private val events = linkedMapOf<String, SessionEvent>()
+        private val acceptedOperationKeys = mutableSetOf<String>()
+        private val versions = linkedMapOf<Pair<SyncEntityType, String>, RemoteEntityVersion>()
 
         val copy: InitialAccountCopy
             get() = InitialAccountCopy(
@@ -383,6 +421,19 @@ class SyncCoordinatorTest {
             val latestOperations = batch.operations.groupBy { it.entityType to it.entityId }
                 .mapValues { (_, operations) -> operations.maxBy { it.id } }
                 .values
+                .filter { acceptedOperationKeys.add(it.operationKey) }
+            latestOperations.forEach { operation ->
+                val key = operation.entityType to operation.entityId
+                val previousVersion = versions[key]?.serverVersion ?: 0L
+                versions[key] = RemoteEntityVersion(
+                    entityType = operation.entityType,
+                    entityId = operation.entityId,
+                    serverVersion = previousVersion + 1L,
+                    serverUpdatedAtEpochMillis = operation.clientUpdatedAtEpochMillis,
+                    deletedAtEpochMillis = operation.clientUpdatedAtEpochMillis
+                        .takeIf { operation.kind == SyncOperationKind.DELETE },
+                )
+            }
             latestOperations.filter { it.kind == SyncOperationKind.DELETE }.forEach { operation ->
                 when (operation.entityType) {
                     SyncEntityType.AQUARIUM -> aquariums.remove(operation.entityId)
@@ -410,5 +461,7 @@ class SyncCoordinatorTest {
         }
 
         override suspend fun pull(session: SyncSession): InitialAccountCopy = copy
+
+        override suspend fun pullVersioned(session: SyncSession) = RemoteSyncSnapshot(copy, versions.values.toList())
     }
 }

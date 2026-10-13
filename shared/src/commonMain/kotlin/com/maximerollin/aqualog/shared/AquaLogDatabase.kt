@@ -150,10 +150,36 @@ data class AccountInvitationEntity(
 @Entity(tableName = "sync_operations")
 data class SyncOperationEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val operationKey: String = "",
     val entityType: String,
     val entityId: String,
     @ColumnInfo(defaultValue = "'upsert'") val kind: String = "upsert",
     val attemptCount: Int = 0,
+    val nextAttemptAtEpochMillis: Long = 0L,
+    val failureCategory: String? = null,
+    val failureDetail: String? = null,
+    val clientUpdatedAtEpochMillis: Long = 0L,
+)
+
+@Entity(
+    tableName = "sync_entity_versions",
+    primaryKeys = ["entityType", "entityId"],
+)
+data class SyncEntityVersionEntity(
+    val entityType: String,
+    val entityId: String,
+    val serverVersion: Long,
+    val serverUpdatedAtEpochMillis: Long,
+    val deletedAtEpochMillis: Long?,
+)
+
+@Entity(tableName = "sync_runtime_state")
+data class SyncRuntimeStateEntity(
+    @PrimaryKey val singletonId: Int = 1,
+    val attemptCount: Int,
+    val nextAttemptAtEpochMillis: Long,
+    val failureCategory: String,
+    val failureDetail: String?,
 )
 
 @Dao
@@ -360,12 +386,13 @@ abstract class SessionDao {
     }
 
     @Transaction
-    open suspend fun delete(sessionId: String) {
+    open suspend fun delete(sessionId: String, syncOperations: List<SyncOperationEntity>) {
         requireNotNull(getById(sessionId)) { "Session does not exist" }
         deleteMeasurements(sessionId)
         deleteMaintenanceActions(sessionId)
         deleteEvents(sessionId)
         check(deleteSessionRow(sessionId) == 1)
+        insertSyncOperations(syncOperations)
     }
 }
 
@@ -584,17 +611,79 @@ abstract class PortableDataDao {
 
 @Dao
 abstract class SyncDao {
-    @Query("SELECT COUNT(*) FROM sync_operations")
-    abstract fun observePendingCount(): Flow<Int>
+    @Query("SELECT * FROM sync_operations ORDER BY id ASC")
+    abstract fun observePending(): Flow<List<SyncOperationEntity>>
 
     @Query("SELECT * FROM sync_operations ORDER BY id ASC LIMIT :limit")
     abstract suspend fun pending(limit: Int): List<SyncOperationEntity>
 
+    @Query(
+        "SELECT * FROM sync_operations WHERE nextAttemptAtEpochMillis <= :eligibleAtEpochMillis " +
+            "ORDER BY id ASC LIMIT :limit",
+    )
+    abstract suspend fun pendingEligible(limit: Int, eligibleAtEpochMillis: Long): List<SyncOperationEntity>
+
+    @Query("SELECT MIN(nextAttemptAtEpochMillis) FROM sync_operations WHERE nextAttemptAtEpochMillis > 0")
+    abstract suspend fun nextOperationRetryAtEpochMillis(): Long?
+
+    @Query("SELECT * FROM sync_runtime_state WHERE singletonId = 1")
+    abstract fun observeRuntimeState(): Flow<SyncRuntimeStateEntity?>
+
+    @Query("SELECT * FROM sync_runtime_state WHERE singletonId = 1")
+    abstract suspend fun runtimeState(): SyncRuntimeStateEntity?
+
+    @Upsert
+    protected abstract suspend fun upsertRuntimeState(state: SyncRuntimeStateEntity)
+
+    @Query("DELETE FROM sync_runtime_state")
+    protected abstract suspend fun clearRuntimeState()
+
     @Query("DELETE FROM sync_operations WHERE id IN (:operationIds)")
     abstract suspend fun acknowledge(operationIds: List<Long>)
 
-    @Query("UPDATE sync_operations SET attemptCount = attemptCount + 1 WHERE id IN (:operationIds)")
-    abstract suspend fun recordFailure(operationIds: List<Long>)
+    @Query(
+        "UPDATE sync_operations SET attemptCount = attemptCount + 1, " +
+            "nextAttemptAtEpochMillis = :nextRetryAtEpochMillis, failureCategory = :category, " +
+            "failureDetail = :detail WHERE id IN (:operationIds)",
+    )
+    protected abstract suspend fun updateOperationFailures(
+        operationIds: List<Long>,
+        category: String,
+        detail: String?,
+        nextRetryAtEpochMillis: Long,
+    )
+
+    @Query(
+        "UPDATE sync_operations SET nextAttemptAtEpochMillis = 0, " +
+            "failureCategory = NULL, failureDetail = NULL",
+    )
+    protected abstract suspend fun resetOperationRetries()
+
+    @Transaction
+    open suspend fun recordFailure(
+        operationIds: List<Long>,
+        category: String,
+        detail: String?,
+        nextRetryAtEpochMillis: Long,
+    ) {
+        if (operationIds.isNotEmpty()) {
+            updateOperationFailures(operationIds, category, detail, nextRetryAtEpochMillis)
+        }
+        upsertRuntimeState(
+            SyncRuntimeStateEntity(
+                attemptCount = (runtimeState()?.attemptCount ?: 0) + 1,
+                nextAttemptAtEpochMillis = nextRetryAtEpochMillis,
+                failureCategory = category,
+                failureDetail = detail,
+            ),
+        )
+    }
+
+    @Transaction
+    open suspend fun retryNow() {
+        resetOperationRetries()
+        clearRuntimeState()
+    }
 
     @Upsert
     protected abstract suspend fun upsertAquariums(aquariums: List<AquariumEntity>)
@@ -625,6 +714,12 @@ abstract class SyncDao {
     @Upsert
     protected abstract suspend fun upsertEvents(events: List<SessionEventEntity>)
 
+    @Query("SELECT * FROM sync_entity_versions")
+    protected abstract suspend fun allVersions(): List<SyncEntityVersionEntity>
+
+    @Upsert
+    protected abstract suspend fun upsertVersions(versions: List<SyncEntityVersionEntity>)
+
     @Query("SELECT * FROM measurements")
     protected abstract suspend fun allMeasurements(): List<MeasurementEntity>
 
@@ -643,6 +738,15 @@ abstract class SyncDao {
     @Query("DELETE FROM session_events WHERE id IN (:ids)")
     protected abstract suspend fun deleteEvents(ids: List<String>)
 
+    @Query("DELETE FROM sessions WHERE id IN (:ids)")
+    protected abstract suspend fun deleteSessions(ids: List<String>)
+
+    @Query("DELETE FROM parameter_definitions WHERE id IN (:ids)")
+    protected abstract suspend fun deleteParameters(ids: List<String>)
+
+    @Query("DELETE FROM aquariums WHERE id IN (:ids)")
+    protected abstract suspend fun deleteAquariums(ids: List<String>)
+
     @Transaction
     open suspend fun applyRemoteCopy(
         aquariums: List<AquariumEntity>,
@@ -654,6 +758,7 @@ abstract class SyncDao {
         acknowledgedOperationIds: List<Long>,
     ) {
         if (acknowledgedOperationIds.isNotEmpty()) acknowledge(acknowledgedOperationIds)
+        clearRuntimeState()
         val dirty = pending(Int.MAX_VALUE).map { it.entityType to it.entityId }.toSet()
         val cleanAquariums = aquariums.filterNot { SyncEntityType.AQUARIUM.storageValue to it.id in dirty }
         val cleanParameters = parameters.filterNot { SyncEntityType.PARAMETER_DEFINITION.storageValue to it.id in dirty }
@@ -678,18 +783,65 @@ abstract class SyncDao {
         if (cleanActions.isNotEmpty()) upsertMaintenanceActions(cleanActions)
         if (cleanEvents.isNotEmpty()) upsertEvents(cleanEvents)
 
-        val remoteMeasurementIds = measurements.mapTo(mutableSetOf(), MeasurementEntity::id)
-        val remoteActionIds = actions.mapTo(mutableSetOf(), MaintenanceActionEntity::id)
-        val remoteEventIds = events.mapTo(mutableSetOf(), SessionEventEntity::id)
-        allMeasurements().map(MeasurementEntity::id)
-            .filter { it !in remoteMeasurementIds && SyncEntityType.MEASUREMENT.storageValue to it !in dirty }
-            .takeIf(List<String>::isNotEmpty)?.let { deleteMeasurements(it) }
-        allActions().map(MaintenanceActionEntity::id)
-            .filter { it !in remoteActionIds && SyncEntityType.MAINTENANCE_ACTION.storageValue to it !in dirty }
-            .takeIf(List<String>::isNotEmpty)?.let { deleteActions(it) }
-        allEvents().map(SessionEventEntity::id)
-            .filter { it !in remoteEventIds && SyncEntityType.EVENT.storageValue to it !in dirty }
-            .takeIf(List<String>::isNotEmpty)?.let { deleteEvents(it) }
+    }
+
+    @Transaction
+    open suspend fun applyRemoteSnapshot(
+        aquariums: List<AquariumEntity>,
+        parameters: List<ParameterDefinitionEntity>,
+        sessions: List<SessionEntity>,
+        measurements: List<MeasurementEntity>,
+        actions: List<MaintenanceActionEntity>,
+        events: List<SessionEventEntity>,
+        versions: List<SyncEntityVersionEntity>,
+        acknowledgedOperationIds: List<Long>,
+    ) {
+        if (acknowledgedOperationIds.isNotEmpty()) acknowledge(acknowledgedOperationIds)
+        clearRuntimeState()
+        val dirty = pending(Int.MAX_VALUE).map { it.entityType to it.entityId }.toSet()
+        val storedVersions = allVersions().associateBy { it.entityType to it.entityId }
+        val acceptedVersions = versions.filter { incoming ->
+            val key = incoming.entityType to incoming.entityId
+            key !in dirty && incoming.serverVersion > (storedVersions[key]?.serverVersion ?: Long.MIN_VALUE)
+        }
+        val acceptedLive = acceptedVersions.filter { it.deletedAtEpochMillis == null }
+            .mapTo(mutableSetOf()) { it.entityType to it.entityId }
+        fun accepted(type: SyncEntityType, id: String) = type.storageValue to id in acceptedLive
+
+        aquariums.filter { accepted(SyncEntityType.AQUARIUM, it.id) }
+            .takeIf(List<AquariumEntity>::isNotEmpty)?.let { upsertAquariums(it) }
+        parameters.filter { accepted(SyncEntityType.PARAMETER_DEFINITION, it.id) }
+            .takeIf(List<ParameterDefinitionEntity>::isNotEmpty)?.let { upsertParameterDefinitions(it) }
+        sessions.filter { accepted(SyncEntityType.SESSION, it.id) }.forEach { session ->
+            insertRemoteSessions(listOf(session))
+            updateRemoteSession(
+                session.id,
+                session.aquariumId,
+                session.occurredAtEpochMillis,
+                session.createdAtEpochMillis,
+            )
+        }
+        measurements.filter { accepted(SyncEntityType.MEASUREMENT, it.id) }
+            .takeIf(List<MeasurementEntity>::isNotEmpty)?.let { upsertMeasurements(it) }
+        actions.filter { accepted(SyncEntityType.MAINTENANCE_ACTION, it.id) }
+            .takeIf(List<MaintenanceActionEntity>::isNotEmpty)?.let { upsertMaintenanceActions(it) }
+        events.filter { accepted(SyncEntityType.EVENT, it.id) }
+            .takeIf(List<SessionEventEntity>::isNotEmpty)?.let { upsertEvents(it) }
+
+        val tombstones = acceptedVersions.filter { it.deletedAtEpochMillis != null }.groupBy { it.entityType }
+        tombstones[SyncEntityType.MEASUREMENT.storageValue]?.map(SyncEntityVersionEntity::entityId)
+            ?.takeIf(List<String>::isNotEmpty)?.let { deleteMeasurements(it) }
+        tombstones[SyncEntityType.MAINTENANCE_ACTION.storageValue]?.map(SyncEntityVersionEntity::entityId)
+            ?.takeIf(List<String>::isNotEmpty)?.let { deleteActions(it) }
+        tombstones[SyncEntityType.EVENT.storageValue]?.map(SyncEntityVersionEntity::entityId)
+            ?.takeIf(List<String>::isNotEmpty)?.let { deleteEvents(it) }
+        tombstones[SyncEntityType.SESSION.storageValue]?.map(SyncEntityVersionEntity::entityId)
+            ?.takeIf(List<String>::isNotEmpty)?.let { deleteSessions(it) }
+        tombstones[SyncEntityType.PARAMETER_DEFINITION.storageValue]?.map(SyncEntityVersionEntity::entityId)
+            ?.takeIf(List<String>::isNotEmpty)?.let { deleteParameters(it) }
+        tombstones[SyncEntityType.AQUARIUM.storageValue]?.map(SyncEntityVersionEntity::entityId)
+            ?.takeIf(List<String>::isNotEmpty)?.let { deleteAquariums(it) }
+        if (acceptedVersions.isNotEmpty()) upsertVersions(acceptedVersions)
     }
 }
 
@@ -706,8 +858,10 @@ abstract class SyncDao {
         AccountStateEntity::class,
         AccountInvitationEntity::class,
         SyncOperationEntity::class,
+        SyncEntityVersionEntity::class,
+        SyncRuntimeStateEntity::class,
     ],
-    version = 8,
+    version = 9,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -730,7 +884,16 @@ fun createAquaLogDatabase(
 ): AquaLogDatabase = builder
     .setDriver(BundledSQLiteDriver())
     .setQueryCoroutineContext(Dispatchers.IO)
-    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+    .addMigrations(
+        MIGRATION_1_2,
+        MIGRATION_2_3,
+        MIGRATION_3_4,
+        MIGRATION_4_5,
+        MIGRATION_5_6,
+        MIGRATION_6_7,
+        MIGRATION_7_8,
+        MIGRATION_8_9,
+    )
     .build()
 
 private val MIGRATION_1_2 = Migration(1, 2) { connection ->
@@ -809,5 +972,45 @@ private val MIGRATION_6_7 = Migration(6, 7) { connection ->
 private val MIGRATION_7_8 = Migration(7, 8) { connection ->
     connection.execSQL(
         "ALTER TABLE sync_operations ADD COLUMN kind TEXT NOT NULL DEFAULT 'upsert'",
+    )
+}
+
+private val MIGRATION_8_9 = Migration(8, 9) { connection ->
+    connection.execSQL(
+        "ALTER TABLE sync_operations ADD COLUMN operationKey TEXT NOT NULL DEFAULT ''",
+    )
+    connection.execSQL(
+        "UPDATE sync_operations SET operationKey = 'legacy-' || entityType || '-' || entityId || '-' || id",
+    )
+    connection.execSQL(
+        "ALTER TABLE sync_operations ADD COLUMN nextAttemptAtEpochMillis INTEGER NOT NULL DEFAULT 0",
+    )
+    connection.execSQL("ALTER TABLE sync_operations ADD COLUMN failureCategory TEXT")
+    connection.execSQL("ALTER TABLE sync_operations ADD COLUMN failureDetail TEXT")
+    connection.execSQL(
+        "ALTER TABLE sync_operations ADD COLUMN clientUpdatedAtEpochMillis INTEGER NOT NULL DEFAULT 0",
+    )
+    connection.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS sync_entity_versions (
+            entityType TEXT NOT NULL,
+            entityId TEXT NOT NULL,
+            serverVersion INTEGER NOT NULL,
+            serverUpdatedAtEpochMillis INTEGER NOT NULL,
+            deletedAtEpochMillis INTEGER,
+            PRIMARY KEY(entityType, entityId)
+        )
+        """.trimIndent(),
+    )
+    connection.execSQL(
+        """
+        CREATE TABLE IF NOT EXISTS sync_runtime_state (
+            singletonId INTEGER NOT NULL PRIMARY KEY,
+            attemptCount INTEGER NOT NULL,
+            nextAttemptAtEpochMillis INTEGER NOT NULL,
+            failureCategory TEXT NOT NULL,
+            failureDetail TEXT
+        )
+        """.trimIndent(),
     )
 }

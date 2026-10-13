@@ -29,8 +29,14 @@ import com.maximerollin.aqualog.shared.SecureTokenStorage
 import com.maximerollin.aqualog.shared.Session
 import com.maximerollin.aqualog.shared.SessionEvent
 import com.maximerollin.aqualog.shared.SyncBackend
+import com.maximerollin.aqualog.shared.SyncConflictException
 import com.maximerollin.aqualog.shared.SyncCoordinator
+import com.maximerollin.aqualog.shared.SyncEntityType
+import com.maximerollin.aqualog.shared.SyncNetworkException
+import com.maximerollin.aqualog.shared.RemoteEntityVersion
+import com.maximerollin.aqualog.shared.RemoteSyncSnapshot
 import com.maximerollin.aqualog.shared.SyncRunResult
+import com.maximerollin.aqualog.shared.SyncServerException
 import com.maximerollin.aqualog.shared.SyncSession
 import com.maximerollin.aqualog.shared.SyncSessionProvider
 import com.maximerollin.aqualog.shared.SyncOperationKind
@@ -41,6 +47,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 class LocalAccountSyncSessionProvider(
@@ -77,28 +84,55 @@ class SupabaseSyncBackend(
         batch.operations.groupBy { it.entityType to it.entityId }
             .mapValues { (_, operations) -> operations.maxBy { it.id } }
             .values
-            .filter { it.kind == SyncOperationKind.DELETE }
-            .forEach { operation -> delete(operation.entityType.remoteTable, operation.entityId, session.accessToken) }
-        upsert("aquariums", batch.aquariums.map { it.toRemoteJson(session.accountId) }, session.accessToken)
-        upsert(
-            "parameter_definitions",
-            batch.parameterDefinitions.map { it.toRemoteJson(session.accountId) },
-            session.accessToken,
-        )
-        upsert("sessions", batch.sessions.map { it.toRemoteJson(session.accountId) }, session.accessToken)
-        upsert("measurements", batch.measurements.map { it.toRemoteJson(session.accountId) }, session.accessToken)
-        upsert(
-            "maintenance_actions",
-            batch.maintenanceActions.map { it.toRemoteJson(session.accountId) },
-            session.accessToken,
-        )
-        upsert("session_events", batch.events.map { it.toRemoteJson(session.accountId) }, session.accessToken)
+            .sortedBy { it.id }
+            .forEach { operation ->
+                val payload = when (operation.entityType) {
+                    SyncEntityType.AQUARIUM -> batch.aquariums.firstOrNull { it.id == operation.entityId }
+                        ?.toRemoteJson(session.accountId)
+                    SyncEntityType.PARAMETER_DEFINITION -> batch.parameterDefinitions
+                        .firstOrNull { it.id == operation.entityId }?.toRemoteJson(session.accountId)
+                    SyncEntityType.SESSION -> batch.sessions.firstOrNull { it.id == operation.entityId }
+                        ?.toRemoteJson(session.accountId)
+                    SyncEntityType.MEASUREMENT -> batch.measurements.firstOrNull { it.id == operation.entityId }
+                        ?.toRemoteJson(session.accountId)
+                    SyncEntityType.MAINTENANCE_ACTION -> batch.maintenanceActions
+                        .firstOrNull { it.id == operation.entityId }?.toRemoteJson(session.accountId)
+                    SyncEntityType.EVENT -> batch.events.firstOrNull { it.id == operation.entityId }
+                        ?.toRemoteJson(session.accountId)
+                }
+                require(operation.kind == SyncOperationKind.DELETE || payload != null) {
+                    "Pending upsert payload is missing"
+                }
+                request(
+                    path = "/rest/v1/rpc/apply_sync_operation",
+                    method = "POST",
+                    accessToken = session.accessToken,
+                    body = JSONObject()
+                        .put("p_operation_key", operation.operationKey)
+                        .put("p_entity_type", operation.entityType.storageValue)
+                        .put("p_entity_id", operation.entityId)
+                        .put("p_kind", operation.kind.storageValue)
+                        .put("p_client_updated_at_epoch_millis", operation.clientUpdatedAtEpochMillis)
+                        .put("p_payload", payload ?: JSONObject.NULL)
+                        .toString(),
+                    prefer = "return=minimal",
+                )
+            }
     }
 
-    override suspend fun pull(session: SyncSession): InitialAccountCopy = withContext(Dispatchers.IO) {
+    override suspend fun pull(session: SyncSession): InitialAccountCopy = pullVersioned(session).copy
+
+    override suspend fun pullVersioned(session: SyncSession): RemoteSyncSnapshot = withContext(Dispatchers.IO) {
         require(configuration.isConfigured) { "Supabase is not configured for this build" }
-        InitialAccountCopy(
-            aquariums = get("aquariums", session.accessToken).map { value ->
+        val aquariums = get("aquariums", session.accessToken)
+        val parameters = get("parameter_definitions", session.accessToken)
+        val sessions = get("sessions", session.accessToken)
+        val measurements = get("measurements", session.accessToken)
+        val actions = get("maintenance_actions", session.accessToken)
+        val events = get("session_events", session.accessToken)
+        RemoteSyncSnapshot(
+            copy = InitialAccountCopy(
+            aquariums = aquariums.filterLive().map { value ->
                 Aquarium(
                     id = value.getString("id"),
                     name = value.getString("name"),
@@ -108,7 +142,7 @@ class SupabaseSyncBackend(
                     profile = AquariumProfile.fromStorageValue(value.getString("profile")),
                 )
             },
-            parameterDefinitions = get("parameter_definitions", session.accessToken).map { value ->
+            parameterDefinitions = parameters.filterLive().map { value ->
                 ParameterDefinition(
                     id = value.getString("id"),
                     aquariumId = value.getString("aquarium_id"),
@@ -121,7 +155,7 @@ class SupabaseSyncBackend(
                     indicativeMaximum = value.nullableDouble("indicative_maximum"),
                 )
             },
-            sessions = get("sessions", session.accessToken).map { value ->
+            sessions = sessions.filterLive().map { value ->
                 Session(
                     id = value.getString("id"),
                     aquariumId = value.getString("aquarium_id"),
@@ -129,7 +163,7 @@ class SupabaseSyncBackend(
                     createdAtEpochMillis = value.getLong("created_at_epoch_millis"),
                 )
             },
-            measurements = get("measurements", session.accessToken).map { value ->
+            measurements = measurements.filterLive().map { value ->
                 Measurement(
                     id = value.getString("id"),
                     sessionId = value.getString("session_id"),
@@ -137,7 +171,7 @@ class SupabaseSyncBackend(
                     value = value.getDouble("value"),
                 )
             },
-            maintenanceActions = get("maintenance_actions", session.accessToken).map { value ->
+            maintenanceActions = actions.filterLive().map { value ->
                 MaintenanceAction(
                     id = value.getString("id"),
                     sessionId = value.getString("session_id"),
@@ -147,7 +181,7 @@ class SupabaseSyncBackend(
                     product = value.nullableString("product"),
                 )
             },
-            events = get("session_events", session.accessToken).map { value ->
+            events = events.filterLive().map { value ->
                 SessionEvent(
                     id = value.getString("id"),
                     sessionId = value.getString("session_id"),
@@ -155,17 +189,15 @@ class SupabaseSyncBackend(
                     note = value.getString("note"),
                 )
             },
-        )
-    }
-
-    private fun upsert(table: String, rows: List<JSONObject>, accessToken: String) {
-        if (rows.isEmpty()) return
-        request(
-            path = "/rest/v1/$table?on_conflict=id",
-            method = "POST",
-            accessToken = accessToken,
-            body = JSONArray(rows).toString(),
-            prefer = "resolution=merge-duplicates,return=minimal",
+            ),
+            versions = buildList {
+                addAll(aquariums.toVersions(SyncEntityType.AQUARIUM))
+                addAll(parameters.toVersions(SyncEntityType.PARAMETER_DEFINITION))
+                addAll(sessions.toVersions(SyncEntityType.SESSION))
+                addAll(measurements.toVersions(SyncEntityType.MEASUREMENT))
+                addAll(actions.toVersions(SyncEntityType.MAINTENANCE_ACTION))
+                addAll(events.toVersions(SyncEntityType.EVENT))
+            },
         )
     }
 
@@ -178,15 +210,6 @@ class SupabaseSyncBackend(
             ),
         )
         return List(values.length()) { index -> values.getJSONObject(index) }
-    }
-
-    private fun delete(table: String, entityId: String, accessToken: String) {
-        request(
-            path = "/rest/v1/$table?id=eq.$entityId",
-            method = "DELETE",
-            accessToken = accessToken,
-            prefer = "return=minimal",
-        )
     }
 
     private fun request(
@@ -213,8 +236,13 @@ class SupabaseSyncBackend(
             val response = (if (status in 200..299) connection.inputStream else connection.errorStream)
                 ?.bufferedReader()?.use { it.readText() }.orEmpty()
             if (status == HttpURLConnection.HTTP_UNAUTHORIZED) throw CloudAuthenticationExpiredException()
-            if (status !in 200..299) error("Supabase sync returned HTTP $status: $response")
+            if (status == HttpURLConnection.HTTP_CONFLICT) {
+                throw SyncConflictException("Supabase rejected a concurrent write (HTTP $status)")
+            }
+            if (status !in 200..299) throw SyncServerException("Supabase sync failed (HTTP $status)")
             response
+        } catch (network: IOException) {
+            throw SyncNetworkException(network.message?.take(160) ?: "Network request failed")
         } finally {
             connection.disconnect()
         }
@@ -279,12 +307,18 @@ private fun JSONObject.putNullable(name: String, value: Any?): JSONObject = put(
 private fun JSONObject.nullableDouble(name: String): Double? = if (isNull(name)) null else getDouble(name)
 private fun JSONObject.nullableString(name: String): String? = if (isNull(name)) null else getString(name)
 
-private val com.maximerollin.aqualog.shared.SyncEntityType.remoteTable: String
-    get() = when (this) {
-        com.maximerollin.aqualog.shared.SyncEntityType.AQUARIUM -> "aquariums"
-        com.maximerollin.aqualog.shared.SyncEntityType.PARAMETER_DEFINITION -> "parameter_definitions"
-        com.maximerollin.aqualog.shared.SyncEntityType.SESSION -> "sessions"
-        com.maximerollin.aqualog.shared.SyncEntityType.MEASUREMENT -> "measurements"
-        com.maximerollin.aqualog.shared.SyncEntityType.MAINTENANCE_ACTION -> "maintenance_actions"
-        com.maximerollin.aqualog.shared.SyncEntityType.EVENT -> "session_events"
-    }
+private fun List<JSONObject>.filterLive() = filter { it.isNull("deleted_at_epoch_millis") }
+
+private fun List<JSONObject>.toVersions(entityType: SyncEntityType) = map { value ->
+    RemoteEntityVersion(
+        entityType = entityType,
+        entityId = value.getString("id"),
+        serverVersion = value.getLong("server_version"),
+        serverUpdatedAtEpochMillis = value.getLong("server_updated_at_epoch_millis"),
+        deletedAtEpochMillis = if (value.isNull("deleted_at_epoch_millis")) {
+            null
+        } else {
+            value.getLong("deleted_at_epoch_millis")
+        },
+    )
+}
