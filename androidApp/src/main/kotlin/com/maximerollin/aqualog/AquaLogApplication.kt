@@ -25,7 +25,7 @@ open class AquaLogApplication : Application() {
             database = database,
             generateId = { UUID.randomUUID().toString() },
             currentTimeMillis = System::currentTimeMillis,
-            onSyncNeeded = { AndroidSyncScheduler.enqueue(this) },
+            onSyncNeeded = { AndroidSyncScheduler.requestImmediate(this) },
         )
     }
 
@@ -43,6 +43,7 @@ open class AquaLogApplication : Application() {
                 secureTokenStorage,
                 SupabaseAuthGateway(this, SupabaseConfiguration.fromBuildConfig(), secureTokenStorage),
             ),
+            currentTimeMillis = System::currentTimeMillis,
         )
     }
 

@@ -304,6 +304,7 @@ class HomeViewModel(
     private val currentTimeMillis: () -> Long = System::currentTimeMillis,
     private val currentTimeZoneId: () -> String = { ZoneId.systemDefault().id },
     private val generateInteractionId: () -> String = { UUID.randomUUID().toString() },
+    private val onSyncRetryRequested: () -> Unit = {},
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
     private val mutableUiState = MutableStateFlow(
@@ -397,6 +398,14 @@ class HomeViewModel(
     }
 
     fun startOnboarding() = moveTo(OnboardingStep.PROFILE)
+
+    fun retrySynchronization() {
+        val syncLocalData = aquariumRepository as? SyncLocalDataSource ?: return
+        viewModelScope.launch {
+            syncLocalData.retrySyncNow()
+            onSyncRetryRequested()
+        }
+    }
 
     fun startPortableDataOperation() {
         mutableUiState.update { it.copy(portableData = PortableDataUiState(isWorking = true)) }
@@ -1371,6 +1380,7 @@ class HomeViewModel(
             taskReminderScheduler: TaskReminderScheduler = NoOpTaskReminderScheduler,
             accountCoordinator: AccountActivationCoordinator? = null,
             proPurchaseCoordinator: ProPurchaseCoordinator? = null,
+            onSyncRetryRequested: () -> Unit = {},
         ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
@@ -1380,6 +1390,7 @@ class HomeViewModel(
                         taskReminderScheduler = taskReminderScheduler,
                         accountCoordinator = accountCoordinator,
                         proPurchaseCoordinator = proPurchaseCoordinator,
+                        onSyncRetryRequested = onSyncRetryRequested,
                         savedStateHandle = extras.createSavedStateHandle(),
                     ) as T
             }

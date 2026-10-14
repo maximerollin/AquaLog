@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
             taskReminderScheduler = application.taskReminderScheduler,
             accountCoordinator = application.accountCoordinator,
             proPurchaseCoordinator = proPurchaseCoordinator,
+            onSyncRetryRequested = { AndroidSyncScheduler.requestImmediate(application) },
         )
     }
 

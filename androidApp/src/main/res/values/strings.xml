@@ -165,6 +165,12 @@
     <string name="settings_placeholder">Account, units and appearance settings will be added in their dedicated slices.</string>
     <string name="sync_status_synced">✓ Synced</string>
     <string name="sync_status_pending">○ Sync pending</string>
+    <string name="sync_status_failed">Sync unavailable</string>
+    <string name="sync_failure_network">Network connection failed. Your local data remains available.</string>
+    <string name="sync_failure_conflict">A newer copy was kept. Your local data remains available.</string>
+    <string name="sync_failure_server">The sync service could not complete the request. Your local data remains available.</string>
+    <string name="sync_failure_unknown">Sync did not complete. Your local data remains available.</string>
+    <string name="sync_retry">Retry sync</string>
     <string name="portable_data_title">Portable local data</string>
     <string name="portable_data_description">Save or restore your local AquaLog copy with Android document storage.</string>
     <string name="portable_data_replace_explanation">Restore validates the whole file first, then atomically replaces Aquarium data on this device. Stable IDs prevent duplicates. Account credentials and billing data are never included.</string>

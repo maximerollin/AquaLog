@@ -35,6 +35,8 @@ class SessionReliabilityFlowTest {
 
         val temperature = composeRule.onNodeWithContentDescription("Measurement for Temperature")
         temperature.performTextReplacement("24,5")
+        temperature.assertTextContains("24,5")
+        closeSoftKeyboard()
         scenario.moveToState(Lifecycle.State.CREATED)
         scenario.moveToState(Lifecycle.State.RESUMED)
         composeRule.onNodeWithContentDescription("Measurement for Temperature")
