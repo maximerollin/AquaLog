@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(12);
 
 insert into auth.users (id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -32,6 +32,18 @@ select throws_ok(
     '22023',
     'deletion operation key is invalid',
     'empty operation key is rejected'
+);
+
+set local request.jwt.claims = '{"sub":"13000000-0000-0000-0000-000000000002","role":"authenticated"}';
+select lives_ok(
+    $$select public.delete_account_data('delete-operation-1')$$,
+    'another account may use the same opaque operation key without sharing a receipt'
+);
+reset role;
+select is(
+    (select count(*) from public.account_deletion_receipts where operation_key = 'delete-operation-1'),
+    2::bigint,
+    'receipts remain independently scoped by account and operation key'
 );
 
 select * from finish();

@@ -17,6 +17,7 @@ import com.maximerollin.aqualog.shared.AccountDeletionGateway
 import com.maximerollin.aqualog.shared.AuthTokens
 import com.maximerollin.aqualog.shared.CloudAccountDeletionResult
 import com.maximerollin.aqualog.shared.SecureTokenStorage
+import com.maximerollin.aqualog.shared.AccountOperationGate
 
 class AquaLogTestRunner : AndroidJUnitRunner() {
     override fun newApplication(
@@ -32,6 +33,7 @@ class TestAquaLogApplication : AquaLogApplication() {
     private var portableService: PortableDataService? = null
     private var accountControl: AccountControlCoordinator? = null
     private var roomRepository: RoomAquariumRepository? = null
+    private var operationGate: AccountOperationGate? = null
     private var databaseSequence = 0
     val recordingTaskReminderScheduler = RecordingTaskReminderScheduler()
 
@@ -46,6 +48,9 @@ class TestAquaLogApplication : AquaLogApplication() {
 
     override val accountControlCoordinator: AccountControlCoordinator
         get() = requireNotNull(accountControl) { "resetRepository() must run before launching MainActivity" }
+
+    override val accountOperationGate: AccountOperationGate
+        get() = requireNotNull(operationGate) { "resetRepository() must run before launching MainActivity" }
 
     var deletionResult: CloudAccountDeletionResult = CloudAccountDeletionResult.Completed
 
@@ -73,12 +78,18 @@ class TestAquaLogApplication : AquaLogApplication() {
         repository = newRepository
         portableService = PortableDataService(newDatabase)
         val tokenStorage = TestTokenStorage(AuthTokens("access", "refresh"))
+        operationGate = AccountOperationGate(newRepository)
         accountControl = AccountControlCoordinator(
             localData = newRepository,
             tokenStorage = tokenStorage,
             deletionGateway = object : AccountDeletionGateway {
-                override suspend fun deleteAccount(accessToken: String, operationKey: String) = deletionResult
+                override suspend fun deleteAccount(
+                    accessToken: String,
+                    operationKey: String,
+                    recoveryCredential: String?,
+                ) = deletionResult
             },
+            operationGate = accountOperationGate,
             generateOperationKey = { "test-deletion-operation" },
         )
         deletionResult = CloudAccountDeletionResult.Completed

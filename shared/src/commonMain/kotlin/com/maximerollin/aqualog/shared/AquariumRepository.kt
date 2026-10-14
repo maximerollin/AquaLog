@@ -60,7 +60,7 @@ class RoomAquariumRepository(
     private val currentTimeMillis: () -> Long,
     private val onSyncNeeded: () -> Unit = {},
     private val generateOperationKey: () -> String = ::randomSyncOperationKey,
-) : AquariumRepository, AccountLocalDataSource, AccountControlLocalData, SyncLocalDataSource {
+) : AquariumRepository, AccountLocalDataSource, AccountControlLocalData, AccountAccessMarkerStore, SyncLocalDataSource {
     private val aquariumDao = database.aquariumDao()
     private val sessionDao = database.sessionDao()
     private val taskDao = database.taskDao()
@@ -573,6 +573,12 @@ class RoomAquariumRepository(
                 phase = AccountDeletionPhase.CLOUD_PENDING.name,
             ),
         )
+    }
+
+    override suspend fun isAccountAccessRevoked(): Boolean = accountControlDao.isAccountAccessRevoked()
+
+    override suspend fun markAccountAccessRevoked() {
+        accountControlDao.upsertAccountAccessState(AccountAccessStateEntity())
     }
 
     override suspend fun markCloudDeletionComplete() = accountControlDao.markCloudDeletionComplete()

@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog.shared
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.sync.Mutex
 
 data class AccountIdentity(
     val accountId: String,
@@ -23,6 +24,7 @@ data class PendingAccountDeletion(
 )
 
 sealed interface CloudAccountDeletionResult {
+    data class Prepared(val recoveryCredential: String) : CloudAccountDeletionResult
     data object Completed : CloudAccountDeletionResult
     data class RetryableFailure(val safeDetail: String) : CloudAccountDeletionResult
     data object AuthenticationRequired : CloudAccountDeletionResult
@@ -30,7 +32,69 @@ sealed interface CloudAccountDeletionResult {
 }
 
 interface AccountDeletionGateway {
-    suspend fun deleteAccount(accessToken: String, operationKey: String): CloudAccountDeletionResult
+    suspend fun deleteAccount(
+        accessToken: String,
+        operationKey: String,
+        recoveryCredential: String?,
+    ): CloudAccountDeletionResult
+}
+
+interface DeletionRecoveryCredentialStorage {
+    suspend fun saveDeletionCredential(operationKey: String, credential: String)
+    suspend fun readDeletionCredential(operationKey: String): String?
+    suspend fun clearDeletionCredential()
+}
+
+interface AccountAccessMarkerStore {
+    suspend fun isAccountAccessRevoked(): Boolean
+    suspend fun markAccountAccessRevoked()
+}
+
+class AccountOperationLease internal constructor(internal val generation: Long)
+
+sealed interface AccountLeaseResult<out T> {
+    data class Completed<T>(val value: T) : AccountLeaseResult<T>
+    data object Revoked : AccountLeaseResult<Nothing>
+}
+
+class AccountOperationGate(private val markerStore: AccountAccessMarkerStore) {
+    private val mutex = Mutex()
+    private var generation = 0L
+
+    suspend fun acquire(): AccountOperationLease? {
+        mutex.lock()
+        return try {
+            if (markerStore.isAccountAccessRevoked()) null else AccountOperationLease(generation)
+        } finally {
+            mutex.unlock()
+        }
+    }
+
+    suspend fun beginRevocation() {
+        mutex.lock()
+        try {
+            generation += 1
+            markerStore.markAccountAccessRevoked()
+        } finally {
+            mutex.unlock()
+        }
+    }
+
+    suspend fun <T> runIfCurrent(
+        lease: AccountOperationLease,
+        operation: suspend () -> T,
+    ): AccountLeaseResult<T> {
+        mutex.lock()
+        return try {
+            if (lease.generation != generation || markerStore.isAccountAccessRevoked()) {
+                AccountLeaseResult.Revoked
+            } else {
+                AccountLeaseResult.Completed(operation())
+            }
+        } finally {
+            mutex.unlock()
+        }
+    }
 }
 
 interface AccountControlLocalData {
@@ -81,6 +145,8 @@ class AccountControlCoordinator(
     private val localData: AccountControlLocalData,
     private val tokenStorage: SecureTokenStorage,
     private val deletionGateway: AccountDeletionGateway,
+    private val operationGate: AccountOperationGate? = null,
+    private val deletionCredentialStorage: DeletionRecoveryCredentialStorage? = null,
     private val generateOperationKey: () -> String = { error("Deletion operation key generator is not configured") },
 ) {
     suspend fun identity(): AccountIdentity? = localData.accountIdentity()
@@ -88,6 +154,7 @@ class AccountControlCoordinator(
     suspend fun pendingDeletion(): PendingAccountDeletion? = localData.pendingDeletion()
 
     suspend fun logout(localCopyDecision: LocalCopyDecision): AccountControlResult {
+        operationGate?.beginRevocation()
         try {
             tokenStorage.clear()
         } catch (cancelled: CancellationException) {
@@ -119,13 +186,33 @@ class AccountControlCoordinator(
             operationKey = generateOperationKey(),
             phase = AccountDeletionPhase.CLOUD_PENDING,
         ).also { localData.beginDeletion(it.operationKey) }
+        operationGate?.beginRevocation()
         if (pending.phase == AccountDeletionPhase.CLOUD_PENDING) {
             val tokens = tokenStorage.read() ?: return AccountControlResult.DeletionIncomplete(
                 AccountControlFailure.AUTHENTICATION,
                 "Sign in again to verify and finish account deletion.",
             )
-            when (val result = deletionGateway.deleteAccount(tokens.accessToken, pending.operationKey)) {
-                CloudAccountDeletionResult.Completed -> localData.markCloudDeletionComplete()
+            var recoveryCredential = deletionCredentialStorage?.readDeletionCredential(pending.operationKey)
+            var result = deletionGateway.deleteAccount(tokens.accessToken, pending.operationKey, recoveryCredential)
+            if (result is CloudAccountDeletionResult.Prepared) {
+                recoveryCredential = result.recoveryCredential
+                val storage = deletionCredentialStorage ?: return AccountControlResult.DeletionIncomplete(
+                    AccountControlFailure.CONFIGURATION,
+                    "Secure deletion recovery is not configured for this build.",
+                )
+                storage.saveDeletionCredential(pending.operationKey, recoveryCredential)
+                result = deletionGateway.deleteAccount(tokens.accessToken, pending.operationKey, recoveryCredential)
+            }
+            when (result) {
+                is CloudAccountDeletionResult.Prepared -> {
+                    return AccountControlResult.DeletionIncomplete(
+                        AccountControlFailure.CLOUD,
+                        "Account deletion preparation could not be completed. Try again.",
+                    )
+                }
+                CloudAccountDeletionResult.Completed -> {
+                    localData.markCloudDeletionComplete()
+                }
                 is CloudAccountDeletionResult.RetryableFailure -> {
                     return AccountControlResult.DeletionIncomplete(
                         AccountControlFailure.CLOUD,
@@ -145,6 +232,16 @@ class AccountControlCoordinator(
                     )
                 }
             }
+        }
+        try {
+            deletionCredentialStorage?.clearDeletionCredential()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            return AccountControlResult.DeletionIncomplete(
+                AccountControlFailure.TOKEN_INVALIDATION,
+                "Secure deletion recovery state could not be cleared.",
+            )
         }
         try {
             tokenStorage.clear()

@@ -17,6 +17,7 @@ import com.maximerollin.aqualog.shared.CloudRepository
 import com.maximerollin.aqualog.shared.CloudAuthenticationExpiredException
 import com.maximerollin.aqualog.shared.AccountDeletionGateway
 import com.maximerollin.aqualog.shared.CloudAccountDeletionResult
+import com.maximerollin.aqualog.shared.DeletionRecoveryCredentialStorage
 import com.maximerollin.aqualog.shared.InitialAccountCopy
 import com.maximerollin.aqualog.shared.MagicLinkRequestResult
 import com.maximerollin.aqualog.shared.PendingAuthenticationAttempt
@@ -56,7 +57,10 @@ data class SupabaseConfiguration(
     }
 }
 
-class AndroidSecureTokenStorage(context: Context) : SecureTokenStorage, AuthenticationAttemptStorage {
+class AndroidSecureTokenStorage(context: Context) :
+    SecureTokenStorage,
+    AuthenticationAttemptStorage,
+    DeletionRecoveryCredentialStorage {
     private val preferences = context.getSharedPreferences("encrypted_account_tokens", Context.MODE_PRIVATE)
 
     override suspend fun save(tokens: AuthTokens) = withContext(Dispatchers.IO) {
@@ -97,6 +101,29 @@ class AndroidSecureTokenStorage(context: Context) : SecureTokenStorage, Authenti
     override suspend fun clearAttempt() = withContext(Dispatchers.IO) {
         check(preferences.edit().remove(ATTEMPT_IV_KEY).remove(ATTEMPT_KEY).commit()) {
             "Pending authentication attempt could not be cleared"
+        }
+    }
+
+    override suspend fun saveDeletionCredential(operationKey: String, credential: String) =
+        withContext(Dispatchers.IO) {
+            saveEncrypted(
+                DELETION_IV_KEY,
+                DELETION_KEY,
+                "$operationKey\u0000$credential".toByteArray(),
+            )
+        }
+
+    override suspend fun readDeletionCredential(operationKey: String): String? =
+        withContext(Dispatchers.IO) {
+            readEncrypted(DELETION_IV_KEY, DELETION_KEY)?.let { plaintext ->
+                val parts = plaintext.toString(Charsets.UTF_8).split('\u0000', limit = 2)
+                parts.takeIf { it.size == 2 && it[0] == operationKey }?.get(1)
+            }
+        }
+
+    override suspend fun clearDeletionCredential() = withContext(Dispatchers.IO) {
+        check(preferences.edit().remove(DELETION_IV_KEY).remove(DELETION_KEY).commit()) {
+            "Deletion recovery credential could not be cleared"
         }
     }
 
@@ -143,6 +170,8 @@ class AndroidSecureTokenStorage(context: Context) : SecureTokenStorage, Authenti
         const val TOKEN_KEY = "tokens"
         const val ATTEMPT_IV_KEY = "attempt_iv"
         const val ATTEMPT_KEY = "attempt"
+        const val DELETION_IV_KEY = "deletion_iv"
+        const val DELETION_KEY = "deletion_credential"
     }
 }
 
@@ -403,6 +432,7 @@ class SupabaseAccountDeletionGateway(
     override suspend fun deleteAccount(
         accessToken: String,
         operationKey: String,
+        recoveryCredential: String?,
     ): CloudAccountDeletionResult = withContext(Dispatchers.IO) {
         if (!configuration.isConfigured) return@withContext CloudAccountDeletionResult.NotConfigured
         val connection = URL("${configuration.projectUrl}/functions/v1/delete-account")
@@ -417,9 +447,21 @@ class SupabaseAccountDeletionGateway(
                 setRequestProperty("Authorization", "Bearer $accessToken")
                 setRequestProperty("Content-Type", "application/json")
                 outputStream.use {
-                    it.write(JSONObject().put("operationKey", operationKey).toString().toByteArray())
+                    it.write(
+                        JSONObject()
+                            .put("operationKey", operationKey)
+                            .putNullable("recoveryCredential", recoveryCredential)
+                            .toString()
+                            .toByteArray(),
+                    )
                 }
                 when (responseCode) {
+                    HttpURLConnection.HTTP_ACCEPTED -> {
+                        val body = inputStream.bufferedReader().use { it.readText() }
+                        CloudAccountDeletionResult.Prepared(
+                            JSONObject(body).getString("recoveryCredential"),
+                        )
+                    }
                     in 200..299 -> CloudAccountDeletionResult.Completed
                     HttpURLConnection.HTTP_UNAUTHORIZED -> CloudAccountDeletionResult.AuthenticationRequired
                     else -> {

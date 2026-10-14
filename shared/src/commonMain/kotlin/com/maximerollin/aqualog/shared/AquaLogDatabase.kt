@@ -155,6 +155,12 @@ data class AccountDeletionStateEntity(
     val phase: String,
 )
 
+@Entity(tableName = "account_access_state")
+data class AccountAccessStateEntity(
+    @PrimaryKey val singletonId: Int = 1,
+    val revoked: Boolean = true,
+)
+
 @Entity(tableName = "sync_operations")
 data class SyncOperationEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -507,6 +513,15 @@ abstract class AccountControlDao {
     @Upsert
     abstract suspend fun upsertDeletion(state: AccountDeletionStateEntity)
 
+    @Query("SELECT EXISTS(SELECT 1 FROM account_access_state WHERE singletonId = 1 AND revoked = 1)")
+    abstract suspend fun isAccountAccessRevoked(): Boolean
+
+    @Upsert
+    abstract suspend fun upsertAccountAccessState(state: AccountAccessStateEntity)
+
+    @Query("DELETE FROM account_access_state")
+    protected abstract suspend fun deleteAccountAccessState()
+
     @Query("UPDATE account_deletion_state SET phase = :phase WHERE singletonId = 1")
     protected abstract suspend fun updateDeletionPhase(phase: String): Int
 
@@ -570,6 +585,7 @@ abstract class AccountControlDao {
         deleteSyncRuntimeState()
         deleteSyncScheduleState()
         deleteDeletionState()
+        deleteAccountAccessState()
     }
 
     @Transaction
@@ -982,12 +998,13 @@ abstract class SyncDao {
         AccountStateEntity::class,
         AccountInvitationEntity::class,
         AccountDeletionStateEntity::class,
+        AccountAccessStateEntity::class,
         SyncOperationEntity::class,
         SyncEntityVersionEntity::class,
         SyncRuntimeStateEntity::class,
         SyncScheduleStateEntity::class,
     ],
-    version = 12,
+    version = 13,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -1023,6 +1040,7 @@ fun createAquaLogDatabase(
         MIGRATION_9_10,
         MIGRATION_10_11,
         MIGRATION_11_12,
+        MIGRATION_12_13,
     )
     .build()
 
@@ -1161,5 +1179,11 @@ private val MIGRATION_11_12 = Migration(11, 12) { connection ->
     connection.execSQL("ALTER TABLE account_state ADD COLUMN email TEXT")
     connection.execSQL(
         "CREATE TABLE IF NOT EXISTS account_deletion_state (singletonId INTEGER NOT NULL PRIMARY KEY, operationKey TEXT NOT NULL, phase TEXT NOT NULL)",
+    )
+}
+
+private val MIGRATION_12_13 = Migration(12, 13) { connection ->
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS account_access_state (singletonId INTEGER NOT NULL PRIMARY KEY, revoked INTEGER NOT NULL)",
     )
 }

@@ -4,6 +4,7 @@ import android.app.Application
 import com.maximerollin.aqualog.shared.AQUA_LOG_DATABASE_NAME
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
 import com.maximerollin.aqualog.shared.AccountControlCoordinator
+import com.maximerollin.aqualog.shared.AccountOperationGate
 import com.maximerollin.aqualog.shared.DeletionAwareSyncSessionProvider
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.PortableDataService
@@ -33,6 +34,10 @@ open class AquaLogApplication : Application() {
         AndroidSecureTokenStorage(this)
     }
 
+    open val accountOperationGate: AccountOperationGate by lazy {
+        AccountOperationGate(aquariumRepository as RoomAquariumRepository)
+    }
+
     open val syncCoordinator: SyncCoordinator by lazy {
         val localData = aquariumRepository as RoomAquariumRepository
         SyncCoordinator(
@@ -44,9 +49,11 @@ open class AquaLogApplication : Application() {
                     localData,
                     secureTokenStorage,
                     SupabaseAuthGateway(this, SupabaseConfiguration.fromBuildConfig(), secureTokenStorage),
+                    accountOperationGate,
                 ),
             ),
             currentTimeMillis = System::currentTimeMillis,
+            operationGate = accountOperationGate,
         )
     }
 
@@ -75,6 +82,8 @@ open class AquaLogApplication : Application() {
             localData = aquariumRepository as RoomAquariumRepository,
             tokenStorage = secureTokenStorage,
             deletionGateway = SupabaseAccountDeletionGateway(SupabaseConfiguration.fromBuildConfig()),
+            operationGate = accountOperationGate,
+            deletionCredentialStorage = secureTokenStorage,
             generateOperationKey = { UUID.randomUUID().toString() },
         )
     }

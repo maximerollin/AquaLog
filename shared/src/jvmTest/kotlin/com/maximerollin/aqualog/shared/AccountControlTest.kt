@@ -1,6 +1,8 @@
 package com.maximerollin.aqualog.shared
 
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.async
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
 import java.nio.file.Files
 import kotlin.test.Test
@@ -240,6 +242,81 @@ class AccountControlTest {
         assertEquals("account-1", local.account?.accountId)
     }
 
+    @Test
+    fun `logout persists revocation marker before clearing secure tokens`() = runTest {
+        val local = FakeAccountControlLocalData(
+            account = AccountIdentity("account-1", "owner@example.com"),
+            hasLocalData = true,
+            hasPendingSync = true,
+        )
+        val gate = AccountOperationGate(local)
+        val tokens = object : SecureTokenStorage {
+            override suspend fun save(tokens: AuthTokens) = Unit
+            override suspend fun read() = AuthTokens("access", "refresh")
+            override suspend fun clear() {
+                assertTrue(local.accessRevoked, "revocation must be durable before token clearing starts")
+            }
+        }
+        val coordinator = AccountControlCoordinator(
+            localData = local,
+            tokenStorage = tokens,
+            deletionGateway = FakeDeletionGateway(),
+            operationGate = gate,
+        )
+
+        assertIs<AccountControlResult.SignedOut>(coordinator.logout(LocalCopyDecision.KEEP))
+    }
+
+    @Test
+    fun `refresh result cannot save tokens after concurrent revocation`() = runTest {
+        val local = FakeAccountControlLocalData(
+            account = AccountIdentity("account-1", "owner@example.com"),
+            hasLocalData = true,
+            hasPendingSync = true,
+        )
+        val gate = AccountOperationGate(local)
+        val lease = requireNotNull(gate.acquire())
+        val response = CompletableDeferred<AuthTokens>()
+        var saved: AuthTokens? = null
+        val refresh = async {
+            val refreshed = response.await()
+            gate.runIfCurrent(lease) { saved = refreshed }
+        }
+
+        gate.beginRevocation()
+        response.complete(AuthTokens("new-access", "new-refresh"))
+
+        assertEquals(AccountLeaseResult.Revoked, refresh.await())
+        assertNull(saved)
+    }
+
+    @Test
+    fun `server-issued deletion credential is persisted before destructive retry and then cleared`() = runTest {
+        val local = FakeAccountControlLocalData(
+            account = AccountIdentity("account-1", "owner@example.com"),
+            hasLocalData = true,
+            hasPendingSync = false,
+        )
+        val gateway = SequenceDeletionGateway(
+            mutableListOf(
+                CloudAccountDeletionResult.Prepared("signed-account-1-operation-1"),
+                CloudAccountDeletionResult.Completed,
+            ),
+        )
+        val credentialStorage = FakeDeletionCredentialStorage()
+        val coordinator = AccountControlCoordinator(
+            localData = local,
+            tokenStorage = FakeTokenStorage(AuthTokens("access", "refresh")),
+            deletionGateway = gateway,
+            deletionCredentialStorage = credentialStorage,
+            generateOperationKey = { "operation-1" },
+        )
+
+        assertEquals(AccountControlResult.Deleted, coordinator.deleteAccount())
+        assertEquals(listOf(null, "signed-account-1-operation-1"), gateway.credentials)
+        assertNull(credentialStorage.credential)
+    }
+
     private class FakeTokenStorage(
         initial: AuthTokens?,
         private var failNextClear: Boolean = false,
@@ -264,15 +341,37 @@ class AccountControlTest {
     private class FakeDeletionGateway(
         private val result: CloudAccountDeletionResult = CloudAccountDeletionResult.Completed,
     ) : AccountDeletionGateway {
-        override suspend fun deleteAccount(accessToken: String, operationKey: String) =
+        override suspend fun deleteAccount(accessToken: String, operationKey: String, recoveryCredential: String?) =
             result
     }
 
     private class SequenceDeletionGateway(
         private val results: MutableList<CloudAccountDeletionResult>,
     ) : AccountDeletionGateway {
-        override suspend fun deleteAccount(accessToken: String, operationKey: String): CloudAccountDeletionResult =
-            results.removeFirstOrNull() ?: error("Cloud deletion must not repeat after completion")
+        val credentials = mutableListOf<String?>()
+        override suspend fun deleteAccount(
+            accessToken: String,
+            operationKey: String,
+            recoveryCredential: String?,
+        ): CloudAccountDeletionResult {
+            credentials += recoveryCredential
+            return results.removeFirstOrNull() ?: error("Cloud deletion must not repeat after completion")
+        }
+    }
+
+    private class FakeDeletionCredentialStorage : DeletionRecoveryCredentialStorage {
+        var credential: String? = null
+        private var operationKey: String? = null
+        override suspend fun saveDeletionCredential(operationKey: String, credential: String) {
+            this.operationKey = operationKey
+            this.credential = credential
+        }
+        override suspend fun readDeletionCredential(operationKey: String): String? =
+            credential.takeIf { this.operationKey == operationKey }
+        override suspend fun clearDeletionCredential() {
+            operationKey = null
+            credential = null
+        }
     }
 
     private class FakeAccountControlLocalData(
@@ -280,8 +379,9 @@ class AccountControlTest {
         var hasLocalData: Boolean,
         var hasPendingSync: Boolean,
         private var failNextRemoval: Boolean = false,
-    ) : AccountControlLocalData {
+    ) : AccountControlLocalData, AccountAccessMarkerStore {
         private var deletion: PendingAccountDeletion? = null
+        var accessRevoked = false
 
         override suspend fun accountIdentity() = account
 
@@ -289,6 +389,12 @@ class AccountControlTest {
 
         override suspend fun beginDeletion(operationKey: String) {
             deletion = PendingAccountDeletion(operationKey, AccountDeletionPhase.CLOUD_PENDING)
+        }
+
+        override suspend fun isAccountAccessRevoked() = accessRevoked
+
+        override suspend fun markAccountAccessRevoked() {
+            accessRevoked = true
         }
 
         override suspend fun markCloudDeletionComplete() {
@@ -299,6 +405,7 @@ class AccountControlTest {
             account = null
             hasPendingSync = false
             deletion = null
+            accessRevoked = false
         }
 
         override suspend fun removeAccountAndLocalCopy() {
@@ -310,6 +417,7 @@ class AccountControlTest {
             hasPendingSync = false
             hasLocalData = false
             deletion = null
+            accessRevoked = false
         }
     }
 }

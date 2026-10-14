@@ -370,7 +370,7 @@ private fun PortableDataSettings(
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(stringResource(R.string.account_actions), style = MaterialTheme.typography.titleMedium)
-                    if (accountState.identity != null) {
+                    if (accountState.identity != null && accountState.pendingDeletion == null) {
                         OutlinedButton(
                             onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.LOGOUT) },
                             enabled = !accountState.isWorking,

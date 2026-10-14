@@ -1,18 +1,25 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { AccountDeletionAdmin, deleteAccount } from "./service.ts";
+import {
+  AccountDeletionAdmin,
+  deleteAccount,
+  deleteAccountFiles,
+  issueDeletionCredential,
+  verifyDeletionCredential,
+} from "./service.ts";
 
 const json = (body: unknown, status: number) => Response.json(body, { status });
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
   const authorization = request.headers.get("Authorization");
-  if (!authorization?.startsWith("Bearer ")) return json({ error: "Authentication required" }, 401);
-  const accessToken = authorization.slice("Bearer ".length);
+  const accessToken = authorization?.startsWith("Bearer ") ? authorization.slice("Bearer ".length) : "";
   let operationKey: string;
+  let recoveryCredential: string | null;
   try {
-    const body = await request.json() as { operationKey?: unknown };
+    const body = await request.json() as { operationKey?: unknown; recoveryCredential?: unknown };
     if (typeof body.operationKey !== "string") throw new TypeError();
     operationKey = body.operationKey;
+    recoveryCredential = typeof body.recoveryCredential === "string" ? body.recoveryCredential : null;
   } catch {
     return json({ error: "A valid deletion operation key is required" }, 400);
   }
@@ -20,9 +27,12 @@ Deno.serve(async (request) => {
   const url = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !anonKey || !serviceRoleKey) return json({ error: "Account deletion is not configured" }, 503);
+  const signingSecret = Deno.env.get("AQUALOG_DELETION_SIGNING_SECRET");
+  if (!url || !anonKey || !serviceRoleKey || !signingSecret) {
+    return json({ error: "Account deletion is not configured" }, 503);
+  }
   const userClient = createClient(url, anonKey, {
-    global: { headers: { Authorization: authorization } },
+    global: { headers: authorization ? { Authorization: authorization } : {} },
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const adminClient = createClient(url, serviceRoleKey, {
@@ -30,12 +40,36 @@ Deno.serve(async (request) => {
   });
   const buckets = (Deno.env.get("AQUALOG_ACCOUNT_STORAGE_BUCKETS") ?? "")
     .split(",").map((value) => value.trim()).filter(Boolean);
+  const { data: liveUserData, error: liveUserError } = accessToken
+    ? await userClient.auth.getUser()
+    : { data: { user: null }, error: null };
+  const liveAccountId = liveUserError ? null : liveUserData.user?.id ?? null;
+  if (!recoveryCredential) {
+    if (!liveAccountId) return json({ error: "Authentication required" }, 401);
+    const credential = await issueDeletionCredential(
+      signingSecret,
+      liveAccountId,
+      operationKey,
+      Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60,
+    );
+    return json({ recoveryCredential: credential }, 202);
+  }
+  const claims = await verifyDeletionCredential(
+    signingSecret,
+    recoveryCredential,
+    operationKey,
+    Math.floor(Date.now() / 1000),
+  );
+  if (!claims) return json({ error: "Deletion recovery credential is invalid" }, 401);
+  const accountId = claims.accountId;
+  if (liveAccountId && liveAccountId !== accountId) return json({ error: "Account mismatch" }, 403);
+
   const admin: AccountDeletionAdmin = {
-    async completedAccountId(key) {
+    async isCompleted(ownerId, key) {
       const { data, error } = await adminClient.from("account_deletion_receipts")
-        .select("account_id").eq("operation_key", key).maybeSingle();
+        .select("account_id").eq("account_id", ownerId).eq("operation_key", key).maybeSingle();
       if (error) throw error;
-      return data?.account_id ?? null;
+      return data != null;
     },
     async authUserExists(accountId) {
       const { data, error } = await adminClient.auth.admin.getUserById(accountId);
@@ -43,25 +77,18 @@ Deno.serve(async (request) => {
       if ((error as { status?: number }).status === 404) return false;
       throw error;
     },
-    async authenticatedAccountId() {
-      const { data, error } = await userClient.auth.getUser();
-      return error ? null : data.user?.id ?? null;
-    },
     async deleteFiles(accountId) {
-      for (const bucket of buckets) {
-        let offset = 0;
-        while (true) {
-          const { data, error } = await adminClient.storage.from(bucket).list(accountId, { limit: 100, offset });
+      await deleteAccountFiles({
+        async list(bucket, prefix, limit) {
+          const { data, error } = await adminClient.storage.from(bucket).list(prefix, { limit, offset: 0 });
           if (error) throw error;
-          const paths = (data ?? []).filter((item) => item.id).map((item) => `${accountId}/${item.name}`);
-          if (paths.length > 0) {
-            const { error: removeError } = await adminClient.storage.from(bucket).remove(paths);
-            if (removeError) throw removeError;
-          }
-          if ((data?.length ?? 0) < 100) break;
-          offset += 100;
-        }
-      }
+          return (data ?? []).map((item) => ({ name: item.name, id: item.id ?? null }));
+        },
+        async remove(bucket, paths) {
+          const { error } = await adminClient.storage.from(bucket).remove(paths);
+          if (error) throw error;
+        },
+      }, buckets, accountId);
     },
     async deleteDatabaseData(_token, key) {
       const { error } = await userClient.rpc("delete_account_data", { p_operation_key: key });
@@ -74,7 +101,13 @@ Deno.serve(async (request) => {
   };
 
   try {
-    const outcome = await deleteAccount(admin, accessToken, operationKey);
+    const outcome = await deleteAccount(
+      admin,
+      accountId,
+      liveAccountId,
+      accessToken,
+      operationKey,
+    );
     switch (outcome.status) {
       case "completed": return json({ deleted: true }, 200);
       case "authentication_required": return json({ error: "Authentication required" }, 401);
