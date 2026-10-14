@@ -1,0 +1,315 @@
+package com.maximerollin.aqualog.shared
+
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.flow.first
+import java.nio.file.Files
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+class AccountControlTest {
+    @Test
+    fun `logout keeping the local copy detaches account ownership and invalidates tokens`() = runTest {
+        val local = FakeAccountControlLocalData(
+            account = AccountIdentity("account-1", "owner@example.com"),
+            hasLocalData = true,
+            hasPendingSync = true,
+        )
+        val tokens = FakeTokenStorage(AuthTokens("access", "refresh"))
+        val coordinator = AccountControlCoordinator(local, tokens, FakeDeletionGateway())
+
+        val result = coordinator.logout(LocalCopyDecision.KEEP)
+
+        assertEquals(AccountControlResult.SignedOut(LocalCopyDecision.KEEP), result)
+        assertTrue(local.hasLocalData)
+        assertNull(local.account)
+        assertEquals(false, local.hasPendingSync)
+        assertNull(tokens.read())
+    }
+
+    @Test
+    fun `a cloud deletion failure stays pending and keeps local data and tokens for retry`() = runTest {
+        val local = FakeAccountControlLocalData(
+            account = AccountIdentity("account-1", "owner@example.com"),
+            hasLocalData = true,
+            hasPendingSync = false,
+        )
+        val tokens = FakeTokenStorage(AuthTokens("access", "refresh"))
+        val gateway = FakeDeletionGateway(
+            CloudAccountDeletionResult.RetryableFailure("Service temporarily unavailable"),
+        )
+        val coordinator = AccountControlCoordinator(local, tokens, gateway) { "deletion-1" }
+
+        val result = coordinator.deleteAccount()
+
+        assertEquals(
+            AccountControlResult.DeletionIncomplete(
+                AccountControlFailure.CLOUD,
+                "Service temporarily unavailable",
+            ),
+            result,
+        )
+        assertEquals(
+            PendingAccountDeletion("deletion-1", AccountDeletionPhase.CLOUD_PENDING),
+            local.pendingDeletion(),
+        )
+        assertTrue(local.hasLocalData)
+        assertEquals(AuthTokens("access", "refresh"), tokens.read())
+    }
+
+    @Test
+    fun `retry after cloud deletion resumes token invalidation without repeating cloud deletion`() = runTest {
+        val local = FakeAccountControlLocalData(
+            account = AccountIdentity("account-1", "owner@example.com"),
+            hasLocalData = true,
+            hasPendingSync = false,
+        )
+        val tokens = FakeTokenStorage(AuthTokens("access", "refresh"), failNextClear = true)
+        val gateway = SequenceDeletionGateway(
+            mutableListOf(CloudAccountDeletionResult.Completed),
+        )
+        val coordinator = AccountControlCoordinator(local, tokens, gateway) { "deletion-1" }
+
+        assertEquals(
+            AccountControlResult.DeletionIncomplete(
+                AccountControlFailure.TOKEN_INVALIDATION,
+                "Secure account tokens could not be cleared.",
+            ),
+            coordinator.deleteAccount(),
+        )
+        assertEquals(
+            PendingAccountDeletion("deletion-1", AccountDeletionPhase.CLOUD_DELETED),
+            local.pendingDeletion(),
+        )
+        assertTrue(local.hasLocalData)
+
+        assertEquals(AccountControlResult.Deleted, coordinator.deleteAccount())
+        assertNull(tokens.read())
+        assertEquals(false, local.hasLocalData)
+    }
+
+    @Test
+    fun `Room logout keeps the portable copy but removes account ownership and its outbox`() = runTest {
+        val database = createAquaLogDatabase(
+            createJvmDatabaseBuilder(
+                Files.createTempDirectory("aqualog-account-logout")
+                    .resolve("aqualog.db")
+                    .toString(),
+            ),
+        )
+        val ids = generateSequence(1) { it + 1 }.map { "account-id-$it" }.iterator()
+        val repository = RoomAquariumRepository(database, ids::next, { 100L })
+        repository.createConfiguredAquarium(
+            "Kept Aquarium",
+            80.0,
+            VolumeUnit.LITERS,
+            AquariumProfile.ESTABLISHED,
+            OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+        )
+        repository.beginAccountMigration("account-1", "owner@example.com")
+        repository.completeAccountMigration("account-1")
+        assertEquals(AccountIdentity("account-1", "owner@example.com"), repository.accountIdentity())
+        val portableData = PortableDataService(database)
+        val export = portableData.export()
+        val coordinator = AccountControlCoordinator(
+            repository,
+            FakeTokenStorage(AuthTokens("access", "refresh")),
+            FakeDeletionGateway(),
+        )
+
+        assertEquals(
+            AccountControlResult.SignedOut(LocalCopyDecision.KEEP),
+            coordinator.logout(LocalCopyDecision.KEEP),
+        )
+
+        assertEquals("Kept Aquarium", repository.observeCurrentAquarium().first()?.name)
+        assertNull(repository.accountIdentity())
+        assertTrue(repository.pendingSyncBatch().operations.isEmpty())
+        assertIs<PortableImportResult.Imported>(portableData.importData(export))
+        database.close()
+    }
+
+    @Test
+    fun `local cleanup failure after cloud deletion is recoverable without account tokens`() = runTest {
+        val local = FakeAccountControlLocalData(
+            account = AccountIdentity("account-1", "owner@example.com"),
+            hasLocalData = true,
+            hasPendingSync = false,
+            failNextRemoval = true,
+        )
+        val tokens = FakeTokenStorage(AuthTokens("access", "refresh"))
+        val gateway = SequenceDeletionGateway(
+            mutableListOf(CloudAccountDeletionResult.Completed),
+        )
+        val coordinator = AccountControlCoordinator(local, tokens, gateway) { "deletion-1" }
+
+        assertEquals(
+            AccountControlResult.DeletionIncomplete(
+                AccountControlFailure.LOCAL_DATA,
+                "Cloud deletion finished, but local data still needs to be removed.",
+            ),
+            coordinator.deleteAccount(),
+        )
+        assertNull(tokens.read())
+        assertTrue(local.hasLocalData)
+        assertEquals(AccountDeletionPhase.CLOUD_DELETED, local.pendingDeletion()?.phase)
+
+        assertEquals(AccountControlResult.Deleted, coordinator.deleteAccount())
+        assertEquals(false, local.hasLocalData)
+    }
+
+    @Test
+    fun `pending account deletion blocks synchronization without consuming local changes`() = runTest {
+        val local = FakeAccountControlLocalData(
+            account = AccountIdentity("account-1", "owner@example.com"),
+            hasLocalData = true,
+            hasPendingSync = true,
+        ).also { it.beginDeletion("deletion-1") }
+        var delegateCalls = 0
+        val provider = DeletionAwareSyncSessionProvider(
+            local,
+            object : SyncSessionProvider {
+                override suspend fun currentSession(): SyncSession {
+                    delegateCalls += 1
+                    return SyncSession("account-1", "access")
+                }
+            },
+        )
+
+        assertNull(provider.currentSession())
+        assertEquals(0, delegateCalls)
+        assertTrue(local.hasPendingSync)
+        assertTrue(local.hasLocalData)
+    }
+
+    @Test
+    fun `Room logout removing the local copy clears account and aquarium data`() = runTest {
+        val database = createAquaLogDatabase(
+            createJvmDatabaseBuilder(
+                Files.createTempDirectory("aqualog-account-remove")
+                    .resolve("aqualog.db")
+                    .toString(),
+            ),
+        )
+        val ids = generateSequence(1) { it + 1 }.map { "remove-id-$it" }.iterator()
+        val repository = RoomAquariumRepository(database, ids::next, { 100L })
+        repository.createConfiguredAquarium(
+            "Removed Aquarium",
+            80.0,
+            VolumeUnit.LITERS,
+            AquariumProfile.ESTABLISHED,
+            OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+        )
+        repository.beginAccountMigration("account-1", "owner@example.com")
+        repository.completeAccountMigration("account-1")
+        val coordinator = AccountControlCoordinator(
+            repository,
+            FakeTokenStorage(AuthTokens("access", "refresh")),
+            FakeDeletionGateway(),
+        )
+
+        assertEquals(
+            AccountControlResult.SignedOut(LocalCopyDecision.REMOVE),
+            coordinator.logout(LocalCopyDecision.REMOVE),
+        )
+        assertNull(repository.observeCurrentAquarium().first())
+        assertNull(repository.accountIdentity())
+        database.close()
+    }
+
+    @Test
+    fun `failed token invalidation never reports sign out as complete or removes local data`() = runTest {
+        val local = FakeAccountControlLocalData(
+            account = AccountIdentity("account-1", "owner@example.com"),
+            hasLocalData = true,
+            hasPendingSync = true,
+        )
+        val tokens = FakeTokenStorage(AuthTokens("access", "refresh"), failNextClear = true)
+        val coordinator = AccountControlCoordinator(local, tokens, FakeDeletionGateway())
+
+        assertEquals(
+            AccountControlResult.SignOutIncomplete(
+                AccountControlFailure.TOKEN_INVALIDATION,
+                "Sign out could not clear secure account tokens. Your local data was not changed.",
+            ),
+            coordinator.logout(LocalCopyDecision.REMOVE),
+        )
+        assertTrue(local.hasLocalData)
+        assertEquals("account-1", local.account?.accountId)
+    }
+
+    private class FakeTokenStorage(
+        initial: AuthTokens?,
+        private var failNextClear: Boolean = false,
+    ) : SecureTokenStorage {
+        private var tokens = initial
+
+        override suspend fun save(tokens: AuthTokens) {
+            this.tokens = tokens
+        }
+
+        override suspend fun read() = tokens
+
+        override suspend fun clear() {
+            if (failNextClear) {
+                failNextClear = false
+                error("Secure account tokens could not be cleared")
+            }
+            tokens = null
+        }
+    }
+
+    private class FakeDeletionGateway(
+        private val result: CloudAccountDeletionResult = CloudAccountDeletionResult.Completed,
+    ) : AccountDeletionGateway {
+        override suspend fun deleteAccount(accessToken: String, operationKey: String) =
+            result
+    }
+
+    private class SequenceDeletionGateway(
+        private val results: MutableList<CloudAccountDeletionResult>,
+    ) : AccountDeletionGateway {
+        override suspend fun deleteAccount(accessToken: String, operationKey: String): CloudAccountDeletionResult =
+            results.removeFirstOrNull() ?: error("Cloud deletion must not repeat after completion")
+    }
+
+    private class FakeAccountControlLocalData(
+        var account: AccountIdentity?,
+        var hasLocalData: Boolean,
+        var hasPendingSync: Boolean,
+        private var failNextRemoval: Boolean = false,
+    ) : AccountControlLocalData {
+        private var deletion: PendingAccountDeletion? = null
+
+        override suspend fun accountIdentity() = account
+
+        override suspend fun pendingDeletion() = deletion
+
+        override suspend fun beginDeletion(operationKey: String) {
+            deletion = PendingAccountDeletion(operationKey, AccountDeletionPhase.CLOUD_PENDING)
+        }
+
+        override suspend fun markCloudDeletionComplete() {
+            deletion = requireNotNull(deletion).copy(phase = AccountDeletionPhase.CLOUD_DELETED)
+        }
+
+        override suspend fun detachAccountKeepingLocalCopy() {
+            account = null
+            hasPendingSync = false
+            deletion = null
+        }
+
+        override suspend fun removeAccountAndLocalCopy() {
+            if (failNextRemoval) {
+                failNextRemoval = false
+                error("local database unavailable")
+            }
+            account = null
+            hasPendingSync = false
+            hasLocalData = false
+            deletion = null
+        }
+    }
+}

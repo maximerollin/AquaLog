@@ -15,6 +15,8 @@ import com.maximerollin.aqualog.shared.AuthenticatedAccount
 import com.maximerollin.aqualog.shared.AuthenticationResult
 import com.maximerollin.aqualog.shared.CloudRepository
 import com.maximerollin.aqualog.shared.CloudAuthenticationExpiredException
+import com.maximerollin.aqualog.shared.AccountDeletionGateway
+import com.maximerollin.aqualog.shared.CloudAccountDeletionResult
 import com.maximerollin.aqualog.shared.InitialAccountCopy
 import com.maximerollin.aqualog.shared.MagicLinkRequestResult
 import com.maximerollin.aqualog.shared.PendingAuthenticationAttempt
@@ -252,7 +254,12 @@ class SupabaseAuthGateway(
                     request("${configuration.projectUrl}/auth/v1/user", bearerToken = accessToken),
                 )
                 AuthenticationResult.Authenticated(
-                    AuthenticatedAccount(user.getString("id"), accessToken, rotatedRefreshToken),
+                    AuthenticatedAccount(
+                        user.getString("id"),
+                        accessToken,
+                        rotatedRefreshToken,
+                        user.optString("email").takeIf(String::isNotBlank),
+                    ),
                 )
             }.getOrElse { AuthenticationResult.Failed(it.message ?: "Session refresh failed") }
         }
@@ -303,7 +310,12 @@ class SupabaseAuthGateway(
                 request("${configuration.projectUrl}/auth/v1/user", bearerToken = accessToken),
             )
             AuthenticationResult.Authenticated(
-                AuthenticatedAccount(user.getString("id"), accessToken, refreshToken),
+                AuthenticatedAccount(
+                    user.getString("id"),
+                    accessToken,
+                    refreshToken,
+                    user.optString("email").takeIf(String::isNotBlank),
+                ),
             )
         }.getOrElse { AuthenticationResult.Failed(it.message ?: "Authentication validation failed") }
     }
@@ -379,6 +391,54 @@ class SupabaseInitialMigrationRepository(
                 if (status == HttpURLConnection.HTTP_UNAUTHORIZED) throw CloudAuthenticationExpiredException()
                 if (status !in 200..299) error("Initial migration failed with HTTP $status: $responseBody")
             }
+        } finally {
+            connection.disconnect()
+        }
+    }
+}
+
+class SupabaseAccountDeletionGateway(
+    private val configuration: SupabaseConfiguration,
+) : AccountDeletionGateway {
+    override suspend fun deleteAccount(
+        accessToken: String,
+        operationKey: String,
+    ): CloudAccountDeletionResult = withContext(Dispatchers.IO) {
+        if (!configuration.isConfigured) return@withContext CloudAccountDeletionResult.NotConfigured
+        val connection = URL("${configuration.projectUrl}/functions/v1/delete-account")
+            .openConnection() as HttpURLConnection
+        try {
+            connection.run {
+                requestMethod = "POST"
+                connectTimeout = 20_000
+                readTimeout = 20_000
+                doOutput = true
+                setRequestProperty("apikey", configuration.anonymousKey)
+                setRequestProperty("Authorization", "Bearer $accessToken")
+                setRequestProperty("Content-Type", "application/json")
+                outputStream.use {
+                    it.write(JSONObject().put("operationKey", operationKey).toString().toByteArray())
+                }
+                when (responseCode) {
+                    in 200..299 -> CloudAccountDeletionResult.Completed
+                    HttpURLConnection.HTTP_UNAUTHORIZED -> CloudAccountDeletionResult.AuthenticationRequired
+                    else -> {
+                        val body = errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                        val step = runCatching { JSONObject(body).optString("step") }.getOrNull()
+                        val detail = when (step) {
+                            "files" -> "Cloud files could not be removed yet. Try again."
+                            "database" -> "Cloud data could not be removed yet. Try again."
+                            "auth" -> "Cloud data was removed, but account access still needs to be revoked. Try again."
+                            else -> "Account deletion could not be completed. Try again."
+                        }
+                        CloudAccountDeletionResult.RetryableFailure(detail)
+                    }
+                }
+            }
+        } catch (_: java.io.IOException) {
+            CloudAccountDeletionResult.RetryableFailure(
+                "Account deletion could not reach the service. Your local data is still available.",
+            )
         } finally {
             connection.disconnect()
         }

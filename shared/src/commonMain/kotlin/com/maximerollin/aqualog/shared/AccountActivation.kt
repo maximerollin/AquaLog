@@ -9,6 +9,7 @@ data class AuthenticatedAccount(
     val accountId: String,
     val accessToken: String,
     val refreshToken: String,
+    val email: String? = null,
 )
 
 data class PendingAuthenticationAttempt(
@@ -114,6 +115,7 @@ enum class InitialMigrationStatus(val storageValue: String) {
 data class AccountMigrationState(
     val accountId: String,
     val status: InitialMigrationStatus,
+    val email: String? = null,
 )
 
 interface AccountLocalDataSource {
@@ -122,7 +124,7 @@ interface AccountLocalDataSource {
     suspend fun markAccountInvitationOffered()
     suspend fun initialAccountCopy(): InitialAccountCopy
     suspend fun accountMigrationState(): AccountMigrationState?
-    suspend fun beginAccountMigration(accountId: String)
+    suspend fun beginAccountMigration(accountId: String, email: String? = null)
     suspend fun completeAccountMigration(accountId: String)
 }
 
@@ -179,7 +181,7 @@ class AccountActivationCoordinator(
     private suspend fun activate(result: AuthenticationResult): AccountActivationResult = when (result) {
         is AuthenticationResult.Authenticated -> {
             tokenStorage.save(AuthTokens(result.account.accessToken, result.account.refreshToken))
-            localData.beginAccountMigration(result.account.accountId)
+            localData.beginAccountMigration(result.account.accountId, result.account.email)
             migrate(
                 accountId = result.account.accountId,
                 tokens = AuthTokens(result.account.accessToken, result.account.refreshToken),

@@ -1,0 +1,171 @@
+package com.maximerollin.aqualog.shared
+
+import kotlinx.coroutines.CancellationException
+
+data class AccountIdentity(
+    val accountId: String,
+    val email: String?,
+)
+
+enum class LocalCopyDecision {
+    KEEP,
+    REMOVE,
+}
+
+enum class AccountDeletionPhase {
+    CLOUD_PENDING,
+    CLOUD_DELETED,
+}
+
+data class PendingAccountDeletion(
+    val operationKey: String,
+    val phase: AccountDeletionPhase,
+)
+
+sealed interface CloudAccountDeletionResult {
+    data object Completed : CloudAccountDeletionResult
+    data class RetryableFailure(val safeDetail: String) : CloudAccountDeletionResult
+    data object AuthenticationRequired : CloudAccountDeletionResult
+    data object NotConfigured : CloudAccountDeletionResult
+}
+
+interface AccountDeletionGateway {
+    suspend fun deleteAccount(accessToken: String, operationKey: String): CloudAccountDeletionResult
+}
+
+interface AccountControlLocalData {
+    suspend fun accountIdentity(): AccountIdentity?
+    suspend fun pendingDeletion(): PendingAccountDeletion?
+    suspend fun beginDeletion(operationKey: String)
+    suspend fun markCloudDeletionComplete()
+    suspend fun detachAccountKeepingLocalCopy()
+    suspend fun removeAccountAndLocalCopy()
+}
+
+/** Prevents a pending deletion from racing with uploads that could recreate cloud data. */
+class DeletionAwareSyncSessionProvider(
+    private val localData: AccountControlLocalData,
+    private val delegate: SyncSessionProvider,
+) : SyncSessionProvider {
+    override suspend fun currentSession(): SyncSession? =
+        if (localData.pendingDeletion() == null) delegate.currentSession() else null
+
+    override suspend fun refreshSession(expiredSession: SyncSession): SyncSession? =
+        if (localData.pendingDeletion() == null) delegate.refreshSession(expiredSession) else null
+
+    override suspend fun requireReauthentication() = delegate.requireReauthentication()
+}
+
+sealed interface AccountControlResult {
+    data class SignedOut(val localCopyDecision: LocalCopyDecision) : AccountControlResult
+    data class SignOutIncomplete(
+        val failure: AccountControlFailure,
+        val safeDetail: String,
+    ) : AccountControlResult
+    data object Deleted : AccountControlResult
+    data class DeletionIncomplete(
+        val failure: AccountControlFailure,
+        val safeDetail: String,
+    ) : AccountControlResult
+}
+
+enum class AccountControlFailure {
+    CLOUD,
+    AUTHENTICATION,
+    TOKEN_INVALIDATION,
+    LOCAL_DATA,
+    CONFIGURATION,
+}
+
+class AccountControlCoordinator(
+    private val localData: AccountControlLocalData,
+    private val tokenStorage: SecureTokenStorage,
+    private val deletionGateway: AccountDeletionGateway,
+    private val generateOperationKey: () -> String = { error("Deletion operation key generator is not configured") },
+) {
+    suspend fun identity(): AccountIdentity? = localData.accountIdentity()
+
+    suspend fun pendingDeletion(): PendingAccountDeletion? = localData.pendingDeletion()
+
+    suspend fun logout(localCopyDecision: LocalCopyDecision): AccountControlResult {
+        try {
+            tokenStorage.clear()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            return AccountControlResult.SignOutIncomplete(
+                AccountControlFailure.TOKEN_INVALIDATION,
+                "Sign out could not clear secure account tokens. Your local data was not changed.",
+            )
+        }
+        try {
+            when (localCopyDecision) {
+                LocalCopyDecision.KEEP -> localData.detachAccountKeepingLocalCopy()
+                LocalCopyDecision.REMOVE -> localData.removeAccountAndLocalCopy()
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            return AccountControlResult.SignOutIncomplete(
+                AccountControlFailure.LOCAL_DATA,
+                "Account access was cleared, but the local sign-out choice still needs to be completed.",
+            )
+        }
+        return AccountControlResult.SignedOut(localCopyDecision)
+    }
+
+    suspend fun deleteAccount(): AccountControlResult {
+        val pending = localData.pendingDeletion() ?: PendingAccountDeletion(
+            operationKey = generateOperationKey(),
+            phase = AccountDeletionPhase.CLOUD_PENDING,
+        ).also { localData.beginDeletion(it.operationKey) }
+        if (pending.phase == AccountDeletionPhase.CLOUD_PENDING) {
+            val tokens = tokenStorage.read() ?: return AccountControlResult.DeletionIncomplete(
+                AccountControlFailure.AUTHENTICATION,
+                "Sign in again to verify and finish account deletion.",
+            )
+            when (val result = deletionGateway.deleteAccount(tokens.accessToken, pending.operationKey)) {
+                CloudAccountDeletionResult.Completed -> localData.markCloudDeletionComplete()
+                is CloudAccountDeletionResult.RetryableFailure -> {
+                    return AccountControlResult.DeletionIncomplete(
+                        AccountControlFailure.CLOUD,
+                        result.safeDetail,
+                    )
+                }
+                CloudAccountDeletionResult.AuthenticationRequired -> {
+                    return AccountControlResult.DeletionIncomplete(
+                        AccountControlFailure.AUTHENTICATION,
+                        "Sign in again to verify and finish account deletion.",
+                    )
+                }
+                CloudAccountDeletionResult.NotConfigured -> {
+                    return AccountControlResult.DeletionIncomplete(
+                        AccountControlFailure.CONFIGURATION,
+                        "Cloud account deletion is not configured for this build.",
+                    )
+                }
+            }
+        }
+        try {
+            tokenStorage.clear()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            return AccountControlResult.DeletionIncomplete(
+                AccountControlFailure.TOKEN_INVALIDATION,
+                "Secure account tokens could not be cleared.",
+            )
+        }
+        try {
+            localData.removeAccountAndLocalCopy()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            return AccountControlResult.DeletionIncomplete(
+                AccountControlFailure.LOCAL_DATA,
+                "Cloud deletion finished, but local data still needs to be removed.",
+            )
+        }
+        return AccountControlResult.Deleted
+    }
+}

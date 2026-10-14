@@ -9,6 +9,12 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
 import com.maximerollin.aqualog.shared.AccountActivationResult
+import com.maximerollin.aqualog.shared.AccountControlCoordinator
+import com.maximerollin.aqualog.shared.AccountControlFailure
+import com.maximerollin.aqualog.shared.AccountControlResult
+import com.maximerollin.aqualog.shared.AccountIdentity
+import com.maximerollin.aqualog.shared.LocalCopyDecision
+import com.maximerollin.aqualog.shared.PendingAccountDeletion
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
@@ -150,6 +156,17 @@ data class PortableDataUiState(
     val showImportConfirmation: Boolean = false,
 )
 
+enum class AccountSettingsDialog { NONE, LOGOUT, DELETE, PRIVACY, SUPPORT }
+
+data class AccountSettingsUiState(
+    val identity: AccountIdentity? = null,
+    val pendingDeletion: PendingAccountDeletion? = null,
+    val isWorking: Boolean = false,
+    val dialog: AccountSettingsDialog = AccountSettingsDialog.NONE,
+    val failure: AccountControlFailure? = null,
+    val safeDetail: String? = null,
+)
+
 data class ParameterEditorState(
     val parameter: BuiltInParameter,
     val isActive: Boolean,
@@ -216,6 +233,7 @@ data class HomeUiState(
     val syncState: SyncState = SyncState(SyncStatus.SYNCED, 0),
     val tasks: TaskUiState = TaskUiState(),
     val portableData: PortableDataUiState = PortableDataUiState(),
+    val accountSettings: AccountSettingsUiState = AccountSettingsUiState(),
 )
 
 data class RapidSessionUiState(
@@ -271,6 +289,7 @@ class HomeViewModel(
     private val aquariumRepository: AquariumRepository,
     private val taskReminderScheduler: TaskReminderScheduler = NoOpTaskReminderScheduler,
     private val accountCoordinator: AccountActivationCoordinator? = null,
+    private val accountControlCoordinator: AccountControlCoordinator? = null,
     private val currentTimeMillis: () -> Long = System::currentTimeMillis,
     private val currentTimeZoneId: () -> String = { ZoneId.systemDefault().id },
     private val generateInteractionId: () -> String = { UUID.randomUUID().toString() },
@@ -347,6 +366,9 @@ class HomeViewModel(
                 }
             }
         }
+        if (accountControlCoordinator != null) {
+            refreshAccountSettings()
+        }
         (aquariumRepository as? SyncLocalDataSource)?.let { syncLocalData ->
             viewModelScope.launch {
                 syncLocalData.observeSyncState().collect { syncState ->
@@ -411,6 +433,109 @@ class HomeViewModel(
     fun failPortableDataAccess() {
         mutableUiState.update {
             it.copy(portableData = PortableDataUiState(message = PortableDataMessage.STORAGE_ERROR))
+        }
+    }
+
+    fun showAccountSettingsDialog(dialog: AccountSettingsDialog) {
+        mutableUiState.update { state ->
+            state.copy(accountSettings = state.accountSettings.copy(dialog = dialog))
+        }
+    }
+
+    fun dismissAccountSettingsDialog() = showAccountSettingsDialog(AccountSettingsDialog.NONE)
+
+    fun logout(localCopyDecision: LocalCopyDecision) {
+        val coordinator = accountControlCoordinator ?: return
+        mutableUiState.update { state ->
+            state.copy(accountSettings = state.accountSettings.copy(isWorking = true, dialog = AccountSettingsDialog.NONE))
+        }
+        viewModelScope.launch {
+            runCatching { coordinator.logout(localCopyDecision) }
+                .onSuccess { result ->
+                    if (result is AccountControlResult.SignOutIncomplete) {
+                        mutableUiState.update { state ->
+                            state.copy(
+                                accountSettings = state.accountSettings.copy(
+                                    isWorking = false,
+                                    failure = result.failure,
+                                    safeDetail = result.safeDetail,
+                                ),
+                            )
+                        }
+                    } else {
+                        refreshAccountSettingsState()
+                    }
+                }
+                .onFailure {
+                    mutableUiState.update { state ->
+                        state.copy(
+                            accountSettings = state.accountSettings.copy(
+                                isWorking = false,
+                                failure = AccountControlFailure.LOCAL_DATA,
+                                safeDetail = "Sign out could not be completed. Your local data was not changed.",
+                            ),
+                        )
+                    }
+                }
+        }
+    }
+
+    fun deleteAccount() {
+        val coordinator = accountControlCoordinator ?: return
+        mutableUiState.update { state ->
+            state.copy(accountSettings = state.accountSettings.copy(isWorking = true, dialog = AccountSettingsDialog.NONE))
+        }
+        viewModelScope.launch {
+            val result = runCatching { coordinator.deleteAccount() }.getOrElse {
+                mutableUiState.update { state ->
+                    state.copy(
+                        accountSettings = state.accountSettings.copy(
+                            isWorking = false,
+                            failure = AccountControlFailure.LOCAL_DATA,
+                            safeDetail = "Account deletion could not be resumed. Your local data was not changed.",
+                        ),
+                    )
+                }
+                return@launch
+            }
+            when (result) {
+                AccountControlResult.Deleted -> refreshAccountSettingsState()
+                is AccountControlResult.SignOutIncomplete -> Unit
+                is AccountControlResult.DeletionIncomplete -> {
+                    val pending = coordinator.pendingDeletion()
+                    mutableUiState.update { state ->
+                        state.copy(
+                            accountSettings = state.accountSettings.copy(
+                                pendingDeletion = pending,
+                                isWorking = false,
+                                failure = result.failure,
+                                safeDetail = result.safeDetail,
+                            ),
+                        )
+                    }
+                }
+                is AccountControlResult.SignedOut -> Unit
+            }
+        }
+    }
+
+    fun retryAccountDeletion() = deleteAccount()
+
+    private fun refreshAccountSettings() {
+        viewModelScope.launch { refreshAccountSettingsState() }
+    }
+
+    private suspend fun refreshAccountSettingsState() {
+        val coordinator = accountControlCoordinator ?: return
+        val identity = coordinator.identity()
+        val pending = coordinator.pendingDeletion()
+        mutableUiState.update { state ->
+            state.copy(
+                accountSettings = AccountSettingsUiState(
+                    identity = identity,
+                    pendingDeletion = pending,
+                ),
+            )
         }
     }
 
@@ -1146,6 +1271,7 @@ class HomeViewModel(
             repository: AquariumRepository,
             taskReminderScheduler: TaskReminderScheduler = NoOpTaskReminderScheduler,
             accountCoordinator: AccountActivationCoordinator? = null,
+            accountControlCoordinator: AccountControlCoordinator? = null,
             onSyncRetryRequested: () -> Unit = {},
         ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
@@ -1155,6 +1281,7 @@ class HomeViewModel(
                         aquariumRepository = repository,
                         taskReminderScheduler = taskReminderScheduler,
                         accountCoordinator = accountCoordinator,
+                        accountControlCoordinator = accountControlCoordinator,
                         onSyncRetryRequested = onSyncRetryRequested,
                         savedStateHandle = extras.createSavedStateHandle(),
                     ) as T

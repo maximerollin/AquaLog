@@ -3,6 +3,8 @@ package com.maximerollin.aqualog
 import android.app.Application
 import com.maximerollin.aqualog.shared.AQUA_LOG_DATABASE_NAME
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
+import com.maximerollin.aqualog.shared.AccountControlCoordinator
+import com.maximerollin.aqualog.shared.DeletionAwareSyncSessionProvider
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.PortableDataService
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
@@ -36,10 +38,13 @@ open class AquaLogApplication : Application() {
         SyncCoordinator(
             localData = localData,
             backend = SupabaseSyncBackend(SupabaseConfiguration.fromBuildConfig()),
-            sessionProvider = LocalAccountSyncSessionProvider(
+            sessionProvider = DeletionAwareSyncSessionProvider(
                 localData,
-                secureTokenStorage,
-                SupabaseAuthGateway(this, SupabaseConfiguration.fromBuildConfig(), secureTokenStorage),
+                LocalAccountSyncSessionProvider(
+                    localData,
+                    secureTokenStorage,
+                    SupabaseAuthGateway(this, SupabaseConfiguration.fromBuildConfig(), secureTokenStorage),
+                ),
             ),
             currentTimeMillis = System::currentTimeMillis,
         )
@@ -64,4 +69,13 @@ open class AquaLogApplication : Application() {
                 tokenStorage = secureTokenStorage,
             )
         }
+
+    open val accountControlCoordinator: AccountControlCoordinator by lazy {
+        AccountControlCoordinator(
+            localData = aquariumRepository as RoomAquariumRepository,
+            tokenStorage = secureTokenStorage,
+            deletionGateway = SupabaseAccountDeletionGateway(SupabaseConfiguration.fromBuildConfig()),
+            generateOperationKey = { UUID.randomUUID().toString() },
+        )
+    }
 }
