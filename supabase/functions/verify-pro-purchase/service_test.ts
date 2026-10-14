@@ -48,6 +48,58 @@ Deno.test("pending and mismatched Play subscriptions cannot grant Pro", () => {
   if (mismatched.active) throw new Error("a different product granted Pro");
 });
 
+Deno.test("active grace and canceled states grant only while Google expiry is after server now", () => {
+  const now = Date.parse("2027-01-01T00:00:00Z");
+  const states = [
+    "SUBSCRIPTION_STATE_ACTIVE",
+    "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
+    "SUBSCRIPTION_STATE_CANCELED",
+  ];
+  for (const subscriptionState of states) {
+    const future = interpretSubscription(
+      {
+        ...activeSubscription,
+        subscriptionState,
+        lineItems: [{
+          productId: "aqualog_pro_annual",
+          expiryTime: "2027-01-01T00:00:00.001Z",
+        }],
+      },
+      "aqualog_pro_annual",
+      now,
+    );
+    const exactNow = interpretSubscription(
+      {
+        ...activeSubscription,
+        subscriptionState,
+        lineItems: [{
+          productId: "aqualog_pro_annual",
+          expiryTime: "2027-01-01T00:00:00Z",
+        }],
+      },
+      "aqualog_pro_annual",
+      now,
+    );
+    const past = interpretSubscription(
+      {
+        ...activeSubscription,
+        subscriptionState,
+        lineItems: [{
+          productId: "aqualog_pro_annual",
+          expiryTime: "2026-12-31T23:59:59.999Z",
+        }],
+      },
+      "aqualog_pro_annual",
+      now,
+    );
+    if (!future.active || exactNow.active || past.active) {
+      throw new Error(
+        `${subscriptionState} ignored the server expiry boundary`,
+      );
+    }
+  }
+});
+
 Deno.test("stolen and unbound purchases are rejected before claim or acknowledgement", async () => {
   const ownerAccountId = "10000000-0000-0000-0000-000000000011";
   const attackerAccountId = "10000000-0000-0000-0000-000000000012";

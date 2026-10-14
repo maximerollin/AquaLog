@@ -37,5 +37,6 @@ The ordinary connected suite skips this test and continues to use deterministic 
 At app startup and after an authentication change, AquaLog asks the server to revalidate the stored,
 encrypted purchase token against `purchases.subscriptionsv2.get`. The server atomically updates the
 entitlement to active or inactive from Google's current state; the Android clock is not the source of
-truth. This repository does not provision RTDN infrastructure, so a revocation is observed on the
+truth, and expiry boundaries are evaluated against the server clock. This repository does not
+provision RTDN infrastructure, so a revocation is observed on the
 next startup or authentication refresh rather than pushed in real time.

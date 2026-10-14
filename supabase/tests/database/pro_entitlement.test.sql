@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(22);
 
 insert into auth.users (id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -103,6 +103,39 @@ select lives_ok(
 );
 reset role;
 select is((select status from public.pro_entitlements), 'active', 'recovered entitlement is active again');
+
+set local role service_role;
+select throws_ok(
+  $$select public.activate_claimed_pro_purchase(
+    '10000000-0000-0000-0000-000000000011',
+    'aqualog_pro_annual',
+    'sha256-token',
+    now() - interval '1 second',
+    'GPA.1234'
+  )$$,
+  '22023',
+  'active entitlement must expire in the future',
+  'activation refuses a Google expiry in the past'
+);
+select lives_ok(
+  $$select public.revalidate_claimed_pro_purchase(
+    '10000000-0000-0000-0000-000000000011',
+    'aqualog_pro_annual',
+    'sha256-token',
+    true,
+    now(),
+    'GPA.1234'
+  )$$,
+  'revalidation safely coerces an entitlement expiring now to inactive'
+);
+reset role;
+select is((select status from public.pro_entitlements), 'inactive', 'an entitlement expiring now is inactive');
+select is((select purchase_status from public.play_purchase_verifications), 'inactive', 'the matching purchase record is inactive too');
+select is(
+  (select count(*) from public.pro_entitlements where account_id = '10000000-0000-0000-0000-000000000012'),
+  0::bigint,
+  'expiry defense never grants the purchase to another account'
+);
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"10000000-0000-0000-0000-000000000011","role":"authenticated"}';

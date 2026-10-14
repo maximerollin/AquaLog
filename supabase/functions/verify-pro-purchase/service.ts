@@ -97,6 +97,7 @@ export function validateVerificationRequest(value: unknown): {
 export function interpretSubscription(
   value: unknown,
   expectedProductId: string,
+  serverNowEpochMillis: number = Date.now(),
 ): VerifiedSubscription {
   const purchase = value as SubscriptionPurchase;
   const lineItem = purchase.lineItems?.find((item) =>
@@ -110,7 +111,7 @@ export function interpretSubscription(
     purchase.subscriptionState === "SUBSCRIPTION_STATE_IN_GRACE_PERIOD" ||
     purchase.subscriptionState === "SUBSCRIPTION_STATE_CANCELED";
   const active = expectedProductId === annualProProductId && stateCanGrant &&
-    Number.isFinite(expiry);
+    Number.isFinite(expiry) && expiry > serverNowEpochMillis;
   return {
     active,
     productId: expectedProductId,
