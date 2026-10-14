@@ -21,19 +21,17 @@ import com.maximerollin.aqualog.shared.ProEntitlement
 import com.maximerollin.aqualog.shared.PurchaseAccountIdentityResult
 import com.maximerollin.aqualog.shared.ProPurchaseVerifier
 import com.maximerollin.aqualog.shared.PurchaseVerificationResult
-import com.maximerollin.aqualog.shared.SecureTokenStorage
+import com.maximerollin.aqualog.shared.SyncSessionProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.text.DateFormat
-import java.time.Instant
 import java.util.Calendar
 import java.lang.ref.WeakReference
 import kotlin.coroutines.resume
@@ -210,142 +208,138 @@ class GooglePlayBillingGateway(
     }
 }
 
-class SupabaseProPurchaseVerifier(
+internal class SupabaseProPurchaseVerifier(
     private val configuration: SupabaseConfiguration,
-    private val tokenStorage: SecureTokenStorage,
+    private val sessionProvider: SyncSessionProvider,
+    private val transport: ProPurchaseServerTransport = HttpProPurchaseServerTransport(configuration),
 ) : ProPurchaseVerifier {
-    override suspend fun loadPurchaseAccountIdentity(): PurchaseAccountIdentityResult =
-        withContext(Dispatchers.IO) {
-            val accessToken = tokenStorage.read()?.accessToken
-                ?: return@withContext PurchaseAccountIdentityResult.AuthenticationRequired
-            if (!configuration.isConfigured) {
-                return@withContext PurchaseAccountIdentityResult.Failed("Purchase verification is unavailable")
-            }
-            val connection = verificationConnection(accessToken)
-            try {
-                connection.requestMethod = "POST"
-                connection.doOutput = true
-                connection.outputStream.use { output ->
-                    output.write(JSONObject().put("action", "purchaseIdentity").toString().toByteArray())
-                }
-                val status = connection.responseCode
-                val body = responseBody(connection, status)
-                when {
-                    status == HttpURLConnection.HTTP_UNAUTHORIZED -> {
-                        PurchaseAccountIdentityResult.AuthenticationRequired
-                    }
-                    status !in 200..299 -> {
-                        PurchaseAccountIdentityResult.Failed("Purchase account verification failed; try again")
-                    }
-                    else -> {
-                        val accountId = JSONObject(body).optString("obfuscatedAccountId")
-                        if (accountId.isBlank() || accountId.length > 64) {
-                            PurchaseAccountIdentityResult.Failed("Purchase account verification failed; try again")
-                        } else {
-                            PurchaseAccountIdentityResult.Available(accountId)
-                        }
-                    }
-                }
-            } catch (error: Exception) {
-                PurchaseAccountIdentityResult.Failed(error.message ?: "Purchase account verification failed")
-            } finally {
-                connection.disconnect()
-            }
-        }
-
-    override suspend fun loadEntitlement(): PurchaseVerificationResult = withContext(Dispatchers.IO) {
-        val accessToken = tokenStorage.read()?.accessToken
-            ?: return@withContext PurchaseVerificationResult.AuthenticationRequired
+    override suspend fun loadPurchaseAccountIdentity(): PurchaseAccountIdentityResult {
         if (!configuration.isConfigured) {
-            return@withContext PurchaseVerificationResult.Failed("Pro status is unavailable")
+            return PurchaseAccountIdentityResult.Failed("Purchase verification is unavailable")
         }
-        val connection = URL(
-            "${configuration.projectUrl}/rest/v1/pro_entitlements" +
-                "?select=product_id,status,valid_until&limit=1",
-        ).openConnection() as HttpURLConnection
-        try {
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 20_000
-            connection.readTimeout = 20_000
-            connection.setRequestProperty("apikey", configuration.anonymousKey)
-            connection.setRequestProperty("Authorization", "Bearer $accessToken")
-            val status = connection.responseCode
-            val body = responseBody(connection, status)
-            when {
-                status == HttpURLConnection.HTTP_UNAUTHORIZED -> PurchaseVerificationResult.AuthenticationRequired
-                status !in 200..299 -> PurchaseVerificationResult.Failed("Pro status could not be refreshed")
-                else -> {
-                    val row = JSONArray(body).optJSONObject(0)
-                        ?: return@withContext PurchaseVerificationResult.Rejected("No active Pro subscription")
-                    val validUntil = runCatching {
-                        Instant.parse(row.getString("valid_until")).toEpochMilli()
-                    }.getOrNull()
-                    if (
-                        row.optString("product_id") != ANNUAL_PRO_PRODUCT_ID ||
-                        row.optString("status") != "active" ||
-                        validUntil == null ||
-                        validUntil <= System.currentTimeMillis()
-                    ) {
-                        PurchaseVerificationResult.Rejected("No active Pro subscription")
-                    } else {
-                        PurchaseVerificationResult.Verified(
-                            ProEntitlement(ANNUAL_PRO_PRODUCT_ID, validUntil),
-                        )
-                    }
+        return when (val response = authorizedRequest(transport::loadPurchaseAccountIdentity)) {
+            is ProPurchaseServerResponse.Success -> {
+                val accountId = response.value
+                if (accountId.isBlank() || accountId.length > 64) {
+                    PurchaseAccountIdentityResult.Failed("Purchase account verification failed; try again")
+                } else {
+                    PurchaseAccountIdentityResult.Available(accountId)
                 }
+            }
+            ProPurchaseServerResponse.Unauthorized -> PurchaseAccountIdentityResult.AuthenticationRequired
+            is ProPurchaseServerResponse.Failure -> PurchaseAccountIdentityResult.Failed(response.reason)
+        }
+    }
+
+    override suspend fun loadEntitlement(): PurchaseVerificationResult {
+        if (!configuration.isConfigured) {
+            return PurchaseVerificationResult.Failed("Pro status is unavailable")
+        }
+        return authorizedRequest(transport::loadEntitlement).toVerificationResult(
+            fallback = "Pro status could not be refreshed",
+        )
+    }
+
+    override suspend fun verify(productId: String, purchaseToken: String): PurchaseVerificationResult {
+        if (!configuration.isConfigured) {
+            return PurchaseVerificationResult.Failed("Purchase verification is unavailable")
+        }
+        return authorizedRequest { accessToken ->
+            transport.verify(accessToken, productId, purchaseToken)
+        }.toVerificationResult(fallback = "Receipt verification failed; try again")
+    }
+
+    private suspend fun <T> authorizedRequest(
+        request: suspend (accessToken: String) -> ProPurchaseServerResponse<T>,
+    ): ProPurchaseServerResponse<T> {
+        var session = sessionProvider.currentSession() ?: return ProPurchaseServerResponse.Unauthorized
+        var response = request(session.accessToken)
+        if (response != ProPurchaseServerResponse.Unauthorized) return response
+        session = sessionProvider.refreshSession(session) ?: run {
+            sessionProvider.requireReauthentication()
+            return ProPurchaseServerResponse.Unauthorized
+        }
+        response = request(session.accessToken)
+        if (response == ProPurchaseServerResponse.Unauthorized) {
+            sessionProvider.requireReauthentication()
+        }
+        return response
+    }
+}
+
+internal data class ServerProEntitlement(
+    val active: Boolean,
+    val productId: String? = null,
+    val validUntilEpochMillis: Long? = null,
+)
+
+internal sealed interface ProPurchaseServerResponse<out T> {
+    data class Success<T>(val value: T) : ProPurchaseServerResponse<T>
+    data object Unauthorized : ProPurchaseServerResponse<Nothing>
+    data class Failure(val reason: String) : ProPurchaseServerResponse<Nothing>
+}
+
+internal interface ProPurchaseServerTransport {
+    suspend fun loadPurchaseAccountIdentity(accessToken: String): ProPurchaseServerResponse<String>
+    suspend fun loadEntitlement(accessToken: String): ProPurchaseServerResponse<ServerProEntitlement>
+    suspend fun verify(
+        accessToken: String,
+        productId: String,
+        purchaseToken: String,
+    ): ProPurchaseServerResponse<ServerProEntitlement>
+}
+
+private class HttpProPurchaseServerTransport(
+    private val configuration: SupabaseConfiguration,
+) : ProPurchaseServerTransport {
+    override suspend fun loadPurchaseAccountIdentity(accessToken: String) = post(
+        accessToken = accessToken,
+        body = JSONObject().put("action", "purchaseIdentity"),
+    ) { response -> response.optString("obfuscatedAccountId") }
+
+    override suspend fun loadEntitlement(accessToken: String) = post(
+        accessToken = accessToken,
+        body = JSONObject().put("action", "loadEntitlement"),
+        parse = ::parseEntitlement,
+    )
+
+    override suspend fun verify(
+        accessToken: String,
+        productId: String,
+        purchaseToken: String,
+    ) = post(
+        accessToken = accessToken,
+        body = JSONObject()
+            .put("productId", productId)
+            .put("purchaseToken", purchaseToken),
+        parse = ::parseEntitlement,
+    )
+
+    private suspend fun <T> post(
+        accessToken: String,
+        body: JSONObject,
+        parse: (JSONObject) -> T,
+    ): ProPurchaseServerResponse<T> = withContext(Dispatchers.IO) {
+        val connection = verificationConnection(accessToken)
+        try {
+            connection.requestMethod = "POST"
+            connection.doOutput = true
+            connection.outputStream.use { output -> output.write(body.toString().toByteArray()) }
+            val status = connection.responseCode
+            val responseBody = responseBody(connection, status)
+            when {
+                status == HttpURLConnection.HTTP_UNAUTHORIZED -> ProPurchaseServerResponse.Unauthorized
+                status !in 200..299 -> ProPurchaseServerResponse.Failure(
+                    JSONObject(responseBody).optString("error").ifBlank { "Purchase server request failed" },
+                )
+                else -> ProPurchaseServerResponse.Success(parse(JSONObject(responseBody)))
             }
         } catch (error: Exception) {
-            PurchaseVerificationResult.Failed(error.message ?: "Pro status could not be refreshed")
+            ProPurchaseServerResponse.Failure(error.message ?: "Purchase server request failed")
         } finally {
             connection.disconnect()
         }
     }
-
-    override suspend fun verify(productId: String, purchaseToken: String): PurchaseVerificationResult =
-        withContext(Dispatchers.IO) {
-            val accessToken = tokenStorage.read()?.accessToken
-                ?: return@withContext PurchaseVerificationResult.AuthenticationRequired
-            if (!configuration.isConfigured) {
-                return@withContext PurchaseVerificationResult.Failed("Purchase verification is unavailable")
-            }
-            val connection = verificationConnection(accessToken)
-            try {
-                connection.requestMethod = "POST"
-                connection.doOutput = true
-                connection.outputStream.use { output ->
-                    output.write(
-                        JSONObject()
-                            .put("productId", productId)
-                            .put("purchaseToken", purchaseToken)
-                            .toString()
-                            .toByteArray(),
-                    )
-                }
-                val status = connection.responseCode
-                val body = responseBody(connection, status)
-                when {
-                    status == HttpURLConnection.HTTP_UNAUTHORIZED -> PurchaseVerificationResult.AuthenticationRequired
-                    status !in 200..299 -> PurchaseVerificationResult.Failed("Receipt verification failed; try again")
-                    else -> {
-                        val response = JSONObject(body)
-                        if (!response.optBoolean("active", false)) {
-                            PurchaseVerificationResult.Rejected("Google Play did not confirm an active subscription")
-                        } else {
-                            PurchaseVerificationResult.Verified(
-                                ProEntitlement(
-                                    productId = response.getString("productId"),
-                                    validUntilEpochMillis = response.getLong("validUntilEpochMillis"),
-                                ),
-                            )
-                        }
-                    }
-                }
-            } catch (error: Exception) {
-                PurchaseVerificationResult.Failed(error.message ?: "Receipt verification failed")
-            } finally {
-                connection.disconnect()
-            }
-        }
 
     private fun verificationConnection(accessToken: String): HttpURLConnection =
         (URL("${configuration.projectUrl}/functions/v1/verify-pro-purchase")
@@ -357,7 +351,34 @@ class SupabaseProPurchaseVerifier(
             setRequestProperty("Content-Type", "application/json")
         }
 
+    private fun parseEntitlement(response: JSONObject) = ServerProEntitlement(
+        active = response.optBoolean("active", false),
+        productId = response.optString("productId").takeIf(String::isNotBlank),
+        validUntilEpochMillis = response.optLong("validUntilEpochMillis").takeIf { it > 0L },
+    )
+
     private fun responseBody(connection: HttpURLConnection, status: Int): String =
         (if (status in 200..299) connection.inputStream else connection.errorStream)
             ?.bufferedReader()?.use { it.readText() }.orEmpty()
+}
+
+private fun ProPurchaseServerResponse<ServerProEntitlement>.toVerificationResult(
+    fallback: String,
+): PurchaseVerificationResult = when (this) {
+    ProPurchaseServerResponse.Unauthorized -> PurchaseVerificationResult.AuthenticationRequired
+    is ProPurchaseServerResponse.Failure -> PurchaseVerificationResult.Failed(reason.ifBlank { fallback })
+    is ProPurchaseServerResponse.Success -> {
+        val entitlement = value
+        if (
+            !entitlement.active ||
+            entitlement.productId != ANNUAL_PRO_PRODUCT_ID ||
+            entitlement.validUntilEpochMillis == null
+        ) {
+            PurchaseVerificationResult.Rejected("Google Play did not confirm an active subscription")
+        } else {
+            PurchaseVerificationResult.Verified(
+                ProEntitlement(ANNUAL_PRO_PRODUCT_ID, entitlement.validUntilEpochMillis),
+            )
+        }
+    }
 }

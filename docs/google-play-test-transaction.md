@@ -16,7 +16,8 @@ Prerequisites:
    `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `GOOGLE_PLAY_PACKAGE_NAME`,
    `GOOGLE_PLAY_ACCOUNT_HMAC_SECRET`, and Supabase service-role secrets. The HMAC secret must be a
    high-entropy server-only value shared by every deployed instance of the function; rotating it
-   invalidates in-flight purchases that were launched with the previous opaque account identifier.
+   invalidates opaque account identifiers and prevents revalidation of purchase tokens encrypted
+   with the previous value. Plan a controlled key migration before rotating it.
    Never put any of these values in the APK or repository.
 4. Open that same debug build and sign in to AquaLog so encrypted Supabase tokens exist. Launch the
    purchase from AquaLog only after signing in, then confirm it explicitly in the Google Play sheet
@@ -32,3 +33,9 @@ Run only against that prepared device:
 ```
 
 The ordinary connected suite skips this test and continues to use deterministic boundary doubles.
+
+At app startup and after an authentication change, AquaLog asks the server to revalidate the stored,
+encrypted purchase token against `purchases.subscriptionsv2.get`. The server atomically updates the
+entitlement to active or inactive from Google's current state; the Android clock is not the source of
+truth. This repository does not provision RTDN infrastructure, so a revocation is observed on the
+next startup or authentication refresh rather than pushed in real time.

@@ -1135,9 +1135,11 @@ class HomeViewModel(
         val coordinator = proPurchaseCoordinator ?: return
         when (val outcome = coordinator.refreshEntitlement()) {
             is ProPurchaseOutcome.Entitled -> updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
-            ProPurchaseOutcome.NotEntitled,
-            ProPurchaseOutcome.AuthenticationRequired,
-            -> updatePro(ProPurchaseStatus.IDLE)
+            ProPurchaseOutcome.NotEntitled -> updatePro(ProPurchaseStatus.IDLE)
+            ProPurchaseOutcome.AuthenticationRequired -> updatePro(
+                ProPurchaseStatus.ERROR,
+                "Sign in again to refresh your Pro status. Pro features stay locked until verification succeeds.",
+            )
             is ProPurchaseOutcome.Failed -> updatePro(
                 ProPurchaseStatus.ERROR,
                 "Pro status could not be refreshed. Pro features stay locked until verification succeeds.",

@@ -33,16 +33,24 @@ open class AquaLogApplication : Application() {
         AndroidSecureTokenStorage(this)
     }
 
+    private val accountSessionProvider by lazy {
+        LocalAccountSyncSessionProvider(
+            localData = aquariumRepository as RoomAquariumRepository,
+            tokenStorage = secureTokenStorage,
+            authGateway = SupabaseAuthGateway(
+                this,
+                SupabaseConfiguration.fromBuildConfig(),
+                secureTokenStorage,
+            ),
+        )
+    }
+
     open val syncCoordinator: SyncCoordinator by lazy {
         val localData = aquariumRepository as RoomAquariumRepository
         SyncCoordinator(
             localData = localData,
             backend = SupabaseSyncBackend(SupabaseConfiguration.fromBuildConfig()),
-            sessionProvider = LocalAccountSyncSessionProvider(
-                localData,
-                secureTokenStorage,
-                SupabaseAuthGateway(this, SupabaseConfiguration.fromBuildConfig(), secureTokenStorage),
-            ),
+            sessionProvider = accountSessionProvider,
             currentTimeMillis = System::currentTimeMillis,
         )
     }
@@ -73,7 +81,7 @@ open class AquaLogApplication : Application() {
             billingGateway = googlePlayBillingGateway,
             purchaseVerifier = SupabaseProPurchaseVerifier(
                 configuration = SupabaseConfiguration.fromBuildConfig(),
-                tokenStorage = secureTokenStorage,
+                sessionProvider = accountSessionProvider,
             ),
         )
     }

@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(17);
 
 insert into auth.users (id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -14,6 +14,7 @@ select lives_ok(
     '10000000-0000-0000-0000-000000000011',
     'aqualog_pro_annual',
     'sha256-token',
+    'encrypted-token',
     '2027-10-21T12:00:00Z',
     'GPA.1234'
   )$$,
@@ -24,6 +25,7 @@ select lives_ok(
     '10000000-0000-0000-0000-000000000011',
     'aqualog_pro_annual',
     'sha256-token',
+    'encrypted-token',
     '2027-10-21T12:00:00Z',
     'GPA.1234'
   )$$,
@@ -34,6 +36,7 @@ select throws_ok(
     '10000000-0000-0000-0000-000000000012',
     'aqualog_pro_annual',
     'sha256-token',
+    'attacker-encrypted-token',
     '2027-10-21T12:00:00Z',
     'GPA.1234'
   )$$,
@@ -57,6 +60,49 @@ select lives_ok(
 reset role;
 select is((select count(*) from public.play_purchase_verifications), 1::bigint, 'one verification row remains');
 select is((select count(*) from public.pro_entitlements), 1::bigint, 'one entitlement row remains');
+
+set local role service_role;
+select lives_ok(
+  $$select public.revalidate_claimed_pro_purchase(
+    '10000000-0000-0000-0000-000000000011',
+    'aqualog_pro_annual',
+    'sha256-token',
+    false,
+    '2026-10-14T12:00:00Z',
+    'GPA.1234'
+  )$$,
+  'server revalidation can revoke the claimed entitlement atomically'
+);
+reset role;
+select is((select purchase_status from public.play_purchase_verifications), 'inactive', 'claim is inactive after Google revocation');
+select is((select status from public.pro_entitlements), 'inactive', 'entitlement is inactive after Google revocation');
+set local role service_role;
+select throws_ok(
+  $$select public.revalidate_claimed_pro_purchase(
+    '10000000-0000-0000-0000-000000000012',
+    'aqualog_pro_annual',
+    'sha256-token',
+    true,
+    '2027-10-21T12:00:00Z',
+    'GPA.1234'
+  )$$,
+  '42501',
+  'purchase claim belongs to another account',
+  'another account cannot revalidate the claimed purchase'
+);
+select lives_ok(
+  $$select public.revalidate_claimed_pro_purchase(
+    '10000000-0000-0000-0000-000000000011',
+    'aqualog_pro_annual',
+    'sha256-token',
+    true,
+    '2027-10-21T12:00:00Z',
+    'GPA.1234'
+  )$$,
+  'the owner can be reactivated after Google confirms recovery'
+);
+reset role;
+select is((select status from public.pro_entitlements), 'active', 'recovered entitlement is active again');
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"10000000-0000-0000-0000-000000000011","role":"authenticated"}';

@@ -5,6 +5,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.ProPurchaseOutcome
+import com.maximerollin.aqualog.shared.AuthTokens
+import com.maximerollin.aqualog.shared.AuthenticationResult
+import com.maximerollin.aqualog.shared.SyncSession
+import com.maximerollin.aqualog.shared.SyncSessionProvider
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -31,11 +35,33 @@ class GooglePlayTestTransactionTest {
             gateway = GooglePlayBillingGateway(activity.applicationContext).also { it.attach(activity) }
         }
         val application = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+        val tokenStorage = AndroidSecureTokenStorage(application)
+        val authGateway = SupabaseAuthGateway(
+            application,
+            SupabaseConfiguration.fromBuildConfig(),
+            tokenStorage,
+        )
         val coordinator = ProPurchaseCoordinator(
             billingGateway = gateway,
             purchaseVerifier = SupabaseProPurchaseVerifier(
                 SupabaseConfiguration.fromBuildConfig(),
-                AndroidSecureTokenStorage(application),
+                object : SyncSessionProvider {
+                    override suspend fun currentSession(): SyncSession? = tokenStorage.read()?.let {
+                        SyncSession(accountId = "license-tester", accessToken = it.accessToken)
+                    }
+
+                    override suspend fun refreshSession(expiredSession: SyncSession): SyncSession? {
+                        val refreshToken = tokenStorage.read()?.refreshToken ?: return null
+                        val refreshed = authGateway.refreshSession(refreshToken)
+                            as? AuthenticationResult.Authenticated ?: return null
+                        tokenStorage.save(
+                            AuthTokens(refreshed.account.accessToken, refreshed.account.refreshToken),
+                        )
+                        return SyncSession(refreshed.account.accountId, refreshed.account.accessToken)
+                    }
+
+                    override suspend fun requireReauthentication() = tokenStorage.clear()
+                },
             ),
         )
 
