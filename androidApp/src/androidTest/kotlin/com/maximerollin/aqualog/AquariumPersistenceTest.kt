@@ -69,6 +69,7 @@ class AquariumPersistenceTest {
         ).assertIsDisplayed()
         composeRule.onNodeWithText("Continue for free").performClick()
 
+        waitForText("Amazonien")
         composeRule.onNodeWithText("Amazonien").assertIsDisplayed()
         composeRule.onNodeWithText("120.5 US gal").assertIsDisplayed()
         composeRule.onNodeWithText("No Session yet").assertIsDisplayed()
@@ -76,6 +77,7 @@ class AquariumPersistenceTest {
 
         scenario.recreate()
 
+        waitForText("Amazonien")
         composeRule.onNodeWithText("Amazonien").assertIsDisplayed()
         composeRule.onNodeWithText("120.5 US gal").assertIsDisplayed()
         composeRule.onNodeWithText("No Session yet").assertIsDisplayed()
@@ -84,5 +86,11 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithText("Choose Free or Pro").assertIsDisplayed()
         composeRule.onNodeWithText("Back to Settings").performClick()
         scenario.close()
+    }
+
+    private fun waitForText(text: String) {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }
