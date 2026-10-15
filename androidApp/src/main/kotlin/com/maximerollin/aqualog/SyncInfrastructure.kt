@@ -141,6 +141,7 @@ class SupabaseSyncBackend(
                     volumeUnit = VolumeUnit.fromStorageValue(value.getString("volume_unit")),
                     createdAtEpochMillis = value.getLong("created_at_epoch_millis"),
                     profile = AquariumProfile.fromStorageValue(value.getString("profile")),
+                    isArchived = value.optBoolean("is_archived", false),
                 )
             },
             parameterDefinitions = parameters.filterLive().map { value ->
@@ -318,7 +319,7 @@ object AndroidSyncScheduler {
 private fun Aquarium.toRemoteJson(accountId: String) = JSONObject()
     .put("id", id).put("account_id", accountId).put("name", name).put("volume", volume)
     .put("volume_unit", volumeUnit.storageValue).put("created_at_epoch_millis", createdAtEpochMillis)
-    .put("profile", profile.storageValue)
+    .put("profile", profile.storageValue).put("is_archived", isArchived)
 
 private fun ParameterDefinition.toRemoteJson(accountId: String) = JSONObject()
     .put("id", id).put("account_id", accountId).put("aquarium_id", aquariumId)

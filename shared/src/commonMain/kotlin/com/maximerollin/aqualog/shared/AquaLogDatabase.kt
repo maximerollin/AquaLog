@@ -30,6 +30,13 @@ data class AquariumEntity(
     val volumeUnit: String,
     val createdAtEpochMillis: Long,
     @ColumnInfo(defaultValue = "'established'") val profile: String,
+    @ColumnInfo(defaultValue = "0") val isArchived: Boolean = false,
+)
+
+@Entity(tableName = "selected_aquarium")
+data class SelectedAquariumEntity(
+    @PrimaryKey val singletonId: Int = 1,
+    val aquariumId: String,
 )
 
 @Entity(tableName = "parameter_definitions")
@@ -191,12 +198,26 @@ data class SyncScheduleStateEntity(
 
 @Dao
 abstract class AquariumDao {
-    @Query("SELECT * FROM aquariums ORDER BY createdAtEpochMillis ASC LIMIT 1")
+    @Query(
+        "SELECT a.* FROM aquariums a LEFT JOIN selected_aquarium s ON s.singletonId = 1 " +
+            "WHERE a.isArchived = 0 ORDER BY CASE WHEN a.id = s.aquariumId THEN 0 ELSE 1 END, " +
+            "a.createdAtEpochMillis ASC LIMIT 1",
+    )
     abstract fun observeCurrent(): Flow<AquariumEntity?>
 
     @Transaction
-    @Query("SELECT * FROM aquariums ORDER BY createdAtEpochMillis ASC LIMIT 1")
+    @Query(
+        "SELECT a.* FROM aquariums a LEFT JOIN selected_aquarium s ON s.singletonId = 1 " +
+            "WHERE a.isArchived = 0 ORDER BY CASE WHEN a.id = s.aquariumId THEN 0 ELSE 1 END, " +
+            "a.createdAtEpochMillis ASC LIMIT 1",
+    )
     abstract fun observeCurrentSetup(): Flow<AquariumSetupEntity?>
+
+    @Query(
+        "SELECT * FROM aquariums WHERE (:includeArchived = 1 OR isArchived = 0) " +
+            "ORDER BY createdAtEpochMillis ASC",
+    )
+    abstract fun observeAquariums(includeArchived: Boolean): Flow<List<AquariumEntity>>
 
     @Transaction
     @Query("SELECT * FROM aquariums ORDER BY createdAtEpochMillis ASC")
@@ -227,8 +248,19 @@ abstract class AquariumDao {
     @Upsert
     protected abstract suspend fun upsertParameter(parameter: ParameterDefinitionEntity)
 
+    @Upsert
+    protected abstract suspend fun upsertSelection(selection: SelectedAquariumEntity)
+
+    @Query("SELECT COUNT(*) FROM aquariums")
+    protected abstract suspend fun aquariumCount(): Int
+
     @Transaction
-    open suspend fun create(aquarium: AquariumEntity, syncOperation: SyncOperationEntity) {
+    open suspend fun create(
+        aquarium: AquariumEntity,
+        syncOperation: SyncOperationEntity,
+        allowMultiple: Boolean,
+    ) {
+        if (!allowMultiple && aquariumCount() > 0) throw FreeAquariumLimitReached()
         insert(aquarium)
         insertSyncOperations(listOf(syncOperation))
     }
@@ -238,10 +270,19 @@ abstract class AquariumDao {
         aquarium: AquariumEntity,
         parameters: List<ParameterDefinitionEntity>,
         syncOperations: List<SyncOperationEntity>,
+        allowMultiple: Boolean,
     ) {
+        if (!allowMultiple && aquariumCount() > 0) throw FreeAquariumLimitReached()
         insert(aquarium)
         insertParameters(parameters)
         insertSyncOperations(syncOperations)
+    }
+
+    @Transaction
+    open suspend fun selectAquarium(aquariumId: String) {
+        val aquarium = requireNotNull(getSetup(aquariumId)) { "Aquarium does not exist" }.aquarium
+        require(!aquarium.isArchived) { "Archived Aquarium cannot be selected" }
+        upsertSelection(SelectedAquariumEntity(aquariumId = aquariumId))
     }
 
     @Transaction
@@ -874,6 +915,7 @@ abstract class SyncDao {
 @Database(
     entities = [
         AquariumEntity::class,
+        SelectedAquariumEntity::class,
         ParameterDefinitionEntity::class,
         SessionEntity::class,
         MeasurementEntity::class,
@@ -888,7 +930,7 @@ abstract class SyncDao {
         SyncRuntimeStateEntity::class,
         SyncScheduleStateEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -922,6 +964,7 @@ fun createAquaLogDatabase(
         MIGRATION_8_9,
         MIGRATION_9_10,
         MIGRATION_10_11,
+        MIGRATION_11_12,
     )
     .build()
 
@@ -1053,5 +1096,12 @@ private val MIGRATION_9_10 = Migration(9, 10) { connection ->
 private val MIGRATION_10_11 = Migration(10, 11) { connection ->
     connection.execSQL(
         "CREATE TABLE IF NOT EXISTS sync_schedule_state (singletonId INTEGER NOT NULL PRIMARY KEY, generation INTEGER NOT NULL)",
+    )
+}
+
+private val MIGRATION_11_12 = Migration(11, 12) { connection ->
+    connection.execSQL("ALTER TABLE aquariums ADD COLUMN isArchived INTEGER NOT NULL DEFAULT 0")
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS selected_aquarium (singletonId INTEGER NOT NULL PRIMARY KEY, aquariumId TEXT NOT NULL)",
     )
 }

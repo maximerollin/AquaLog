@@ -136,6 +136,50 @@ class ProPurchaseCoordinatorTest {
         assertIs<ProPurchaseOutcome.Entitled>(outcome)
         assertEquals("restored-token", verifier.lastPurchaseToken)
     }
+
+    @Test
+    fun `fresh install restores a lifetime purchase for the authenticated account`() = runTest {
+        val billing = DeterministicBillingGateway(
+            restored = PlayPurchaseUpdate.Purchased(LIFETIME_PRO_PRODUCT_ID, "owned-lifetime-token"),
+        )
+        val lifetimeEntitlement = ProEntitlement(
+            productId = LIFETIME_PRO_PRODUCT_ID,
+            validUntilEpochMillis = null,
+        )
+        val verifier = DeterministicPurchaseVerifier(
+            result = PurchaseVerificationResult.Verified(lifetimeEntitlement),
+            accountIdentity = PurchaseAccountIdentityResult.Available("same-authenticated-account"),
+        )
+
+        // A new coordinator represents a reinstall: it has no local entitlement cache.
+        val reinstalledCoordinator = ProPurchaseCoordinator(billing, verifier)
+        assertEquals(false, reinstalledCoordinator.hasProEntitlement)
+
+        val outcome = reinstalledCoordinator.restorePurchase()
+
+        assertEquals(ProPurchaseOutcome.Entitled(lifetimeEntitlement), outcome)
+        assertEquals(lifetimeEntitlement, reinstalledCoordinator.entitlement)
+        assertEquals("owned-lifetime-token", verifier.lastPurchaseToken)
+    }
+
+    @Test
+    fun `lifetime offer has no trial and launches the one time Play product`() = runTest {
+        val billing = DeterministicBillingGateway()
+        val coordinator = ProPurchaseCoordinator(
+            billing,
+            DeterministicPurchaseVerifier(PurchaseVerificationResult.Rejected("unused")),
+        )
+
+        assertEquals(
+            LifetimeProOffer(LIFETIME_PRO_PRODUCT_ID, "34,99 €"),
+            coordinator.loadLifetimeOffer(),
+        )
+        assertEquals(
+            ProPurchaseOutcome.AwaitingPlayConfirmation,
+            coordinator.startLifetimePurchase(),
+        )
+        assertEquals(LIFETIME_PRO_PRODUCT_ID, billing.lastLaunchedProductId)
+    }
 }
 
 private class DeterministicBillingGateway(
@@ -144,6 +188,7 @@ private class DeterministicBillingGateway(
     override val purchaseUpdates: Flow<PlayPurchaseUpdate> = emptyFlow()
     var launchCount = 0
     var lastAccountIdentifier: String? = null
+    var lastLaunchedProductId: String? = null
 
     override suspend fun loadAnnualOffer(): AnnualProOffer = AnnualProOffer(
         productId = ANNUAL_PRO_PRODUCT_ID,
@@ -155,7 +200,24 @@ private class DeterministicBillingGateway(
     override suspend fun launchAnnualPurchase(obfuscatedAccountId: String): BillingLaunchResult {
         launchCount += 1
         lastAccountIdentifier = obfuscatedAccountId
+        lastLaunchedProductId = ANNUAL_PRO_PRODUCT_ID
         return BillingLaunchResult.Started
+    }
+
+    override suspend fun loadLifetimeOffer(): LifetimeProOffer = LifetimeProOffer(
+        productId = LIFETIME_PRO_PRODUCT_ID,
+        formattedPrice = "34,99 €",
+    )
+
+    override suspend fun launchLifetimePurchase(obfuscatedAccountId: String): BillingLaunchResult {
+        launchCount += 1
+        lastAccountIdentifier = obfuscatedAccountId
+        lastLaunchedProductId = LIFETIME_PRO_PRODUCT_ID
+        return BillingLaunchResult.Started
+    }
+
+    override suspend fun restoreLifetimePurchase(): PlayPurchaseUpdate? = restored?.takeIf {
+        it is PlayPurchaseUpdate.Purchased && it.productId == LIFETIME_PRO_PRODUCT_ID
     }
 
     override suspend fun restoreAnnualPurchase(): PlayPurchaseUpdate? = restored

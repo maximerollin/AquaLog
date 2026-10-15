@@ -9,10 +9,13 @@ import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.ANNUAL_PRO_PRODUCT_ID
 import com.maximerollin.aqualog.shared.AnnualProOffer
+import com.maximerollin.aqualog.shared.LIFETIME_PRO_PRODUCT_ID
+import com.maximerollin.aqualog.shared.LifetimeProOffer
 import com.maximerollin.aqualog.shared.BillingLaunchResult
 import com.maximerollin.aqualog.shared.PlayPurchaseUpdate
 import com.maximerollin.aqualog.shared.ProBillingGateway
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
+import com.maximerollin.aqualog.shared.ProEntitlement
 import com.maximerollin.aqualog.shared.ProPurchaseVerifier
 import com.maximerollin.aqualog.shared.PurchaseAccountIdentityResult
 import com.maximerollin.aqualog.shared.PurchaseVerificationResult
@@ -39,6 +42,7 @@ class TestAquaLogApplication : AquaLogApplication() {
     private var portableService: PortableDataService? = null
     private var databaseSequence = 0
     val recordingTaskReminderScheduler = RecordingTaskReminderScheduler()
+    private var verifiedProEntitlement: ProEntitlement? = null
 
     override val taskReminderScheduler: TaskReminderScheduler
         get() = recordingTaskReminderScheduler
@@ -57,12 +61,19 @@ class TestAquaLogApplication : AquaLogApplication() {
             )
             override suspend fun launchAnnualPurchase(obfuscatedAccountId: String) = BillingLaunchResult.Started
             override suspend fun restoreAnnualPurchase(): PlayPurchaseUpdate? = null
+            override suspend fun loadLifetimeOffer() = LifetimeProOffer(
+                productId = LIFETIME_PRO_PRODUCT_ID,
+                formattedPrice = "€34.99",
+            )
+            override suspend fun launchLifetimePurchase(obfuscatedAccountId: String) = BillingLaunchResult.Started
+            override suspend fun restoreLifetimePurchase(): PlayPurchaseUpdate? = null
         },
         purchaseVerifier = object : ProPurchaseVerifier {
             override suspend fun loadPurchaseAccountIdentity() =
                 PurchaseAccountIdentityResult.Available("instrumented-test-account")
             override suspend fun loadEntitlement() =
-                PurchaseVerificationResult.Rejected("No instrumented entitlement")
+                verifiedProEntitlement?.let(PurchaseVerificationResult::Verified)
+                    ?: PurchaseVerificationResult.Rejected("No instrumented entitlement")
             override suspend fun verify(productId: String, purchaseToken: String) =
                 PurchaseVerificationResult.Rejected("Test purchases require an explicit test")
         },
@@ -84,6 +95,11 @@ class TestAquaLogApplication : AquaLogApplication() {
         )
         portableService = PortableDataService(newDatabase)
         recordingTaskReminderScheduler.reset()
+        verifiedProEntitlement = null
+    }
+
+    fun grantPro(entitlement: ProEntitlement) {
+        verifiedProEntitlement = entitlement
     }
 
     fun installRepository(value: AquariumRepository) {

@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.map
 import kotlin.random.Random
 
 interface AquariumRepository {
+    fun observeAquariums(includeArchived: Boolean = false): Flow<List<Aquarium>>
+
     fun observeCurrentAquarium(): Flow<Aquarium?>
 
     fun observeCurrentSetup(): Flow<AquariumSetup?>
@@ -15,6 +17,7 @@ interface AquariumRepository {
         name: String,
         volume: Double,
         volumeUnit: VolumeUnit,
+        access: AquariumCreationAccess = AquariumCreationAccess.FREE,
     ): Aquarium
 
     suspend fun createConfiguredAquarium(
@@ -23,7 +26,12 @@ interface AquariumRepository {
         volumeUnit: VolumeUnit,
         profile: AquariumProfile,
         parameters: List<ParameterDefinitionDraft>,
+        access: AquariumCreationAccess = AquariumCreationAccess.FREE,
     ): AquariumSetup
+
+    suspend fun selectAquarium(aquariumId: String)
+
+    suspend fun archiveAquarium(aquariumId: String): Aquarium
 
     suspend fun updateAquarium(aquarium: Aquarium): Aquarium
 
@@ -67,6 +75,9 @@ class RoomAquariumRepository(
     private val accountDao = database.accountDao()
     private val syncDao = database.syncDao()
 
+    override fun observeAquariums(includeArchived: Boolean): Flow<List<Aquarium>> =
+        aquariumDao.observeAquariums(includeArchived).map { aquariums -> aquariums.map(AquariumEntity::toDomain) }
+
     override fun observeCurrentAquarium(): Flow<Aquarium?> =
         aquariumDao.observeCurrent().map { it?.toDomain() }
 
@@ -77,6 +88,7 @@ class RoomAquariumRepository(
         name: String,
         volume: Double,
         volumeUnit: VolumeUnit,
+        access: AquariumCreationAccess,
     ): Aquarium {
         require(name.isNotBlank()) { "Aquarium name must not be blank" }
         require(volume > 0.0 && volume.isFinite()) { "Aquarium volume must be positive" }
@@ -91,6 +103,7 @@ class RoomAquariumRepository(
         aquariumDao.create(
             aquarium = aquarium.toEntity(),
             syncOperation = newSyncOperation(SyncEntityType.AQUARIUM, aquarium.id),
+            allowMultiple = access == AquariumCreationAccess.PRO,
         )
         onSyncNeeded()
         return aquarium
@@ -102,6 +115,7 @@ class RoomAquariumRepository(
         volumeUnit: VolumeUnit,
         profile: AquariumProfile,
         parameters: List<ParameterDefinitionDraft>,
+        access: AquariumCreationAccess,
     ): AquariumSetup {
         require(name.isNotBlank()) { "Aquarium name must not be blank" }
         require(volume > 0.0 && volume.isFinite()) { "Aquarium volume must be positive" }
@@ -153,9 +167,25 @@ class RoomAquariumRepository(
             parameters = definitions.map(ParameterDefinition::toEntity),
             syncOperations = listOf(newSyncOperation(SyncEntityType.AQUARIUM, aquarium.id)) +
                 definitions.map { newSyncOperation(SyncEntityType.PARAMETER_DEFINITION, it.id) },
+            allowMultiple = access == AquariumCreationAccess.PRO,
         )
         onSyncNeeded()
         return AquariumSetup(aquarium, definitions)
+    }
+
+    override suspend fun selectAquarium(aquariumId: String) {
+        aquariumDao.selectAquarium(aquariumId)
+    }
+
+    override suspend fun archiveAquarium(aquariumId: String): Aquarium {
+        val existing = requireNotNull(aquariumDao.getSetup(aquariumId)) { "Aquarium does not exist" }.aquarium.toDomain()
+        val archived = existing.copy(isArchived = true)
+        aquariumDao.updateAquarium(
+            archived.toEntity(),
+            newSyncOperation(SyncEntityType.AQUARIUM, archived.id),
+        )
+        onSyncNeeded()
+        return archived
     }
 
     override suspend fun updateAquarium(aquarium: Aquarium): Aquarium {
@@ -742,6 +772,7 @@ private fun AquariumEntity.toDomain() = Aquarium(
     volumeUnit = VolumeUnit.fromStorageValue(volumeUnit),
     createdAtEpochMillis = createdAtEpochMillis,
     profile = AquariumProfile.fromStorageValue(profile),
+    isArchived = isArchived,
 )
 
 private fun Aquarium.toEntity() = AquariumEntity(
@@ -751,6 +782,7 @@ private fun Aquarium.toEntity() = AquariumEntity(
     volumeUnit = volumeUnit.storageValue,
     createdAtEpochMillis = createdAtEpochMillis,
     profile = profile.storageValue,
+    isArchived = isArchived,
 )
 
 private fun AquariumSetupEntity.toDomain() = AquariumSetup(

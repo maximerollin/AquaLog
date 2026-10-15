@@ -14,6 +14,8 @@ import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import com.maximerollin.aqualog.shared.ANNUAL_PRO_PRODUCT_ID
 import com.maximerollin.aqualog.shared.AnnualProOffer
+import com.maximerollin.aqualog.shared.LIFETIME_PRO_PRODUCT_ID
+import com.maximerollin.aqualog.shared.LifetimeProOffer
 import com.maximerollin.aqualog.shared.BillingLaunchResult
 import com.maximerollin.aqualog.shared.PlayPurchaseUpdate
 import com.maximerollin.aqualog.shared.ProBillingGateway
@@ -56,8 +58,9 @@ class GooglePlayBillingGateway(
         .enableAutoServiceReconnection()
         .build()
 
-    private var productDetails: ProductDetails? = null
-    private var offerToken: String? = null
+    private var annualProductDetails: ProductDetails? = null
+    private var annualOfferToken: String? = null
+    private var lifetimeProductDetails: ProductDetails? = null
 
     fun attach(activity: Activity) {
         this.activity = WeakReference(activity)
@@ -98,8 +101,8 @@ class GooglePlayBillingGateway(
         val recurring = offer.pricingPhases.pricingPhaseList.lastOrNull { phase ->
             phase.priceAmountMicros > 0L && phase.billingPeriod == ANNUAL_PERIOD
         } ?: error("The Google Play annual Pro offer has no annual price")
-        productDetails = details
-        offerToken = offer.offerToken
+        annualProductDetails = details
+        annualOfferToken = offer.offerToken
         return AnnualProOffer(
             productId = details.productId,
             formattedPrice = recurring.formattedPrice,
@@ -111,8 +114,8 @@ class GooglePlayBillingGateway(
     override suspend fun launchAnnualPurchase(obfuscatedAccountId: String): BillingLaunchResult {
         val purchaseActivity = activity.get()
             ?: return BillingLaunchResult.Failed("Return to AquaLog and try the purchase again")
-        val details = productDetails ?: return BillingLaunchResult.Failed("Reload the Google Play offer and try again")
-        val token = offerToken ?: return BillingLaunchResult.Failed("Reload the Google Play offer and try again")
+        val details = annualProductDetails ?: return BillingLaunchResult.Failed("Reload the Google Play offer and try again")
+        val token = annualOfferToken ?: return BillingLaunchResult.Failed("Reload the Google Play offer and try again")
         val product = BillingFlowParams.ProductDetailsParams.newBuilder()
             .setProductDetails(details)
             .setOfferToken(token)
@@ -148,12 +151,51 @@ class GooglePlayBillingGateway(
         }
     }
 
+    override suspend fun loadLifetimeOffer(): LifetimeProOffer {
+        val details = loadProductDetails(LIFETIME_PRO_PRODUCT_ID, BillingClient.ProductType.INAPP)
+        val oneTimeOffer = requireNotNull(details.oneTimePurchaseOfferDetails) {
+            "The Google Play lifetime Pro offer has no price"
+        }
+        lifetimeProductDetails = details
+        return LifetimeProOffer(
+            productId = details.productId,
+            formattedPrice = oneTimeOffer.formattedPrice,
+        )
+    }
+
+    override suspend fun launchLifetimePurchase(obfuscatedAccountId: String): BillingLaunchResult {
+        val purchaseActivity = activity.get()
+            ?: return BillingLaunchResult.Failed("Return to AquaLog and try the purchase again")
+        val details = lifetimeProductDetails
+            ?: return BillingLaunchResult.Failed("Reload the Google Play offer and try again")
+        val product = BillingFlowParams.ProductDetailsParams.newBuilder()
+            .setProductDetails(details)
+            .build()
+        val result = billingClient.launchBillingFlow(
+            purchaseActivity,
+            BillingFlowParams.newBuilder()
+                .setProductDetailsParamsList(listOf(product))
+                .setObfuscatedAccountId(obfuscatedAccountId)
+                .build(),
+        )
+        return if (result.responseCode == BillingClient.BillingResponseCode.OK) {
+            BillingLaunchResult.Started
+        } else {
+            BillingLaunchResult.Failed(playMessage(result, "Google Play could not start the purchase"))
+        }
+    }
+
+    override suspend fun restoreLifetimePurchase(): PlayPurchaseUpdate? =
+        restorePurchase(BillingClient.ProductType.INAPP, LIFETIME_PRO_PRODUCT_ID)
+
     override fun onPurchasesUpdated(result: BillingResult, purchases: MutableList<Purchase>?) {
         val update = when (result.responseCode) {
             BillingClient.BillingResponseCode.OK -> purchases
-                ?.firstOrNull(::isAnnualProPurchase)
+                ?.firstOrNull { purchase ->
+                    isAnnualProPurchase(purchase) || LIFETIME_PRO_PRODUCT_ID in purchase.products
+                }
                 ?.toUpdate()
-                ?: PlayPurchaseUpdate.Failed("Google Play returned no annual Pro purchase")
+                ?: PlayPurchaseUpdate.Failed("Google Play returned no Pro purchase")
             BillingClient.BillingResponseCode.USER_CANCELED -> PlayPurchaseUpdate.Cancelled
             else -> PlayPurchaseUpdate.Failed(playMessage(result, "Google Play purchase failed"))
         }
@@ -182,16 +224,62 @@ class GooglePlayBillingGateway(
         }
     }
 
-    private fun Purchase.toUpdate(): PlayPurchaseUpdate = when (purchaseState) {
-        Purchase.PurchaseState.PENDING -> PlayPurchaseUpdate.Pending
-        Purchase.PurchaseState.PURCHASED -> PlayPurchaseUpdate.Purchased(
-            productId = ANNUAL_PRO_PRODUCT_ID,
-            purchaseToken = purchaseToken,
-        )
-        else -> PlayPurchaseUpdate.Failed("Google Play purchase is not complete")
+    private fun Purchase.toUpdate(): PlayPurchaseUpdate {
+        val proProductId = products.firstOrNull { it in setOf(ANNUAL_PRO_PRODUCT_ID, LIFETIME_PRO_PRODUCT_ID) }
+            ?: return PlayPurchaseUpdate.Failed("Unexpected Google Play product")
+        return when (purchaseState) {
+            Purchase.PurchaseState.PENDING -> PlayPurchaseUpdate.Pending
+            Purchase.PurchaseState.PURCHASED -> PlayPurchaseUpdate.Purchased(
+                productId = proProductId,
+                purchaseToken = purchaseToken,
+            )
+            else -> PlayPurchaseUpdate.Failed("Google Play purchase is not complete")
+        }
     }
 
     private fun isAnnualProPurchase(purchase: Purchase): Boolean = ANNUAL_PRO_PRODUCT_ID in purchase.products
+
+    private suspend fun loadProductDetails(productId: String, productType: String): ProductDetails {
+        ensureConnected()
+        val params = QueryProductDetailsParams.newBuilder()
+            .setProductList(
+                listOf(
+                    QueryProductDetailsParams.Product.newBuilder()
+                        .setProductId(productId)
+                        .setProductType(productType)
+                        .build(),
+                ),
+            )
+            .build()
+        return suspendCancellableCoroutine { continuation ->
+            billingClient.queryProductDetailsAsync(params) { result, response ->
+                if (!continuation.isActive) return@queryProductDetailsAsync
+                val detail = response.productDetailsList.firstOrNull()
+                if (result.responseCode == BillingClient.BillingResponseCode.OK && detail != null) {
+                    continuation.resume(detail)
+                } else {
+                    continuation.resumeWithException(
+                        IllegalStateException(playMessage(result, "Google Play offer unavailable")),
+                    )
+                }
+            }
+        }
+    }
+
+    private suspend fun restorePurchase(productType: String, productId: String): PlayPurchaseUpdate? {
+        ensureConnected()
+        val params = QueryPurchasesParams.newBuilder().setProductType(productType).build()
+        return suspendCancellableCoroutine { continuation ->
+            billingClient.queryPurchasesAsync(params) { result, purchases ->
+                if (!continuation.isActive) return@queryPurchasesAsync
+                if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+                    continuation.resume(PlayPurchaseUpdate.Failed(playMessage(result, "Restore failed")))
+                } else {
+                    continuation.resume(purchases.firstOrNull { productId in it.products }?.toUpdate())
+                }
+            }
+        }
+    }
 
     private fun formattedDateAfterTrial(): String {
         val billingDate = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, TRIAL_DAYS) }.time
@@ -369,15 +457,15 @@ private fun ProPurchaseServerResponse<ServerProEntitlement>.toVerificationResult
     is ProPurchaseServerResponse.Failure -> PurchaseVerificationResult.Failed(reason.ifBlank { fallback })
     is ProPurchaseServerResponse.Success -> {
         val entitlement = value
-        if (
-            !entitlement.active ||
-            entitlement.productId != ANNUAL_PRO_PRODUCT_ID ||
+        val isAnnual = entitlement.productId == ANNUAL_PRO_PRODUCT_ID &&
+            entitlement.validUntilEpochMillis != null
+        val isLifetime = entitlement.productId == LIFETIME_PRO_PRODUCT_ID &&
             entitlement.validUntilEpochMillis == null
-        ) {
+        if (!entitlement.active || (!isAnnual && !isLifetime)) {
             PurchaseVerificationResult.Rejected("Google Play did not confirm an active subscription")
         } else {
             PurchaseVerificationResult.Verified(
-                ProEntitlement(ANNUAL_PRO_PRODUCT_ID, entitlement.validUntilEpochMillis),
+                ProEntitlement(requireNotNull(entitlement.productId), entitlement.validUntilEpochMillis),
             )
         }
     }

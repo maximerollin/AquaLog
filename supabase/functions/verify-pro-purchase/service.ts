@@ -1,4 +1,5 @@
 export const annualProProductId = "aqualog_pro_annual";
+export const lifetimeProProductId = "aqualog_pro_lifetime";
 
 type SubscriptionLineItem = {
   productId?: string;
@@ -18,8 +19,8 @@ type SubscriptionPurchase = {
 export type VerifiedSubscription = {
   active: boolean;
   productId: string;
-  validUntilEpochMillis: number;
-  validUntil: string;
+  validUntilEpochMillis: number | null;
+  validUntil: string | null;
   latestOrderId: string | null;
   requiresAcknowledgement: boolean;
   obfuscatedExternalAccountId: string | null;
@@ -31,7 +32,7 @@ export type ProPurchaseClaim = {
   purchaseToken: string;
   purchaseTokenHash: string;
   purchaseTokenCiphertext: string;
-  validUntil: string;
+  validUntil: string | null;
   latestOrderId: string | null;
 };
 
@@ -47,7 +48,7 @@ export type ProEntitlementRevalidation = {
   productId: string;
   purchaseTokenHash: string;
   active: boolean;
-  validUntil: string;
+  validUntil: string | null;
   latestOrderId: string | null;
 };
 
@@ -79,7 +80,10 @@ export function validateVerificationRequest(value: unknown): {
     throw new TypeError("Purchase verification requires a JSON object");
   }
   const candidate = value as Record<string, unknown>;
-  if (candidate.productId !== annualProProductId) {
+  if (
+    typeof candidate.productId !== "string" ||
+    ![annualProProductId, lifetimeProProductId].includes(candidate.productId)
+  ) {
     throw new TypeError("Unexpected Google Play product");
   }
   if (
@@ -91,6 +95,34 @@ export function validateVerificationRequest(value: unknown): {
   return {
     productId: candidate.productId,
     purchaseToken: candidate.purchaseToken,
+  };
+}
+
+type LifetimePurchase = {
+  purchaseState?: number;
+  acknowledgementState?: number;
+  productId?: string;
+  orderId?: string;
+  refundableQuantity?: number;
+  obfuscatedExternalAccountId?: string;
+};
+
+export function interpretLifetimePurchase(
+  value: unknown,
+  expectedProductId: string,
+): VerifiedSubscription {
+  const purchase = value as LifetimePurchase;
+  const active = expectedProductId === lifetimeProProductId &&
+    purchase.productId === expectedProductId && purchase.purchaseState === 0 &&
+    (purchase.refundableQuantity ?? 1) > 0;
+  return {
+    active,
+    productId: expectedProductId,
+    validUntilEpochMillis: null,
+    validUntil: null,
+    latestOrderId: purchase.orderId ?? null,
+    requiresAcknowledgement: purchase.acknowledgementState === 0,
+    obfuscatedExternalAccountId: purchase.obfuscatedExternalAccountId ?? null,
   };
 }
 
@@ -154,10 +186,10 @@ export async function verifyAndClaimSubscription(
   request: { productId: string; purchaseToken: string },
   dependencies: ProPurchaseVerificationDependencies,
 ): Promise<ProPurchaseVerificationOutcome> {
-  const verified = interpretSubscription(
-    await dependencies.loadGoogleSubscription(request.purchaseToken),
-    request.productId,
-  );
+  const googlePurchase = await dependencies.loadGoogleSubscription(request.purchaseToken);
+  const verified = request.productId === lifetimeProProductId
+    ? interpretLifetimePurchase(googlePurchase, request.productId)
+    : interpretSubscription(googlePurchase, request.productId);
   if (!verified.active) {
     return { kind: "rejected", reason: "subscription is not active" };
   }
@@ -200,7 +232,8 @@ export async function revalidateStoredSubscription(
   dependencies: ProEntitlementRevalidationDependencies,
 ): Promise<ProPurchaseVerificationOutcome> {
   if (
-    stored.accountId !== accountId || stored.productId !== annualProProductId
+    stored.accountId !== accountId ||
+    ![annualProProductId, lifetimeProProductId].includes(stored.productId)
   ) {
     return {
       kind: "rejected",
@@ -211,10 +244,10 @@ export async function revalidateStoredSubscription(
     stored.purchaseTokenCiphertext,
     dependencies.hmacSecret,
   );
-  const verified = interpretSubscription(
-    await dependencies.loadGoogleSubscription(purchaseToken),
-    stored.productId,
-  );
+  const googlePurchase = await dependencies.loadGoogleSubscription(purchaseToken);
+  const verified = stored.productId === lifetimeProProductId
+    ? interpretLifetimePurchase(googlePurchase, stored.productId)
+    : interpretSubscription(googlePurchase, stored.productId);
   const expectedIdentity = await playAccountIdentifier(
     accountId,
     dependencies.hmacSecret,

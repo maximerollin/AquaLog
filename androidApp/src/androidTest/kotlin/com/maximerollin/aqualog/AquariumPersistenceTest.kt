@@ -63,7 +63,8 @@ class AquariumPersistenceTest {
             .performTextInput("6.8")
         composeRule.onNodeWithText("See Free and Pro").performClick()
         composeRule.onNodeWithText("Free").assertIsDisplayed()
-        composeRule.onNodeWithText("Pro · annual subscription").assertIsDisplayed()
+        composeRule.onNodeWithText("Pro · annual or lifetime").assertIsDisplayed()
+        composeRule.onNodeWithText("€34.99 once. Lifetime access, with no trial.").assertIsDisplayed()
         composeRule.onNodeWithText(
             "€14.99 per year after a 14-day free trial. First billing date: October 21, 2026.",
         ).assertIsDisplayed()

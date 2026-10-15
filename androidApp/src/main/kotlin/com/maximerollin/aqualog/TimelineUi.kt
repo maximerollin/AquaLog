@@ -219,7 +219,7 @@ private fun TimelineFilters(state: HomeUiState, viewModel: HomeViewModel) {
                 label = { Text(stringResource(R.string.timeline_all_aquariums)) },
                 modifier = Modifier.heightIn(min = 48.dp),
             )
-            state.setup?.aquarium?.let { aquarium ->
+            state.aquariums.forEach { aquarium ->
                 FilterChip(
                     selected = state.timeline.aquariumId == aquarium.id,
                     onClick = { viewModel.selectTimelineAquarium(aquarium.id) },
