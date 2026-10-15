@@ -46,6 +46,8 @@ import com.maximerollin.aqualog.shared.PortableImportProblem
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.SyncFailureCategory
+import com.maximerollin.aqualog.shared.AccountDeletionPhase
+import com.maximerollin.aqualog.shared.LocalCopyDecision
 
 @Composable
 fun AquaLogContent(
@@ -53,10 +55,14 @@ fun AquaLogContent(
     viewModel: HomeViewModel,
     onExportData: () -> Unit = {},
     onImportData: () -> Unit = {},
+    onOpenExternalUrl: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     when {
         state.isLoading -> LoadingContent(modifier)
+        state.accountSettings.pendingDeletion?.phase == AccountDeletionPhase.CLOUD_DELETED -> {
+            AccountDeletionCleanupScreen(state.accountSettings, viewModel, modifier)
+        }
         state.account.step != AccountStep.HIDDEN -> AccountScreen(state.account, viewModel, modifier)
         state.tasks.isOpen && state.setup != null -> TaskScreen(
             state = state.tasks,
@@ -87,7 +93,7 @@ fun AquaLogContent(
             onContinue = viewModel::closeProPaywall,
             modifier = modifier,
         )
-        state.setup != null -> AquariumShell(state, viewModel, onExportData, modifier)
+        state.setup != null -> AquariumShell(state, viewModel, onExportData, onOpenExternalUrl, modifier)
         state.step == OnboardingStep.WELCOME -> WelcomeScreen(
             state = state.portableData,
             onContinue = viewModel::startOnboarding,
@@ -220,6 +226,7 @@ private fun AquariumShell(
     state: HomeUiState,
     viewModel: HomeViewModel,
     onExportData: () -> Unit,
+    onOpenExternalUrl: (String) -> Unit,
     modifier: Modifier,
 ) {
     Scaffold(
@@ -246,10 +253,15 @@ private fun AquariumShell(
         when (state.destination) {
             MainDestination.HOME -> AquariumHome(state, viewModel, contentModifier)
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
-            MainDestination.SETTINGS -> SettingsScreen(
-                state = state,
-                viewModel = viewModel,
+            MainDestination.SETTINGS -> PortableDataSettings(
+                state = state.portableData,
+                accountState = state.accountSettings,
+                syncState = state.syncState,
+                proState = state.pro,
                 onExportData = onExportData,
+                onRequestImport = viewModel::requestPortableImport,
+                viewModel = viewModel,
+                onOpenExternalUrl = onOpenExternalUrl,
                 modifier = contentModifier,
             )
         }
@@ -287,6 +299,266 @@ private fun WelcomeScreen(
         ) {
             Text(stringResource(R.string.restore_from_export))
         }
+    }
+}
+
+@Composable
+private fun PortableDataSettings(
+    state: PortableDataUiState,
+    accountState: AccountSettingsUiState,
+    syncState: com.maximerollin.aqualog.shared.SyncState,
+    proState: ProUiState,
+    onExportData: () -> Unit,
+    onRequestImport: () -> Unit,
+    viewModel: HomeViewModel,
+    onOpenExternalUrl: (String) -> Unit,
+    modifier: Modifier,
+) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize().padding(horizontal = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        item { Spacer(Modifier.height(8.dp)) }
+        item { ScreenHeading(R.string.settings_title, R.string.portable_data_description) }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(
+                            if (proState.purchaseStatus == ProPurchaseStatus.ACTIVE) {
+                                R.string.pro_active
+                            } else {
+                                R.string.free_plan
+                            },
+                        ),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        stringResource(R.string.subscription_settings_description),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Button(
+                        onClick = viewModel::openProPaywall,
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                    ) {
+                        Text(stringResource(R.string.view_free_and_pro))
+                    }
+                }
+            }
+        }
+        if (state.message != null || state.importProblem != null) {
+            item { PortableDataMessage(state) }
+        }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.account_title), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        accountState.identity?.email ?: stringResource(R.string.account_local_only),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        when (syncState.status) {
+                            SyncStatus.SYNCED -> stringResource(R.string.sync_status_synced)
+                            SyncStatus.PENDING -> stringResource(R.string.sync_status_pending)
+                            SyncStatus.FAILED -> stringResource(R.string.sync_status_failed)
+                        },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        accountState.pendingDeletion?.let {
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.account_deletion_pending), style = MaterialTheme.typography.titleMedium)
+                        Text(accountState.safeDetail ?: stringResource(R.string.account_deletion_pending_description))
+                        if (accountState.showDeletionReauthenticationAction) {
+                            Button(
+                                onClick = viewModel::reauthenticateAccountDeletionWithGoogle,
+                                enabled = !accountState.isWorking,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                            ) { Text(stringResource(R.string.continue_with_google)) }
+                            OutlinedButton(
+                                onClick = viewModel::requestDeletionMagicLink,
+                                enabled = !accountState.isWorking,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                            ) { Text(stringResource(R.string.send_deletion_magic_link)) }
+                        } else {
+                            Button(
+                                onClick = viewModel::retryAccountDeletion,
+                                enabled = !accountState.isWorking,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                            ) { Text(stringResource(R.string.retry_account_deletion)) }
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.portable_data_title), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.portable_data_replace_explanation),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Button(
+                    onClick = onExportData,
+                    enabled = !state.isWorking,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                ) {
+                    Text(stringResource(R.string.export_data))
+                }
+                OutlinedButton(
+                    onClick = onRequestImport,
+                    enabled = !state.isWorking,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                ) {
+                    Text(stringResource(R.string.restore_from_export))
+                }
+            }
+        }
+        }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.account_actions), style = MaterialTheme.typography.titleMedium)
+                    if (accountState.identity != null && accountState.pendingDeletion == null) {
+                        OutlinedButton(
+                            onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.LOGOUT) },
+                            enabled = !accountState.isWorking,
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                        ) { Text(stringResource(R.string.sign_out)) }
+                        OutlinedButton(
+                            onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.DELETE) },
+                            enabled = !accountState.isWorking,
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                        ) { Text(stringResource(R.string.delete_account)) }
+                    } else {
+                        Text(stringResource(R.string.account_local_only_description))
+                    }
+                }
+            }
+        }
+        item {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                TextButton(onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.PRIVACY) }) {
+                    Text(stringResource(R.string.privacy_policy))
+                }
+                TextButton(onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.SUPPORT) }) {
+                    Text(stringResource(R.string.support))
+                }
+            }
+        }
+        item {
+            if (state.isWorking || accountState.isWorking) CircularProgressIndicator()
+            accountState.safeDetail?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Spacer(Modifier.height(16.dp))
+        }
+    }
+    AccountSettingsDialog(accountState.dialog, viewModel, onOpenExternalUrl)
+}
+
+@Composable
+private fun AccountSettingsDialog(
+    dialog: AccountSettingsDialog,
+    viewModel: HomeViewModel,
+    onOpenExternalUrl: (String) -> Unit,
+) {
+    when (dialog) {
+        AccountSettingsDialog.NONE -> Unit
+        AccountSettingsDialog.LOGOUT -> AlertDialog(
+            onDismissRequest = viewModel::dismissAccountSettingsDialog,
+            title = { Text(stringResource(R.string.sign_out)) },
+            text = { Text(stringResource(R.string.sign_out_copy_choice)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.logout(LocalCopyDecision.KEEP) }) {
+                    Text(stringResource(R.string.keep_local_copy))
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = { viewModel.logout(LocalCopyDecision.REMOVE) }) {
+                        Text(stringResource(R.string.remove_local_copy))
+                    }
+                    TextButton(onClick = viewModel::dismissAccountSettingsDialog) { Text(stringResource(R.string.cancel)) }
+                }
+            },
+        )
+        AccountSettingsDialog.DELETE -> AlertDialog(
+            onDismissRequest = viewModel::dismissAccountSettingsDialog,
+            title = { Text(stringResource(R.string.delete_account_confirmation_title)) },
+            text = { Text(stringResource(R.string.delete_account_confirmation_description)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::deleteAccount) { Text(stringResource(R.string.delete_account_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissAccountSettingsDialog) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+        AccountSettingsDialog.PRIVACY -> InformationDialog(
+            R.string.privacy_policy,
+            R.string.privacy_policy_local,
+            BuildConfig.PRIVACY_URL,
+            R.string.open_privacy_policy,
+            onOpenExternalUrl,
+            viewModel::dismissAccountSettingsDialog,
+        )
+        AccountSettingsDialog.SUPPORT -> InformationDialog(
+            R.string.support,
+            R.string.support_unconfigured,
+            BuildConfig.SUPPORT_URL,
+            R.string.open_support,
+            onOpenExternalUrl,
+            viewModel::dismissAccountSettingsDialog,
+        )
+    }
+}
+
+@Composable
+private fun InformationDialog(
+    title: Int,
+    body: Int,
+    configuredUrl: String,
+    openLabel: Int,
+    onOpenExternalUrl: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(title)) },
+        text = { Text(stringResource(body)) },
+        confirmButton = {
+            if (configuredUrl.startsWith("https://")) {
+                TextButton(onClick = { onOpenExternalUrl(configuredUrl) }) { Text(stringResource(openLabel)) }
+            } else {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+            }
+        },
+        dismissButton = if (configuredUrl.startsWith("https://")) {
+            { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } }
+        } else null,
+    )
+}
+
+@Composable
+private fun AccountDeletionCleanupScreen(
+    state: AccountSettingsUiState,
+    viewModel: HomeViewModel,
+    modifier: Modifier,
+) {
+    StandardScreen(modifier) {
+        ScreenHeading(R.string.account_deleted_cleanup_title, R.string.account_deleted_cleanup_description)
+        state.safeDetail?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        Spacer(Modifier.weight(1f))
+        Button(
+            onClick = viewModel::retryAccountDeletion,
+            enabled = !state.isWorking,
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+        ) { Text(stringResource(R.string.finish_local_cleanup)) }
     }
 }
 
@@ -720,68 +992,6 @@ private fun PaywallScreen(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun SettingsScreen(
-    state: HomeUiState,
-    viewModel: HomeViewModel,
-    onExportData: () -> Unit,
-    modifier: Modifier,
-) {
-    StandardScreen(modifier) {
-        Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium)
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    stringResource(
-                        if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
-                            R.string.pro_active
-                        } else {
-                            R.string.free_plan
-                        },
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    stringResource(R.string.subscription_settings_description),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Button(
-                    onClick = viewModel::openProPaywall,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(R.string.view_free_and_pro))
-                }
-            }
-        }
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.portable_data_title), style = MaterialTheme.typography.titleMedium)
-                Text(
-                    stringResource(R.string.portable_data_replace_explanation),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Button(
-                    onClick = onExportData,
-                    enabled = !state.portableData.isWorking,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(R.string.export_data))
-                }
-                OutlinedButton(
-                    onClick = viewModel::requestPortableImport,
-                    enabled = !state.portableData.isWorking,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(R.string.restore_from_export))
-                }
-            }
-        }
-        if (state.portableData.isWorking) CircularProgressIndicator()
-        PortableDataMessage(state.portableData)
     }
 }
 

@@ -64,6 +64,11 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/migrate-initial-copy/index.ts"
 
+[functions.delete-account]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/delete-account/index.ts"
+
 [functions.verify-pro-purchase]
 enabled = true
 verify_jwt = true
