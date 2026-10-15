@@ -1,9 +1,11 @@
 package com.maximerollin.aqualog
 
 import android.app.Application
+import android.app.Activity
 import com.maximerollin.aqualog.shared.AQUA_LOG_DATABASE_NAME
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
 import com.maximerollin.aqualog.shared.AquariumRepository
+import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.PortableDataService
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.SyncCoordinator
@@ -31,16 +33,24 @@ open class AquaLogApplication : Application() {
         AndroidSecureTokenStorage(this)
     }
 
+    private val accountSessionProvider by lazy {
+        LocalAccountSyncSessionProvider(
+            localData = aquariumRepository as RoomAquariumRepository,
+            tokenStorage = secureTokenStorage,
+            authGateway = SupabaseAuthGateway(
+                this,
+                SupabaseConfiguration.fromBuildConfig(),
+                secureTokenStorage,
+            ),
+        )
+    }
+
     open val syncCoordinator: SyncCoordinator by lazy {
         val localData = aquariumRepository as RoomAquariumRepository
         SyncCoordinator(
             localData = localData,
             backend = SupabaseSyncBackend(SupabaseConfiguration.fromBuildConfig()),
-            sessionProvider = LocalAccountSyncSessionProvider(
-                localData,
-                secureTokenStorage,
-                SupabaseAuthGateway(this, SupabaseConfiguration.fromBuildConfig(), secureTokenStorage),
-            ),
+            sessionProvider = accountSessionProvider,
             currentTimeMillis = System::currentTimeMillis,
         )
     }
@@ -64,4 +74,20 @@ open class AquaLogApplication : Application() {
                 tokenStorage = secureTokenStorage,
             )
         }
+
+    private val googlePlayBillingGateway by lazy { GooglePlayBillingGateway(this) }
+    private val defaultProPurchaseCoordinator by lazy {
+        ProPurchaseCoordinator(
+            billingGateway = googlePlayBillingGateway,
+            purchaseVerifier = SupabaseProPurchaseVerifier(
+                configuration = SupabaseConfiguration.fromBuildConfig(),
+                sessionProvider = accountSessionProvider,
+            ),
+        )
+    }
+
+    open fun proPurchaseCoordinator(activity: Activity): ProPurchaseCoordinator {
+        googlePlayBillingGateway.attach(activity)
+        return defaultProPurchaseCoordinator
+    }
 }

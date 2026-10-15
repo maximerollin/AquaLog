@@ -11,6 +11,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -42,7 +43,9 @@ class TaskFlowTest {
         val scenario = launchTaskScreen()
         try {
             composeRule.onNodeWithText("First due date").performClick()
-            onView(isAssignableFrom(DatePicker::class.java)).check(matches(isDisplayed()))
+            onView(isAssignableFrom(DatePicker::class.java))
+                .inRoot(isDialog())
+                .check(matches(isDisplayed()))
             pressBack()
         } finally {
             scenario.close()
@@ -54,7 +57,9 @@ class TaskFlowTest {
         val scenario = launchTaskScreen()
         try {
             composeRule.onNodeWithText("Time (optional)").performClick()
-            onView(isAssignableFrom(TimePicker::class.java)).check(matches(isDisplayed()))
+            onView(isAssignableFrom(TimePicker::class.java))
+                .inRoot(isDialog())
+                .check(matches(isDisplayed()))
             pressBack()
         } finally {
             scenario.close()

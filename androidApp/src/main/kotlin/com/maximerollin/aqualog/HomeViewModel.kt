@@ -17,6 +17,9 @@ import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinitionDraft
+import com.maximerollin.aqualog.shared.AnnualProOffer
+import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
+import com.maximerollin.aqualog.shared.ProPurchaseOutcome
 import com.maximerollin.aqualog.shared.PortableImportProblem
 import com.maximerollin.aqualog.shared.PortableImportResult
 import com.maximerollin.aqualog.shared.RapidSessionContext
@@ -137,6 +140,31 @@ data class TrendsUiState(
     val hasRecoverableError: Boolean = false,
 )
 
+enum class ProPurchaseStatus {
+    IDLE,
+    AWAITING_PLAY_CONFIRMATION,
+    PENDING,
+    VERIFYING,
+    ACTIVE,
+    CANCELLED,
+    ERROR,
+}
+
+enum class ProAuthenticationContinuation {
+    START_PURCHASE,
+    RESTORE_PURCHASE,
+}
+
+data class ProUiState(
+    val showPaywall: Boolean = false,
+    val openedFromOnboarding: Boolean = false,
+    val isLoadingOffer: Boolean = false,
+    val offer: AnnualProOffer? = null,
+    val purchaseStatus: ProPurchaseStatus = ProPurchaseStatus.IDLE,
+    val message: String? = null,
+    val actionAfterAuthentication: ProAuthenticationContinuation? = null,
+)
+
 enum class PortableDataMessage {
     EXPORT_READY,
     IMPORT_COMPLETE,
@@ -213,6 +241,7 @@ data class HomeUiState(
     val historySection: HistorySection = HistorySection.CHRONOLOGY,
     val timeline: TimelineUiState = TimelineUiState(),
     val trends: TrendsUiState = TrendsUiState(),
+    val pro: ProUiState = ProUiState(),
     val syncState: SyncState = SyncState(SyncStatus.SYNCED, 0),
     val tasks: TaskUiState = TaskUiState(),
     val portableData: PortableDataUiState = PortableDataUiState(),
@@ -271,6 +300,7 @@ class HomeViewModel(
     private val aquariumRepository: AquariumRepository,
     private val taskReminderScheduler: TaskReminderScheduler = NoOpTaskReminderScheduler,
     private val accountCoordinator: AccountActivationCoordinator? = null,
+    private val proPurchaseCoordinator: ProPurchaseCoordinator? = null,
     private val currentTimeMillis: () -> Long = System::currentTimeMillis,
     private val currentTimeZoneId: () -> String = { ZoneId.systemDefault().id },
     private val generateInteractionId: () -> String = { UUID.randomUUID().toString() },
@@ -344,6 +374,17 @@ class HomeViewModel(
                             it.copy(accountInvitationPrompt = AccountInvitationPrompt.REMINDER)
                         }
                     }
+                }
+            }
+        }
+        if (proPurchaseCoordinator != null) {
+            viewModelScope.launch { refreshProEntitlement() }
+            viewModelScope.launch {
+                proPurchaseCoordinator.purchaseUpdates.collect { update ->
+                    mutableUiState.update { state ->
+                        state.copy(pro = state.pro.copy(purchaseStatus = ProPurchaseStatus.VERIFYING, message = null))
+                    }
+                    handleProOutcome(proPurchaseCoordinator.resolve(update), continuation = null)
                 }
             }
         }
@@ -494,27 +535,104 @@ class HomeViewModel(
         }
     }
 
-    fun continueToPaywall() = moveTo(OnboardingStep.PAYWALL)
+    fun continueToPaywall() {
+        moveTo(OnboardingStep.PAYWALL)
+        mutableUiState.update {
+            it.copy(pro = it.pro.copy(showPaywall = true, openedFromOnboarding = true))
+        }
+        loadProOffer()
+    }
+
+    fun openProPaywall() {
+        mutableUiState.update {
+            it.copy(pro = it.pro.copy(showPaywall = true, openedFromOnboarding = false))
+        }
+        loadProOffer()
+    }
+
+    fun closeProPaywall() {
+        if (mutableUiState.value.setup == null) return
+        mutableUiState.update {
+            it.copy(pro = it.pro.copy(showPaywall = false, openedFromOnboarding = false))
+        }
+    }
+
+    fun loadProOffer() {
+        val coordinator = proPurchaseCoordinator ?: run {
+            mutableUiState.update {
+                it.copy(pro = it.pro.copy(isLoadingOffer = false, purchaseStatus = ProPurchaseStatus.ERROR, message = "Google Play is unavailable"))
+            }
+            return
+        }
+        mutableUiState.update { it.copy(pro = it.pro.copy(isLoadingOffer = true, message = null)) }
+        viewModelScope.launch {
+            runCatching { coordinator.loadOffer() }
+                .onSuccess { offer ->
+                    mutableUiState.update { state ->
+                        state.copy(
+                            pro = state.pro.copy(
+                                isLoadingOffer = false,
+                                offer = offer,
+                                purchaseStatus = if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
+                                    ProPurchaseStatus.ACTIVE
+                                } else {
+                                    ProPurchaseStatus.IDLE
+                                },
+                            ),
+                        )
+                    }
+                }
+                .onFailure {
+                    mutableUiState.update { state ->
+                        state.copy(
+                            pro = state.pro.copy(
+                                isLoadingOffer = false,
+                                purchaseStatus = if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
+                                    ProPurchaseStatus.ACTIVE
+                                } else {
+                                    ProPurchaseStatus.ERROR
+                                },
+                                message = "Google Play offer unavailable. Try again.",
+                            ),
+                        )
+                    }
+                }
+        }
+    }
+
+    fun startProPurchase() {
+        val coordinator = proPurchaseCoordinator ?: return
+        if (
+            mutableUiState.value.pro.purchaseStatus in setOf(
+                ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION,
+                ProPurchaseStatus.PENDING,
+                ProPurchaseStatus.VERIFYING,
+                ProPurchaseStatus.ACTIVE,
+            )
+        ) return
+        updatePro(ProPurchaseStatus.VERIFYING)
+        viewModelScope.launch {
+            handleProOutcome(
+                coordinator.startPurchase(),
+                continuation = ProAuthenticationContinuation.START_PURCHASE,
+            )
+        }
+    }
+
+    fun restoreProPurchase() {
+        val coordinator = proPurchaseCoordinator ?: return
+        if (mutableUiState.value.pro.purchaseStatus == ProPurchaseStatus.VERIFYING) return
+        updatePro(ProPurchaseStatus.VERIFYING)
+        viewModelScope.launch {
+            handleProOutcome(
+                coordinator.restorePurchase(),
+                continuation = ProAuthenticationContinuation.RESTORE_PURCHASE,
+            )
+        }
+    }
 
     fun finishForFree() {
-        val state = mutableUiState.value
-        if (state.isSaving) return
-        val volume = state.volumeInput.toDecimalOrNull() ?: return
-        val parameters = configuredParameters() ?: return
-        mutableUiState.update { it.copy(isSaving = true) }
-        viewModelScope.launch {
-            runCatching {
-                aquariumRepository.createConfiguredAquarium(
-                    name = state.aquariumName,
-                    volume = volume,
-                    volumeUnit = state.volumeUnit,
-                    profile = state.profile,
-                    parameters = parameters,
-                )
-            }.onFailure {
-                mutableUiState.update { current -> current.copy(isSaving = false) }
-            }
-        }
+        viewModelScope.launch { persistOnboardingAquarium(keepPaywallOpen = false) }
     }
 
     fun openRapidSession() {
@@ -972,6 +1090,123 @@ class HomeViewModel(
                 )
             }
         }
+        if (result == AccountActivationResult.Activated) {
+            val continuation = mutableUiState.value.pro.actionAfterAuthentication
+            viewModelScope.launch {
+                refreshProEntitlement()
+                when (continuation) {
+                    ProAuthenticationContinuation.START_PURCHASE -> startProPurchase()
+                    ProAuthenticationContinuation.RESTORE_PURCHASE -> restoreProPurchase()
+                    null -> Unit
+                }
+            }
+        }
+    }
+
+    private suspend fun handleProOutcome(
+        outcome: ProPurchaseOutcome,
+        continuation: ProAuthenticationContinuation?,
+    ) {
+        when (outcome) {
+            ProPurchaseOutcome.AwaitingPlayConfirmation -> updatePro(ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION)
+            ProPurchaseOutcome.Pending -> updatePro(ProPurchaseStatus.PENDING, "Google Play is still processing this purchase. You can restore it later.")
+            ProPurchaseOutcome.Cancelled -> updatePro(ProPurchaseStatus.CANCELLED, "Purchase cancelled. You can continue free or try again.")
+            ProPurchaseOutcome.NotEntitled -> updatePro(ProPurchaseStatus.IDLE)
+            ProPurchaseOutcome.AuthenticationRequired -> {
+                mutableUiState.update { state ->
+                    state.copy(
+                        pro = state.pro.copy(
+                            purchaseStatus = ProPurchaseStatus.ERROR,
+                            message = "Sign in to bind this Google Play purchase to your AquaLog account.",
+                            actionAfterAuthentication = continuation,
+                        ),
+                    )
+                }
+                if (accountCoordinator != null && persistOnboardingAquarium(keepPaywallOpen = true)) {
+                    updateAccount { it.copy(step = AccountStep.METHODS, error = null) }
+                }
+            }
+            is ProPurchaseOutcome.Entitled -> updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
+            is ProPurchaseOutcome.Failed -> updatePro(ProPurchaseStatus.ERROR, outcome.reason)
+        }
+    }
+
+    private suspend fun refreshProEntitlement() {
+        val coordinator = proPurchaseCoordinator ?: return
+        when (val outcome = coordinator.refreshEntitlement()) {
+            is ProPurchaseOutcome.Entitled -> updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
+            ProPurchaseOutcome.NotEntitled -> updatePro(ProPurchaseStatus.IDLE)
+            ProPurchaseOutcome.AuthenticationRequired -> updatePro(
+                ProPurchaseStatus.ERROR,
+                "Sign in again to refresh your Pro status. Pro features stay locked until verification succeeds.",
+            )
+            is ProPurchaseOutcome.Failed -> updatePro(
+                ProPurchaseStatus.ERROR,
+                "Pro status could not be refreshed. Pro features stay locked until verification succeeds.",
+            )
+            else -> Unit
+        }
+    }
+
+    private fun updatePro(status: ProPurchaseStatus, message: String? = null) {
+        mutableUiState.update { state ->
+            state.copy(
+                pro = state.pro.copy(
+                    purchaseStatus = status,
+                    message = message,
+                    actionAfterAuthentication = null,
+                ),
+            )
+        }
+    }
+
+    private suspend fun persistOnboardingAquarium(keepPaywallOpen: Boolean): Boolean {
+        val state = mutableUiState.value
+        if (state.setup != null) {
+            if (!keepPaywallOpen) hideProPaywall()
+            return true
+        }
+        if (state.isSaving) return false
+        val volume = state.volumeInput.toDecimalOrNull() ?: return false
+        val parameters = configuredParameters() ?: return false
+        mutableUiState.update { it.copy(isSaving = true) }
+        return runCatching {
+            aquariumRepository.createConfiguredAquarium(
+                name = state.aquariumName,
+                volume = volume,
+                volumeUnit = state.volumeUnit,
+                profile = state.profile,
+                parameters = parameters,
+            )
+        }.fold(
+            onSuccess = {
+                if (!keepPaywallOpen) hideProPaywall()
+                true
+            },
+            onFailure = {
+                mutableUiState.update { current ->
+                    current.copy(
+                        isSaving = false,
+                        pro = current.pro.copy(
+                            purchaseStatus = ProPurchaseStatus.ERROR,
+                            message = "Purchase confirmed, but the Aquarium could not be saved. Try restoring later.",
+                        ),
+                    )
+                }
+                false
+            },
+        )
+    }
+
+    private fun hideProPaywall() {
+        mutableUiState.update { current ->
+            current.copy(
+                pro = current.pro.copy(
+                    showPaywall = false,
+                    openedFromOnboarding = false,
+                ),
+            )
+        }
     }
 
     private fun updateAccount(transform: (AccountUiState) -> AccountUiState) {
@@ -1146,6 +1381,7 @@ class HomeViewModel(
             repository: AquariumRepository,
             taskReminderScheduler: TaskReminderScheduler = NoOpTaskReminderScheduler,
             accountCoordinator: AccountActivationCoordinator? = null,
+            proPurchaseCoordinator: ProPurchaseCoordinator? = null,
             onSyncRetryRequested: () -> Unit = {},
         ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
@@ -1155,6 +1391,7 @@ class HomeViewModel(
                         aquariumRepository = repository,
                         taskReminderScheduler = taskReminderScheduler,
                         accountCoordinator = accountCoordinator,
+                        proPurchaseCoordinator = proPurchaseCoordinator,
                         onSyncRetryRequested = onSyncRetryRequested,
                         savedStateHandle = extras.createSavedStateHandle(),
                     ) as T
