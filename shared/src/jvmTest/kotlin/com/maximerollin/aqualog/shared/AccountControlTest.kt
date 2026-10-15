@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.first
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -346,7 +347,7 @@ class AccountControlTest {
         assertIs<AccountControlResult.DeletionIncomplete>(coordinator.deleteAccount())
         assertEquals(
             AccountDeletionReauthenticationResult.Resumed(AccountControlResult.Deleted),
-            coordinator.reauthenticateDeletionWithGoogle(),
+            coordinator.completeDeletionReauthentication("aqualog://auth/callback"),
         )
         assertEquals(listOf("operation-1", "operation-1"), gateway.operationKeys)
         assertEquals(listOf("expired-access", "new-access"), gateway.accessTokens)
@@ -380,12 +381,55 @@ class AccountControlTest {
         assertIs<AccountControlResult.DeletionIncomplete>(coordinator.deleteAccount())
         assertEquals(
             AccountDeletionReauthenticationResult.WrongAccount("owner@example.com"),
-            coordinator.reauthenticateDeletionWithGoogle(),
+            coordinator.completeDeletionReauthentication("aqualog://auth/callback"),
         )
         assertEquals(PendingAccountDeletion("operation-1", AccountDeletionPhase.CLOUD_PENDING), local.pendingDeletion())
         assertEquals(1, gateway.operationKeys.size)
         assertNull(tokens.read())
         assertTrue(local.hasLocalData)
+    }
+
+    @Test
+    fun `process recreation magic link resumes the persisted deletion operation for only the expected account`() = runTest {
+        val local = FakeAccountControlLocalData(
+            account = AccountIdentity("account-1", "owner@example.com"),
+            hasLocalData = true,
+            hasPendingSync = false,
+        )
+        val tokens = FakeTokenStorage(AuthTokens("expired-access", "expired-refresh"))
+        val deletionGateway = SequenceDeletionGateway(
+            mutableListOf(
+                CloudAccountDeletionResult.AuthenticationRequired,
+                CloudAccountDeletionResult.Completed,
+            ),
+        )
+        val beforeProcessDeath = AccountControlCoordinator(
+            localData = local,
+            tokenStorage = tokens,
+            deletionGateway = deletionGateway,
+            generateOperationKey = { "operation-1" },
+        )
+        assertIs<AccountControlResult.DeletionIncomplete>(beforeProcessDeath.deleteAccount())
+
+        val afterProcessRecreation = AccountControlCoordinator(
+            localData = local,
+            tokenStorage = tokens,
+            deletionGateway = deletionGateway,
+            reauthenticationGateway = FakeReauthenticationGateway(
+                AuthenticationResult.Authenticated(
+                    AuthenticatedAccount("account-1", "new-access", "new-refresh", "owner@example.com"),
+                ),
+            ),
+            generateOperationKey = { error("Persisted deletion must reuse its operation key") },
+        )
+
+        assertEquals(
+            AccountDeletionReauthenticationResult.Resumed(AccountControlResult.Deleted),
+            afterProcessRecreation.completeDeletionReauthentication("aqualog://auth/callback"),
+        )
+        assertEquals(listOf("operation-1", "operation-1"), deletionGateway.operationKeys)
+        assertEquals(listOf("expired-access", "new-access"), deletionGateway.accessTokens)
+        assertFalse(local.hasLocalData)
     }
 
     private class FakeTokenStorage(

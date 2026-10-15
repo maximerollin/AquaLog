@@ -201,6 +201,17 @@ data class AccountSettingsUiState(
         get() = pendingDeletion?.phase == AccountDeletionPhase.CLOUD_PENDING && requiresDeletionReauthentication
 }
 
+internal enum class AuthenticationCallbackTarget { ACCOUNT_ACTIVATION, ACCOUNT_DELETION }
+
+internal suspend fun resolveAuthenticationCallbackTarget(
+    loadPendingDeletion: suspend () -> PendingAccountDeletion?,
+): AuthenticationCallbackTarget =
+    if (loadPendingDeletion()?.phase == AccountDeletionPhase.CLOUD_PENDING) {
+        AuthenticationCallbackTarget.ACCOUNT_DELETION
+    } else {
+        AuthenticationCallbackTarget.ACCOUNT_ACTIVATION
+    }
+
 data class ParameterEditorState(
     val parameter: BuiltInParameter,
     val isActive: Boolean,
@@ -1264,13 +1275,28 @@ class HomeViewModel(
     }
 
     fun completeAccountCallback(callbackUrl: String) {
-        if (mutableUiState.value.accountSettings.showDeletionReauthenticationAction) {
-            launchDeletionReauthentication {
-                requireNotNull(accountControlCoordinator).completeDeletionReauthentication(callbackUrl)
+        viewModelScope.launch {
+            val target = runCatching {
+                resolveAuthenticationCallbackTarget { accountControlCoordinator?.pendingDeletion() }
+            }.getOrElse {
+                mutableUiState.update { state ->
+                    state.copy(
+                        accountSettings = state.accountSettings.copy(
+                            isWorking = false,
+                            failure = AccountControlFailure.LOCAL_DATA,
+                            safeDetail = "The authentication link could not be processed safely. Try again.",
+                        ),
+                    )
+                }
+                return@launch
             }
-        } else {
-            launchAccountAction(AccountError.AUTHENTICATION) {
-                requireNotNull(accountCoordinator).completeMagicLink(callbackUrl)
+            when (target) {
+                AuthenticationCallbackTarget.ACCOUNT_DELETION -> launchDeletionReauthentication {
+                    requireNotNull(accountControlCoordinator).completeDeletionReauthentication(callbackUrl)
+                }
+                AuthenticationCallbackTarget.ACCOUNT_ACTIVATION -> launchAccountAction(AccountError.AUTHENTICATION) {
+                    requireNotNull(accountCoordinator).completeMagicLink(callbackUrl)
+                }
             }
         }
     }
