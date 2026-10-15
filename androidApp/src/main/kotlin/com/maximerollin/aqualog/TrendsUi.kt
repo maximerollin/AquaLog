@@ -21,6 +21,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -78,6 +79,14 @@ private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier:
                     stringResource(R.string.trends_free_limit),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (state.pro.purchaseStatus != ProPurchaseStatus.ACTIVE) {
+                    TextButton(
+                        onClick = viewModel::openProPaywall,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) {
+                        Text(stringResource(R.string.unlock_history_beyond_90_days))
+                    }
+                }
             }
         }
         item { TrendPeriods(state.trends.period, viewModel::selectTrendPeriod) }

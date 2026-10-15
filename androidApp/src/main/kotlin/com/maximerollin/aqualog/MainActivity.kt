@@ -26,6 +26,9 @@ import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
 class MainActivity : ComponentActivity() {
+    private val proPurchaseCoordinator by lazy {
+        (application as AquaLogApplication).proPurchaseCoordinator(this)
+    }
     private val homeViewModel: HomeViewModel by viewModels {
         val application = application as AquaLogApplication
         HomeViewModel.factory(
@@ -33,6 +36,7 @@ class MainActivity : ComponentActivity() {
             taskReminderScheduler = application.taskReminderScheduler,
             accountCoordinator = application.accountCoordinator,
             accountControlCoordinator = application.accountControlCoordinator,
+            proPurchaseCoordinator = proPurchaseCoordinator,
             onSyncRetryRequested = { AndroidSyncScheduler.requestImmediate(application) },
         )
     }
@@ -59,6 +63,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        proPurchaseCoordinator
         setContent {
             AquaLogTheme {
                 AquaLogApp(

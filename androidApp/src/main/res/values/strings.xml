@@ -60,13 +60,24 @@
     <string name="practice_not_saved">Practice only · no Session or Measurement will be created</string>
     <string name="see_free_and_pro">See Free and Pro</string>
 
-    <string name="paywall_title">Start free. Upgrade when it helps.</string>
-    <string name="paywall_description">Your core routine stays useful for free. This provisional screen never starts a purchase.</string>
+    <string name="paywall_title">Choose Free or Pro</string>
+    <string name="paywall_description">Continue free at any time. A Pro trial starts only after you confirm in Google Play.</string>
     <string name="free_plan">Free</string>
     <string name="free_plan_description">One Aquarium, unlimited Sessions and Measurements, 90 days of history.</string>
-    <string name="pro_plan">Pro · €14.99/year</string>
-    <string name="pro_plan_description">Multiple Aquariums, unlimited history and advanced analysis. Billing comes in a later slice.</string>
+    <string name="pro_plan">Pro · annual subscription</string>
+    <string name="pro_plan_description">Multiple Aquariums, history beyond 90 days and advanced analysis.</string>
     <string name="continue_for_free">Continue for free</string>
+    <string name="continue_with_pro">Continue with Pro</string>
+    <string name="loading_google_play_offer">Loading the localized Google Play offer…</string>
+    <string name="pro_offer_summary">%1$s per year after a %2$d-day free trial. First billing date: %3$s.</string>
+    <string name="start_trial_in_google_play">Review and confirm in Google Play</string>
+    <string name="google_play_offer_unavailable">The localized Google Play offer is unavailable. No trial has started.</string>
+    <string name="restore_purchase">Restore Google Play purchase</string>
+    <string name="back_to_settings">Back to Settings</string>
+    <string name="subscription_settings_description">Free includes 90 days of history. Review Pro, retry a purchase or restore an existing subscription.</string>
+    <string name="view_free_and_pro">View Free and Pro</string>
+    <string name="pro_active">Pro active</string>
+    <string name="unlock_history_beyond_90_days">View Pro for history beyond 90 days</string>
 
     <string name="home_title">Your Aquarium</string>
     <string name="aquarium_ready">Ready for your next routine</string>

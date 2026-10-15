@@ -1,0 +1,162 @@
+begin;
+
+create extension if not exists pgtap with schema extensions;
+select plan(22);
+
+insert into auth.users (id, aud, role, email, encrypted_password, created_at, updated_at)
+values
+  ('10000000-0000-0000-0000-000000000011', 'authenticated', 'authenticated', 'pro@example.com', '', now(), now()),
+  ('10000000-0000-0000-0000-000000000012', 'authenticated', 'authenticated', 'free@example.com', '', now(), now());
+
+set local role service_role;
+select lives_ok(
+  $$select public.claim_verified_pro_purchase(
+    '10000000-0000-0000-0000-000000000011',
+    'aqualog_pro_annual',
+    'sha256-token',
+    'encrypted-token',
+    '2027-10-21T12:00:00Z',
+    'GPA.1234'
+  )$$,
+  'the server can claim a Google-bound Play purchase'
+);
+select lives_ok(
+  $$select public.claim_verified_pro_purchase(
+    '10000000-0000-0000-0000-000000000011',
+    'aqualog_pro_annual',
+    'sha256-token',
+    'encrypted-token',
+    '2027-10-21T12:00:00Z',
+    'GPA.1234'
+  )$$,
+  'replaying the same claim for its owner is idempotent'
+);
+select throws_ok(
+  $$select public.claim_verified_pro_purchase(
+    '10000000-0000-0000-0000-000000000012',
+    'aqualog_pro_annual',
+    'sha256-token',
+    'attacker-encrypted-token',
+    '2027-10-21T12:00:00Z',
+    'GPA.1234'
+  )$$,
+  '42501',
+  'purchase token belongs to another account',
+  'another account cannot steal an existing claim'
+);
+reset role;
+select is((select count(*) from public.pro_entitlements), 0::bigint, 'a claim alone grants no entitlement');
+set local role service_role;
+select lives_ok(
+  $$select public.activate_claimed_pro_purchase(
+    '10000000-0000-0000-0000-000000000011',
+    'aqualog_pro_annual',
+    'sha256-token',
+    '2027-10-21T12:00:00Z',
+    'GPA.1234'
+  )$$,
+  'the owner activates Pro only after Google acknowledgement'
+);
+reset role;
+select is((select count(*) from public.play_purchase_verifications), 1::bigint, 'one verification row remains');
+select is((select count(*) from public.pro_entitlements), 1::bigint, 'one entitlement row remains');
+
+set local role service_role;
+select lives_ok(
+  $$select public.revalidate_claimed_pro_purchase(
+    '10000000-0000-0000-0000-000000000011',
+    'aqualog_pro_annual',
+    'sha256-token',
+    false,
+    '2026-10-14T12:00:00Z',
+    'GPA.1234'
+  )$$,
+  'server revalidation can revoke the claimed entitlement atomically'
+);
+reset role;
+select is((select purchase_status from public.play_purchase_verifications), 'inactive', 'claim is inactive after Google revocation');
+select is((select status from public.pro_entitlements), 'inactive', 'entitlement is inactive after Google revocation');
+set local role service_role;
+select throws_ok(
+  $$select public.revalidate_claimed_pro_purchase(
+    '10000000-0000-0000-0000-000000000012',
+    'aqualog_pro_annual',
+    'sha256-token',
+    true,
+    '2027-10-21T12:00:00Z',
+    'GPA.1234'
+  )$$,
+  '42501',
+  'purchase claim belongs to another account',
+  'another account cannot revalidate the claimed purchase'
+);
+select lives_ok(
+  $$select public.revalidate_claimed_pro_purchase(
+    '10000000-0000-0000-0000-000000000011',
+    'aqualog_pro_annual',
+    'sha256-token',
+    true,
+    '2027-10-21T12:00:00Z',
+    'GPA.1234'
+  )$$,
+  'the owner can be reactivated after Google confirms recovery'
+);
+reset role;
+select is((select status from public.pro_entitlements), 'active', 'recovered entitlement is active again');
+
+set local role service_role;
+select throws_ok(
+  $$select public.activate_claimed_pro_purchase(
+    '10000000-0000-0000-0000-000000000011',
+    'aqualog_pro_annual',
+    'sha256-token',
+    now() - interval '1 second',
+    'GPA.1234'
+  )$$,
+  '22023',
+  'active entitlement must expire in the future',
+  'activation refuses a Google expiry in the past'
+);
+select lives_ok(
+  $$select public.revalidate_claimed_pro_purchase(
+    '10000000-0000-0000-0000-000000000011',
+    'aqualog_pro_annual',
+    'sha256-token',
+    true,
+    now(),
+    'GPA.1234'
+  )$$,
+  'revalidation safely coerces an entitlement expiring now to inactive'
+);
+reset role;
+select is((select status from public.pro_entitlements), 'inactive', 'an entitlement expiring now is inactive');
+select is((select purchase_status from public.play_purchase_verifications), 'inactive', 'the matching purchase record is inactive too');
+select is(
+  (select count(*) from public.pro_entitlements where account_id = '10000000-0000-0000-0000-000000000012'),
+  0::bigint,
+  'expiry defense never grants the purchase to another account'
+);
+
+set local role authenticated;
+set local request.jwt.claims = '{"sub":"10000000-0000-0000-0000-000000000011","role":"authenticated"}';
+select is((select product_id from public.pro_entitlements), 'aqualog_pro_annual', 'owner can read the entitlement');
+select throws_ok(
+  $$select * from public.play_purchase_verifications$$,
+  '42501',
+  null,
+  'the client cannot read server-side purchase verification records'
+);
+select throws_ok(
+  $$insert into public.pro_entitlements(account_id, product_id, status, valid_until) values (
+    '10000000-0000-0000-0000-000000000011', 'aqualog_pro_annual', 'active', now()
+  )$$,
+  '42501',
+  null,
+  'the client cannot mint an entitlement'
+);
+
+set local request.jwt.claims = '{"sub":"10000000-0000-0000-0000-000000000012","role":"authenticated"}';
+select is((select count(*) from public.pro_entitlements), 0::bigint, 'another account cannot read the entitlement');
+
+select * from finish();
+rollback;

@@ -63,6 +63,7 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithText("Water change").performClick()
         save.assertIsEnabled().performClick()
 
+        waitForText("Session saved")
         composeRule.onNodeWithText("Session saved").assertIsDisplayed()
         composeRule.onAllNodes(hasText("Secure your local Aquarium copy")).assertCountEquals(0)
         composeRule.onNodeWithText("Continue").performClick()
@@ -89,7 +90,8 @@ class RapidSessionFlowTest {
             composeRule.onAllNodes(hasText("Measurements")).fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24.5")
-        composeRule.onNodeWithText("Save Session").performClick()
+        composeRule.onNodeWithText("Save Session").assertIsEnabled().assertIsDisplayed().performClick()
+        waitForText("Session saved")
         composeRule.onNodeWithText("Session saved").assertIsDisplayed()
         composeRule.onAllNodes(hasText("Secure your local Aquarium copy")).assertCountEquals(0)
         firstScenario.close()
@@ -136,5 +138,11 @@ class RapidSessionFlowTest {
             composeRule.onAllNodes(hasText("New Session")).fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithText("Amazonien").assertIsDisplayed()
+    }
+
+    private fun waitForText(text: String) {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 }
