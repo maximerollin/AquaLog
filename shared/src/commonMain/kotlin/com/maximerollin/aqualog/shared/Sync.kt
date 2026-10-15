@@ -150,9 +150,15 @@ class SyncCoordinator(
     private val sessionProvider: SyncSessionProvider,
     private val retryPolicy: SyncRetryPolicy = SyncRetryPolicy(),
     private val currentTimeMillis: (() -> Long)? = null,
+    private val operationGate: AccountOperationGate? = null,
 ) {
     suspend fun runOnce(): SyncRunResult {
-        var session = sessionProvider.currentSession() ?: return SyncRunResult.SignedOut
+        val lease = operationGate?.acquire()
+        if (operationGate != null && lease == null) return SyncRunResult.SignedOut
+        var session = when (val acquired = runGuarded(lease) { sessionProvider.currentSession() }) {
+            is AccountLeaseResult.Completed -> acquired.value ?: return SyncRunResult.SignedOut
+            AccountLeaseResult.Revoked -> return SyncRunResult.SignedOut
+        }
         val generation = localData.syncGeneration()
         var refreshed = false
         var hasPulled = false
@@ -169,9 +175,22 @@ class SyncCoordinator(
                 return SyncRunResult.Synchronized(downloadedSessionCount)
             }
             try {
-                if (batch.operations.isNotEmpty()) backend.push(session, batch)
-                val remoteSnapshot = backend.pullVersioned(session)
-                localData.commitRemoteSnapshot(remoteSnapshot, batch.operations.map(SyncOperation::id))
+                if (batch.operations.isNotEmpty()) {
+                    if (runGuarded(lease) { backend.push(session, batch) } is AccountLeaseResult.Revoked) {
+                        return SyncRunResult.SignedOut
+                    }
+                }
+                val remoteSnapshot = when (val pulled = runGuarded(lease) { backend.pullVersioned(session) }) {
+                    is AccountLeaseResult.Completed -> pulled.value
+                    AccountLeaseResult.Revoked -> return SyncRunResult.SignedOut
+                }
+                if (
+                    runGuarded(lease) {
+                        localData.commitRemoteSnapshot(remoteSnapshot, batch.operations.map(SyncOperation::id))
+                    } is AccountLeaseResult.Revoked
+                ) {
+                    return SyncRunResult.SignedOut
+                }
                 downloadedSessionCount = remoteSnapshot.copy.sessions.size
                 hasPulled = true
             } catch (cancellation: CancellationException) {
@@ -193,17 +212,30 @@ class SyncCoordinator(
                     localData.syncAttemptCount(),
                 ) + 1
                 val delay = retryPolicy.delayMillis(attempt)
-                val recorded = localData.recordSyncFailure(
-                    operationIds = operationIds,
-                    failure = error.toSyncFailure(),
-                    nextRetryAtEpochMillis = (currentTimeMillis?.invoke() ?: 0L) + delay,
-                    expectedGeneration = generation,
-                )
+                val recorded = when (
+                    val failure = runGuarded(lease) {
+                        localData.recordSyncFailure(
+                            operationIds = operationIds,
+                            failure = error.toSyncFailure(),
+                            nextRetryAtEpochMillis = (currentTimeMillis?.invoke() ?: 0L) + delay,
+                            expectedGeneration = generation,
+                        )
+                    }
+                ) {
+                    is AccountLeaseResult.Completed -> failure.value
+                    AccountLeaseResult.Revoked -> return SyncRunResult.SignedOut
+                }
                 return SyncRunResult.Retry(if (recorded) delay else 0L)
             }
         }
         return SyncRunResult.Retry(retryPolicy.delayMillis(1))
     }
+
+    private suspend fun <T> runGuarded(
+        lease: AccountOperationLease?,
+        operation: suspend () -> T,
+    ): AccountLeaseResult<T> = operationGate?.runIfCurrent(requireNotNull(lease), operation)
+        ?: AccountLeaseResult.Completed(operation())
 
     private companion object {
         const val MAX_BATCHES_PER_RUN = 20

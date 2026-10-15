@@ -9,6 +9,14 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
 import com.maximerollin.aqualog.shared.AccountActivationResult
+import com.maximerollin.aqualog.shared.AccountControlCoordinator
+import com.maximerollin.aqualog.shared.AccountDeletionPhase
+import com.maximerollin.aqualog.shared.AccountDeletionReauthenticationResult
+import com.maximerollin.aqualog.shared.AccountControlFailure
+import com.maximerollin.aqualog.shared.AccountControlResult
+import com.maximerollin.aqualog.shared.AccountIdentity
+import com.maximerollin.aqualog.shared.LocalCopyDecision
+import com.maximerollin.aqualog.shared.PendingAccountDeletion
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
@@ -207,6 +215,32 @@ data class FeedbackUiState(
     val isUnavailable: Boolean = false,
 )
 
+enum class AccountSettingsDialog { NONE, LOGOUT, DELETE, PRIVACY, SUPPORT }
+
+data class AccountSettingsUiState(
+    val identity: AccountIdentity? = null,
+    val pendingDeletion: PendingAccountDeletion? = null,
+    val isWorking: Boolean = false,
+    val dialog: AccountSettingsDialog = AccountSettingsDialog.NONE,
+    val failure: AccountControlFailure? = null,
+    val safeDetail: String? = null,
+    val requiresDeletionReauthentication: Boolean = false,
+) {
+    val showDeletionReauthenticationAction: Boolean
+        get() = pendingDeletion?.phase == AccountDeletionPhase.CLOUD_PENDING && requiresDeletionReauthentication
+}
+
+internal enum class AuthenticationCallbackTarget { ACCOUNT_ACTIVATION, ACCOUNT_DELETION }
+
+internal suspend fun resolveAuthenticationCallbackTarget(
+    loadPendingDeletion: suspend () -> PendingAccountDeletion?,
+): AuthenticationCallbackTarget =
+    if (loadPendingDeletion()?.phase == AccountDeletionPhase.CLOUD_PENDING) {
+        AuthenticationCallbackTarget.ACCOUNT_DELETION
+    } else {
+        AuthenticationCallbackTarget.ACCOUNT_ACTIVATION
+    }
+
 data class ParameterEditorState(
     val parameter: BuiltInParameter,
     val isActive: Boolean,
@@ -275,6 +309,7 @@ data class HomeUiState(
     val tasks: TaskUiState = TaskUiState(),
     val portableData: PortableDataUiState = PortableDataUiState(),
     val feedback: FeedbackUiState = FeedbackUiState(),
+    val accountSettings: AccountSettingsUiState = AccountSettingsUiState(),
 )
 
 data class RapidSessionUiState(
@@ -330,6 +365,7 @@ class HomeViewModel(
     private val aquariumRepository: AquariumRepository,
     private val taskReminderScheduler: TaskReminderScheduler = NoOpTaskReminderScheduler,
     private val accountCoordinator: AccountActivationCoordinator? = null,
+    private val accountControlCoordinator: AccountControlCoordinator? = null,
     private val proPurchaseCoordinator: ProPurchaseCoordinator? = null,
     private val currentTimeMillis: () -> Long = System::currentTimeMillis,
     private val currentTimeZoneId: () -> String = { ZoneId.systemDefault().id },
@@ -412,6 +448,9 @@ class HomeViewModel(
                     }
                 }
             }
+        }
+        if (accountControlCoordinator != null) {
+            refreshAccountSettings()
         }
         if (proPurchaseCoordinator != null) {
             viewModelScope.launch { refreshProEntitlement() }
@@ -554,6 +593,190 @@ class HomeViewModel(
                     message = if (delivered) "" else state.feedback.message,
                     wasSubmitted = delivered,
                     isUnavailable = !delivered,
+                ),
+            )
+        }
+    }
+
+    fun showAccountSettingsDialog(dialog: AccountSettingsDialog) {
+        mutableUiState.update { state ->
+            state.copy(accountSettings = state.accountSettings.copy(dialog = dialog))
+        }
+    }
+
+    fun dismissAccountSettingsDialog() = showAccountSettingsDialog(AccountSettingsDialog.NONE)
+
+    fun logout(localCopyDecision: LocalCopyDecision) {
+        val coordinator = accountControlCoordinator ?: return
+        mutableUiState.update { state ->
+            state.copy(accountSettings = state.accountSettings.copy(isWorking = true, dialog = AccountSettingsDialog.NONE))
+        }
+        viewModelScope.launch {
+            runCatching { coordinator.logout(localCopyDecision) }
+                .onSuccess { result ->
+                    if (result is AccountControlResult.SignOutIncomplete) {
+                        mutableUiState.update { state ->
+                            state.copy(
+                                accountSettings = state.accountSettings.copy(
+                                    isWorking = false,
+                                    failure = result.failure,
+                                    safeDetail = result.safeDetail,
+                                ),
+                            )
+                        }
+                    } else {
+                        refreshAccountSettingsState()
+                    }
+                }
+                .onFailure {
+                    mutableUiState.update { state ->
+                        state.copy(
+                            accountSettings = state.accountSettings.copy(
+                                isWorking = false,
+                                failure = AccountControlFailure.LOCAL_DATA,
+                                safeDetail = "Sign out could not be completed. Your local data was not changed.",
+                            ),
+                        )
+                    }
+                }
+        }
+    }
+
+    fun deleteAccount() {
+        val coordinator = accountControlCoordinator ?: return
+        mutableUiState.update { state ->
+            state.copy(accountSettings = state.accountSettings.copy(isWorking = true, dialog = AccountSettingsDialog.NONE))
+        }
+        viewModelScope.launch {
+            val result = runCatching { coordinator.deleteAccount() }.getOrElse {
+                mutableUiState.update { state ->
+                    state.copy(
+                        accountSettings = state.accountSettings.copy(
+                            isWorking = false,
+                            failure = AccountControlFailure.LOCAL_DATA,
+                            safeDetail = "Account deletion could not be resumed. Your local data was not changed.",
+                        ),
+                    )
+                }
+                return@launch
+            }
+            when (result) {
+                AccountControlResult.Deleted -> refreshAccountSettingsState()
+                is AccountControlResult.SignOutIncomplete -> Unit
+                is AccountControlResult.DeletionIncomplete -> {
+                    val pending = coordinator.pendingDeletion()
+                    val requiresReauthentication = coordinator.deletionRequiresReauthentication()
+                    mutableUiState.update { state ->
+                        state.copy(
+                            accountSettings = state.accountSettings.copy(
+                                pendingDeletion = pending,
+                                isWorking = false,
+                                failure = result.failure,
+                                safeDetail = result.safeDetail,
+                                requiresDeletionReauthentication = requiresReauthentication,
+                            ),
+                        )
+                    }
+                }
+                is AccountControlResult.SignedOut -> Unit
+            }
+        }
+    }
+
+    fun retryAccountDeletion() = deleteAccount()
+
+    fun reauthenticateAccountDeletionWithGoogle() = launchDeletionReauthentication {
+        requireNotNull(accountControlCoordinator).reauthenticateDeletionWithGoogle()
+    }
+
+    fun requestDeletionMagicLink() = launchDeletionReauthentication {
+        requireNotNull(accountControlCoordinator).requestDeletionMagicLink()
+    }
+
+    private fun launchDeletionReauthentication(
+        action: suspend () -> AccountDeletionReauthenticationResult,
+    ) {
+        if (accountControlCoordinator == null) return
+        mutableUiState.update { state ->
+            state.copy(accountSettings = state.accountSettings.copy(isWorking = true, safeDetail = null))
+        }
+        viewModelScope.launch {
+            handleDeletionReauthentication(
+                runCatching { action() }.getOrElse {
+                    AccountDeletionReauthenticationResult.Failed("Account authentication could not be completed.")
+                },
+            )
+        }
+    }
+
+    private suspend fun handleDeletionReauthentication(result: AccountDeletionReauthenticationResult) {
+        when (result) {
+            is AccountDeletionReauthenticationResult.Resumed -> when (val deletion = result.deletionResult) {
+                AccountControlResult.Deleted -> refreshAccountSettingsState()
+                is AccountControlResult.DeletionIncomplete -> {
+                    val coordinator = requireNotNull(accountControlCoordinator)
+                    val pending = coordinator.pendingDeletion()
+                    val requiresReauthentication = coordinator.deletionRequiresReauthentication()
+                    mutableUiState.update { state ->
+                        state.copy(
+                            accountSettings = state.accountSettings.copy(
+                                pendingDeletion = pending,
+                                isWorking = false,
+                                failure = deletion.failure,
+                                safeDetail = deletion.safeDetail,
+                                requiresDeletionReauthentication = requiresReauthentication,
+                            ),
+                        )
+                    }
+                }
+                is AccountControlResult.SignedOut,
+                is AccountControlResult.SignOutIncomplete,
+                -> updateDeletionAuthenticationMessage("Account deletion could not be resumed.")
+            }
+            AccountDeletionReauthenticationResult.AwaitingAuthentication -> updateDeletionAuthenticationMessage(
+                "Finish authentication in your browser to resume account deletion.",
+            )
+            AccountDeletionReauthenticationResult.MagicLinkSent -> updateDeletionAuthenticationMessage(
+                "Open the sign-in link sent to your account email to resume deletion.",
+            )
+            AccountDeletionReauthenticationResult.Cancelled -> updateDeletionAuthenticationMessage(
+                "Authentication was cancelled. Account deletion is still pending.",
+            )
+            AccountDeletionReauthenticationResult.ExpiredLink -> updateDeletionAuthenticationMessage(
+                "This sign-in link has expired. Request a new link to resume deletion.",
+            )
+            AccountDeletionReauthenticationResult.IgnoredCallback -> updateDeletionAuthenticationMessage(
+                "This sign-in link does not match the pending deletion.",
+            )
+            is AccountDeletionReauthenticationResult.WrongAccount -> updateDeletionAuthenticationMessage(
+                result.expectedEmail?.let { "Sign in as $it to resume deletion." }
+                    ?: "Sign in with the account awaiting deletion.",
+            )
+            is AccountDeletionReauthenticationResult.Failed -> updateDeletionAuthenticationMessage(result.safeDetail)
+        }
+    }
+
+    private fun updateDeletionAuthenticationMessage(message: String) {
+        mutableUiState.update { state ->
+            state.copy(accountSettings = state.accountSettings.copy(isWorking = false, safeDetail = message))
+        }
+    }
+
+    private fun refreshAccountSettings() {
+        viewModelScope.launch { refreshAccountSettingsState() }
+    }
+
+    private suspend fun refreshAccountSettingsState() {
+        val coordinator = accountControlCoordinator ?: return
+        val identity = coordinator.identity()
+        val pending = coordinator.pendingDeletion()
+        val requiresReauthentication = coordinator.deletionRequiresReauthentication()
+        mutableUiState.update { state ->
+            state.copy(
+                accountSettings = AccountSettingsUiState(
+                    identity = identity,
+                    pendingDeletion = pending,
+                    requiresDeletionReauthentication = requiresReauthentication,
                 ),
             )
         }
@@ -1181,8 +1404,31 @@ class HomeViewModel(
         }
     }
 
-    fun completeAccountCallback(callbackUrl: String) = launchAccountAction(AccountError.AUTHENTICATION) {
-        requireNotNull(accountCoordinator).completeMagicLink(callbackUrl)
+    fun completeAccountCallback(callbackUrl: String) {
+        viewModelScope.launch {
+            val target = runCatching {
+                resolveAuthenticationCallbackTarget { accountControlCoordinator?.pendingDeletion() }
+            }.getOrElse {
+                mutableUiState.update { state ->
+                    state.copy(
+                        accountSettings = state.accountSettings.copy(
+                            isWorking = false,
+                            failure = AccountControlFailure.LOCAL_DATA,
+                            safeDetail = "The authentication link could not be processed safely. Try again.",
+                        ),
+                    )
+                }
+                return@launch
+            }
+            when (target) {
+                AuthenticationCallbackTarget.ACCOUNT_DELETION -> launchDeletionReauthentication {
+                    requireNotNull(accountControlCoordinator).completeDeletionReauthentication(callbackUrl)
+                }
+                AuthenticationCallbackTarget.ACCOUNT_ACTIVATION -> launchAccountAction(AccountError.AUTHENTICATION) {
+                    requireNotNull(accountCoordinator).completeMagicLink(callbackUrl)
+                }
+            }
+        }
     }
 
     fun retryAccountMigration() = launchAccountAction(AccountError.MIGRATION) {
@@ -1525,6 +1771,7 @@ class HomeViewModel(
             repository: AquariumRepository,
             taskReminderScheduler: TaskReminderScheduler = NoOpTaskReminderScheduler,
             accountCoordinator: AccountActivationCoordinator? = null,
+            accountControlCoordinator: AccountControlCoordinator? = null,
             proPurchaseCoordinator: ProPurchaseCoordinator? = null,
             productTelemetry: ProductTelemetry = DisabledProductTelemetry,
             crashReporter: CrashReporter = DisabledCrashReporter,
@@ -1539,6 +1786,7 @@ class HomeViewModel(
                         aquariumRepository = repository,
                         taskReminderScheduler = taskReminderScheduler,
                         accountCoordinator = accountCoordinator,
+                        accountControlCoordinator = accountControlCoordinator,
                         proPurchaseCoordinator = proPurchaseCoordinator,
                         productTelemetry = productTelemetry,
                         crashReporter = crashReporter,

@@ -4,6 +4,9 @@ import android.app.Application
 import android.app.Activity
 import com.maximerollin.aqualog.shared.AQUA_LOG_DATABASE_NAME
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
+import com.maximerollin.aqualog.shared.AccountControlCoordinator
+import com.maximerollin.aqualog.shared.AccountOperationGate
+import com.maximerollin.aqualog.shared.DeletionAwareSyncSessionProvider
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.CrashReporter
 import com.maximerollin.aqualog.shared.DisabledCrashReporter
@@ -40,14 +43,23 @@ open class AquaLogApplication : Application() {
         AndroidSecureTokenStorage(this)
     }
 
+    open val accountOperationGate: AccountOperationGate by lazy {
+        AccountOperationGate(aquariumRepository as RoomAquariumRepository)
+    }
+
     private val accountSessionProvider by lazy {
-        LocalAccountSyncSessionProvider(
-            localData = aquariumRepository as RoomAquariumRepository,
-            tokenStorage = secureTokenStorage,
-            authGateway = SupabaseAuthGateway(
-                this,
-                SupabaseConfiguration.fromBuildConfig(),
-                secureTokenStorage,
+        val localData = aquariumRepository as RoomAquariumRepository
+        DeletionAwareSyncSessionProvider(
+            localData,
+            LocalAccountSyncSessionProvider(
+                localData = localData,
+                tokenStorage = secureTokenStorage,
+                authGateway = SupabaseAuthGateway(
+                    this,
+                    SupabaseConfiguration.fromBuildConfig(),
+                    secureTokenStorage,
+                ),
+                operationGate = accountOperationGate,
             ),
         )
     }
@@ -59,6 +71,7 @@ open class AquaLogApplication : Application() {
             backend = SupabaseSyncBackend(SupabaseConfiguration.fromBuildConfig()),
             sessionProvider = accountSessionProvider,
             currentTimeMillis = System::currentTimeMillis,
+            operationGate = accountOperationGate,
         )
     }
 
@@ -86,6 +99,19 @@ open class AquaLogApplication : Application() {
                 tokenStorage = secureTokenStorage,
             )
         }
+
+    open val accountControlCoordinator: AccountControlCoordinator by lazy {
+        val configuration = SupabaseConfiguration.fromBuildConfig()
+        AccountControlCoordinator(
+            localData = aquariumRepository as RoomAquariumRepository,
+            tokenStorage = secureTokenStorage,
+            deletionGateway = SupabaseAccountDeletionGateway(configuration),
+            operationGate = accountOperationGate,
+            deletionCredentialStorage = secureTokenStorage,
+            reauthenticationGateway = SupabaseAuthGateway(this, configuration, secureTokenStorage),
+            generateOperationKey = { UUID.randomUUID().toString() },
+        )
+    }
 
     private val googlePlayBillingGateway by lazy { GooglePlayBillingGateway(this) }
     private val defaultProPurchaseCoordinator by lazy {
