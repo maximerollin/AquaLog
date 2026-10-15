@@ -35,6 +35,7 @@ class MainActivity : ComponentActivity() {
             repository = application.aquariumRepository,
             taskReminderScheduler = application.taskReminderScheduler,
             accountCoordinator = application.accountCoordinator,
+            accountControlCoordinator = application.accountControlCoordinator,
             proPurchaseCoordinator = proPurchaseCoordinator,
             onSyncRetryRequested = { AndroidSyncScheduler.requestImmediate(application) },
         )
@@ -74,6 +75,9 @@ class MainActivity : ComponentActivity() {
                     onImportData = {
                         homeViewModel.startPortableDataOperation()
                         openImportDocument.launch(arrayOf("application/json"))
+                    },
+                    onOpenExternalUrl = { url ->
+                        if (url.startsWith("https://")) startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                     },
                 )
             }
@@ -155,6 +159,7 @@ private fun AquaLogApp(
     viewModel: HomeViewModel,
     onExportData: () -> Unit,
     onImportData: () -> Unit,
+    onOpenExternalUrl: (String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -166,6 +171,7 @@ private fun AquaLogApp(
             viewModel = viewModel,
             onExportData = onExportData,
             onImportData = onImportData,
+            onOpenExternalUrl = onOpenExternalUrl,
             modifier = Modifier.padding(contentPadding),
         )
     }

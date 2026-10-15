@@ -30,6 +30,8 @@ import com.maximerollin.aqualog.shared.SessionEvent
 import com.maximerollin.aqualog.shared.SyncBackend
 import com.maximerollin.aqualog.shared.SyncConflictException
 import com.maximerollin.aqualog.shared.SyncCoordinator
+import com.maximerollin.aqualog.shared.AccountOperationGate
+import com.maximerollin.aqualog.shared.AccountLeaseResult
 import com.maximerollin.aqualog.shared.SyncEntityType
 import com.maximerollin.aqualog.shared.SyncNetworkException
 import com.maximerollin.aqualog.shared.RemoteEntityVersion
@@ -54,6 +56,7 @@ class LocalAccountSyncSessionProvider(
     private val localData: AccountLocalDataSource,
     private val tokenStorage: SecureTokenStorage,
     private val authGateway: AuthGateway,
+    private val operationGate: AccountOperationGate? = null,
 ) : SyncSessionProvider {
     override suspend fun currentSession(): SyncSession? {
         val account = localData.accountMigrationState()
@@ -64,10 +67,19 @@ class LocalAccountSyncSessionProvider(
     }
 
     override suspend fun refreshSession(expiredSession: SyncSession): SyncSession? {
+        val lease = operationGate?.acquire()
+        if (operationGate != null && lease == null) return null
         val refreshToken = tokenStorage.read()?.refreshToken ?: return null
         val refreshed = authGateway.refreshSession(refreshToken) as? AuthenticationResult.Authenticated ?: return null
         if (refreshed.account.accountId != expiredSession.accountId) return null
-        tokenStorage.save(AuthTokens(refreshed.account.accessToken, refreshed.account.refreshToken))
+        if (operationGate != null) {
+            val saved = operationGate.runIfCurrent(requireNotNull(lease)) {
+                tokenStorage.save(AuthTokens(refreshed.account.accessToken, refreshed.account.refreshToken))
+            }
+            if (saved is AccountLeaseResult.Revoked) return null
+        } else {
+            tokenStorage.save(AuthTokens(refreshed.account.accessToken, refreshed.account.refreshToken))
+        }
         return SyncSession(refreshed.account.accountId, refreshed.account.accessToken)
     }
 

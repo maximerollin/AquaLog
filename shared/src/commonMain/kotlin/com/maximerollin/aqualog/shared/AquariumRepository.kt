@@ -68,11 +68,12 @@ class RoomAquariumRepository(
     private val currentTimeMillis: () -> Long,
     private val onSyncNeeded: () -> Unit = {},
     private val generateOperationKey: () -> String = ::randomSyncOperationKey,
-) : AquariumRepository, AccountLocalDataSource, SyncLocalDataSource {
+) : AquariumRepository, AccountLocalDataSource, AccountControlLocalData, AccountAccessMarkerStore, SyncLocalDataSource {
     private val aquariumDao = database.aquariumDao()
     private val sessionDao = database.sessionDao()
     private val taskDao = database.taskDao()
     private val accountDao = database.accountDao()
+    private val accountControlDao = database.accountControlDao()
     private val syncDao = database.syncDao()
 
     override fun observeAquariums(includeArchived: Boolean): Flow<List<Aquarium>> =
@@ -563,19 +564,58 @@ class RoomAquariumRepository(
     )
 
     override suspend fun accountMigrationState(): AccountMigrationState? = accountDao.get()?.let {
-        AccountMigrationState(it.accountId, InitialMigrationStatus.fromStorageValue(it.migrationStatus))
+        AccountMigrationState(it.accountId, InitialMigrationStatus.fromStorageValue(it.migrationStatus), it.email)
     }
 
-    override suspend fun beginAccountMigration(accountId: String) {
+    override suspend fun beginAccountMigration(accountId: String, email: String?) {
         val current = accountDao.get()
         if (current?.accountId == accountId && current.migrationStatus == InitialMigrationStatus.COMPLETE.storageValue) return
-        accountDao.upsert(AccountStateEntity(accountId = accountId, migrationStatus = InitialMigrationStatus.PENDING.storageValue))
+        accountDao.upsert(
+            AccountStateEntity(
+                accountId = accountId,
+                migrationStatus = InitialMigrationStatus.PENDING.storageValue,
+                email = email ?: current?.email,
+            ),
+        )
     }
 
     override suspend fun completeAccountMigration(accountId: String) {
-        accountDao.upsert(AccountStateEntity(accountId = accountId, migrationStatus = InitialMigrationStatus.COMPLETE.storageValue))
+        accountDao.upsert(
+            AccountStateEntity(
+                accountId = accountId,
+                migrationStatus = InitialMigrationStatus.COMPLETE.storageValue,
+                email = accountDao.get()?.takeIf { it.accountId == accountId }?.email,
+            ),
+        )
         onSyncNeeded()
     }
+
+    override suspend fun accountIdentity(): AccountIdentity? = accountControlDao.accountIdentity()
+
+    override suspend fun pendingDeletion(): PendingAccountDeletion? = accountControlDao.pendingDeletion()?.let {
+        PendingAccountDeletion(it.operationKey, AccountDeletionPhase.valueOf(it.phase))
+    }
+
+    override suspend fun beginDeletion(operationKey: String) {
+        accountControlDao.upsertDeletion(
+            AccountDeletionStateEntity(
+                operationKey = operationKey,
+                phase = AccountDeletionPhase.CLOUD_PENDING.name,
+            ),
+        )
+    }
+
+    override suspend fun isAccountAccessRevoked(): Boolean = accountControlDao.isAccountAccessRevoked()
+
+    override suspend fun markAccountAccessRevoked() {
+        accountControlDao.upsertAccountAccessState(AccountAccessStateEntity())
+    }
+
+    override suspend fun markCloudDeletionComplete() = accountControlDao.markCloudDeletionComplete()
+
+    override suspend fun detachAccountKeepingLocalCopy() = accountControlDao.detachAccountKeepingLocalCopy()
+
+    override suspend fun removeAccountAndLocalCopy() = accountControlDao.removeAccountAndLocalCopy()
 
     override fun observeSyncState(): Flow<SyncState> = combine(
         syncDao.observePending(),

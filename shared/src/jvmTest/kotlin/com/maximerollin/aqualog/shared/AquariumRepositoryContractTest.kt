@@ -13,8 +13,8 @@ import kotlin.test.assertTrue
 
 class AquariumRepositoryContractTest {
     @Test
-    fun `Room eleven migrates existing Aquarium into active multi Aquarium state`() = runTest {
-        val databasePath = Files.createTempDirectory("aqualog-room-11-12")
+    fun `Room thirteen migrates existing Aquarium into active multi Aquarium state`() = runTest {
+        val databasePath = Files.createTempDirectory("aqualog-room-13-14")
             .resolve("aqualog.db")
             .toAbsolutePath()
             .toString()
@@ -30,9 +30,9 @@ class AquariumRepositoryContractTest {
             connection.execSQL("DROP TABLE selected_aquarium")
             connection.execSQL("ALTER TABLE aquariums DROP COLUMN isArchived")
             connection.execSQL(
-                "UPDATE room_master_table SET identity_hash = '70f5ca608b22f45ac3403e847b07afa6' WHERE id = 42",
+                "UPDATE room_master_table SET identity_hash = '954d0dd95a58b7427e20e1a1f515177e' WHERE id = 42",
             )
-            connection.execSQL("PRAGMA user_version = 11")
+            connection.execSQL("PRAGMA user_version = 13")
         }
 
         val migrated = createAquaLogDatabase(createJvmDatabaseBuilder(databasePath))

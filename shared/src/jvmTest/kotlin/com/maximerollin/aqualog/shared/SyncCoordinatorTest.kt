@@ -1,6 +1,9 @@
 package com.maximerollin.aqualog.shared
 
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import java.nio.file.Files
 import kotlin.test.Test
@@ -9,6 +12,40 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class SyncCoordinatorTest {
+    @Test
+    fun `inflight pull cannot commit locally after account revocation starts`() = runTest {
+        val fixture = fixture()
+        fixture.repository.createAquarium("Pending Aquarium", 80.0, VolumeUnit.LITERS)
+        val pullStarted = CompletableDeferred<Unit>()
+        val releasePull = CompletableDeferred<Unit>()
+        val backend = object : SyncBackend {
+            override suspend fun push(session: SyncSession, batch: PendingSyncBatch) = Unit
+            override suspend fun pull(session: SyncSession): InitialAccountCopy {
+                pullStarted.complete(Unit)
+                releasePull.await()
+                return InitialAccountCopy(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+            }
+        }
+        val gate = AccountOperationGate(fixture.repository)
+        val run = async {
+            SyncCoordinator(
+                fixture.repository,
+                backend,
+                FixedSyncSessionProvider(SyncSession("account-1", "access")),
+                operationGate = gate,
+            ).runOnce()
+        }
+        pullStarted.await()
+        val revoke = async(start = CoroutineStart.UNDISPATCHED) { gate.beginRevocation() }
+
+        releasePull.complete(Unit)
+
+        revoke.await()
+        assertEquals(SyncRunResult.SignedOut, run.await())
+        assertTrue(fixture.repository.pendingSyncBatch().operations.isNotEmpty())
+        fixture.database.close()
+    }
+
     @Test
     fun `a local edit created during push survives the stale pull and is drained before success`() = runTest {
         val fixture = fixture()

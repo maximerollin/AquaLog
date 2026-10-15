@@ -9,6 +9,12 @@ val supabaseUrl = providers.gradleProperty("AQUALOG_SUPABASE_URL")
 val supabaseAnonKey = providers.gradleProperty("AQUALOG_SUPABASE_ANON_KEY")
     .orElse(providers.environmentVariable("AQUALOG_SUPABASE_ANON_KEY"))
     .getOrElse("")
+val privacyUrl = providers.gradleProperty("AQUALOG_PRIVACY_URL")
+    .orElse(providers.environmentVariable("AQUALOG_PRIVACY_URL"))
+    .getOrElse("")
+val supportUrl = providers.gradleProperty("AQUALOG_SUPPORT_URL")
+    .orElse(providers.environmentVariable("AQUALOG_SUPPORT_URL"))
+    .getOrElse("")
 fun String.asBuildConfigString(): String = "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {
@@ -24,6 +30,8 @@ android {
         testInstrumentationRunner = "com.maximerollin.aqualog.AquaLogTestRunner"
         buildConfigField("String", "SUPABASE_URL", supabaseUrl.asBuildConfigString())
         buildConfigField("String", "SUPABASE_ANON_KEY", supabaseAnonKey.asBuildConfigString())
+        buildConfigField("String", "PRIVACY_URL", privacyUrl.asBuildConfigString())
+        buildConfigField("String", "SUPPORT_URL", supportUrl.asBuildConfigString())
     }
 
     buildFeatures {

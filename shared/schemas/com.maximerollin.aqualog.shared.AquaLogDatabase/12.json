@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 12,
-    "identityHash": "753e80baa9176bfe8bb333466c79a761",
+    "identityHash": "d74e25d88bd9929d6ba46d3bc0a4318d",
     "entities": [
       {
         "tableName": "aquariums",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `volume` REAL NOT NULL, `volumeUnit` TEXT NOT NULL, `createdAtEpochMillis` INTEGER NOT NULL, `profile` TEXT NOT NULL DEFAULT 'established', `isArchived` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `volume` REAL NOT NULL, `volumeUnit` TEXT NOT NULL, `createdAtEpochMillis` INTEGER NOT NULL, `profile` TEXT NOT NULL DEFAULT 'established', PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -44,43 +44,12 @@
             "affinity": "TEXT",
             "notNull": true,
             "defaultValue": "'established'"
-          },
-          {
-            "fieldPath": "isArchived",
-            "columnName": "isArchived",
-            "affinity": "INTEGER",
-            "notNull": true,
-            "defaultValue": "0"
           }
         ],
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
             "id"
-          ]
-        }
-      },
-      {
-        "tableName": "selected_aquarium",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`singletonId` INTEGER NOT NULL, `aquariumId` TEXT NOT NULL, PRIMARY KEY(`singletonId`))",
-        "fields": [
-          {
-            "fieldPath": "singletonId",
-            "columnName": "singletonId",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "aquariumId",
-            "columnName": "aquariumId",
-            "affinity": "TEXT",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "singletonId"
           ]
         }
       },
@@ -464,7 +433,7 @@
       },
       {
         "tableName": "account_state",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`singletonId` INTEGER NOT NULL, `accountId` TEXT NOT NULL, `migrationStatus` TEXT NOT NULL, PRIMARY KEY(`singletonId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`singletonId` INTEGER NOT NULL, `accountId` TEXT NOT NULL, `migrationStatus` TEXT NOT NULL, `email` TEXT, PRIMARY KEY(`singletonId`))",
         "fields": [
           {
             "fieldPath": "singletonId",
@@ -483,6 +452,11 @@
             "columnName": "migrationStatus",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -506,6 +480,36 @@
             "fieldPath": "wasOffered",
             "columnName": "wasOffered",
             "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "singletonId"
+          ]
+        }
+      },
+      {
+        "tableName": "account_deletion_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`singletonId` INTEGER NOT NULL, `operationKey` TEXT NOT NULL, `phase` TEXT NOT NULL, PRIMARY KEY(`singletonId`))",
+        "fields": [
+          {
+            "fieldPath": "singletonId",
+            "columnName": "singletonId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "operationKey",
+            "columnName": "operationKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phase",
+            "columnName": "phase",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
@@ -703,7 +707,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '753e80baa9176bfe8bb333466c79a761')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd74e25d88bd9929d6ba46d3bc0a4318d')"
     ]
   }
 }
