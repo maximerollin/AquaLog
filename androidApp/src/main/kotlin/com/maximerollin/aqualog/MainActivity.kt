@@ -29,6 +29,9 @@ class MainActivity : ComponentActivity() {
     private val proPurchaseCoordinator by lazy {
         (application as AquaLogApplication).proPurchaseCoordinator(this)
     }
+    private val reviewCoordinator by lazy {
+        (application as AquaLogApplication).reviewCoordinator(this)
+    }
     private val homeViewModel: HomeViewModel by viewModels {
         val application = application as AquaLogApplication
         HomeViewModel.factory(
@@ -36,6 +39,10 @@ class MainActivity : ComponentActivity() {
             taskReminderScheduler = application.taskReminderScheduler,
             accountCoordinator = application.accountCoordinator,
             proPurchaseCoordinator = proPurchaseCoordinator,
+            productTelemetry = application.productTelemetry,
+            crashReporter = application.crashReporter,
+            feedbackGateway = application.feedbackGateway,
+            reviewCoordinator = reviewCoordinator,
             onSyncRetryRequested = { AndroidSyncScheduler.requestImmediate(application) },
         )
     }

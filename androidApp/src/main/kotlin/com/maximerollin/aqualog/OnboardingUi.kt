@@ -136,6 +136,14 @@ fun AquaLogContent(
             onDismiss = viewModel::dismissPortableImportConfirmation,
         )
     }
+    if (state.feedback.isOpen) {
+        FeedbackDialog(
+            state = state.feedback,
+            onMessageChanged = viewModel::updateFeedback,
+            onSubmit = viewModel::submitFeedback,
+            onDismiss = viewModel::dismissFeedback,
+        )
+    }
 }
 
 @Composable
@@ -730,59 +738,136 @@ private fun SettingsScreen(
     onExportData: () -> Unit,
     modifier: Modifier,
 ) {
-    StandardScreen(modifier) {
-        Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium)
-        Card(Modifier.fillMaxWidth()) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        item {
+            Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineMedium)
+        }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(
+                            if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
+                                R.string.pro_active
+                            } else {
+                                R.string.free_plan
+                            },
+                        ),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        stringResource(R.string.subscription_settings_description),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Button(
+                        onClick = viewModel::openProPaywall,
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                    ) {
+                        Text(stringResource(R.string.view_free_and_pro))
+                    }
+                }
+            }
+        }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.portable_data_title), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.portable_data_replace_explanation),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Button(
+                        onClick = onExportData,
+                        enabled = !state.portableData.isWorking,
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                    ) {
+                        Text(stringResource(R.string.export_data))
+                    }
+                    OutlinedButton(
+                        onClick = viewModel::requestPortableImport,
+                        enabled = !state.portableData.isWorking,
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                    ) {
+                        Text(stringResource(R.string.restore_from_export))
+                    }
+                }
+            }
+        }
+        if (state.portableData.isWorking) item { CircularProgressIndicator() }
+        item { PortableDataMessage(state.portableData) }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.feedback_title), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.feedback_settings_description),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedButton(
+                        onClick = viewModel::openFeedback,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) {
+                        Text(stringResource(R.string.send_feedback))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeedbackDialog(
+    state: FeedbackUiState,
+    onMessageChanged: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.feedback_title)) },
+        text = {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    stringResource(
-                        if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
-                            R.string.pro_active
-                        } else {
-                            R.string.free_plan
-                        },
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    stringResource(R.string.subscription_settings_description),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Button(
-                    onClick = viewModel::openProPaywall,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(R.string.view_free_and_pro))
-                }
-            }
-        }
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.portable_data_title), style = MaterialTheme.typography.titleMedium)
-                Text(
-                    stringResource(R.string.portable_data_replace_explanation),
+                    stringResource(R.string.feedback_privacy_explanation),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Button(
-                    onClick = onExportData,
-                    enabled = !state.portableData.isWorking,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(R.string.export_data))
+                OutlinedTextField(
+                    value = state.message,
+                    onValueChange = onMessageChanged,
+                    label = { Text(stringResource(R.string.feedback_message_label)) },
+                    supportingText = {
+                        Text(stringResource(R.string.feedback_character_count, state.message.length))
+                    },
+                    minLines = 4,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (state.wasSubmitted) {
+                    Text(stringResource(R.string.feedback_sent), color = MaterialTheme.colorScheme.primary)
                 }
-                OutlinedButton(
-                    onClick = viewModel::requestPortableImport,
-                    enabled = !state.portableData.isWorking,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(R.string.restore_from_export))
+                if (state.isUnavailable) {
+                    Text(stringResource(R.string.feedback_unavailable), color = MaterialTheme.colorScheme.error)
                 }
             }
-        }
-        if (state.portableData.isWorking) CircularProgressIndicator()
-        PortableDataMessage(state.portableData)
-    }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onSubmit,
+                enabled = state.message.isNotBlank(),
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) {
+                Text(stringResource(R.string.send_feedback))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
 }
 
 @Composable

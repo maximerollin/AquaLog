@@ -12,7 +12,15 @@ import com.maximerollin.aqualog.shared.AccountActivationResult
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.AnalyticsSyncFailureCategory
+import com.maximerollin.aqualog.shared.CrashReporter
+import com.maximerollin.aqualog.shared.DisabledCrashReporter
+import com.maximerollin.aqualog.shared.DisabledFeedbackGateway
+import com.maximerollin.aqualog.shared.DisabledProductTelemetry
 import com.maximerollin.aqualog.shared.EventType
+import com.maximerollin.aqualog.shared.FeedbackCoordinator
+import com.maximerollin.aqualog.shared.FeedbackGateway
+import com.maximerollin.aqualog.shared.GraphPeriod
 import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
@@ -22,23 +30,37 @@ import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.ProPurchaseOutcome
 import com.maximerollin.aqualog.shared.PortableImportProblem
 import com.maximerollin.aqualog.shared.PortableImportResult
+import com.maximerollin.aqualog.shared.ProductEvent
+import com.maximerollin.aqualog.shared.ProductTelemetry
+import com.maximerollin.aqualog.shared.ProProduct
+import com.maximerollin.aqualog.shared.PaywallSource
 import com.maximerollin.aqualog.shared.RapidSessionContext
 import com.maximerollin.aqualog.shared.RapidSessionInput
 import com.maximerollin.aqualog.shared.RecordedSession
+import com.maximerollin.aqualog.shared.ReviewCoordinator
 import com.maximerollin.aqualog.shared.SessionEditInput
+import com.maximerollin.aqualog.shared.SessionUsage
+import com.maximerollin.aqualog.shared.SyncFailureCategory
 import com.maximerollin.aqualog.shared.SyncLocalDataSource
+import com.maximerollin.aqualog.shared.SyncOutcome
 import com.maximerollin.aqualog.shared.SyncState
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.TimelineFilter
 import com.maximerollin.aqualog.shared.TimelineSession
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskInput
+import com.maximerollin.aqualog.shared.TaskUsage
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.TaskRecurrence
 import com.maximerollin.aqualog.shared.TaskResolution
 import com.maximerollin.aqualog.shared.TaskResolutionInput
 import com.maximerollin.aqualog.shared.TrendPeriod
 import com.maximerollin.aqualog.shared.TrendSnapshot
+import com.maximerollin.aqualog.shared.TechnicalComponent
+import com.maximerollin.aqualog.shared.TechnicalFailure
+import com.maximerollin.aqualog.shared.TechnicalFailureKind
+import com.maximerollin.aqualog.shared.OnboardingMilestone
+import com.maximerollin.aqualog.shared.VoluntaryFeedback
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.evaluateMeasurement
 import kotlinx.coroutines.Job
@@ -178,6 +200,13 @@ data class PortableDataUiState(
     val showImportConfirmation: Boolean = false,
 )
 
+data class FeedbackUiState(
+    val isOpen: Boolean = false,
+    val message: String = "",
+    val wasSubmitted: Boolean = false,
+    val isUnavailable: Boolean = false,
+)
+
 data class ParameterEditorState(
     val parameter: BuiltInParameter,
     val isActive: Boolean,
@@ -245,6 +274,7 @@ data class HomeUiState(
     val syncState: SyncState = SyncState(SyncStatus.SYNCED, 0),
     val tasks: TaskUiState = TaskUiState(),
     val portableData: PortableDataUiState = PortableDataUiState(),
+    val feedback: FeedbackUiState = FeedbackUiState(),
 )
 
 data class RapidSessionUiState(
@@ -305,8 +335,13 @@ class HomeViewModel(
     private val currentTimeZoneId: () -> String = { ZoneId.systemDefault().id },
     private val generateInteractionId: () -> String = { UUID.randomUUID().toString() },
     private val onSyncRetryRequested: () -> Unit = {},
+    private val productTelemetry: ProductTelemetry = DisabledProductTelemetry,
+    private val crashReporter: CrashReporter = DisabledCrashReporter,
+    feedbackGateway: FeedbackGateway = DisabledFeedbackGateway,
+    private val reviewCoordinator: ReviewCoordinator? = null,
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
+    private val feedbackCoordinator = FeedbackCoordinator(feedbackGateway)
     private val mutableUiState = MutableStateFlow(
         HomeUiState(
             rapidSession = savedStateHandle
@@ -317,6 +352,7 @@ class HomeViewModel(
     val uiState: StateFlow<HomeUiState> = mutableUiState.asStateFlow()
     private var timelineJob: Job? = null
     private var trendsJob: Job? = null
+    private var lastObservedSyncState: SyncState? = null
 
     init {
         viewModelScope.launch {
@@ -384,20 +420,50 @@ class HomeViewModel(
                     mutableUiState.update { state ->
                         state.copy(pro = state.pro.copy(purchaseStatus = ProPurchaseStatus.VERIFYING, message = null))
                     }
-                    handleProOutcome(proPurchaseCoordinator.resolve(update), continuation = null)
+                    val outcome = proPurchaseCoordinator.resolve(update)
+                    if (outcome is ProPurchaseOutcome.Entitled) {
+                        recordProductEvent(ProductEvent.PurchaseConfirmed(ProProduct.ANNUAL))
+                    }
+                    handleProOutcome(outcome, continuation = null)
                 }
             }
         }
         (aquariumRepository as? SyncLocalDataSource)?.let { syncLocalData ->
             viewModelScope.launch {
                 syncLocalData.observeSyncState().collect { syncState ->
+                    val previous = lastObservedSyncState
+                    if (previous != null && previous != syncState) {
+                        when (syncState.status) {
+                            SyncStatus.SYNCED -> if (previous.status != SyncStatus.SYNCED) {
+                                recordProductEvent(ProductEvent.SyncFinished(SyncOutcome.SUCCEEDED))
+                            }
+                            SyncStatus.FAILED -> {
+                                val category = syncState.failure?.category.toAnalyticsCategory()
+                                recordProductEvent(ProductEvent.SyncFinished(SyncOutcome.FAILED, category))
+                                runCatching {
+                                    crashReporter.record(
+                                        TechnicalFailure(
+                                            kind = TechnicalFailureKind.NON_FATAL,
+                                            component = TechnicalComponent.SYNC,
+                                            syncCategory = category,
+                                        ),
+                                    )
+                                }
+                            }
+                            SyncStatus.PENDING -> Unit
+                        }
+                    }
+                    lastObservedSyncState = syncState
                     mutableUiState.update { it.copy(syncState = syncState) }
                 }
             }
         }
     }
 
-    fun startOnboarding() = moveTo(OnboardingStep.PROFILE)
+    fun startOnboarding() {
+        recordProductEvent(ProductEvent.Onboarding(OnboardingMilestone.STARTED))
+        moveTo(OnboardingStep.PROFILE)
+    }
 
     fun retrySynchronization() {
         val syncLocalData = aquariumRepository as? SyncLocalDataSource ?: return
@@ -432,6 +498,7 @@ class HomeViewModel(
     }
 
     fun completePortableExport() {
+        recordProductEvent(ProductEvent.ExportCompleted)
         mutableUiState.update {
             it.copy(portableData = PortableDataUiState(message = PortableDataMessage.EXPORT_READY))
         }
@@ -455,7 +522,45 @@ class HomeViewModel(
         }
     }
 
+    fun openFeedback() {
+        mutableUiState.update { it.copy(feedback = FeedbackUiState(isOpen = true)) }
+    }
+
+    fun dismissFeedback() {
+        mutableUiState.update { it.copy(feedback = FeedbackUiState()) }
+    }
+
+    fun updateFeedback(value: String) {
+        mutableUiState.update { state ->
+            state.copy(
+                feedback = state.feedback.copy(
+                    message = value.take(2_000),
+                    wasSubmitted = false,
+                    isUnavailable = false,
+                ),
+            )
+        }
+    }
+
+    fun submitFeedback() {
+        val message = mutableUiState.value.feedback.message
+        if (message.isBlank()) return
+        val delivered = runCatching {
+            feedbackCoordinator.submit(VoluntaryFeedback(message))
+        }.getOrDefault(false)
+        mutableUiState.update { state ->
+            state.copy(
+                feedback = state.feedback.copy(
+                    message = if (delivered) "" else state.feedback.message,
+                    wasSubmitted = delivered,
+                    isUnavailable = !delivered,
+                ),
+            )
+        }
+    }
+
     fun selectProfile(profile: AquariumProfile) {
+        recordProductEvent(ProductEvent.Onboarding(OnboardingMilestone.PROFILE_SELECTED))
         mutableUiState.update {
             it.copy(
                 profile = profile,
@@ -536,6 +641,8 @@ class HomeViewModel(
     }
 
     fun continueToPaywall() {
+        recordProductEvent(ProductEvent.Onboarding(OnboardingMilestone.PRACTICE_COMPLETED))
+        recordProductEvent(ProductEvent.PaywallViewed(PaywallSource.ONBOARDING))
         moveTo(OnboardingStep.PAYWALL)
         mutableUiState.update {
             it.copy(pro = it.pro.copy(showPaywall = true, openedFromOnboarding = true))
@@ -544,6 +651,7 @@ class HomeViewModel(
     }
 
     fun openProPaywall() {
+        recordProductEvent(ProductEvent.PaywallViewed(PaywallSource.SETTINGS))
         mutableUiState.update {
             it.copy(pro = it.pro.copy(showPaywall = true, openedFromOnboarding = false))
         }
@@ -712,6 +820,7 @@ class HomeViewModel(
                 )
             }.onSuccess { created ->
                 taskReminderScheduler.schedule(created.occurrence)
+                recordProductEvent(ProductEvent.TaskUsed(TaskUsage.CREATED))
                 updateTasks {
                     it.copy(title = "", time = "", isSaving = false, showValidationError = false)
                 }
@@ -748,6 +857,15 @@ class HomeViewModel(
             }.onSuccess { result ->
                 taskReminderScheduler.cancel(occurrence.id)
                 result.nextOccurrence?.let(taskReminderScheduler::schedule)
+                recordProductEvent(
+                    ProductEvent.TaskUsed(
+                        when (resolution) {
+                            TaskResolution.COMPLETED -> TaskUsage.COMPLETED
+                            TaskResolution.POSTPONED -> TaskUsage.POSTPONED
+                            TaskResolution.IGNORED -> TaskUsage.SKIPPED
+                        },
+                    ),
+                )
             }
         }
     }
@@ -859,10 +977,14 @@ class HomeViewModel(
 
     fun selectHistorySection(section: HistorySection) {
         mutableUiState.update { it.copy(historySection = section) }
-        if (section == HistorySection.TRENDS) observeTrends()
+        if (section == HistorySection.TRENDS) {
+            recordProductEvent(ProductEvent.GraphViewed(mutableUiState.value.trends.period.toGraphPeriod()))
+            observeTrends()
+        }
     }
 
     fun selectTrendPeriod(period: TrendPeriod) {
+        recordProductEvent(ProductEvent.GraphViewed(period.toGraphPeriod()))
         mutableUiState.update { state ->
             state.copy(trends = state.trends.copy(period = period))
         }
@@ -963,6 +1085,7 @@ class HomeViewModel(
     fun saveRapidSession() {
         val draft = mutableUiState.value.rapidSession ?: return
         if (!draft.canSave) return
+        val isFirstSession = draft.editingSessionId == null && mutableUiState.value.latestSession == null
         mutableUiState.update { it.copy(rapidSession = draft.copy(isSaving = true, saveError = false)) }
         viewModelScope.launch {
             runCatching {
@@ -1008,6 +1131,13 @@ class HomeViewModel(
                         it.copy(accountInvitationPrompt = AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION)
                     }
                 }
+                recordProductEvent(
+                    ProductEvent.SessionSaved(
+                        if (draft.editingSessionId == null) SessionUsage.CREATED else SessionUsage.EDITED,
+                    ),
+                )
+                if (isFirstSession) recordProductEvent(ProductEvent.FirstSessionSaved)
+                if (draft.editingSessionId == null) reviewCoordinator?.onSuccessfulSession()
             }.onFailure {
                 updateRapidSession { it.copy(isSaving = false, saveError = true) }
             }
@@ -1126,7 +1256,10 @@ class HomeViewModel(
                     updateAccount { it.copy(step = AccountStep.METHODS, error = null) }
                 }
             }
-            is ProPurchaseOutcome.Entitled -> updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
+            is ProPurchaseOutcome.Entitled -> {
+                recordProductEvent(ProductEvent.EntitlementConfirmed(active = true, product = ProProduct.ANNUAL))
+                updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
+            }
             is ProPurchaseOutcome.Failed -> updatePro(ProPurchaseStatus.ERROR, outcome.reason)
         }
     }
@@ -1134,8 +1267,14 @@ class HomeViewModel(
     private suspend fun refreshProEntitlement() {
         val coordinator = proPurchaseCoordinator ?: return
         when (val outcome = coordinator.refreshEntitlement()) {
-            is ProPurchaseOutcome.Entitled -> updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
-            ProPurchaseOutcome.NotEntitled -> updatePro(ProPurchaseStatus.IDLE)
+            is ProPurchaseOutcome.Entitled -> {
+                recordProductEvent(ProductEvent.EntitlementConfirmed(active = true, product = ProProduct.ANNUAL))
+                updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
+            }
+            ProPurchaseOutcome.NotEntitled -> {
+                recordProductEvent(ProductEvent.EntitlementConfirmed(active = false, product = ProProduct.ANNUAL))
+                updatePro(ProPurchaseStatus.IDLE)
+            }
             ProPurchaseOutcome.AuthenticationRequired -> updatePro(
                 ProPurchaseStatus.ERROR,
                 "Sign in again to refresh your Pro status. Pro features stay locked until verification succeeds.",
@@ -1180,6 +1319,7 @@ class HomeViewModel(
             )
         }.fold(
             onSuccess = {
+                recordProductEvent(ProductEvent.Onboarding(OnboardingMilestone.COMPLETED))
                 if (!keepPaywallOpen) hideProPaywall()
                 true
             },
@@ -1355,6 +1495,10 @@ class HomeViewModel(
         mutableUiState.update { it.copy(step = step) }
     }
 
+    private fun recordProductEvent(event: ProductEvent) {
+        runCatching { productTelemetry.record(event) }
+    }
+
     private fun updateParameter(
         parameter: BuiltInParameter,
         transform: (ParameterEditorState) -> ParameterEditorState,
@@ -1382,6 +1526,10 @@ class HomeViewModel(
             taskReminderScheduler: TaskReminderScheduler = NoOpTaskReminderScheduler,
             accountCoordinator: AccountActivationCoordinator? = null,
             proPurchaseCoordinator: ProPurchaseCoordinator? = null,
+            productTelemetry: ProductTelemetry = DisabledProductTelemetry,
+            crashReporter: CrashReporter = DisabledCrashReporter,
+            feedbackGateway: FeedbackGateway = DisabledFeedbackGateway,
+            reviewCoordinator: ReviewCoordinator? = null,
             onSyncRetryRequested: () -> Unit = {},
         ): ViewModelProvider.Factory =
             object : ViewModelProvider.Factory {
@@ -1392,6 +1540,10 @@ class HomeViewModel(
                         taskReminderScheduler = taskReminderScheduler,
                         accountCoordinator = accountCoordinator,
                         proPurchaseCoordinator = proPurchaseCoordinator,
+                        productTelemetry = productTelemetry,
+                        crashReporter = crashReporter,
+                        feedbackGateway = feedbackGateway,
+                        reviewCoordinator = reviewCoordinator,
                         onSyncRetryRequested = onSyncRetryRequested,
                         savedStateHandle = extras.createSavedStateHandle(),
                     ) as T
@@ -1469,3 +1621,16 @@ private fun Double?.displayInput(): String = when {
 }
 
 private fun <T> T?.orDefault(default: T): T = this ?: default
+
+private fun TrendPeriod.toGraphPeriod(): GraphPeriod = when (this) {
+    TrendPeriod.SEVEN_DAYS -> GraphPeriod.DAYS_7
+    TrendPeriod.THIRTY_DAYS -> GraphPeriod.DAYS_30
+    TrendPeriod.NINETY_DAYS -> GraphPeriod.DAYS_90
+}
+
+private fun SyncFailureCategory?.toAnalyticsCategory(): AnalyticsSyncFailureCategory = when (this) {
+    SyncFailureCategory.NETWORK -> AnalyticsSyncFailureCategory.NETWORK
+    SyncFailureCategory.CONFLICT -> AnalyticsSyncFailureCategory.CONFLICT
+    SyncFailureCategory.SERVER -> AnalyticsSyncFailureCategory.SERVER
+    SyncFailureCategory.UNKNOWN, null -> AnalyticsSyncFailureCategory.UNKNOWN
+}

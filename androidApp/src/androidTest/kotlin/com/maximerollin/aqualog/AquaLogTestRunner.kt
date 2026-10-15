@@ -1,29 +1,35 @@
 package com.maximerollin.aqualog
 
-import android.app.Application
 import android.app.Activity
+import android.app.Application
 import android.content.Context
 import androidx.test.runner.AndroidJUnitRunner
+import com.maximerollin.aqualog.shared.ANNUAL_PRO_PRODUCT_ID
+import com.maximerollin.aqualog.shared.AllowlistedAnalyticsAdapter
+import com.maximerollin.aqualog.shared.AllowlistedProductTelemetry
+import com.maximerollin.aqualog.shared.AnalyticsPayload
+import com.maximerollin.aqualog.shared.AnnualProOffer
 import com.maximerollin.aqualog.shared.AquaLogDatabase
 import com.maximerollin.aqualog.shared.AquariumRepository
-import com.maximerollin.aqualog.shared.RoomAquariumRepository
-import com.maximerollin.aqualog.shared.ANNUAL_PRO_PRODUCT_ID
-import com.maximerollin.aqualog.shared.AnnualProOffer
 import com.maximerollin.aqualog.shared.BillingLaunchResult
+import com.maximerollin.aqualog.shared.FeedbackGateway
 import com.maximerollin.aqualog.shared.PlayPurchaseUpdate
+import com.maximerollin.aqualog.shared.PortableDataService
 import com.maximerollin.aqualog.shared.ProBillingGateway
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.ProPurchaseVerifier
+import com.maximerollin.aqualog.shared.ProductTelemetry
 import com.maximerollin.aqualog.shared.PurchaseAccountIdentityResult
 import com.maximerollin.aqualog.shared.PurchaseVerificationResult
-import com.maximerollin.aqualog.shared.PortableDataService
+import com.maximerollin.aqualog.shared.RoomAquariumRepository
+import com.maximerollin.aqualog.shared.TaskOccurrence
+import com.maximerollin.aqualog.shared.VoluntaryFeedback
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
-import com.maximerollin.aqualog.shared.TaskOccurrence
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 class AquaLogTestRunner : AndroidJUnitRunner() {
     override fun newApplication(
@@ -39,6 +45,14 @@ class TestAquaLogApplication : AquaLogApplication() {
     private var portableService: PortableDataService? = null
     private var databaseSequence = 0
     val recordingTaskReminderScheduler = RecordingTaskReminderScheduler()
+    val analyticsPayloads = CopyOnWriteArrayList<AnalyticsPayload>()
+    val recordedFeedback = CopyOnWriteArrayList<VoluntaryFeedback>()
+
+    override val productTelemetry: ProductTelemetry = AllowlistedProductTelemetry(
+        adapter = AllowlistedAnalyticsAdapter(analyticsPayloads::add),
+        enabled = true,
+    )
+    override val feedbackGateway: FeedbackGateway = FeedbackGateway(recordedFeedback::add)
 
     override val taskReminderScheduler: TaskReminderScheduler
         get() = recordingTaskReminderScheduler
@@ -84,6 +98,8 @@ class TestAquaLogApplication : AquaLogApplication() {
         )
         portableService = PortableDataService(newDatabase)
         recordingTaskReminderScheduler.reset()
+        analyticsPayloads.clear()
+        recordedFeedback.clear()
     }
 
     fun installRepository(value: AquariumRepository) {

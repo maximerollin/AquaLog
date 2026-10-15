@@ -5,8 +5,15 @@ import android.app.Activity
 import com.maximerollin.aqualog.shared.AQUA_LOG_DATABASE_NAME
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
 import com.maximerollin.aqualog.shared.AquariumRepository
+import com.maximerollin.aqualog.shared.CrashReporter
+import com.maximerollin.aqualog.shared.DisabledCrashReporter
+import com.maximerollin.aqualog.shared.DisabledFeedbackGateway
+import com.maximerollin.aqualog.shared.DisabledProductTelemetry
+import com.maximerollin.aqualog.shared.FeedbackGateway
+import com.maximerollin.aqualog.shared.ProductTelemetry
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.PortableDataService
+import com.maximerollin.aqualog.shared.ReviewCoordinator
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.SyncCoordinator
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
@@ -63,6 +70,11 @@ open class AquaLogApplication : Application() {
         AndroidTaskReminderScheduler(this)
     }
 
+    /** External analytics/crash adapters stay disabled until a reviewed build-time integration is supplied. */
+    open val productTelemetry: ProductTelemetry = DisabledProductTelemetry
+    open val crashReporter: CrashReporter = DisabledCrashReporter
+    open val feedbackGateway: FeedbackGateway = DisabledFeedbackGateway
+
     open val accountCoordinator: AccountActivationCoordinator
         get() {
             val localData = aquariumRepository as RoomAquariumRepository
@@ -90,4 +102,7 @@ open class AquaLogApplication : Application() {
         googlePlayBillingGateway.attach(activity)
         return defaultProPurchaseCoordinator
     }
+
+    open fun reviewCoordinator(activity: Activity): ReviewCoordinator =
+        androidReviewCoordinator(this, activity)
 }
