@@ -317,6 +317,77 @@ class AccountControlTest {
         assertNull(credentialStorage.credential)
     }
 
+    @Test
+    fun `expired deletion authentication can reauthenticate the expected account and resume the same operation`() = runTest {
+        val local = FakeAccountControlLocalData(
+            account = AccountIdentity("account-1", "owner@example.com"),
+            hasLocalData = true,
+            hasPendingSync = false,
+        )
+        val tokens = FakeTokenStorage(AuthTokens("expired-access", "expired-refresh"))
+        val gateway = SequenceDeletionGateway(
+            mutableListOf(
+                CloudAccountDeletionResult.AuthenticationRequired,
+                CloudAccountDeletionResult.Completed,
+            ),
+        )
+        val coordinator = AccountControlCoordinator(
+            localData = local,
+            tokenStorage = tokens,
+            deletionGateway = gateway,
+            reauthenticationGateway = FakeReauthenticationGateway(
+                AuthenticationResult.Authenticated(
+                    AuthenticatedAccount("account-1", "new-access", "new-refresh", "owner@example.com"),
+                ),
+            ),
+            generateOperationKey = { "operation-1" },
+        )
+
+        assertIs<AccountControlResult.DeletionIncomplete>(coordinator.deleteAccount())
+        assertEquals(
+            AccountDeletionReauthenticationResult.Resumed(AccountControlResult.Deleted),
+            coordinator.reauthenticateDeletionWithGoogle(),
+        )
+        assertEquals(listOf("operation-1", "operation-1"), gateway.operationKeys)
+        assertEquals(listOf("expired-access", "new-access"), gateway.accessTokens)
+        assertEquals(false, local.hasLocalData)
+        assertNull(tokens.read())
+    }
+
+    @Test
+    fun `reauthenticating another account refuses deletion without replacing tokens or pending operation`() = runTest {
+        val local = FakeAccountControlLocalData(
+            account = AccountIdentity("account-1", "owner@example.com"),
+            hasLocalData = true,
+            hasPendingSync = false,
+        )
+        val tokens = FakeTokenStorage(AuthTokens("expired-access", "expired-refresh"))
+        val gateway = SequenceDeletionGateway(
+            mutableListOf(CloudAccountDeletionResult.AuthenticationRequired),
+        )
+        val coordinator = AccountControlCoordinator(
+            localData = local,
+            tokenStorage = tokens,
+            deletionGateway = gateway,
+            reauthenticationGateway = FakeReauthenticationGateway(
+                AuthenticationResult.Authenticated(
+                    AuthenticatedAccount("account-2", "other-access", "other-refresh", "other@example.com"),
+                ),
+            ),
+            generateOperationKey = { "operation-1" },
+        )
+
+        assertIs<AccountControlResult.DeletionIncomplete>(coordinator.deleteAccount())
+        assertEquals(
+            AccountDeletionReauthenticationResult.WrongAccount("owner@example.com"),
+            coordinator.reauthenticateDeletionWithGoogle(),
+        )
+        assertEquals(PendingAccountDeletion("operation-1", AccountDeletionPhase.CLOUD_PENDING), local.pendingDeletion())
+        assertEquals(1, gateway.operationKeys.size)
+        assertNull(tokens.read())
+        assertTrue(local.hasLocalData)
+    }
+
     private class FakeTokenStorage(
         initial: AuthTokens?,
         private var failNextClear: Boolean = false,
@@ -349,14 +420,27 @@ class AccountControlTest {
         private val results: MutableList<CloudAccountDeletionResult>,
     ) : AccountDeletionGateway {
         val credentials = mutableListOf<String?>()
+        val operationKeys = mutableListOf<String>()
+        val accessTokens = mutableListOf<String>()
         override suspend fun deleteAccount(
             accessToken: String,
             operationKey: String,
             recoveryCredential: String?,
         ): CloudAccountDeletionResult {
             credentials += recoveryCredential
+            operationKeys += operationKey
+            accessTokens += accessToken
             return results.removeFirstOrNull() ?: error("Cloud deletion must not repeat after completion")
         }
+    }
+
+    private class FakeReauthenticationGateway(
+        private val googleResult: AuthenticationResult,
+    ) : AuthGateway {
+        override suspend fun signInWithGoogle() = googleResult
+        override suspend fun requestMagicLink(email: String) = MagicLinkRequestResult.Sent
+        override suspend fun completeMagicLink(callbackUrl: String) = googleResult
+        override suspend fun refreshSession(refreshToken: String) = AuthenticationResult.Failed("unused")
     }
 
     private class FakeDeletionCredentialStorage : DeletionRecoveryCredentialStorage {

@@ -374,11 +374,24 @@ private fun PortableDataSettings(
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.account_deletion_pending), style = MaterialTheme.typography.titleMedium)
                         Text(accountState.safeDetail ?: stringResource(R.string.account_deletion_pending_description))
-                        Button(
-                            onClick = viewModel::retryAccountDeletion,
-                            enabled = !accountState.isWorking,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                        ) { Text(stringResource(R.string.retry_account_deletion)) }
+                        if (accountState.showDeletionReauthenticationAction) {
+                            Button(
+                                onClick = viewModel::reauthenticateAccountDeletionWithGoogle,
+                                enabled = !accountState.isWorking,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                            ) { Text(stringResource(R.string.continue_with_google)) }
+                            OutlinedButton(
+                                onClick = viewModel::requestDeletionMagicLink,
+                                enabled = !accountState.isWorking,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                            ) { Text(stringResource(R.string.send_deletion_magic_link)) }
+                        } else {
+                            Button(
+                                onClick = viewModel::retryAccountDeletion,
+                                enabled = !accountState.isWorking,
+                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                            ) { Text(stringResource(R.string.retry_account_deletion)) }
+                        }
                     }
                 }
             }

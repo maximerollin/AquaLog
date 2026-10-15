@@ -133,6 +133,17 @@ sealed interface AccountControlResult {
     ) : AccountControlResult
 }
 
+sealed interface AccountDeletionReauthenticationResult {
+    data object AwaitingAuthentication : AccountDeletionReauthenticationResult
+    data object MagicLinkSent : AccountDeletionReauthenticationResult
+    data object Cancelled : AccountDeletionReauthenticationResult
+    data object ExpiredLink : AccountDeletionReauthenticationResult
+    data object IgnoredCallback : AccountDeletionReauthenticationResult
+    data class WrongAccount(val expectedEmail: String?) : AccountDeletionReauthenticationResult
+    data class Failed(val safeDetail: String) : AccountDeletionReauthenticationResult
+    data class Resumed(val deletionResult: AccountControlResult) : AccountDeletionReauthenticationResult
+}
+
 enum class AccountControlFailure {
     CLOUD,
     AUTHENTICATION,
@@ -147,11 +158,34 @@ class AccountControlCoordinator(
     private val deletionGateway: AccountDeletionGateway,
     private val operationGate: AccountOperationGate? = null,
     private val deletionCredentialStorage: DeletionRecoveryCredentialStorage? = null,
+    private val reauthenticationGateway: AuthGateway? = null,
     private val generateOperationKey: () -> String = { error("Deletion operation key generator is not configured") },
 ) {
     suspend fun identity(): AccountIdentity? = localData.accountIdentity()
 
     suspend fun pendingDeletion(): PendingAccountDeletion? = localData.pendingDeletion()
+
+    suspend fun deletionRequiresReauthentication(): Boolean =
+        localData.pendingDeletion()?.phase == AccountDeletionPhase.CLOUD_PENDING && tokenStorage.read() == null
+
+    suspend fun reauthenticateDeletionWithGoogle(): AccountDeletionReauthenticationResult =
+        reauthenticateDeletion(reauthenticationGateway?.signInWithGoogle())
+
+    suspend fun requestDeletionMagicLink(): AccountDeletionReauthenticationResult {
+        val gateway = reauthenticationGateway
+            ?: return AccountDeletionReauthenticationResult.Failed("Account authentication is not configured for this build.")
+        val expected = expectedDeletionAccount()
+            ?: return AccountDeletionReauthenticationResult.Failed("No pending account deletion requires authentication.")
+        val email = expected.email
+            ?: return AccountDeletionReauthenticationResult.Failed("The account email is unavailable. Use Google sign-in instead.")
+        return when (val result = gateway.requestMagicLink(email)) {
+            MagicLinkRequestResult.Sent -> AccountDeletionReauthenticationResult.MagicLinkSent
+            is MagicLinkRequestResult.Failed -> AccountDeletionReauthenticationResult.Failed(result.reason)
+        }
+    }
+
+    suspend fun completeDeletionReauthentication(callbackUrl: String): AccountDeletionReauthenticationResult =
+        reauthenticateDeletion(reauthenticationGateway?.completeMagicLink(callbackUrl))
 
     suspend fun logout(localCopyDecision: LocalCopyDecision): AccountControlResult {
         operationGate?.beginRevocation()
@@ -220,6 +254,7 @@ class AccountControlCoordinator(
                     )
                 }
                 CloudAccountDeletionResult.AuthenticationRequired -> {
+                    runCatching { tokenStorage.clear() }
                     return AccountControlResult.DeletionIncomplete(
                         AccountControlFailure.AUTHENTICATION,
                         "Sign in again to verify and finish account deletion.",
@@ -265,4 +300,32 @@ class AccountControlCoordinator(
         }
         return AccountControlResult.Deleted
     }
+
+    private suspend fun reauthenticateDeletion(
+        result: AuthenticationResult?,
+    ): AccountDeletionReauthenticationResult {
+        val expected = expectedDeletionAccount()
+            ?: return AccountDeletionReauthenticationResult.Failed("No pending account deletion requires authentication.")
+        return when (result) {
+            null -> AccountDeletionReauthenticationResult.Failed("Account authentication is not configured for this build.")
+            is AuthenticationResult.Authenticated -> {
+                if (result.account.accountId != expected.accountId) {
+                    AccountDeletionReauthenticationResult.WrongAccount(expected.email)
+                } else {
+                    tokenStorage.save(AuthTokens(result.account.accessToken, result.account.refreshToken))
+                    AccountDeletionReauthenticationResult.Resumed(deleteAccount())
+                }
+            }
+            AuthenticationResult.AwaitingCallback -> AccountDeletionReauthenticationResult.AwaitingAuthentication
+            AuthenticationResult.Cancelled -> AccountDeletionReauthenticationResult.Cancelled
+            AuthenticationResult.ExpiredLink -> AccountDeletionReauthenticationResult.ExpiredLink
+            AuthenticationResult.IgnoredCallback -> AccountDeletionReauthenticationResult.IgnoredCallback
+            is AuthenticationResult.Failed -> AccountDeletionReauthenticationResult.Failed(result.reason)
+        }
+    }
+
+    private suspend fun expectedDeletionAccount(): AccountIdentity? =
+        localData.accountIdentity()?.takeIf {
+            localData.pendingDeletion()?.phase == AccountDeletionPhase.CLOUD_PENDING
+        }
 }

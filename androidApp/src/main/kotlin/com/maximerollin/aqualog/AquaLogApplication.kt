@@ -89,12 +89,14 @@ open class AquaLogApplication : Application() {
         }
 
     open val accountControlCoordinator: AccountControlCoordinator by lazy {
+        val configuration = SupabaseConfiguration.fromBuildConfig()
         AccountControlCoordinator(
             localData = aquariumRepository as RoomAquariumRepository,
             tokenStorage = secureTokenStorage,
-            deletionGateway = SupabaseAccountDeletionGateway(SupabaseConfiguration.fromBuildConfig()),
+            deletionGateway = SupabaseAccountDeletionGateway(configuration),
             operationGate = accountOperationGate,
             deletionCredentialStorage = secureTokenStorage,
+            reauthenticationGateway = SupabaseAuthGateway(this, configuration, secureTokenStorage),
             generateOperationKey = { UUID.randomUUID().toString() },
         )
     }

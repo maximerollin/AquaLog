@@ -25,6 +25,7 @@ export async function deleteAccount(
 ): Promise<AccountDeletionOutcome> {
   if (!operationKey.trim() || operationKey.length > 200) throw new TypeError("A valid deletion operation key is required");
   if (await admin.isCompleted(accountId, operationKey)) {
+    try { await admin.deleteFiles(accountId); } catch { return { status: "retryable_failure", step: "files" }; }
     if (!await admin.authUserExists(accountId)) return { status: "completed", accountId };
     try {
       await admin.deleteAuthUser(accountId);

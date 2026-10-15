@@ -63,6 +63,17 @@ Deno.test("deletion removes files and database before Auth", async () => {
   if (admin.calls.join() !== expected) throw new Error(admin.calls.join());
 });
 
+Deno.test("a completed database receipt redrains recreated files before retrying Auth deletion", async () => {
+  const admin = new FakeAdmin();
+  admin.completed.add("account-a:operation-1");
+
+  const result = await deleteAccount(admin, "account-a", null, "expired", "operation-1");
+
+  if (result.status !== "completed") throw new Error(`unexpected ${result.status}`);
+  const expected = "receipt:account-a:operation-1,files:account-a,auth-exists:account-a,auth:account-a";
+  if (admin.calls.join() !== expected) throw new Error(admin.calls.join());
+});
+
 class FakeStorage implements AccountFileStorage {
   objects = new Set<string>();
   failRemovalOnce = false;

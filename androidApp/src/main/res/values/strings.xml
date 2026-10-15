@@ -213,6 +213,7 @@
     <string name="account_deletion_pending">Account deletion incomplete</string>
     <string name="account_deletion_pending_description">Local data remains available for export. Synchronization is paused so it cannot recreate cloud data.</string>
     <string name="retry_account_deletion">Retry account deletion</string>
+    <string name="send_deletion_magic_link">Send link to account email</string>
     <string name="account_deleted_cleanup_title">Account access deleted</string>
     <string name="account_deleted_cleanup_description">Cloud deletion is confirmed and account tokens are cleared. Finish removing the local copy before using AquaLog again.</string>
     <string name="finish_local_cleanup">Finish local cleanup</string>
