@@ -113,7 +113,8 @@ export function interpretLifetimePurchase(
 ): VerifiedSubscription {
   const purchase = value as LifetimePurchase;
   const active = expectedProductId === lifetimeProProductId &&
-    purchase.productId === expectedProductId && purchase.purchaseState === 0 &&
+    (purchase.productId === undefined || purchase.productId === expectedProductId) &&
+    purchase.purchaseState === 0 &&
     (purchase.refundableQuantity ?? 1) > 0;
   return {
     active,

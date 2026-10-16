@@ -164,7 +164,22 @@ enum class ProPurchaseStatus {
 
 enum class ProAuthenticationContinuation {
     START_PURCHASE,
+    START_LIFETIME_PURCHASE,
     RESTORE_PURCHASE,
+}
+
+internal fun resumeProAuthenticationContinuation(
+    continuation: ProAuthenticationContinuation?,
+    startAnnualPurchase: () -> Unit,
+    startLifetimePurchase: () -> Unit,
+    restorePurchase: () -> Unit,
+) {
+    when (continuation) {
+        ProAuthenticationContinuation.START_PURCHASE -> startAnnualPurchase()
+        ProAuthenticationContinuation.START_LIFETIME_PURCHASE -> startLifetimePurchase()
+        ProAuthenticationContinuation.RESTORE_PURCHASE -> restorePurchase()
+        null -> Unit
+    }
 }
 
 data class ProUiState(
@@ -982,7 +997,7 @@ class HomeViewModel(
         viewModelScope.launch {
             handleProOutcome(
                 coordinator.startLifetimePurchase(),
-                continuation = ProAuthenticationContinuation.START_PURCHASE,
+                continuation = ProAuthenticationContinuation.START_LIFETIME_PURCHASE,
             )
         }
     }
@@ -1485,11 +1500,12 @@ class HomeViewModel(
             val continuation = mutableUiState.value.pro.actionAfterAuthentication
             viewModelScope.launch {
                 refreshProEntitlement()
-                when (continuation) {
-                    ProAuthenticationContinuation.START_PURCHASE -> startProPurchase()
-                    ProAuthenticationContinuation.RESTORE_PURCHASE -> restoreProPurchase()
-                    null -> Unit
-                }
+                resumeProAuthenticationContinuation(
+                    continuation = continuation,
+                    startAnnualPurchase = ::startProPurchase,
+                    startLifetimePurchase = ::startLifetimeProPurchase,
+                    restorePurchase = ::restoreProPurchase,
+                )
             }
         }
     }

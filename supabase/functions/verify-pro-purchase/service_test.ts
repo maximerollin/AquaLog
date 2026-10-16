@@ -30,6 +30,26 @@ Deno.test("a purchased non-consumable lifetime product grants without expiry or 
   }
 });
 
+Deno.test("lifetime endpoint scope accepts an omitted product id and rejects a conflicting one", () => {
+  const purchase = {
+    purchaseState: 0,
+    acknowledgementState: 1,
+    refundableQuantity: 1,
+    obfuscatedExternalAccountId: "bound-account",
+  };
+  if (!interpretLifetimePurchase(purchase, "aqualog_pro_lifetime").active) {
+    throw new Error("the product-scoped endpoint required an optional response product id");
+  }
+  if (
+    interpretLifetimePurchase(
+      { ...purchase, productId: "another_product" },
+      "aqualog_pro_lifetime",
+    ).active
+  ) {
+    throw new Error("a conflicting response product id granted lifetime Pro");
+  }
+});
+
 Deno.test("lifetime purchase is account-bound claimed and acknowledged before activation", async () => {
   const accountId = "10000000-0000-0000-0000-000000000051";
   const identity = await playAccountIdentifier(accountId, "test-hmac-secret");
