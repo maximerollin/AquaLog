@@ -148,6 +148,14 @@ fun AquaLogContent(
             onDismiss = viewModel::dismissPortableImportConfirmation,
         )
     }
+    if (state.feedback.isOpen) {
+        FeedbackDialog(
+            state = state.feedback,
+            onMessageChanged = viewModel::updateFeedback,
+            onSubmit = viewModel::submitFeedback,
+            onDismiss = viewModel::dismissFeedback,
+        )
+    }
 }
 
 @Composable
@@ -493,6 +501,23 @@ private fun PortableDataSettings(
                         ) { Text(stringResource(R.string.delete_account)) }
                     } else {
                         Text(stringResource(R.string.account_local_only_description))
+                    }
+                }
+            }
+        }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.feedback_title), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(R.string.feedback_settings_description),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedButton(
+                        onClick = viewModel::openFeedback,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) {
+                        Text(stringResource(R.string.send_feedback))
                     }
                 }
             }
@@ -1093,15 +1118,62 @@ private fun PaywallScreen(
 }
 
 @Composable
+private fun FeedbackDialog(
+    state: FeedbackUiState,
+    onMessageChanged: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.feedback_title)) },
+        text = {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    stringResource(R.string.feedback_privacy_explanation),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                OutlinedTextField(
+                    value = state.message,
+                    onValueChange = onMessageChanged,
+                    label = { Text(stringResource(R.string.feedback_message_label)) },
+                    supportingText = {
+                        Text(stringResource(R.string.feedback_character_count, state.message.length))
+                    },
+                    minLines = 4,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (state.wasSubmitted) {
+                    Text(stringResource(R.string.feedback_sent), color = MaterialTheme.colorScheme.primary)
+                }
+                if (state.isUnavailable) {
+                    Text(stringResource(R.string.feedback_unavailable), color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onSubmit,
+                enabled = state.message.isNotBlank(),
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) {
+                Text(stringResource(R.string.send_feedback))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
+}
+
+@Composable
 private fun AquariumEditorDialog(editor: AquariumEditorUiState, viewModel: HomeViewModel) {
     AlertDialog(
         onDismissRequest = viewModel::dismissAquariumEditor,
         title = {
-            Text(
-                stringResource(
-                    if (editor.aquariumId == null) R.string.add_aquarium else R.string.edit_aquarium,
-                ),
-            )
+            Text(stringResource(if (editor.aquariumId == null) R.string.add_aquarium else R.string.edit_aquarium))
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1126,17 +1198,11 @@ private fun AquariumEditorDialog(editor: AquariumEditorUiState, viewModel: HomeV
                             onClick = { viewModel.updateAquariumEditorUnit(unit) },
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                         ) {
-                            Text(
-                                stringResource(
-                                    if (unit == VolumeUnit.LITERS) R.string.unit_liters else R.string.unit_us_gallons,
-                                ),
-                            )
+                            Text(stringResource(if (unit == VolumeUnit.LITERS) R.string.unit_liters else R.string.unit_us_gallons))
                         }
                     }
                 }
-                if (editor.showValidationError) {
-                    Text(stringResource(R.string.invalid_aquarium), color = MaterialTheme.colorScheme.error)
-                }
+                if (editor.showValidationError) Text(stringResource(R.string.invalid_aquarium), color = MaterialTheme.colorScheme.error)
             }
         },
         confirmButton = {
@@ -1144,11 +1210,7 @@ private fun AquariumEditorDialog(editor: AquariumEditorUiState, viewModel: HomeV
                 Text(stringResource(R.string.save_aquarium))
             }
         },
-        dismissButton = {
-            TextButton(onClick = viewModel::dismissAquariumEditor) {
-                Text(stringResource(R.string.cancel))
-            }
-        },
+        dismissButton = { TextButton(onClick = viewModel::dismissAquariumEditor) { Text(stringResource(R.string.cancel)) } },
     )
 }
 

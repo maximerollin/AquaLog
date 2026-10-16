@@ -8,8 +8,12 @@ import com.maximerollin.aqualog.shared.AccountControlCoordinator
 import com.maximerollin.aqualog.shared.AccountOperationGate
 import com.maximerollin.aqualog.shared.DeletionAwareSyncSessionProvider
 import com.maximerollin.aqualog.shared.AquariumRepository
+import com.maximerollin.aqualog.shared.CrashReporter
+import com.maximerollin.aqualog.shared.FeedbackGateway
+import com.maximerollin.aqualog.shared.ProductTelemetry
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.PortableDataService
+import com.maximerollin.aqualog.shared.ReviewCoordinator
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.SyncCoordinator
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
@@ -76,6 +80,19 @@ open class AquaLogApplication : Application() {
         AndroidTaskReminderScheduler(this)
     }
 
+    private val observabilityConfiguration by lazy { ObservabilityConfiguration.fromBuildConfig() }
+
+    /** Each adapter stays disabled unless its complete build/environment configuration is present. */
+    open val productTelemetry: ProductTelemetry by lazy {
+        createProductTelemetry(this, observabilityConfiguration)
+    }
+    open val crashReporter: CrashReporter by lazy {
+        createCrashReporter(this, observabilityConfiguration)
+    }
+    open val feedbackGateway: FeedbackGateway by lazy {
+        createFeedbackGateway(observabilityConfiguration, accountSessionProvider)
+    }
+
     open val accountCoordinator: AccountActivationCoordinator
         get() {
             val localData = aquariumRepository as RoomAquariumRepository
@@ -116,4 +133,7 @@ open class AquaLogApplication : Application() {
         googlePlayBillingGateway.attach(activity)
         return defaultProPurchaseCoordinator
     }
+
+    open fun reviewCoordinator(activity: Activity): ReviewCoordinator =
+        androidReviewCoordinator(this, activity)
 }

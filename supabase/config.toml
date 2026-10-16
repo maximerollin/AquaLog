@@ -73,3 +73,8 @@ entrypoint = "./functions/delete-account/index.ts"
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/verify-pro-purchase/index.ts"
+
+[functions.submit-feedback]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/submit-feedback/index.ts"
