@@ -103,9 +103,12 @@ begin
     if p_account_id is null
        or p_product_id not in ('aqualog_pro_annual', 'aqualog_pro_lifetime')
        or p_purchase_token_hash = ''
-       or (p_product_id = 'aqualog_pro_annual' and (p_valid_until is null or p_valid_until <= clock_timestamp()))
        or (p_product_id = 'aqualog_pro_lifetime' and p_valid_until is not null) then
         raise exception using errcode = '22023', message = 'invalid verified purchase activation';
+    end if;
+    if p_product_id = 'aqualog_pro_annual'
+       and (p_valid_until is null or p_valid_until <= clock_timestamp()) then
+        raise exception using errcode = '22023', message = 'active entitlement must expire in the future';
     end if;
 
     update public.play_purchase_verifications

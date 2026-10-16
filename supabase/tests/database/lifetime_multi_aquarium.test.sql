@@ -38,6 +38,7 @@ select lives_ok(
   )$$,
   'the lifetime entitlement activates only after acknowledgement'
 );
+reset role;
 select is(
   (select product_id from public.pro_entitlements where account_id = '10000000-0000-0000-0000-000000000051'),
   'aqualog_pro_lifetime',
@@ -48,7 +49,6 @@ select is(
   null::timestamptz,
   'lifetime entitlement has no artificial expiry'
 );
-reset role;
 
 set local role authenticated;
 set local request.jwt.claims = '{"sub":"10000000-0000-0000-0000-000000000051","role":"authenticated"}';
@@ -79,13 +79,14 @@ select ok(
 set local request.jwt.claims = '{"sub":"10000000-0000-0000-0000-000000000052","role":"authenticated"}';
 select is((select count(*) from public.pro_entitlements), 0::bigint, 'another account cannot read the lifetime entitlement');
 select is((select count(*) from public.aquariums), 0::bigint, 'another account cannot read either Aquarium');
-select lives_ok(
+select throws_ok(
   $$select public.apply_sync_operation(
     'ticket15-attacker-replay', 'aquarium', '51000000-0000-0000-0000-000000000002',
     'upsert', 3, 0,
     '{"id":"51000000-0000-0000-0000-000000000002","name":"Stolen","volume":1,"volume_unit":"liters","created_at_epoch_millis":2,"profile":"established","is_archived":false}'::jsonb
   )$$,
-  'an ownership-conflicting sync remains non-mutating'
+  '42501', 'entity UUID belongs to another account',
+  'an ownership-conflicting sync is rejected'
 );
 
 reset role;
