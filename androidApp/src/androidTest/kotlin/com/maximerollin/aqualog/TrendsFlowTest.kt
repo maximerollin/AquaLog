@@ -4,8 +4,8 @@ import android.os.SystemClock
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -129,6 +129,7 @@ class TrendsFlowTest {
         val application = context.applicationContext as TestAquaLogApplication
         application.resetRepository()
         val oldTemperature = 20.5
+        var interventionSessionId = ""
         runBlocking {
             val parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED).map {
                 if (it.parameter == BuiltInParameter.PHOSPHATE) it.copy(isActive = true) else it
@@ -155,7 +156,7 @@ class TrendsFlowTest {
                     mapOf(nitrate.id to "24"),
                 ),
             )
-            application.aquariumRepository.saveRapidSession(
+            interventionSessionId = application.aquariumRepository.saveRapidSession(
                 RapidSessionInput(
                     setup.aquarium.id,
                     System.currentTimeMillis() - 10L * 86_400_000L,
@@ -163,7 +164,7 @@ class TrendsFlowTest {
                     mapOf(nitrate.id to "20", phosphate.id to "0.8"),
                     listOf(MaintenanceActionInput(MaintenanceActionType.WATER_CHANGE, "20", "%")),
                 ),
-            )
+            ).session.id
             application.aquariumRepository.saveRapidSession(
                 RapidSessionInput(
                     setup.aquarium.id,
@@ -182,11 +183,22 @@ class TrendsFlowTest {
         composeRule.onNodeWithText("Show complete history").performClick()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("Advanced Pro analysis"))
         composeRule.onNodeWithText("Advanced Pro analysis").assertIsDisplayed()
+        composeRule.onNodeWithTag("trend-list")
+            .performScrollToNode(hasText("Compatible Parameter comparison · mg/L"))
         composeRule.onNodeWithText("Compatible Parameter comparison · mg/L").assertIsDisplayed()
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(
+            hasContentDescription("includes 1 intervention annotations", substring = true),
+        )
         composeRule.onNodeWithContentDescription("includes 1 intervention annotations", substring = true)
             .assertIsDisplayed()
-        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("Water change", substring = true))
-        composeRule.onNode(hasText("Water change", substring = true) and hasClickAction()).performClick()
+        val interventionTag = "trend-intervention-$interventionSessionId"
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasTestTag(interventionTag))
+        composeRule.onNodeWithTag(interventionTag).performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(
+                hasContentDescription("The center line marks the intervention", substring = true),
+            ).fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onNodeWithTag("trend-list").performScrollToNode(
             hasContentDescription("The center line marks the intervention", substring = true),
         )
