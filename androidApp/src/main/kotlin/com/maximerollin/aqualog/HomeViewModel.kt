@@ -7,6 +7,8 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.maximerollin.aqualog.shared.AquariumProfile
+import com.maximerollin.aqualog.shared.Aquarium
+import com.maximerollin.aqualog.shared.AquariumCreationAccess
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
 import com.maximerollin.aqualog.shared.AccountActivationResult
 import com.maximerollin.aqualog.shared.AccountControlCoordinator
@@ -34,6 +36,7 @@ import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinitionDraft
 import com.maximerollin.aqualog.shared.AnnualProOffer
+import com.maximerollin.aqualog.shared.LifetimeProOffer
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.ProPurchaseOutcome
 import com.maximerollin.aqualog.shared.PortableImportProblem
@@ -77,6 +80,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.Serializable
@@ -182,7 +186,22 @@ enum class ProPurchaseStatus {
 
 enum class ProAuthenticationContinuation {
     START_PURCHASE,
+    START_LIFETIME_PURCHASE,
     RESTORE_PURCHASE,
+}
+
+internal fun resumeProAuthenticationContinuation(
+    continuation: ProAuthenticationContinuation?,
+    startAnnualPurchase: () -> Unit,
+    startLifetimePurchase: () -> Unit,
+    restorePurchase: () -> Unit,
+) {
+    when (continuation) {
+        ProAuthenticationContinuation.START_PURCHASE -> startAnnualPurchase()
+        ProAuthenticationContinuation.START_LIFETIME_PURCHASE -> startLifetimePurchase()
+        ProAuthenticationContinuation.RESTORE_PURCHASE -> restorePurchase()
+        null -> Unit
+    }
 }
 
 data class ProUiState(
@@ -190,6 +209,7 @@ data class ProUiState(
     val openedFromOnboarding: Boolean = false,
     val isLoadingOffer: Boolean = false,
     val offer: AnnualProOffer? = null,
+val lifetimeOffer: LifetimeProOffer? = null,
     val purchaseStatus: ProPurchaseStatus = ProPurchaseStatus.IDLE,
     val message: String? = null,
     val actionAfterAuthentication: ProAuthenticationContinuation? = null,
@@ -281,6 +301,8 @@ data class ParameterEditorState(
 data class HomeUiState(
     val isLoading: Boolean = true,
     val setup: AquariumSetup? = null,
+    val aquariums: List<Aquarium> = emptyList(),
+    val aquariumEditor: AquariumEditorUiState? = null,
     val step: OnboardingStep = OnboardingStep.WELCOME,
     val profile: AquariumProfile = AquariumProfile.ESTABLISHED,
     val aquariumName: String = "",
@@ -310,6 +332,15 @@ data class HomeUiState(
     val portableData: PortableDataUiState = PortableDataUiState(),
     val feedback: FeedbackUiState = FeedbackUiState(),
     val accountSettings: AccountSettingsUiState = AccountSettingsUiState(),
+)
+
+data class AquariumEditorUiState(
+    val aquariumId: String? = null,
+    val name: String = "",
+    val volume: String = "",
+    val volumeUnit: VolumeUnit = VolumeUnit.LITERS,
+    val isSaving: Boolean = false,
+    val showValidationError: Boolean = false,
 )
 
 data class RapidSessionUiState(
@@ -391,6 +422,11 @@ class HomeViewModel(
     private var lastObservedSyncState: SyncState? = null
 
     init {
+        viewModelScope.launch {
+            aquariumRepository.observeAquariums().collect { aquariums ->
+                mutableUiState.update { it.copy(aquariums = aquariums) }
+            }
+        }
         viewModelScope.launch {
             aquariumRepository.observeCurrentSetup().collectLatest { setup ->
                 mutableUiState.update {
@@ -509,6 +545,108 @@ class HomeViewModel(
         viewModelScope.launch {
             syncLocalData.retrySyncNow()
             onSyncRetryRequested()
+        }
+    }
+
+    fun selectAquarium(aquariumId: String) {
+        viewModelScope.launch {
+            aquariumRepository.selectAquarium(aquariumId)
+            activateAquariumContext(aquariumId)
+        }
+    }
+
+    fun openCreateAquarium() {
+        val state = mutableUiState.value
+        if (state.aquariums.isNotEmpty() && state.pro.purchaseStatus != ProPurchaseStatus.ACTIVE) {
+            openProPaywall()
+            return
+        }
+        mutableUiState.update { it.copy(aquariumEditor = AquariumEditorUiState()) }
+    }
+
+    fun openEditAquarium() {
+        val aquarium = mutableUiState.value.setup?.aquarium ?: return
+        mutableUiState.update {
+            it.copy(
+                aquariumEditor = AquariumEditorUiState(
+                    aquariumId = aquarium.id,
+                    name = aquarium.name,
+                    volume = aquarium.volume.displayInput(),
+                    volumeUnit = aquarium.volumeUnit,
+                ),
+            )
+        }
+    }
+
+    fun dismissAquariumEditor() {
+        mutableUiState.update { it.copy(aquariumEditor = null) }
+    }
+
+    fun updateAquariumEditorName(value: String) = updateAquariumEditor {
+        it.copy(name = value, showValidationError = false)
+    }
+
+    fun updateAquariumEditorVolume(value: String) = updateAquariumEditor {
+        it.copy(volume = value, showValidationError = false)
+    }
+
+    fun updateAquariumEditorUnit(value: VolumeUnit) = updateAquariumEditor {
+        it.copy(volumeUnit = value, showValidationError = false)
+    }
+
+    fun saveAquariumEditor() {
+        val editor = mutableUiState.value.aquariumEditor ?: return
+        val volume = editor.volume.toDecimalOrNull()
+        if (editor.name.isBlank() || volume == null || volume <= 0.0 || !volume.isFinite()) {
+            updateAquariumEditor { it.copy(showValidationError = true) }
+            return
+        }
+        updateAquariumEditor { it.copy(isSaving = true, showValidationError = false) }
+        viewModelScope.launch {
+            runCatching {
+                val aquariumId = editor.aquariumId
+                if (aquariumId == null) {
+                    val access = if (mutableUiState.value.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
+                        AquariumCreationAccess.PRO
+                    } else {
+                        AquariumCreationAccess.FREE
+                    }
+                    aquariumRepository.createConfiguredAquarium(
+                        name = editor.name,
+                        volume = volume,
+                        volumeUnit = editor.volumeUnit,
+                        profile = AquariumProfile.ESTABLISHED,
+                        parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+                        access = access,
+                    ).aquarium.id.also { aquariumRepository.selectAquarium(it) }
+                } else {
+                    val existing = requireNotNull(mutableUiState.value.aquariums.firstOrNull { it.id == aquariumId })
+                    aquariumRepository.updateAquarium(
+                        existing.copy(
+                            name = editor.name,
+                            volume = volume,
+                            volumeUnit = editor.volumeUnit,
+                        ),
+                    )
+                    aquariumId
+                }
+            }.onSuccess {
+                mutableUiState.update { state -> state.copy(aquariumEditor = null) }
+            }.onFailure {
+                updateAquariumEditor { current ->
+                    current.copy(isSaving = false, showValidationError = true)
+                }
+            }
+        }
+    }
+
+    fun archiveCurrentAquarium() {
+        val state = mutableUiState.value
+        val aquarium = state.setup?.aquarium ?: return
+        if (state.aquariums.size <= 1 || state.pro.purchaseStatus != ProPurchaseStatus.ACTIVE) return
+        viewModelScope.launch {
+            aquariumRepository.archiveAquarium(aquarium.id)
+            aquariumRepository.observeCurrentAquarium().first()?.let(::activateAquariumContext)
         }
     }
 
@@ -899,13 +1037,16 @@ class HomeViewModel(
         }
         mutableUiState.update { it.copy(pro = it.pro.copy(isLoadingOffer = true, message = null)) }
         viewModelScope.launch {
-            runCatching { coordinator.loadOffer() }
+            val lifetimeOffer = runCatching { coordinator.loadLifetimeOffer() }
+            val annualOffer = runCatching { coordinator.loadOffer() }.getOrNull()
+            lifetimeOffer
                 .onSuccess { offer ->
                     mutableUiState.update { state ->
                         state.copy(
                             pro = state.pro.copy(
                                 isLoadingOffer = false,
-                                offer = offer,
+                                offer = annualOffer,
+                                lifetimeOffer = offer,
                                 purchaseStatus = if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
                                     ProPurchaseStatus.ACTIVE
                                 } else {
@@ -948,6 +1089,25 @@ class HomeViewModel(
             handleProOutcome(
                 coordinator.startPurchase(),
                 continuation = ProAuthenticationContinuation.START_PURCHASE,
+            )
+        }
+    }
+
+    fun startLifetimeProPurchase() {
+        val coordinator = proPurchaseCoordinator ?: return
+        if (
+            mutableUiState.value.pro.purchaseStatus in setOf(
+                ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION,
+                ProPurchaseStatus.PENDING,
+                ProPurchaseStatus.VERIFYING,
+                ProPurchaseStatus.ACTIVE,
+            )
+        ) return
+        updatePro(ProPurchaseStatus.VERIFYING)
+        viewModelScope.launch {
+            handleProOutcome(
+                coordinator.startLifetimePurchase(),
+                continuation = ProAuthenticationContinuation.START_LIFETIME_PURCHASE,
             )
         }
     }
@@ -1472,11 +1632,12 @@ class HomeViewModel(
             val continuation = mutableUiState.value.pro.actionAfterAuthentication
             viewModelScope.launch {
                 refreshProEntitlement()
-                when (continuation) {
-                    ProAuthenticationContinuation.START_PURCHASE -> startProPurchase()
-                    ProAuthenticationContinuation.RESTORE_PURCHASE -> restoreProPurchase()
-                    null -> Unit
-                }
+                resumeProAuthenticationContinuation(
+                    continuation = continuation,
+                    startAnnualPurchase = ::startProPurchase,
+                    startLifetimePurchase = ::startLifetimeProPurchase,
+                    restorePurchase = ::restoreProPurchase,
+                )
             }
         }
     }
@@ -1652,6 +1813,29 @@ class HomeViewModel(
         mutableUiState.update { it.copy(tasks = transform(it.tasks)) }
     }
 
+    private fun updateAquariumEditor(transform: (AquariumEditorUiState) -> AquariumEditorUiState) {
+        mutableUiState.update { state ->
+            state.aquariumEditor?.let { state.copy(aquariumEditor = transform(it)) } ?: state
+        }
+    }
+
+    private fun activateAquariumContext(aquarium: Aquarium) = activateAquariumContext(aquarium.id)
+
+    private fun activateAquariumContext(aquariumId: String) {
+        mutableUiState.update { state ->
+            state.copy(
+                timeline = state.timeline.copy(aquariumId = aquariumId),
+                trends = state.trends.copy(selectedParameterDefinitionId = null),
+            )
+        }
+        if (mutableUiState.value.destination == MainDestination.HISTORY) {
+            observeTimeline()
+            if (mutableUiState.value.historySection == HistorySection.TRENDS) {
+                observeTrends(aquariumId)
+            }
+        }
+    }
+
     private fun observeTimeline() {
         timelineJob?.cancel()
         val timeline = mutableUiState.value.timeline
@@ -1697,8 +1881,8 @@ class HomeViewModel(
         }
     }
 
-    private fun observeTrends() {
-        val setup = mutableUiState.value.setup ?: return
+    private fun observeTrends(aquariumId: String? = null) {
+        val selectedAquariumId = aquariumId ?: mutableUiState.value.setup?.aquarium?.id ?: return
         trendsJob?.cancel()
         val period = mutableUiState.value.trends.period
         mutableUiState.update { state ->
@@ -1710,7 +1894,7 @@ class HomeViewModel(
             )
         }
         trendsJob = viewModelScope.launch {
-            aquariumRepository.observeFreeTrends(setup.aquarium.id, period)
+            aquariumRepository.observeFreeTrends(selectedAquariumId, period)
                 .catch {
                     mutableUiState.update { state ->
                         state.copy(

@@ -3,12 +3,18 @@ package com.maximerollin.aqualog.shared
 import kotlinx.coroutines.flow.Flow
 
 const val ANNUAL_PRO_PRODUCT_ID = "aqualog_pro_annual"
+const val LIFETIME_PRO_PRODUCT_ID = "aqualog_pro_lifetime"
 
 data class AnnualProOffer(
     val productId: String,
     val formattedPrice: String,
     val trialDays: Int,
     val formattedBillingDate: String,
+)
+
+data class LifetimeProOffer(
+    val productId: String,
+    val formattedPrice: String,
 )
 
 sealed interface BillingLaunchResult {
@@ -28,6 +34,9 @@ interface ProBillingGateway {
     suspend fun loadAnnualOffer(): AnnualProOffer
     suspend fun launchAnnualPurchase(obfuscatedAccountId: String): BillingLaunchResult
     suspend fun restoreAnnualPurchase(): PlayPurchaseUpdate?
+    suspend fun loadLifetimeOffer(): LifetimeProOffer
+    suspend fun launchLifetimePurchase(obfuscatedAccountId: String): BillingLaunchResult
+    suspend fun restoreLifetimePurchase(): PlayPurchaseUpdate?
 }
 
 sealed interface PurchaseAccountIdentityResult {
@@ -38,7 +47,8 @@ sealed interface PurchaseAccountIdentityResult {
 
 data class ProEntitlement(
     val productId: String,
-    val validUntilEpochMillis: Long,
+    /** Null means a non-expiring, server-verified lifetime entitlement. */
+    val validUntilEpochMillis: Long?,
 )
 
 sealed interface PurchaseVerificationResult {
@@ -77,6 +87,8 @@ class ProPurchaseCoordinator(
 
     suspend fun loadOffer(): AnnualProOffer = billingGateway.loadAnnualOffer()
 
+    suspend fun loadLifetimeOffer(): LifetimeProOffer = billingGateway.loadLifetimeOffer()
+
     suspend fun refreshEntitlement(): ProPurchaseOutcome = applyVerification(
         purchaseVerifier.loadEntitlement(),
         rejectionIsFailure = false,
@@ -93,8 +105,22 @@ class ProPurchaseCoordinator(
         is PurchaseAccountIdentityResult.Failed -> ProPurchaseOutcome.Failed(identity.reason)
     }
 
+    suspend fun startLifetimePurchase(): ProPurchaseOutcome = when (
+        val identity = purchaseVerifier.loadPurchaseAccountIdentity()
+    ) {
+        is PurchaseAccountIdentityResult.Available -> {
+            when (val launch = billingGateway.launchLifetimePurchase(identity.obfuscatedAccountId)) {
+                BillingLaunchResult.Started -> ProPurchaseOutcome.AwaitingPlayConfirmation
+                is BillingLaunchResult.Failed -> ProPurchaseOutcome.Failed(launch.reason)
+            }
+        }
+        PurchaseAccountIdentityResult.AuthenticationRequired -> ProPurchaseOutcome.AuthenticationRequired
+        is PurchaseAccountIdentityResult.Failed -> ProPurchaseOutcome.Failed(identity.reason)
+    }
+
     suspend fun restorePurchase(): ProPurchaseOutcome {
-        val restored = billingGateway.restoreAnnualPurchase()
+        val restored = billingGateway.restoreLifetimePurchase()
+            ?: billingGateway.restoreAnnualPurchase()
             ?: return ProPurchaseOutcome.Failed("No active Google Play purchase was found")
         return resolve(restored)
     }
@@ -107,7 +133,7 @@ class ProPurchaseCoordinator(
     }
 
     private suspend fun verify(update: PlayPurchaseUpdate.Purchased): ProPurchaseOutcome {
-        if (update.productId != ANNUAL_PRO_PRODUCT_ID) {
+        if (update.productId !in setOf(ANNUAL_PRO_PRODUCT_ID, LIFETIME_PRO_PRODUCT_ID)) {
             return ProPurchaseOutcome.Failed("Unexpected Google Play product")
         }
         return applyVerification(

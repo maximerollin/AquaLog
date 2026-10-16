@@ -7,7 +7,15 @@ data class Aquarium(
     val volumeUnit: VolumeUnit,
     val createdAtEpochMillis: Long,
     val profile: AquariumProfile = AquariumProfile.ESTABLISHED,
+    val isArchived: Boolean = false,
 )
+
+enum class AquariumCreationAccess {
+    FREE,
+    PRO,
+}
+
+class FreeAquariumLimitReached : IllegalStateException("Free supports one Aquarium")
 
 data class AquariumSetup(
     val aquarium: Aquarium,

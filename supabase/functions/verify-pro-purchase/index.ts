@@ -1,5 +1,6 @@
 import {
   annualProProductId,
+  lifetimeProProductId,
   playAccountIdentifier,
   ProEntitlementRevalidation,
   ProPurchaseClaim,
@@ -49,8 +50,8 @@ Deno.serve(async (request) => {
         storedPurchase,
         {
           hmacSecret,
-          loadGoogleSubscription: googlePlay.loadSubscription,
-          acknowledgePurchase: googlePlay.acknowledge,
+          loadGoogleSubscription: (token) => googlePlay.loadPurchase(storedPurchase.productId, token),
+          acknowledgePurchase: (token) => googlePlay.acknowledge(storedPurchase.productId, token),
           updateEntitlement: (update) =>
             revalidatePurchaseRpc(
               supabaseUrl,
@@ -78,7 +79,7 @@ Deno.serve(async (request) => {
       verificationRequest,
       {
         hmacSecret,
-        loadGoogleSubscription: googlePlay.loadSubscription,
+        loadGoogleSubscription: (token) => googlePlay.loadPurchase(verificationRequest.productId, token),
         claimPurchase: (claim) =>
           callPurchaseRpc(
             supabaseUrl,
@@ -87,7 +88,7 @@ Deno.serve(async (request) => {
             claim,
           ),
         acknowledgePurchase: (claim) =>
-          googlePlay.acknowledge(claim.purchaseToken),
+          googlePlay.acknowledge(claim.productId, claim.purchaseToken),
         activateEntitlement: (claim) =>
           callPurchaseRpc(
             supabaseUrl,
@@ -138,8 +139,8 @@ function isLoadEntitlementRequest(value: unknown): boolean {
 }
 
 async function googlePlayClient(): Promise<{
-  loadSubscription: (purchaseToken: string) => Promise<unknown>;
-  acknowledge: (purchaseToken: string) => Promise<boolean>;
+  loadPurchase: (productId: string, purchaseToken: string) => Promise<unknown>;
+  acknowledge: (productId: string, purchaseToken: string) => Promise<boolean>;
 }> {
   const serviceAccount = JSON.parse(
     requiredEnv("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"),
@@ -147,15 +148,17 @@ async function googlePlayClient(): Promise<{
   const packageName = requiredEnv("GOOGLE_PLAY_PACKAGE_NAME");
   const googleAccessToken = await googleServiceAccessToken(serviceAccount);
   return {
-    loadSubscription: (purchaseToken) =>
-      googleSubscription(packageName, googleAccessToken, purchaseToken),
-    acknowledge: async (purchaseToken) => {
+    loadPurchase: (productId, purchaseToken) => productId === lifetimeProProductId
+      ? googleLifetimePurchase(packageName, googleAccessToken, purchaseToken)
+      : googleSubscription(packageName, googleAccessToken, purchaseToken),
+    acknowledge: async (productId, purchaseToken) => {
+      const purchasePath = productId === lifetimeProProductId
+        ? `products/${encodeURIComponent(productId)}`
+        : `subscriptions/${encodeURIComponent(annualProProductId)}`;
       const acknowledgement = await fetch(
         `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${
           encodeURIComponent(packageName)
-        }/purchases/subscriptions/${
-          encodeURIComponent(annualProProductId)
-        }/tokens/${encodeURIComponent(purchaseToken)}:acknowledge`,
+        }/purchases/${purchasePath}/tokens/${encodeURIComponent(purchaseToken)}:acknowledge`,
         {
           method: "POST",
           headers: {
@@ -168,6 +171,23 @@ async function googlePlayClient(): Promise<{
       return acknowledgement.ok;
     },
   };
+}
+
+async function googleLifetimePurchase(
+  packageName: string,
+  googleAccessToken: string,
+  purchaseToken: string,
+): Promise<unknown> {
+  const purchaseResponse = await fetch(
+    `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${
+      encodeURIComponent(packageName)
+    }/purchases/products/${encodeURIComponent(lifetimeProProductId)}/tokens/${
+      encodeURIComponent(purchaseToken)
+    }`,
+    { headers: { authorization: `Bearer ${googleAccessToken}` } },
+  );
+  if (!purchaseResponse.ok) throw new GooglePurchaseRejectedError();
+  return purchaseResponse.json();
 }
 
 async function googleSubscription(

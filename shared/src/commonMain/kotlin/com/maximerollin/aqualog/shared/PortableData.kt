@@ -90,6 +90,7 @@ data class PortableAquarium(
     val volumeUnit: String,
     val createdAtEpochMillis: Long,
     val profile: String,
+    val isArchived: Boolean = false,
 )
 
 @Serializable
@@ -401,9 +402,25 @@ private fun PortableDataDocument.toSnapshot() = PortableDatabaseSnapshot(
     taskOccurrences = taskOccurrences.map(PortableTaskOccurrence::toEntity),
 )
 
-private fun AquariumEntity.toPortable() = PortableAquarium(id, name, volume, volumeUnit, createdAtEpochMillis, profile)
+private fun AquariumEntity.toPortable() = PortableAquarium(
+    id,
+    name,
+    volume,
+    volumeUnit,
+    createdAtEpochMillis,
+    profile,
+    isArchived,
+)
 
-private fun PortableAquarium.toEntity() = AquariumEntity(id, name, volume, volumeUnit, createdAtEpochMillis, profile)
+private fun PortableAquarium.toEntity() = AquariumEntity(
+    id,
+    name,
+    volume,
+    volumeUnit,
+    createdAtEpochMillis,
+    profile,
+    isArchived,
+)
 
 private fun ParameterDefinitionEntity.toPortable() = PortableParameterDefinition(
     id,
