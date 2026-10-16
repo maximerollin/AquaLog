@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -11,6 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
@@ -33,6 +36,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -301,7 +306,10 @@ private fun WelcomeScreen(
     onRequestImport: () -> Unit,
     modifier: Modifier,
 ) {
-    StandardScreen(modifier) {
+    Column(
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         Spacer(Modifier.weight(1f))
         ScreenHeading(R.string.welcome_title, R.string.welcome_description)
         PortableDataMessage(state)
@@ -435,7 +443,7 @@ private fun PortableDataSettings(
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.account_deletion_pending), style = MaterialTheme.typography.titleMedium)
-                        Text(accountState.safeDetail ?: stringResource(R.string.account_deletion_pending_description))
+                        Text(accountState.localizedSafeDetail() ?: stringResource(R.string.account_deletion_pending_description))
                         if (accountState.showDeletionReauthenticationAction) {
                             Button(
                                 onClick = viewModel::reauthenticateAccountDeletionWithGoogle,
@@ -534,7 +542,7 @@ private fun PortableDataSettings(
         }
         item {
             if (state.isWorking || accountState.isWorking) CircularProgressIndicator()
-            accountState.safeDetail?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            accountState.localizedSafeDetail()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Spacer(Modifier.height(16.dp))
         }
     }
@@ -632,7 +640,7 @@ private fun AccountDeletionCleanupScreen(
 ) {
     StandardScreen(modifier) {
         ScreenHeading(R.string.account_deleted_cleanup_title, R.string.account_deleted_cleanup_description)
-        state.safeDetail?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        state.localizedSafeDetail()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Spacer(Modifier.weight(1f))
         Button(
             onClick = viewModel::retryAccountDeletion,
@@ -713,7 +721,10 @@ private fun ProfileScreen(
     onContinue: () -> Unit,
     modifier: Modifier,
 ) {
-    StandardScreen(modifier) {
+    Column(
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         ScreenHeading(R.string.profile_title, R.string.profile_description)
         Column(
             modifier = Modifier.selectableGroup(),
@@ -738,7 +749,7 @@ private fun ProfileScreen(
                 onClick = { onSelected(AquariumProfile.PLANTED_SHRIMP) },
             )
         }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(8.dp))
         PrimaryButton(R.string.continue_to_aquarium, onContinue)
     }
 }
@@ -1079,7 +1090,7 @@ private fun PaywallScreen(
         }
         pro.message?.let { message ->
             Text(
-                message,
+                stringResource(message.resourceId()),
                 color = if (pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
                     MaterialTheme.colorScheme.primary
                 } else {
@@ -1116,6 +1127,27 @@ private fun PaywallScreen(
         }
     }
 }
+
+private fun ProMessage.resourceId(): Int = when (this) {
+    ProMessage.PLAY_UNAVAILABLE -> R.string.pro_message_play_unavailable
+    ProMessage.PURCHASE_PENDING -> R.string.pro_message_purchase_pending
+    ProMessage.PURCHASE_CANCELLED -> R.string.pro_message_purchase_cancelled
+    ProMessage.AUTHENTICATION_REQUIRED -> R.string.pro_message_authentication_required
+    ProMessage.ACTIVE -> R.string.pro_message_active
+    ProMessage.VERIFICATION_FAILED -> R.string.pro_message_verification_failed
+    ProMessage.SAVE_FAILED -> R.string.pro_message_save_failed
+}
+
+@Composable
+private fun AccountSettingsUiState.localizedSafeDetail(): String? = safeMessage?.let {
+    stringResource(
+        when (it) {
+            AccountSafeMessage.SIGN_OUT_FAILED -> R.string.account_sign_out_failed
+            AccountSafeMessage.DELETION_RESUME_FAILED -> R.string.account_deletion_resume_failed
+            AccountSafeMessage.AUTHENTICATION_LINK_FAILED -> R.string.authentication_link_processing_failed
+        },
+    )
+} ?: safeDetail
 
 @Composable
 private fun FeedbackDialog(
@@ -1155,7 +1187,7 @@ private fun FeedbackDialog(
             TextButton(
                 onClick = onSubmit,
                 enabled = state.message.isNotBlank(),
-                modifier = Modifier.heightIn(min = 48.dp),
+                modifier = Modifier.heightIn(min = 48.dp).testTag("submit-feedback"),
             ) {
                 Text(stringResource(R.string.send_feedback))
             }
@@ -1432,10 +1464,13 @@ internal fun BuiltInParameter.label(): String = stringResource(
 )
 
 @Composable
-private fun Aquarium.formattedVolume(): String = when (volumeUnit) {
-    VolumeUnit.LITERS -> stringResource(R.string.volume_liters_format, volume.displayValue())
-    VolumeUnit.US_GALLONS -> stringResource(R.string.volume_us_gallons_format, volume.displayValue())
+private fun Aquarium.formattedVolume(): String {
+    val configuration = LocalConfiguration.current
+    @Suppress("DEPRECATION")
+    val locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) configuration.locales[0] else configuration.locale
+    val formatted = LocalizedFormatters(locale).number(volume)
+    return when (volumeUnit) {
+        VolumeUnit.LITERS -> stringResource(R.string.volume_liters_format, formatted)
+        VolumeUnit.US_GALLONS -> stringResource(R.string.volume_us_gallons_format, formatted)
+    }
 }
-
-private fun Double.displayValue(): String =
-    if (this % 1.0 == 0.0) toLong().toString() else toString()

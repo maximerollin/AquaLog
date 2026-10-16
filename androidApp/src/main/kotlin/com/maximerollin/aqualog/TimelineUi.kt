@@ -402,4 +402,8 @@ private fun TimelineSession.effectiveDate(): String =
     DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(session.occurredAtEpochMillis))
 
 private fun Double.displayValue(maximumPrecision: Int): String =
-    String.format(Locale.US, "%.${maximumPrecision}f", this).trimEnd('0').trimEnd('.')
+    java.text.NumberFormat.getNumberInstance(Locale.getDefault()).apply {
+        minimumFractionDigits = 0
+        maximumFractionDigits = maximumPrecision
+        isGroupingUsed = false
+    }.format(this)

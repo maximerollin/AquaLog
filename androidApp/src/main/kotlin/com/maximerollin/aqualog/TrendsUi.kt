@@ -679,6 +679,9 @@ private fun Long.displayTrendDate(): String =
     DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(this))
 
 private fun Double.displayTrendValue(precision: Int): String {
-    val formatted = String.format(Locale.US, "%.${precision}f", this)
-    return if (precision == 0) formatted else formatted.trimEnd('0').trimEnd('.')
+    return java.text.NumberFormat.getNumberInstance(Locale.getDefault()).apply {
+        minimumFractionDigits = 0
+        maximumFractionDigits = precision
+        isGroupingUsed = false
+    }.format(this)
 }

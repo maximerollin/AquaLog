@@ -1,11 +1,14 @@
 package com.maximerollin.aqualog
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximerollin.aqualog.shared.AquariumProfile
@@ -42,8 +45,11 @@ class AccountControlSettingsTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
             composeRule.onNodeWithText("Settings").performClick()
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("owner@example.com"))
             composeRule.onNodeWithText("owner@example.com").assertIsDisplayed()
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Export data"))
             composeRule.onNodeWithText("Export data").assertIsDisplayed()
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Sign out"))
             composeRule.onNodeWithText("Sign out").performScrollTo().performClick()
             composeRule.onNodeWithText("Keep local copy").assertIsDisplayed()
             composeRule.onNodeWithText("Remove local copy").assertIsDisplayed()
@@ -64,13 +70,17 @@ class AccountControlSettingsTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
             composeRule.onNodeWithText("Settings").performClick()
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Delete account"))
             composeRule.onNodeWithText("Delete account").performScrollTo().performClick()
             composeRule.onNodeWithText("Delete account and data").performClick()
             composeRule.waitUntil(5_000) {
                 composeRule.onAllNodesWithText("Account deletion incomplete").fetchSemanticsNodes().isNotEmpty()
             }
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Service temporarily unavailable"))
             composeRule.onNodeWithText("Service temporarily unavailable").performScrollTo().assertIsDisplayed()
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Export data"))
             composeRule.onNodeWithText("Export data").performScrollTo().assertIsDisplayed()
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Retry account deletion"))
             composeRule.onNodeWithText("Retry account deletion").performScrollTo().assertIsDisplayed()
         } finally {
             scenario.close()

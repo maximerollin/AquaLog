@@ -5,10 +5,13 @@ import android.app.Instrumentation.ActivityResult
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.Intents.intended
@@ -59,6 +62,7 @@ class PortableDataFlowTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
             composeRule.onNodeWithText("Settings").performClick()
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Export data"))
             composeRule.onNodeWithText("Export data").performClick()
 
             intended(allOf(hasAction(Intent.ACTION_CREATE_DOCUMENT), hasType("application/json")))
