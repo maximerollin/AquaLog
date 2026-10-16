@@ -15,6 +15,15 @@ val privacyUrl = providers.gradleProperty("AQUALOG_PRIVACY_URL")
 val supportUrl = providers.gradleProperty("AQUALOG_SUPPORT_URL")
     .orElse(providers.environmentVariable("AQUALOG_SUPPORT_URL"))
     .getOrElse("")
+fun configuredValue(name: String) = providers.gradleProperty(name)
+    .orElse(providers.environmentVariable(name))
+    .getOrElse("")
+val postHogApiKey = configuredValue("AQUALOG_POSTHOG_API_KEY")
+val postHogHost = configuredValue("AQUALOG_POSTHOG_HOST")
+val firebaseApplicationId = configuredValue("AQUALOG_FIREBASE_APPLICATION_ID")
+val firebaseApiKey = configuredValue("AQUALOG_FIREBASE_API_KEY")
+val firebaseProjectId = configuredValue("AQUALOG_FIREBASE_PROJECT_ID")
+val feedbackUrl = configuredValue("AQUALOG_FEEDBACK_URL")
 fun String.asBuildConfigString(): String = "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {
@@ -32,6 +41,12 @@ android {
         buildConfigField("String", "SUPABASE_ANON_KEY", supabaseAnonKey.asBuildConfigString())
         buildConfigField("String", "PRIVACY_URL", privacyUrl.asBuildConfigString())
         buildConfigField("String", "SUPPORT_URL", supportUrl.asBuildConfigString())
+        buildConfigField("String", "POSTHOG_API_KEY", postHogApiKey.asBuildConfigString())
+        buildConfigField("String", "POSTHOG_HOST", postHogHost.asBuildConfigString())
+        buildConfigField("String", "FIREBASE_APPLICATION_ID", firebaseApplicationId.asBuildConfigString())
+        buildConfigField("String", "FIREBASE_API_KEY", firebaseApiKey.asBuildConfigString())
+        buildConfigField("String", "FIREBASE_PROJECT_ID", firebaseProjectId.asBuildConfigString())
+        buildConfigField("String", "FEEDBACK_URL", feedbackUrl.asBuildConfigString())
     }
 
     buildFeatures {
@@ -63,6 +78,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.google.play.billing)
     implementation(libs.google.play.review)
+    implementation(libs.posthog.android)
+    implementation(libs.firebase.crashlytics)
     implementation(libs.androidx.work.runtime)
 
     debugImplementation(libs.androidx.compose.ui.tooling)

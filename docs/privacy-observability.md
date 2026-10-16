@@ -12,12 +12,11 @@ category values fail closed. The schema contains no stable user or account ID
 and no field capable of carrying water values, Aquarium names, email addresses,
 photos, notes, observations, or other free text.
 
-The production application currently injects `DisabledProductTelemetry`.
-PostHog must remain disabled until a later integration supplies a reviewed
-`AnalyticsPayloadSink`, wraps it in `AllowlistedAnalyticsAdapter`, separates
-development/closed-test/production projects, and demonstrates the payload tests
-against the real SDK adapter. API keys must be build/environment configuration,
-never repository secrets.
+The production application enables the PostHog Android adapter only when
+`AQUALOG_POSTHOG_API_KEY` and a safe `AQUALOG_POSTHOG_HOST` are supplied through
+Gradle properties or the environment. Otherwise it injects `DisabledProductTelemetry`.
+The adapter disables autocaptured lifecycle/screen/replay data and every product
+payload passes through `AllowlistedAnalyticsAdapter`. Keys are never repository secrets.
 
 ## Technical failures
 
@@ -26,19 +25,21 @@ optional closed synchronization category. `TechnicalFailureSchema` rejects any
 additional context. Exception messages, URLs, identifiers, and user content are
 not part of this contract.
 
-The production application currently injects `DisabledCrashReporter` because
-Firebase Crashlytics is not configured. Enabling it requires separate Firebase
-projects per environment, consent/release review, and an adapter test proving
-that only `RawTechnicalFailure` allowlisted fields reach the SDK. Crash and ANR
-collection must not be enabled merely by adding the dependency.
+Crashlytics initializes without a `google-services.json` only when all three
+`AQUALOG_FIREBASE_APPLICATION_ID`, `AQUALOG_FIREBASE_API_KEY`, and
+`AQUALOG_FIREBASE_PROJECT_ID` values are present. Missing configuration selects
+`DisabledCrashReporter`. Manual reports contain only the closed failure kind,
+component, and optional synchronization category; no user identifier is set.
 
 ## Voluntary feedback and reviews
 
 Feedback uses `FeedbackGateway`, never `ProductTelemetry` or `CrashReporter`.
 The Settings dialog explains exactly what is submitted and reminds the user not
 to type personal details. `DisabledFeedbackGateway` makes the missing delivery
-integration visible and does not claim the message was sent. A real delivery
-endpoint must be configured and reviewed separately before enabling this gate.
+integration visible and does not claim the message was sent. When an authenticated
+Supabase session and `AQUALOG_FEEDBACK_URL` (or the configured Supabase Edge URL)
+exist, the dedicated `submit-feedback` function accepts only the voluntary message;
+the database RPC enforces authentication and three submissions per account/hour.
 
 Review eligibility is stored locally. After three successful Sessions and at
 least seven days since the first one, AquaLog calls Google Play In-App Review

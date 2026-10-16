@@ -89,17 +89,17 @@ data class VoluntaryFeedback(val message: String) {
 }
 
 fun interface FeedbackGateway {
-    fun submit(feedback: VoluntaryFeedback): Boolean
+    suspend fun submit(feedback: VoluntaryFeedback): Boolean
 }
 
 class FeedbackCoordinator(
     private val gateway: FeedbackGateway,
 ) {
-    fun submit(feedback: VoluntaryFeedback): Boolean = gateway.submit(feedback)
+    suspend fun submit(feedback: VoluntaryFeedback): Boolean = gateway.submit(feedback)
 }
 
 object DisabledFeedbackGateway : FeedbackGateway {
-    override fun submit(feedback: VoluntaryFeedback) = false
+    override suspend fun submit(feedback: VoluntaryFeedback) = false
 }
 
 data class ReviewHistory(

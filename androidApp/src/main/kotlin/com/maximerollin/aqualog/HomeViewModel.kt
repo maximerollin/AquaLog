@@ -584,17 +584,19 @@ class HomeViewModel(
     fun submitFeedback() {
         val message = mutableUiState.value.feedback.message
         if (message.isBlank()) return
-        val delivered = runCatching {
-            feedbackCoordinator.submit(VoluntaryFeedback(message))
-        }.getOrDefault(false)
-        mutableUiState.update { state ->
-            state.copy(
-                feedback = state.feedback.copy(
-                    message = if (delivered) "" else state.feedback.message,
-                    wasSubmitted = delivered,
-                    isUnavailable = !delivered,
-                ),
-            )
+        viewModelScope.launch {
+            val delivered = runCatching {
+                feedbackCoordinator.submit(VoluntaryFeedback(message))
+            }.getOrDefault(false)
+            mutableUiState.update { state ->
+                state.copy(
+                    feedback = state.feedback.copy(
+                        message = if (delivered) "" else state.feedback.message,
+                        wasSubmitted = delivered,
+                        isUnavailable = !delivered,
+                    ),
+                )
+            }
         }
     }
 

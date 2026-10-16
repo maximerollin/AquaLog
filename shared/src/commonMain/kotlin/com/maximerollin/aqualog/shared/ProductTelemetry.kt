@@ -73,7 +73,6 @@ sealed interface ProductEvent {
 
 sealed interface AnalyticsValue {
     data class Flag(val value: Boolean) : AnalyticsValue
-    data class Count(val value: Long) : AnalyticsValue
     data class Category(val value: String) : AnalyticsValue
 }
 
@@ -121,7 +120,7 @@ object ProductAnalyticsSchema {
         val type: ValueType = ValueType.CATEGORY,
     )
 
-    private enum class ValueType { FLAG, COUNT, CATEGORY }
+    private enum class ValueType { FLAG, CATEGORY }
 
     private val rules = mapOf(
         "onboarding_progress" to mapOf(
@@ -214,7 +213,6 @@ object ProductAnalyticsSchema {
             val rule = eventRules[key] ?: return@all false
             when {
                 rule.type == ValueType.FLAG -> value is AnalyticsValue.Flag
-                rule.type == ValueType.COUNT -> value is AnalyticsValue.Count && value.value in 0..10_000
                 rule.type == ValueType.CATEGORY -> {
                     value is AnalyticsValue.Category && value.value in requireNotNull(rule.allowedCategories)
                 }

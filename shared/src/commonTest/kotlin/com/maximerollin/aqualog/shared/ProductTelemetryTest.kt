@@ -47,7 +47,7 @@ class ProductTelemetryTest {
         listOf(
             AnalyticsPayload(
                 name = "session_saved",
-                properties = mapOf("water_value" to AnalyticsValue.Count(24)),
+                properties = mapOf("water_value" to AnalyticsValue.Category("24")),
             ),
             AnalyticsPayload(
                 name = "paywall_viewed",

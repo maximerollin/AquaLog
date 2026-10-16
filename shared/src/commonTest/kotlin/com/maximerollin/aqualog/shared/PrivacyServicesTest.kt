@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.shared
 
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -51,7 +52,7 @@ class PrivacyServicesTest {
     }
 
     @Test
-    fun `voluntary feedback stays on its dedicated channel`() {
+    fun `voluntary feedback stays on its dedicated channel`() = runTest {
         val analytics = mutableListOf<AnalyticsPayload>()
         val feedback = mutableListOf<VoluntaryFeedback>()
         val coordinator = FeedbackCoordinator(

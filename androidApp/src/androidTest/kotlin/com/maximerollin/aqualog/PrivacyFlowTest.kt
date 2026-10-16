@@ -52,6 +52,9 @@ class PrivacyFlowTest {
             val privateMessage = "My pH note for Private Aquarium is 7.2"
             composeRule.onNodeWithText("Feedback message").performTextInput(privateMessage)
             composeRule.onNode(hasText("Send feedback") and hasClickAction()).performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                application.recordedFeedback.any { it.message == privateMessage }
+            }
 
             assertEquals(listOf(privateMessage), application.recordedFeedback.map { it.message })
             assertTrue(
