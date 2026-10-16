@@ -148,6 +148,7 @@ class TimelineRepositoryContractTest {
                 volumeUnit = VolumeUnit.LITERS,
                 profile = AquariumProfile.ESTABLISHED,
                 parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+                access = AquariumCreationAccess.PRO,
             )
 
         suspend fun record(

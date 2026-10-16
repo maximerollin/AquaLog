@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.shared.ANNUAL_PRO_PRODUCT_ID
+import com.maximerollin.aqualog.shared.LIFETIME_PRO_PRODUCT_ID
 import com.maximerollin.aqualog.shared.PurchaseVerificationResult
 import com.maximerollin.aqualog.shared.SyncSession
 import com.maximerollin.aqualog.shared.SyncSessionProvider
@@ -10,6 +11,34 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
 class SupabaseProPurchaseVerifierTest {
+    @Test
+    fun `server verified lifetime entitlement is active without a local expiry`() = runTest {
+        val transport = RecordingProPurchaseServerTransport(
+            entitlementResponses = ArrayDeque(
+                listOf(
+                    ProPurchaseServerResponse.Success(
+                        ServerProEntitlement(
+                            active = true,
+                            productId = LIFETIME_PRO_PRODUCT_ID,
+                            validUntilEpochMillis = null,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val verifier = SupabaseProPurchaseVerifier(
+            configuredSupabase,
+            RecordingSessionProvider(SyncSession("account-1", "access-token"), null),
+            transport,
+        )
+
+        val result = verifier.loadEntitlement()
+
+        assertIs<PurchaseVerificationResult.Verified>(result)
+        assertEquals(LIFETIME_PRO_PRODUCT_ID, result.entitlement.productId)
+        assertEquals(null, result.entitlement.validUntilEpochMillis)
+    }
+
     @Test
     fun `an unauthorized entitlement request refreshes once and replays with the new token`() = runTest {
         val sessions = RecordingSessionProvider(

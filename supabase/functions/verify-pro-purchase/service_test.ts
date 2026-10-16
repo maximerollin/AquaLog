@@ -2,12 +2,88 @@ import {
   decryptPurchaseToken,
   encryptPurchaseToken,
   interpretSubscription,
+  interpretLifetimePurchase,
   playAccountIdentifier,
   ProPurchaseVerificationDependencies,
   revalidateStoredSubscription,
   StoredProPurchase,
   verifyAndClaimSubscription,
 } from "./service.ts";
+
+Deno.test("a purchased non-consumable lifetime product grants without expiry or trial", () => {
+  const verified = interpretLifetimePurchase(
+    {
+      purchaseState: 0,
+      acknowledgementState: 0,
+      productId: "aqualog_pro_lifetime",
+      orderId: "GPA.LIFETIME",
+      refundableQuantity: 1,
+      obfuscatedExternalAccountId: "bound-account",
+    },
+    "aqualog_pro_lifetime",
+  );
+  if (!verified.active || verified.validUntil !== null || verified.validUntilEpochMillis !== null) {
+    throw new Error("the lifetime purchase was not represented as non-expiring");
+  }
+  if (!verified.requiresAcknowledgement || verified.obfuscatedExternalAccountId !== "bound-account") {
+    throw new Error("lifetime ownership or acknowledgement was lost");
+  }
+});
+
+Deno.test("lifetime endpoint scope accepts an omitted product id and rejects a conflicting one", () => {
+  const purchase = {
+    purchaseState: 0,
+    acknowledgementState: 1,
+    refundableQuantity: 1,
+    obfuscatedExternalAccountId: "bound-account",
+  };
+  if (!interpretLifetimePurchase(purchase, "aqualog_pro_lifetime").active) {
+    throw new Error("the product-scoped endpoint required an optional response product id");
+  }
+  if (
+    interpretLifetimePurchase(
+      { ...purchase, productId: "another_product" },
+      "aqualog_pro_lifetime",
+    ).active
+  ) {
+    throw new Error("a conflicting response product id granted lifetime Pro");
+  }
+});
+
+Deno.test("lifetime purchase is account-bound claimed and acknowledged before activation", async () => {
+  const accountId = "10000000-0000-0000-0000-000000000051";
+  const identity = await playAccountIdentifier(accountId, "test-hmac-secret");
+  const calls: string[] = [];
+  const outcome = await verifyAndClaimSubscription(
+    accountId,
+    { productId: "aqualog_pro_lifetime", purchaseToken: "lifetime-token" },
+    {
+      hmacSecret: "test-hmac-secret",
+      loadGoogleSubscription: async () => ({
+        purchaseState: 0,
+        acknowledgementState: 0,
+        productId: "aqualog_pro_lifetime",
+        orderId: "GPA.LIFETIME",
+        refundableQuantity: 1,
+        obfuscatedExternalAccountId: identity,
+      }),
+      claimPurchase: async (claim) => {
+        if (claim.validUntil !== null) throw new Error("lifetime claim has an expiry");
+        calls.push("claim");
+      },
+      acknowledgePurchase: async () => {
+        calls.push("acknowledge");
+        return true;
+      },
+      activateEntitlement: async () => {
+        calls.push("activate");
+      },
+    },
+  );
+  if (outcome.kind !== "verified" || calls.join(",") !== "claim,acknowledge,activate") {
+    throw new Error("lifetime entitlement skipped secure claim ordering");
+  }
+});
 
 const activeSubscription = {
   subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
@@ -234,7 +310,7 @@ Deno.test("stored purchase tokens are encrypted and recoverable only with the se
 Deno.test("server reload preserves canceled access until Google marks it expired", async () => {
   const accountId = "10000000-0000-0000-0000-000000000011";
   const identity = await playAccountIdentifier(accountId, "test-hmac-secret");
-  const updates: Array<{ active: boolean; validUntil: string }> = [];
+  const updates: Array<{ active: boolean; validUntil: string | null }> = [];
   const stored = await storedPurchase(accountId);
 
   const outcome = await revalidateStoredSubscription(accountId, stored, {

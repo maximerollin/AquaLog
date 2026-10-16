@@ -65,7 +65,11 @@ fun AquaLogContent(
         }
         state.account.step != AccountStep.HIDDEN -> AccountScreen(state.account, viewModel, modifier)
         state.tasks.isOpen && state.setup != null -> TaskScreen(
-            state = state.tasks,
+            state = state.tasks.copy(
+                pendingOccurrences = state.tasks.pendingOccurrences.filter {
+                    it.aquariumId == state.setup.aquarium.id
+                },
+            ),
             viewModel = viewModel,
             modifier = modifier,
         )
@@ -88,6 +92,7 @@ fun AquaLogContent(
             isSaving = state.isSaving,
             onboarding = state.pro.openedFromOnboarding,
             onStartPurchase = viewModel::startProPurchase,
+            onStartLifetimePurchase = viewModel::startLifetimeProPurchase,
             onRestore = viewModel::restoreProPurchase,
             onRetryOffer = viewModel::loadProOffer,
             onContinue = viewModel::closeProPaywall,
@@ -127,6 +132,7 @@ fun AquaLogContent(
             isSaving = state.isSaving,
             onboarding = true,
             onStartPurchase = viewModel::startProPurchase,
+            onStartLifetimePurchase = viewModel::startLifetimeProPurchase,
             onRestore = viewModel::restoreProPurchase,
             onRetryOffer = viewModel::loadProOffer,
             onContinue = viewModel::finishForFree,
@@ -254,6 +260,7 @@ private fun AquariumShell(
             MainDestination.HOME -> AquariumHome(state, viewModel, contentModifier)
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
             MainDestination.SETTINGS -> PortableDataSettings(
+                homeState = state,
                 state = state.portableData,
                 accountState = state.accountSettings,
                 syncState = state.syncState,
@@ -304,6 +311,7 @@ private fun WelcomeScreen(
 
 @Composable
 private fun PortableDataSettings(
+    homeState: HomeUiState,
     state: PortableDataUiState,
     accountState: AccountSettingsUiState,
     syncState: com.maximerollin.aqualog.shared.SyncState,
@@ -320,6 +328,52 @@ private fun PortableDataSettings(
     ) {
         item { Spacer(Modifier.height(8.dp)) }
         item { ScreenHeading(R.string.settings_title, R.string.portable_data_description) }
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.aquariums_title), style = MaterialTheme.typography.titleMedium)
+                    homeState.aquariums.forEach { aquarium ->
+                        if (homeState.setup?.aquarium?.id == aquarium.id) {
+                            Button(
+                                onClick = {},
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                            ) { Text(aquarium.name) }
+                        } else {
+                            OutlinedButton(
+                                onClick = { viewModel.selectAquarium(aquarium.id) },
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                            ) { Text(aquarium.name) }
+                        }
+                    }
+                    Button(
+                        onClick = viewModel::openCreateAquarium,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) { Text(stringResource(R.string.add_aquarium)) }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        OutlinedButton(
+                            onClick = viewModel::openEditAquarium,
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                        ) { Text(stringResource(R.string.edit_aquarium)) }
+                        OutlinedButton(
+                            onClick = viewModel::archiveCurrentAquarium,
+                            enabled = proState.purchaseStatus == ProPurchaseStatus.ACTIVE &&
+                                homeState.aquariums.size > 1,
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                        ) { Text(stringResource(R.string.archive_aquarium)) }
+                    }
+                    if (proState.purchaseStatus != ProPurchaseStatus.ACTIVE) {
+                        Text(
+                            stringResource(R.string.free_one_aquarium_limit),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
+        }
         item {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -460,6 +514,7 @@ private fun PortableDataSettings(
         }
     }
     AccountSettingsDialog(accountState.dialog, viewModel, onOpenExternalUrl)
+    homeState.aquariumEditor?.let { editor -> AquariumEditorDialog(editor, viewModel) }
 }
 
 @Composable
@@ -911,6 +966,7 @@ private fun PaywallScreen(
     isSaving: Boolean,
     onboarding: Boolean,
     onStartPurchase: () -> Unit,
+    onStartLifetimePurchase: () -> Unit,
     onRestore: () -> Unit,
     onRetryOffer: () -> Unit,
     onContinue: () -> Unit,
@@ -924,6 +980,47 @@ private fun PaywallScreen(
             pro.isLoadingOffer -> {
                 CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
                 Text(stringResource(R.string.loading_google_play_offer))
+            }
+            pro.lifetimeOffer != null -> {
+                Text(
+                    stringResource(R.string.pro_lifetime_offer_summary, pro.lifetimeOffer.formattedPrice),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Button(
+                    onClick = onStartLifetimePurchase,
+                    enabled = pro.purchaseStatus !in setOf(
+                        ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION,
+                        ProPurchaseStatus.PENDING,
+                        ProPurchaseStatus.VERIFYING,
+                        ProPurchaseStatus.ACTIVE,
+                    ),
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                ) {
+                    Text(stringResource(R.string.buy_lifetime_in_google_play))
+                }
+                pro.offer?.let { annualOffer ->
+                    Text(
+                        stringResource(
+                            R.string.pro_offer_summary,
+                            annualOffer.formattedPrice,
+                            annualOffer.trialDays,
+                            annualOffer.formattedBillingDate,
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    OutlinedButton(
+                        onClick = onStartPurchase,
+                        enabled = pro.purchaseStatus !in setOf(
+                            ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION,
+                            ProPurchaseStatus.PENDING,
+                            ProPurchaseStatus.VERIFYING,
+                            ProPurchaseStatus.ACTIVE,
+                        ),
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                    ) {
+                        Text(stringResource(R.string.start_trial_in_google_play))
+                    }
+                }
             }
             pro.offer != null -> {
                 Text(
@@ -993,6 +1090,66 @@ private fun PaywallScreen(
             }
         }
     }
+}
+
+@Composable
+private fun AquariumEditorDialog(editor: AquariumEditorUiState, viewModel: HomeViewModel) {
+    AlertDialog(
+        onDismissRequest = viewModel::dismissAquariumEditor,
+        title = {
+            Text(
+                stringResource(
+                    if (editor.aquariumId == null) R.string.add_aquarium else R.string.edit_aquarium,
+                ),
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = editor.name,
+                    onValueChange = viewModel::updateAquariumEditorName,
+                    label = { Text(stringResource(R.string.aquarium_name_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = editor.volume,
+                    onValueChange = viewModel::updateAquariumEditorVolume,
+                    label = { Text(stringResource(R.string.aquarium_volume_label)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    VolumeUnit.entries.forEach { unit ->
+                        OutlinedButton(
+                            onClick = { viewModel.updateAquariumEditorUnit(unit) },
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                        ) {
+                            Text(
+                                stringResource(
+                                    if (unit == VolumeUnit.LITERS) R.string.unit_liters else R.string.unit_us_gallons,
+                                ),
+                            )
+                        }
+                    }
+                }
+                if (editor.showValidationError) {
+                    Text(stringResource(R.string.invalid_aquarium), color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = viewModel::saveAquariumEditor, enabled = !editor.isSaving) {
+                Text(stringResource(R.string.save_aquarium))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = viewModel::dismissAquariumEditor) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
 }
 
 @Composable
