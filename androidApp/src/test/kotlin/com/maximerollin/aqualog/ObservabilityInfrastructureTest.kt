@@ -3,14 +3,19 @@ package com.maximerollin.aqualog
 import com.maximerollin.aqualog.shared.AnalyticsPayload
 import com.maximerollin.aqualog.shared.AnalyticsValue
 import com.maximerollin.aqualog.shared.RawTechnicalFailure
+import com.maximerollin.aqualog.shared.DisabledCrashReporter
 import com.maximerollin.aqualog.shared.SyncSession
 import com.maximerollin.aqualog.shared.SyncSessionProvider
+import com.maximerollin.aqualog.shared.TechnicalComponent
+import com.maximerollin.aqualog.shared.TechnicalFailure
+import com.maximerollin.aqualog.shared.TechnicalFailureKind
 import com.maximerollin.aqualog.shared.VoluntaryFeedback
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class ObservabilityInfrastructureTest {
@@ -76,6 +81,39 @@ class ObservabilityInfrastructureTest {
         assertFailsWith<IllegalArgumentException> {
             sink.record(RawTechnicalFailure("crash", mapOf("email" to "owner@example.com")))
         }
+    }
+
+    @Test
+    fun `Crashlytics selection fails closed when initialization throws`() {
+        val configured = configuration(
+            firebaseApplicationId = "1:123:android:abc",
+            firebaseApiKey = "test-api-key",
+            firebaseProjectId = "aqualog-test",
+        )
+
+        val reporter = createCrashReporter(configured) { error("Firebase unavailable") }
+
+        assertSame(DisabledCrashReporter, reporter)
+    }
+
+    @Test
+    fun `Crashlytics selection enables the closed adapter after successful initialization`() {
+        val captured = mutableListOf<RawTechnicalFailure>()
+        val configured = configuration(
+            firebaseApplicationId = "1:123:android:abc",
+            firebaseApiKey = "test-api-key",
+            firebaseProjectId = "aqualog-test",
+        )
+        val reporter = createCrashReporter(configured) { FirebaseTechnicalFailureClient(captured::add) }
+
+        reporter.record(
+            TechnicalFailure(
+                kind = TechnicalFailureKind.NON_FATAL,
+                component = TechnicalComponent.SYNC,
+            ),
+        )
+
+        assertEquals(1, captured.size)
     }
 
     @Test

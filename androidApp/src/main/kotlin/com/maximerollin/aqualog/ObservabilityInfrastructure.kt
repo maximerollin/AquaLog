@@ -114,29 +114,37 @@ internal class PostHogAnalyticsSink(
 }
 
 internal fun createCrashReporter(context: Context, config: ObservabilityConfiguration): CrashReporter {
-    if (!config.hasFirebase) return DisabledCrashReporter
-    if (runCatching { FirebaseApp.getInstance() }.getOrNull() == null) {
-        FirebaseApp.initializeApp(
-            context,
-            FirebaseOptions.Builder()
-                .setApplicationId(config.firebaseApplicationId)
-                .setApiKey(config.firebaseApiKey)
-                .setProjectId(config.firebaseProjectId)
-                .build(),
-        )
-    }
-    val crashlytics = FirebaseCrashlytics.getInstance()
-    crashlytics.setCrashlyticsCollectionEnabled(true)
-    return AllowlistedCrashReporter(
-        AllowlistedCrashAdapter(
-            FirebaseTechnicalFailureSink { failure ->
+    return createCrashReporter(config) {
+        if (runCatching { FirebaseApp.getInstance() }.getOrNull() == null) {
+            FirebaseApp.initializeApp(
+                context,
+                FirebaseOptions.Builder()
+                    .setApplicationId(config.firebaseApplicationId)
+                    .setApiKey(config.firebaseApiKey)
+                    .setProjectId(config.firebaseProjectId)
+                    .build(),
+            )
+        }
+        val crashlytics = FirebaseCrashlytics.getInstance()
+        crashlytics.setCrashlyticsCollectionEnabled(true)
+        FirebaseTechnicalFailureClient { failure ->
                 val keys = CustomKeysAndValues.Builder()
                     .putString("failure_kind", failure.kind)
                     .putString("component", requireNotNull(failure.context["component"]))
                 failure.context["sync_category"]?.let { keys.putString("sync_category", it) }
                 crashlytics.recordException(AquaLogTechnicalFailure(failure.kind), keys.build())
-            },
-        ),
+        }
+    }
+}
+
+internal fun createCrashReporter(
+    config: ObservabilityConfiguration,
+    clientFactory: () -> FirebaseTechnicalFailureClient,
+): CrashReporter {
+    if (!config.hasFirebase) return DisabledCrashReporter
+    val client = runCatching(clientFactory).getOrNull() ?: return DisabledCrashReporter
+    return AllowlistedCrashReporter(
+        AllowlistedCrashAdapter(FirebaseTechnicalFailureSink(client)),
         enabled = true,
     )
 }

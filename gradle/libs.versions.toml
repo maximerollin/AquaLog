@@ -17,6 +17,7 @@ billing = "9.1.0"
 play-review = "2.0.2"
 posthog = "3.58.0"
 firebase-crashlytics = "20.1.1"
+firebase-crashlytics-gradle = "3.0.6"
 desugar-jdk-libs = "2.1.5"
 
 [libraries]
@@ -55,3 +56,4 @@ kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref 
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 room3 = { id = "androidx.room3", version.ref = "room3" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebase-crashlytics-gradle" }

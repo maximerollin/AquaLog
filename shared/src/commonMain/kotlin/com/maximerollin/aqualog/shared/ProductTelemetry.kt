@@ -124,35 +124,35 @@ object ProductAnalyticsSchema {
 
     private val rules = mapOf(
         "onboarding_progress" to mapOf(
-            "milestone" to PropertyRule(allowedCategories = OnboardingMilestone.entries.wireValues()),
+            "milestone" to PropertyRule(allowedCategories = OnboardingMilestone.entries.mapTo(mutableSetOf()) { it.wireValue }),
         ),
         "first_session_saved" to emptyMap(),
         "session_saved" to mapOf(
-            "usage" to PropertyRule(allowedCategories = SessionUsage.entries.wireValues()),
+            "usage" to PropertyRule(allowedCategories = SessionUsage.entries.mapTo(mutableSetOf()) { it.wireValue }),
         ),
         "task_used" to mapOf(
-            "usage" to PropertyRule(allowedCategories = TaskUsage.entries.wireValues()),
+            "usage" to PropertyRule(allowedCategories = TaskUsage.entries.mapTo(mutableSetOf()) { it.wireValue }),
         ),
         "graph_viewed" to mapOf(
-            "period" to PropertyRule(allowedCategories = GraphPeriod.entries.wireValues()),
+            "period" to PropertyRule(allowedCategories = GraphPeriod.entries.mapTo(mutableSetOf()) { it.wireValue }),
         ),
         "export_completed" to emptyMap(),
         "sync_finished" to mapOf(
-            "outcome" to PropertyRule(allowedCategories = SyncOutcome.entries.wireValues()),
+            "outcome" to PropertyRule(allowedCategories = SyncOutcome.entries.mapTo(mutableSetOf()) { it.wireValue }),
             "failure_category" to PropertyRule(
                 required = false,
-                allowedCategories = AnalyticsSyncFailureCategory.entries.wireValues(),
+                allowedCategories = AnalyticsSyncFailureCategory.entries.mapTo(mutableSetOf()) { it.wireValue },
             ),
         ),
         "paywall_viewed" to mapOf(
-            "source" to PropertyRule(allowedCategories = PaywallSource.entries.wireValues()),
+            "source" to PropertyRule(allowedCategories = PaywallSource.entries.mapTo(mutableSetOf()) { it.wireValue }),
         ),
         "purchase_confirmed" to mapOf(
-            "product" to PropertyRule(allowedCategories = ProProduct.entries.wireValues()),
+            "product" to PropertyRule(allowedCategories = ProProduct.entries.mapTo(mutableSetOf()) { it.wireValue }),
         ),
         "entitlement_confirmed" to mapOf(
             "active" to PropertyRule(type = ValueType.FLAG),
-            "product" to PropertyRule(allowedCategories = ProProduct.entries.wireValues()),
+            "product" to PropertyRule(allowedCategories = ProProduct.entries.mapTo(mutableSetOf()) { it.wireValue }),
         ),
     )
 
@@ -227,17 +227,4 @@ object ProductAnalyticsSchema {
         return true
     }
 
-    private fun <T> List<T>.wireValues(): Set<String> = mapTo(mutableSetOf()) { entry ->
-        when (entry) {
-            is OnboardingMilestone -> entry.wireValue
-            is SessionUsage -> entry.wireValue
-            is TaskUsage -> entry.wireValue
-            is GraphPeriod -> entry.wireValue
-            is SyncOutcome -> entry.wireValue
-            is AnalyticsSyncFailureCategory -> entry.wireValue
-            is PaywallSource -> entry.wireValue
-            is ProProduct -> entry.wireValue
-            else -> error("Unsupported analytics category")
-        }
-    }
 }

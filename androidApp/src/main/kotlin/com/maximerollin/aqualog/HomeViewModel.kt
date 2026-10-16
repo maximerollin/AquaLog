@@ -23,6 +23,7 @@ import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.AnalyticsSyncFailureCategory
+import com.maximerollin.aqualog.shared.ANNUAL_PRO_PRODUCT_ID
 import com.maximerollin.aqualog.shared.CrashReporter
 import com.maximerollin.aqualog.shared.DisabledCrashReporter
 import com.maximerollin.aqualog.shared.DisabledFeedbackGateway
@@ -37,6 +38,8 @@ import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinitionDraft
 import com.maximerollin.aqualog.shared.AnnualProOffer
 import com.maximerollin.aqualog.shared.LifetimeProOffer
+import com.maximerollin.aqualog.shared.LIFETIME_PRO_PRODUCT_ID
+import com.maximerollin.aqualog.shared.ProEntitlement
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.ProPurchaseOutcome
 import com.maximerollin.aqualog.shared.PortableImportProblem
@@ -496,8 +499,8 @@ class HomeViewModel(
                         state.copy(pro = state.pro.copy(purchaseStatus = ProPurchaseStatus.VERIFYING, message = null))
                     }
                     val outcome = proPurchaseCoordinator.resolve(update)
-                    if (outcome is ProPurchaseOutcome.Entitled) {
-                        recordProductEvent(ProductEvent.PurchaseConfirmed(ProProduct.ANNUAL))
+                    if (outcome is ProPurchaseOutcome.Entitled) outcome.entitlement.analyticsProductOrNull()?.let {
+                        recordProductEvent(ProductEvent.PurchaseConfirmed(it))
                     }
                     handleProOutcome(outcome, continuation = null)
                 }
@@ -1666,7 +1669,9 @@ class HomeViewModel(
                 }
             }
             is ProPurchaseOutcome.Entitled -> {
-                recordProductEvent(ProductEvent.EntitlementConfirmed(active = true, product = ProProduct.ANNUAL))
+                outcome.entitlement.analyticsProductOrNull()?.let {
+                    recordProductEvent(ProductEvent.EntitlementConfirmed(active = true, product = it))
+                }
                 updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
             }
             is ProPurchaseOutcome.Failed -> updatePro(ProPurchaseStatus.ERROR, outcome.reason)
@@ -1677,11 +1682,12 @@ class HomeViewModel(
         val coordinator = proPurchaseCoordinator ?: return
         when (val outcome = coordinator.refreshEntitlement()) {
             is ProPurchaseOutcome.Entitled -> {
-                recordProductEvent(ProductEvent.EntitlementConfirmed(active = true, product = ProProduct.ANNUAL))
+                outcome.entitlement.analyticsProductOrNull()?.let {
+                    recordProductEvent(ProductEvent.EntitlementConfirmed(active = true, product = it))
+                }
                 updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
             }
             ProPurchaseOutcome.NotEntitled -> {
-                recordProductEvent(ProductEvent.EntitlementConfirmed(active = false, product = ProProduct.ANNUAL))
                 updatePro(ProPurchaseStatus.IDLE)
             }
             ProPurchaseOutcome.AuthenticationRequired -> updatePro(
@@ -1983,6 +1989,12 @@ class HomeViewModel(
                     ) as T
             }
     }
+}
+
+internal fun ProEntitlement.analyticsProductOrNull(): ProProduct? = when (productId) {
+    ANNUAL_PRO_PRODUCT_ID -> ProProduct.ANNUAL
+    LIFETIME_PRO_PRODUCT_ID -> ProProduct.LIFETIME
+    else -> null
 }
 
 private object NoOpTaskReminderScheduler : TaskReminderScheduler {
