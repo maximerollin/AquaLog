@@ -287,6 +287,23 @@
     <string name="trends_no_events">No maintenance or Events in the selected period.</string>
     <string name="trends_loading">Loading local trends…</string>
     <string name="trends_error">Local trends could not be read. Your saved data is still on this device.</string>
+    <string name="trends_pro_complete_history">Pro shows the complete local history. Changing Pro status never deletes saved data.</string>
+    <string name="trends_complete_history">Show complete history</string>
+    <string name="trends_start_date">Start date</string>
+    <string name="trends_end_date">End date</string>
+    <string name="date_format_hint">YYYY-MM-DD</string>
+    <string name="trends_apply_custom_period">Apply custom period</string>
+    <string name="trends_invalid_custom_period">Enter an ordered start and end date as YYYY-MM-DD.</string>
+    <string name="trends_advanced_analysis">Advanced Pro analysis</string>
+    <string name="trends_descriptive_disclaimer">Descriptive context only. AquaLog does not diagnose water conditions or recommend treatment.</string>
+    <string name="trends_choose_intervention">Choose an intervention to compare before and after</string>
+    <string name="trends_before_after">Before and after intervention</string>
+    <string name="trends_before_after_values">%1$s · Before average %2$s · After average %3$s %4$s</string>
+    <string name="trends_before_after_insufficient">%1$s · Insufficient measurements before or after this intervention.</string>
+    <string name="trends_text_alternative">Text alternative</string>
+    <string name="trends_period_description">Period: %1$s to %2$s</string>
+    <string name="trends_compatible_comparison">Compatible Parameter comparison · %1$s</string>
+    <string name="trends_comparison_chart_description">Comparison chart for %1$s in %2$s; each series uses a distinct labeled color.</string>
 
     <string name="tasks_title">Tasks &amp; reminders</string>
     <string name="new_task">New Task</string>

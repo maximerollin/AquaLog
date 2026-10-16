@@ -5,8 +5,74 @@ import kotlinx.coroutines.test.runTest
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class TrendRepositoryContractTest {
+    @Test
+    fun `Pro custom period reads multi year history and Free downgrade preserves it`() = runTest {
+        trendFixture().use { fixture ->
+            val setup = fixture.createConfiguredAquarium()
+            val temperature = setup.parameters.first { it.parameter == BuiltInParameter.TEMPERATURE }
+            fixture.record(
+                setup,
+                occurredAt = NOW - 4L * 365L * DAY,
+                key = "four-years-old",
+                measurements = mapOf(temperature.id to "20.0"),
+            )
+            fixture.record(
+                setup,
+                occurredAt = NOW - DAY,
+                key = "recent",
+                measurements = mapOf(temperature.id to "24.0"),
+            )
+
+            val pro = fixture.repository.observeAdvancedTrends(
+                aquariumId = setup.aquarium.id,
+                access = TrendAccess.PRO,
+                customWindow = TrendWindow(NOW - 5L * 365L * DAY, NOW - 3L * 365L * DAY),
+            ).first()
+            assertEquals(listOf(20.0), pro.series.first { it.definition.id == temperature.id }.points.map { it.value })
+
+            val free = fixture.repository.observeAdvancedTrends(
+                aquariumId = setup.aquarium.id,
+                access = TrendAccess.FREE,
+                customWindow = TrendWindow(0L, NOW),
+            ).first()
+            assertEquals(listOf(24.0), free.series.first { it.definition.id == temperature.id }.points.map { it.value })
+            assertEquals(2, fixture.repository.observeTimeline(TimelineFilter()).first().size)
+        }
+    }
+
+    @Test
+    fun `Pro complete history includes annotations even when measurements are incomplete`() = runTest {
+        trendFixture().use { fixture ->
+            val setup = fixture.createConfiguredAquarium()
+            val temperature = setup.parameters.first { it.parameter == BuiltInParameter.TEMPERATURE }
+            fixture.record(
+                setup,
+                occurredAt = NOW - 8L * 365L * DAY,
+                key = "old-action-only",
+                measurements = emptyMap(),
+                actions = listOf(MaintenanceActionInput(MaintenanceActionType.FILTER_MAINTENANCE)),
+            )
+            fixture.record(
+                setup,
+                occurredAt = NOW - 7L * 365L * DAY,
+                key = "old-measurement",
+                measurements = mapOf(temperature.id to "22.0"),
+            )
+
+            val pro = fixture.repository.observeAdvancedTrends(
+                aquariumId = setup.aquarium.id,
+                access = TrendAccess.PRO,
+            ).first()
+
+            assertEquals(NOW - 8L * 365L * DAY, pro.windowStartEpochMillis)
+            assertEquals(listOf(22.0), pro.series.first { it.definition.id == temperature.id }.points.map { it.value })
+            assertTrue(pro.events.single().maintenanceActionTypes.contains(MaintenanceActionType.FILTER_MAINTENANCE))
+        }
+    }
+
     @Test
     fun `free Trends keep every active Parameter visible when no Measurement exists`() = runTest {
         trendFixture().use { fixture ->

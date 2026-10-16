@@ -53,6 +53,12 @@ interface AquariumRepository {
 
     fun observeFreeTrends(aquariumId: String, period: TrendPeriod): Flow<TrendSnapshot>
 
+    fun observeAdvancedTrends(
+        aquariumId: String,
+        access: TrendAccess,
+        customWindow: TrendWindow? = null,
+    ): Flow<AdvancedTrendSnapshot>
+
     suspend fun createTask(input: TaskInput): CreatedTask
 
     suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult
@@ -477,6 +483,68 @@ class RoomAquariumRepository(
                 )
             }
         }
+
+    override fun observeAdvancedTrends(
+        aquariumId: String,
+        access: TrendAccess,
+        customWindow: TrendWindow?,
+    ): Flow<AdvancedTrendSnapshot> = currentTimeMillis().let { now ->
+        combine(
+            aquariumDao.observeAllSetups(),
+            sessionDao.observeAll(),
+        ) { setupEntities, allRecordedEntities ->
+            val setup = requireNotNull(
+                setupEntities.firstOrNull { it.aquarium.id == aquariumId },
+            ) { "Aquarium does not exist" }.toDomain()
+            val aquariumRecords = allRecordedEntities.filter { it.session.aquariumId == aquariumId }
+            val requestedWindow = when (access) {
+                TrendAccess.FREE -> TrendWindow(now - 90L * DAY_MILLIS, now)
+                TrendAccess.PRO -> customWindow ?: TrendWindow(
+                    aquariumRecords.minOfOrNull { it.session.occurredAtEpochMillis } ?: now,
+                    now,
+                )
+            }
+            val records = aquariumRecords.filter {
+                it.session.occurredAtEpochMillis in
+                    requestedWindow.startEpochMillis..requestedWindow.endEpochMillis
+            }
+            AdvancedTrendSnapshot(
+                aquarium = setup.aquarium,
+                access = access,
+                windowStartEpochMillis = requestedWindow.startEpochMillis,
+                windowEndEpochMillis = requestedWindow.endEpochMillis,
+                series = setup.parameters.filter(ParameterDefinition::isActive).map { definition ->
+                    ParameterTrendSeries(
+                        definition = definition,
+                        points = records.mapNotNull { recorded ->
+                            recorded.measurements.firstOrNull {
+                                it.parameterDefinitionId == definition.id
+                            }?.let { measurement ->
+                                TrendPoint(
+                                    sessionId = recorded.session.id,
+                                    occurredAtEpochMillis = recorded.session.occurredAtEpochMillis,
+                                    value = measurement.value,
+                                )
+                            }
+                        }.sortedBy(TrendPoint::occurredAtEpochMillis),
+                    )
+                },
+                events = records.mapNotNull { recorded ->
+                    if (recorded.maintenanceActions.isEmpty() && recorded.events.isEmpty()) return@mapNotNull null
+                    TrendEventMarker(
+                        sessionId = recorded.session.id,
+                        occurredAtEpochMillis = recorded.session.occurredAtEpochMillis,
+                        maintenanceActionTypes = recorded.maintenanceActions.map {
+                            MaintenanceActionType.fromStorageValue(it.type)
+                        },
+                        events = recorded.events.map {
+                            TrendEvent(EventType.fromStorageValue(it.type), it.note)
+                        },
+                    )
+                }.sortedBy(TrendEventMarker::occurredAtEpochMillis),
+            )
+        }
+    }
 
     override suspend fun createTask(input: TaskInput): CreatedTask {
         requireNotNull(aquariumDao.getSetup(input.aquariumId)) { "Aquarium does not exist" }
