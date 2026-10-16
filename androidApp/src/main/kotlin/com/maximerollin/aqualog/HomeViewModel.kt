@@ -70,6 +70,10 @@ import com.maximerollin.aqualog.shared.TaskResolution
 import com.maximerollin.aqualog.shared.TaskResolutionInput
 import com.maximerollin.aqualog.shared.TrendPeriod
 import com.maximerollin.aqualog.shared.TrendSnapshot
+import com.maximerollin.aqualog.shared.TrendWindow
+import com.maximerollin.aqualog.shared.AdvancedTrendAnalysis
+import com.maximerollin.aqualog.shared.AdvancedTrendAnalysisResult
+import com.maximerollin.aqualog.shared.asTrendSnapshot
 import com.maximerollin.aqualog.shared.TechnicalComponent
 import com.maximerollin.aqualog.shared.TechnicalFailure
 import com.maximerollin.aqualog.shared.TechnicalFailureKind
@@ -175,6 +179,12 @@ data class TrendsUiState(
     val snapshot: TrendSnapshot? = null,
     val selectedParameterDefinitionId: String? = null,
     val hasRecoverableError: Boolean = false,
+    val advancedEnabled: Boolean = false,
+    val customStartDate: String = "",
+    val customEndDate: String = "",
+    val customDateError: Boolean = false,
+    val selectedInterventionSessionId: String? = null,
+    val advancedAnalysis: AdvancedTrendAnalysisResult? = null,
 )
 
 enum class ProPurchaseStatus {
@@ -1374,7 +1384,7 @@ class HomeViewModel(
     fun selectTrendPeriod(period: TrendPeriod) {
         recordProductEvent(ProductEvent.GraphViewed(period.toGraphPeriod()))
         mutableUiState.update { state ->
-            state.copy(trends = state.trends.copy(period = period))
+            state.copy(trends = state.trends.copy(period = period, advancedEnabled = false))
         }
         observeTrends()
     }
@@ -1383,6 +1393,61 @@ class HomeViewModel(
         mutableUiState.update { state ->
             state.copy(
                 trends = state.trends.copy(selectedParameterDefinitionId = parameterDefinitionId),
+            )
+        }
+    }
+
+    fun showCompleteProHistory() {
+        if (mutableUiState.value.pro.purchaseStatus != ProPurchaseStatus.ACTIVE) {
+            openProPaywall()
+            return
+        }
+        mutableUiState.update { state ->
+            state.copy(
+                trends = state.trends.copy(
+                    advancedEnabled = true,
+                    customStartDate = "",
+                    customEndDate = "",
+                    customDateError = false,
+                ),
+            )
+        }
+        observeTrends()
+    }
+
+    fun updateTrendCustomStart(value: String) = mutableUiState.update { state ->
+        state.copy(trends = state.trends.copy(customStartDate = value, customDateError = false))
+    }
+
+    fun updateTrendCustomEnd(value: String) = mutableUiState.update { state ->
+        state.copy(trends = state.trends.copy(customEndDate = value, customDateError = false))
+    }
+
+    fun applyTrendCustomPeriod() {
+        val trends = mutableUiState.value.trends
+        val window = trends.customWindowOrNull()
+        if (mutableUiState.value.pro.purchaseStatus != ProPurchaseStatus.ACTIVE || window == null) {
+            mutableUiState.update { state ->
+                state.copy(trends = state.trends.copy(customDateError = true))
+            }
+            return
+        }
+        mutableUiState.update { state ->
+            state.copy(trends = state.trends.copy(advancedEnabled = true, customDateError = false))
+        }
+        observeTrends()
+    }
+
+    fun selectTrendIntervention(sessionId: String) {
+        mutableUiState.update { state ->
+            val analysis = state.trends.advancedAnalysis?.snapshot?.let { snapshot ->
+                AdvancedTrendAnalysis.create(snapshot, sessionId)
+            }
+            state.copy(
+                trends = state.trends.copy(
+                    selectedInterventionSessionId = sessionId,
+                    advancedAnalysis = analysis,
+                ),
             )
         }
     }
@@ -1712,6 +1777,7 @@ class HomeViewModel(
                 ),
             )
         }
+        if (mutableUiState.value.historySection == HistorySection.TRENDS) observeTrends()
     }
 
     private suspend fun persistOnboardingAquarium(keepPaywallOpen: Boolean): Boolean {
@@ -1900,6 +1966,39 @@ class HomeViewModel(
             )
         }
         trendsJob = viewModelScope.launch {
+            val trendsState = mutableUiState.value.trends
+            val isProAdvanced = mutableUiState.value.pro.purchaseStatus == ProPurchaseStatus.ACTIVE &&
+                trendsState.advancedEnabled
+            if (isProAdvanced) {
+                aquariumRepository.observeAdvancedTrends(
+                    aquariumId = selectedAquariumId,
+                    customWindow = trendsState.customWindowOrNull(),
+                ).catch {
+                    mutableUiState.update { state ->
+                        state.copy(trends = state.trends.copy(isLoading = false, hasRecoverableError = true))
+                    }
+                }.collect { advanced ->
+                    val selectedIntervention = mutableUiState.value.trends.selectedInterventionSessionId
+                        ?.takeIf { id -> advanced.events.any { it.sessionId == id } }
+                    val analysis = AdvancedTrendAnalysis.create(advanced, selectedIntervention)
+                    mutableUiState.update { state ->
+                        val selected = state.trends.selectedParameterDefinitionId
+                            ?.takeIf { id -> advanced.series.any { it.definition.id == id } }
+                            ?: advanced.series.firstOrNull()?.definition?.id
+                        state.copy(
+                            trends = state.trends.copy(
+                                isLoading = false,
+                                snapshot = advanced.asTrendSnapshot(period),
+                                selectedParameterDefinitionId = selected,
+                                selectedInterventionSessionId = selectedIntervention,
+                                advancedAnalysis = analysis,
+                                hasRecoverableError = false,
+                            ),
+                        )
+                    }
+                }
+                return@launch
+            }
             aquariumRepository.observeFreeTrends(selectedAquariumId, period)
                 .catch {
                     mutableUiState.update { state ->
@@ -1920,6 +2019,9 @@ class HomeViewModel(
                             trends = state.trends.copy(
                                 isLoading = false,
                                 snapshot = snapshot,
+                                advancedEnabled = false,
+                                advancedAnalysis = null,
+                                selectedInterventionSessionId = null,
                                 selectedParameterDefinitionId = selected,
                                 hasRecoverableError = false,
                             ),
@@ -1927,6 +2029,16 @@ class HomeViewModel(
                     }
                 }
         }
+    }
+
+    private fun TrendsUiState.customWindowOrNull(): TrendWindow? {
+        if (customStartDate.isBlank() && customEndDate.isBlank()) return null
+        return runCatching {
+            val zone = ZoneId.of(currentTimeZoneId())
+            val start = LocalDate.parse(customStartDate).atStartOfDay(zone).toInstant().toEpochMilli()
+            val end = LocalDate.parse(customEndDate).plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1L
+            TrendWindow(start, end)
+        }.getOrNull()
     }
 
     private fun moveTo(step: OnboardingStep) {

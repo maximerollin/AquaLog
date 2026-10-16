@@ -162,6 +162,10 @@ class TestAquaLogApplication : AquaLogApplication() {
         verifiedProEntitlement = entitlement
     }
 
+    fun revokePro() {
+        verifiedProEntitlement = null
+    }
+
     fun installRepository(value: AquariumRepository) {
         database?.close()
         database = null

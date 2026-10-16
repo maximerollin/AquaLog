@@ -37,3 +37,212 @@ data class TrendSnapshot(
     val series: List<ParameterTrendSeries>,
     val events: List<TrendEventMarker>,
 )
+
+data class TrendWindow(
+    val startEpochMillis: Long,
+    val endEpochMillis: Long,
+) {
+    init {
+        require(startEpochMillis <= endEpochMillis) { "Trend period must be ordered" }
+    }
+}
+
+data class AdvancedTrendSnapshot(
+    val aquarium: Aquarium,
+    val windowStartEpochMillis: Long,
+    val windowEndEpochMillis: Long,
+    val series: List<ParameterTrendSeries>,
+    val events: List<TrendEventMarker>,
+)
+
+fun AdvancedTrendSnapshot.asTrendSnapshot(period: TrendPeriod): TrendSnapshot = TrendSnapshot(
+    aquarium = aquarium,
+    period = period,
+    windowStartEpochMillis = windowStartEpochMillis,
+    windowEndEpochMillis = windowEndEpochMillis,
+    series = series,
+    events = events,
+)
+
+data class ComparableTrendGroup(
+    val dimension: TrendComparisonDimension,
+    val canonicalUnit: String,
+    val series: List<ParameterTrendSeries>,
+)
+
+enum class TrendComparisonDimension {
+    TEMPERATURE,
+    MASS_CONCENTRATION,
+}
+
+sealed interface InterventionSeriesComparison {
+    val definitionId: String
+
+    data class Available(
+        override val definitionId: String,
+        val unit: String,
+        val beforeAverage: Double,
+        val afterAverage: Double,
+        val descriptiveDifference: Double,
+    ) : InterventionSeriesComparison
+
+    data class InsufficientData(
+        override val definitionId: String,
+        val unit: String,
+    ) : InterventionSeriesComparison
+}
+
+data class InterventionComparison(
+    val marker: TrendEventMarker,
+    val beforeWindow: TrendWindow,
+    val afterWindow: TrendWindow,
+    val series: List<InterventionSeriesComparison>,
+)
+
+enum class DescriptiveTrendDirection { RISING, FALLING, UNCHANGED, SINGLE_VALUE, NO_DATA }
+
+data class TrendSeriesTextAlternative(
+    val definitionId: String,
+    val unit: String,
+    val pointCount: Int,
+    val firstValue: Double?,
+    val lastValue: Double?,
+    val minimumValue: Double?,
+    val maximumValue: Double?,
+    val direction: DescriptiveTrendDirection,
+)
+
+data class TrendAnnotationTextAlternative(
+    val occurredAtEpochMillis: Long,
+    val maintenanceActionTypes: List<MaintenanceActionType>,
+    val events: List<TrendEvent>,
+)
+
+data class TrendTextAlternative(
+    val period: LongRange,
+    val series: List<TrendSeriesTextAlternative>,
+    val annotations: List<TrendAnnotationTextAlternative>,
+    val interventionComparison: InterventionComparison?,
+)
+
+data class AdvancedTrendAnalysisResult(
+    val snapshot: AdvancedTrendSnapshot,
+    val comparisonGroups: List<ComparableTrendGroup>,
+    val interventionComparison: InterventionComparison?,
+    val textAlternative: TrendTextAlternative,
+)
+
+object AdvancedTrendAnalysis {
+    fun create(
+        snapshot: AdvancedTrendSnapshot,
+        interventionSessionId: String? = null,
+        comparisonWindowMillis: Long = 7L * 24L * 60L * 60L * 1_000L,
+    ): AdvancedTrendAnalysisResult {
+        require(comparisonWindowMillis > 0L) { "Comparison window must be positive" }
+        val groups = snapshot.series
+            .mapNotNull { series -> series.comparisonKey()?.let { it to series } }
+            .groupBy({ it.first }, { it.second })
+            .filterValues { it.size > 1 }
+            .map { (key, series) -> ComparableTrendGroup(key.first, key.second, series) }
+            .sortedBy { it.dimension.name }
+        val marker = interventionSessionId?.let { id -> snapshot.events.firstOrNull { it.sessionId == id } }
+        val intervention = marker?.let {
+            val before = TrendWindow(
+                startEpochMillis = maxOf(snapshot.windowStartEpochMillis, it.occurredAtEpochMillis - comparisonWindowMillis),
+                endEpochMillis = it.occurredAtEpochMillis,
+            )
+            val after = TrendWindow(
+                startEpochMillis = it.occurredAtEpochMillis,
+                endEpochMillis = minOf(snapshot.windowEndEpochMillis, it.occurredAtEpochMillis + comparisonWindowMillis),
+            )
+            InterventionComparison(
+                marker = it,
+                beforeWindow = before,
+                afterWindow = after,
+                series = snapshot.series.map { series -> series.compareAround(it.occurredAtEpochMillis, before, after) },
+            )
+        }
+        return AdvancedTrendAnalysisResult(
+            snapshot = snapshot,
+            comparisonGroups = groups,
+            interventionComparison = intervention,
+            textAlternative = snapshot.textAlternative(intervention),
+        )
+    }
+}
+
+private fun ParameterTrendSeries.comparisonKey(): Pair<TrendComparisonDimension, String>? {
+    val normalized = definition.unit.trim().lowercase()
+    return when {
+        definition.parameter == BuiltInParameter.TEMPERATURE && normalized in setOf("°c", "c", "celsius") ->
+            TrendComparisonDimension.TEMPERATURE to "°C"
+        definition.parameter in setOf(
+            BuiltInParameter.AMMONIA,
+            BuiltInParameter.NITRITE,
+            BuiltInParameter.NITRATE,
+            BuiltInParameter.PHOSPHATE,
+        ) && normalized.replace(" ", "") == "mg/l" ->
+            TrendComparisonDimension.MASS_CONCENTRATION to "mg/L"
+        else -> null
+    }
+}
+
+private fun ParameterTrendSeries.compareAround(
+    interventionAt: Long,
+    before: TrendWindow,
+    after: TrendWindow,
+): InterventionSeriesComparison {
+    val beforeValues = points.filter {
+        it.occurredAtEpochMillis in before.startEpochMillis until interventionAt
+    }.map(TrendPoint::value)
+    val afterValues = points.filter {
+        it.occurredAtEpochMillis > interventionAt && it.occurredAtEpochMillis <= after.endEpochMillis
+    }.map(TrendPoint::value)
+    if (beforeValues.isEmpty() || afterValues.isEmpty()) {
+        return InterventionSeriesComparison.InsufficientData(definition.id, definition.unit)
+    }
+    val beforeAverage = beforeValues.average()
+    val afterAverage = afterValues.average()
+    return InterventionSeriesComparison.Available(
+        definitionId = definition.id,
+        unit = definition.unit,
+        beforeAverage = beforeAverage,
+        afterAverage = afterAverage,
+        descriptiveDifference = afterAverage - beforeAverage,
+    )
+}
+
+private fun AdvancedTrendSnapshot.textAlternative(
+    intervention: InterventionComparison?,
+): TrendTextAlternative = TrendTextAlternative(
+    period = windowStartEpochMillis..windowEndEpochMillis,
+    series = series.map { trendSeries ->
+        val ordered = trendSeries.points.sortedBy(TrendPoint::occurredAtEpochMillis)
+        val first = ordered.firstOrNull()?.value
+        val last = ordered.lastOrNull()?.value
+        TrendSeriesTextAlternative(
+            definitionId = trendSeries.definition.id,
+            unit = trendSeries.definition.unit,
+            pointCount = ordered.size,
+            firstValue = first,
+            lastValue = last,
+            minimumValue = ordered.minOfOrNull(TrendPoint::value),
+            maximumValue = ordered.maxOfOrNull(TrendPoint::value),
+            direction = when {
+                first == null || last == null -> DescriptiveTrendDirection.NO_DATA
+                ordered.size == 1 -> DescriptiveTrendDirection.SINGLE_VALUE
+                last > first -> DescriptiveTrendDirection.RISING
+                last < first -> DescriptiveTrendDirection.FALLING
+                else -> DescriptiveTrendDirection.UNCHANGED
+            },
+        )
+    },
+    annotations = events.map { marker ->
+        TrendAnnotationTextAlternative(
+            occurredAtEpochMillis = marker.occurredAtEpochMillis,
+            maintenanceActionTypes = marker.maintenanceActionTypes,
+            events = marker.events,
+        )
+    },
+    interventionComparison = intervention,
+)

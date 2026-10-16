@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -21,7 +22,11 @@ import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.RapidSessionInput
 import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.ProEntitlement
+import com.maximerollin.aqualog.shared.LIFETIME_PRO_PRODUCT_ID
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -115,6 +120,103 @@ class TrendsFlowTest {
             .assertIsDisplayed()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription("Exact value 100 ppm"))
         composeRule.onNodeWithContentDescription("Exact value 100 ppm").assertIsDisplayed()
+        scenario.close()
+    }
+
+    @Test
+    fun proReadsCompleteHistory_comparesCompatibleParameters_andDowngradeKeepsData() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val application = context.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        val oldTemperature = 20.5
+        var interventionSessionId = ""
+        runBlocking {
+            val parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED).map {
+                if (it.parameter == BuiltInParameter.PHOSPHATE) it.copy(isActive = true) else it
+            }
+            val setup = application.aquariumRepository.createConfiguredAquarium(
+                "Long history", 120.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED, parameters,
+            )
+            val temperature = setup.parameters.first { it.parameter == BuiltInParameter.TEMPERATURE }
+            val nitrate = setup.parameters.first { it.parameter == BuiltInParameter.NITRATE }
+            val phosphate = setup.parameters.first { it.parameter == BuiltInParameter.PHOSPHATE }
+            application.aquariumRepository.saveRapidSession(
+                RapidSessionInput(
+                    setup.aquarium.id,
+                    System.currentTimeMillis() - 4L * 365L * 86_400_000L,
+                    "old-pro-point",
+                    mapOf(temperature.id to oldTemperature.toString()),
+                ),
+            )
+            application.aquariumRepository.saveRapidSession(
+                RapidSessionInput(
+                    setup.aquarium.id,
+                    System.currentTimeMillis() - 12L * 86_400_000L,
+                    "before-intervention",
+                    mapOf(nitrate.id to "24"),
+                ),
+            )
+            interventionSessionId = application.aquariumRepository.saveRapidSession(
+                RapidSessionInput(
+                    setup.aquarium.id,
+                    System.currentTimeMillis() - 10L * 86_400_000L,
+                    "pro-intervention",
+                    mapOf(nitrate.id to "20", phosphate.id to "0.8"),
+                    listOf(MaintenanceActionInput(MaintenanceActionType.WATER_CHANGE, "20", "%")),
+                ),
+            ).session.id
+            application.aquariumRepository.saveRapidSession(
+                RapidSessionInput(
+                    setup.aquarium.id,
+                    System.currentTimeMillis() - 8L * 86_400_000L,
+                    "after-intervention",
+                    mapOf(nitrate.id to "18"),
+                ),
+            )
+        }
+        application.grantPro(ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null))
+        var scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        composeRule.onNodeWithText("History").performClick()
+        composeRule.onNodeWithText("Trends").performClick()
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("Show complete history"))
+        composeRule.onNodeWithText("Show complete history").performClick()
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("Advanced Pro analysis"))
+        composeRule.onNodeWithText("Advanced Pro analysis").assertIsDisplayed()
+        composeRule.onNodeWithTag("trend-list")
+            .performScrollToNode(hasText("Compatible Parameter comparison · mg/L"))
+        composeRule.onNodeWithText("Compatible Parameter comparison · mg/L").assertIsDisplayed()
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(
+            hasContentDescription("includes 1 intervention annotations", substring = true),
+        )
+        composeRule.onNodeWithContentDescription("includes 1 intervention annotations", substring = true)
+            .assertIsDisplayed()
+        val interventionTag = "trend-intervention-$interventionSessionId"
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasTestTag(interventionTag))
+        composeRule.onNodeWithTag(interventionTag).performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(
+                hasContentDescription("The center line marks the intervention", substring = true),
+            ).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(
+            hasContentDescription("The center line marks the intervention", substring = true),
+        )
+        composeRule.onNodeWithContentDescription("The center line marks the intervention", substring = true)
+            .assertIsDisplayed()
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText(oldTemperature.toString(), substring = true))
+        composeRule.onNodeWithText(oldTemperature.toString(), substring = true).assertIsDisplayed()
+
+        application.revokePro()
+        scenario.close()
+        scenario = ActivityScenario.launch(MainActivity::class.java)
+        composeRule.onNodeWithText("History").performClick()
+        composeRule.onNodeWithText("Trends").performClick()
+        composeRule.onNodeWithText("Free trends show up to 90 days. Older data stays saved.").assertIsDisplayed()
+        assertTrue(
+            runBlocking { application.aquariumRepository.observeTimeline(com.maximerollin.aqualog.shared.TimelineFilter()).first() }
+                .any { it.measurements.any { measurement -> measurement.measurement.value == oldTemperature } },
+        )
         scenario.close()
     }
 }
