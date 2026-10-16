@@ -70,10 +70,10 @@ import com.maximerollin.aqualog.shared.TaskResolution
 import com.maximerollin.aqualog.shared.TaskResolutionInput
 import com.maximerollin.aqualog.shared.TrendPeriod
 import com.maximerollin.aqualog.shared.TrendSnapshot
-import com.maximerollin.aqualog.shared.TrendAccess
 import com.maximerollin.aqualog.shared.TrendWindow
 import com.maximerollin.aqualog.shared.AdvancedTrendAnalysis
 import com.maximerollin.aqualog.shared.AdvancedTrendAnalysisResult
+import com.maximerollin.aqualog.shared.asTrendSnapshot
 import com.maximerollin.aqualog.shared.TechnicalComponent
 import com.maximerollin.aqualog.shared.TechnicalFailure
 import com.maximerollin.aqualog.shared.TechnicalFailureKind
@@ -1972,7 +1972,6 @@ class HomeViewModel(
             if (isProAdvanced) {
                 aquariumRepository.observeAdvancedTrends(
                     aquariumId = selectedAquariumId,
-                    access = TrendAccess.PRO,
                     customWindow = trendsState.customWindowOrNull(),
                 ).catch {
                     mutableUiState.update { state ->
@@ -1989,14 +1988,7 @@ class HomeViewModel(
                         state.copy(
                             trends = state.trends.copy(
                                 isLoading = false,
-                                snapshot = TrendSnapshot(
-                                    aquarium = advanced.aquarium,
-                                    period = period,
-                                    windowStartEpochMillis = advanced.windowStartEpochMillis,
-                                    windowEndEpochMillis = advanced.windowEndEpochMillis,
-                                    series = advanced.series,
-                                    events = advanced.events,
-                                ),
+                                snapshot = advanced.asTrendSnapshot(period),
                                 selectedParameterDefinitionId = selected,
                                 selectedInterventionSessionId = selectedIntervention,
                                 advancedAnalysis = analysis,

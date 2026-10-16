@@ -38,8 +38,6 @@ data class TrendSnapshot(
     val events: List<TrendEventMarker>,
 )
 
-enum class TrendAccess { FREE, PRO }
-
 data class TrendWindow(
     val startEpochMillis: Long,
     val endEpochMillis: Long,
@@ -51,11 +49,19 @@ data class TrendWindow(
 
 data class AdvancedTrendSnapshot(
     val aquarium: Aquarium,
-    val access: TrendAccess,
     val windowStartEpochMillis: Long,
     val windowEndEpochMillis: Long,
     val series: List<ParameterTrendSeries>,
     val events: List<TrendEventMarker>,
+)
+
+fun AdvancedTrendSnapshot.asTrendSnapshot(period: TrendPeriod): TrendSnapshot = TrendSnapshot(
+    aquarium = aquarium,
+    period = period,
+    windowStartEpochMillis = windowStartEpochMillis,
+    windowEndEpochMillis = windowEndEpochMillis,
+    series = series,
+    events = events,
 )
 
 data class ComparableTrendGroup(
@@ -93,11 +99,30 @@ data class InterventionComparison(
     val series: List<InterventionSeriesComparison>,
 )
 
+enum class DescriptiveTrendDirection { RISING, FALLING, UNCHANGED, SINGLE_VALUE, NO_DATA }
+
+data class TrendSeriesTextAlternative(
+    val definitionId: String,
+    val unit: String,
+    val pointCount: Int,
+    val firstValue: Double?,
+    val lastValue: Double?,
+    val minimumValue: Double?,
+    val maximumValue: Double?,
+    val direction: DescriptiveTrendDirection,
+)
+
+data class TrendAnnotationTextAlternative(
+    val occurredAtEpochMillis: Long,
+    val maintenanceActionTypes: List<MaintenanceActionType>,
+    val events: List<TrendEvent>,
+)
+
 data class TrendTextAlternative(
     val period: LongRange,
-    val series: List<String>,
-    val annotations: List<String>,
-    val interventionSummary: List<String>,
+    val series: List<TrendSeriesTextAlternative>,
+    val annotations: List<TrendAnnotationTextAlternative>,
+    val interventionComparison: InterventionComparison?,
 )
 
 data class AdvancedTrendAnalysisResult(
@@ -191,37 +216,33 @@ private fun AdvancedTrendSnapshot.textAlternative(
     intervention: InterventionComparison?,
 ): TrendTextAlternative = TrendTextAlternative(
     period = windowStartEpochMillis..windowEndEpochMillis,
-    series = series.map {
-        "${it.definition.parameter.readableName()} · ${it.definition.unit} · ${it.points.size} values"
+    series = series.map { trendSeries ->
+        val ordered = trendSeries.points.sortedBy(TrendPoint::occurredAtEpochMillis)
+        val first = ordered.firstOrNull()?.value
+        val last = ordered.lastOrNull()?.value
+        TrendSeriesTextAlternative(
+            definitionId = trendSeries.definition.id,
+            unit = trendSeries.definition.unit,
+            pointCount = ordered.size,
+            firstValue = first,
+            lastValue = last,
+            minimumValue = ordered.minOfOrNull(TrendPoint::value),
+            maximumValue = ordered.maxOfOrNull(TrendPoint::value),
+            direction = when {
+                first == null || last == null -> DescriptiveTrendDirection.NO_DATA
+                ordered.size == 1 -> DescriptiveTrendDirection.SINGLE_VALUE
+                last > first -> DescriptiveTrendDirection.RISING
+                last < first -> DescriptiveTrendDirection.FALLING
+                else -> DescriptiveTrendDirection.UNCHANGED
+            },
+        )
     },
     annotations = events.map { marker ->
-        buildList {
-            addAll(marker.maintenanceActionTypes.map(MaintenanceActionType::readableName))
-            addAll(marker.events.map { "${it.type.readableName()}: ${it.note}" })
-        }.joinToString(" · ")
+        TrendAnnotationTextAlternative(
+            occurredAtEpochMillis = marker.occurredAtEpochMillis,
+            maintenanceActionTypes = marker.maintenanceActionTypes,
+            events = marker.events,
+        )
     },
-    interventionSummary = intervention?.series?.map { comparison ->
-        when (comparison) {
-            is InterventionSeriesComparison.Available -> {
-                val name = series.first { it.definition.id == comparison.definitionId }.definition.parameter.readableName()
-                "$name changed descriptively from ${comparison.beforeAverage} to ${comparison.afterAverage} ${comparison.unit}"
-            }
-            is InterventionSeriesComparison.InsufficientData -> {
-                val name = series.first { it.definition.id == comparison.definitionId }.definition.parameter.readableName()
-                "$name · insufficient data before or after the intervention"
-            }
-        }
-    }.orEmpty(),
+    interventionComparison = intervention,
 )
-
-private fun BuiltInParameter.readableName(): String = storageValue
-    .replace('_', ' ')
-    .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-
-private fun MaintenanceActionType.readableName(): String = storageValue
-    .replace('_', ' ')
-    .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-
-private fun EventType.readableName(): String = storageValue
-    .replace('_', ' ')
-    .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }

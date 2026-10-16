@@ -67,8 +67,9 @@ class AdvancedTrendAnalysisTest {
         assertIs<InterventionSeriesComparison.InsufficientData>(
             comparison.series.first { it.definitionId == "nitrate" },
         )
-        assertTrue(result.textAlternative.interventionSummary.any { it.contains("insufficient", ignoreCase = true) })
-        assertTrue(result.textAlternative.interventionSummary.none { it.contains("improved", ignoreCase = true) })
+        assertIs<InterventionSeriesComparison.InsufficientData>(
+            result.textAlternative.interventionComparison!!.series.first { it.definitionId == "nitrate" },
+        )
     }
 
     @Test
@@ -98,9 +99,22 @@ class AdvancedTrendAnalysisTest {
         )
 
         assertEquals(0L..20 * DAY, result.textAlternative.period)
-        assertEquals(listOf("Temperature · °C · 3 values"), result.textAlternative.series)
-        assertTrue(result.textAlternative.annotations.single().contains("Filter maintenance"))
-        assertTrue(result.textAlternative.interventionSummary.single().contains("23.0 to 24.0 °C"))
+        val textSeries = result.textAlternative.series.single()
+        assertEquals("°C", textSeries.unit)
+        assertEquals(3, textSeries.pointCount)
+        assertEquals(24.0, textSeries.firstValue)
+        assertEquals(24.0, textSeries.lastValue)
+        assertEquals(23.0, textSeries.minimumValue)
+        assertEquals(24.0, textSeries.maximumValue)
+        assertEquals(DescriptiveTrendDirection.UNCHANGED, textSeries.direction)
+        assertEquals(
+            listOf(MaintenanceActionType.FILTER_MAINTENANCE),
+            result.textAlternative.annotations.single().maintenanceActionTypes,
+        )
+        val textComparison = result.textAlternative.interventionComparison!!.series.single()
+        assertIs<InterventionSeriesComparison.Available>(textComparison)
+        assertEquals(23.0, textComparison.beforeAverage)
+        assertEquals(24.0, textComparison.afterAverage)
     }
 
     private fun advancedSnapshot(
@@ -108,7 +122,6 @@ class AdvancedTrendAnalysisTest {
         events: List<TrendEventMarker> = emptyList(),
     ) = AdvancedTrendSnapshot(
         aquarium = Aquarium("aquarium", "Test", 100.0, VolumeUnit.LITERS, 0L),
-        access = TrendAccess.PRO,
         windowStartEpochMillis = 0L,
         windowEndEpochMillis = 20 * DAY,
         series = series,

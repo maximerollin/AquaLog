@@ -303,7 +303,19 @@
     <string name="trends_text_alternative">Text alternative</string>
     <string name="trends_period_description">Period: %1$s to %2$s</string>
     <string name="trends_compatible_comparison">Compatible Parameter comparison · %1$s</string>
-    <string name="trends_comparison_chart_description">Comparison chart for %1$s in %2$s; each series uses a distinct labeled color.</string>
+    <string name="trends_comparison_chart_description">Comparison chart for %1$s in %2$s; each series uses a distinct labeled color and includes %3$d intervention annotations.</string>
+    <string name="trends_before_after_chart_description">Before and after chart for %1$s. Before average %2$s, after average %3$s %4$s. The center line marks the intervention.</string>
+    <string name="trends_before_label">Before</string>
+    <string name="trends_after_label">After</string>
+    <string name="trends_intervention_marker">Intervention</string>
+    <string name="trends_text_series_values">%1$s: %2$d values in %3$s. First %4$s, last %5$s, minimum %6$s, maximum %7$s. Descriptive direction: %8$s.</string>
+    <string name="trends_text_series_no_data">%1$s: no values in %2$s.</string>
+    <string name="trends_text_annotation">Annotation at %1$s: %2$s</string>
+    <string name="trends_direction_rising">rising</string>
+    <string name="trends_direction_falling">falling</string>
+    <string name="trends_direction_unchanged">unchanged</string>
+    <string name="trends_direction_single">single value</string>
+    <string name="trends_direction_no_data">no data</string>
 
     <string name="tasks_title">Tasks &amp; reminders</string>
     <string name="new_task">New Task</string>

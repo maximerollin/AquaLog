@@ -28,16 +28,11 @@ class TrendRepositoryContractTest {
 
             val pro = fixture.repository.observeAdvancedTrends(
                 aquariumId = setup.aquarium.id,
-                access = TrendAccess.PRO,
                 customWindow = TrendWindow(NOW - 5L * 365L * DAY, NOW - 3L * 365L * DAY),
             ).first()
             assertEquals(listOf(20.0), pro.series.first { it.definition.id == temperature.id }.points.map { it.value })
 
-            val free = fixture.repository.observeAdvancedTrends(
-                aquariumId = setup.aquarium.id,
-                access = TrendAccess.FREE,
-                customWindow = TrendWindow(0L, NOW),
-            ).first()
+            val free = fixture.repository.observeFreeTrends(setup.aquarium.id, TrendPeriod.NINETY_DAYS).first()
             assertEquals(listOf(24.0), free.series.first { it.definition.id == temperature.id }.points.map { it.value })
             assertEquals(2, fixture.repository.observeTimeline(TimelineFilter()).first().size)
         }
@@ -64,7 +59,6 @@ class TrendRepositoryContractTest {
 
             val pro = fixture.repository.observeAdvancedTrends(
                 aquariumId = setup.aquarium.id,
-                access = TrendAccess.PRO,
             ).first()
 
             assertEquals(NOW - 8L * 365L * DAY, pro.windowStartEpochMillis)

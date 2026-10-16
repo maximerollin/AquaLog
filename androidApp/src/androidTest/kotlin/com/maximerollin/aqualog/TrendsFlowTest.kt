@@ -4,6 +4,7 @@ import android.os.SystemClock
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -149,10 +150,26 @@ class TrendsFlowTest {
             application.aquariumRepository.saveRapidSession(
                 RapidSessionInput(
                     setup.aquarium.id,
+                    System.currentTimeMillis() - 12L * 86_400_000L,
+                    "before-intervention",
+                    mapOf(nitrate.id to "24"),
+                ),
+            )
+            application.aquariumRepository.saveRapidSession(
+                RapidSessionInput(
+                    setup.aquarium.id,
                     System.currentTimeMillis() - 10L * 86_400_000L,
                     "pro-intervention",
                     mapOf(nitrate.id to "20", phosphate.id to "0.8"),
                     listOf(MaintenanceActionInput(MaintenanceActionType.WATER_CHANGE, "20", "%")),
+                ),
+            )
+            application.aquariumRepository.saveRapidSession(
+                RapidSessionInput(
+                    setup.aquarium.id,
+                    System.currentTimeMillis() - 8L * 86_400_000L,
+                    "after-intervention",
+                    mapOf(nitrate.id to "18"),
                 ),
             )
         }
@@ -166,6 +183,15 @@ class TrendsFlowTest {
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("Advanced Pro analysis"))
         composeRule.onNodeWithText("Advanced Pro analysis").assertIsDisplayed()
         composeRule.onNodeWithText("Compatible Parameter comparison · mg/L").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("includes 1 intervention annotations", substring = true)
+            .assertIsDisplayed()
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("Water change", substring = true))
+        composeRule.onNode(hasText("Water change", substring = true) and hasClickAction()).performClick()
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(
+            hasContentDescription("The center line marks the intervention", substring = true),
+        )
+        composeRule.onNodeWithContentDescription("The center line marks the intervention", substring = true)
+            .assertIsDisplayed()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText(oldTemperature.toString(), substring = true))
         composeRule.onNodeWithText(oldTemperature.toString(), substring = true).assertIsDisplayed()
 

@@ -55,7 +55,6 @@ interface AquariumRepository {
 
     fun observeAdvancedTrends(
         aquariumId: String,
-        access: TrendAccess,
         customWindow: TrendWindow? = null,
     ): Flow<AdvancedTrendSnapshot>
 
@@ -445,48 +444,20 @@ class RoomAquariumRepository(
                 val setup = requireNotNull(
                     setupEntities.firstOrNull { it.aquarium.id == aquariumId },
                 ) { "Aquarium does not exist" }.toDomain()
+                val content = mapTrendContent(setup, recordedEntities.map(RecordedSessionEntity::toDomain))
                 TrendSnapshot(
                     aquarium = setup.aquarium,
                     period = period,
                     windowStartEpochMillis = now - period.days * DAY_MILLIS,
                     windowEndEpochMillis = now,
-                    series = setup.parameters.filter(ParameterDefinition::isActive).map { definition ->
-                        ParameterTrendSeries(
-                            definition = definition,
-                            points = recordedEntities.mapNotNull { recorded ->
-                                recorded.measurements.firstOrNull {
-                                    it.parameterDefinitionId == definition.id
-                                }?.let { measurement ->
-                                    TrendPoint(
-                                        sessionId = recorded.session.id,
-                                        occurredAtEpochMillis = recorded.session.occurredAtEpochMillis,
-                                        value = measurement.value,
-                                    )
-                                }
-                            }.sortedBy(TrendPoint::occurredAtEpochMillis),
-                        )
-                    },
-                    events = recordedEntities.mapNotNull { recorded ->
-                        if (recorded.maintenanceActions.isEmpty() && recorded.events.isEmpty()) {
-                            return@mapNotNull null
-                        }
-                        TrendEventMarker(
-                            sessionId = recorded.session.id,
-                            occurredAtEpochMillis = recorded.session.occurredAtEpochMillis,
-                            maintenanceActionTypes = recorded.maintenanceActions
-                                .map { MaintenanceActionType.fromStorageValue(it.type) },
-                            events = recorded.events.map {
-                                TrendEvent(EventType.fromStorageValue(it.type), it.note)
-                            },
-                        )
-                    }.sortedBy(TrendEventMarker::occurredAtEpochMillis),
+                    series = content.series,
+                    events = content.events,
                 )
             }
         }
 
     override fun observeAdvancedTrends(
         aquariumId: String,
-        access: TrendAccess,
         customWindow: TrendWindow?,
     ): Flow<AdvancedTrendSnapshot> = currentTimeMillis().let { now ->
         combine(
@@ -497,51 +468,21 @@ class RoomAquariumRepository(
                 setupEntities.firstOrNull { it.aquarium.id == aquariumId },
             ) { "Aquarium does not exist" }.toDomain()
             val aquariumRecords = allRecordedEntities.filter { it.session.aquariumId == aquariumId }
-            val requestedWindow = when (access) {
-                TrendAccess.FREE -> TrendWindow(now - 90L * DAY_MILLIS, now)
-                TrendAccess.PRO -> customWindow ?: TrendWindow(
-                    aquariumRecords.minOfOrNull { it.session.occurredAtEpochMillis } ?: now,
-                    now,
-                )
-            }
+            val requestedWindow = customWindow ?: TrendWindow(
+                aquariumRecords.minOfOrNull { it.session.occurredAtEpochMillis } ?: now,
+                now,
+            )
             val records = aquariumRecords.filter {
                 it.session.occurredAtEpochMillis in
                     requestedWindow.startEpochMillis..requestedWindow.endEpochMillis
-            }
+            }.map(RecordedSessionEntity::toDomain)
+            val content = mapTrendContent(setup, records)
             AdvancedTrendSnapshot(
                 aquarium = setup.aquarium,
-                access = access,
                 windowStartEpochMillis = requestedWindow.startEpochMillis,
                 windowEndEpochMillis = requestedWindow.endEpochMillis,
-                series = setup.parameters.filter(ParameterDefinition::isActive).map { definition ->
-                    ParameterTrendSeries(
-                        definition = definition,
-                        points = records.mapNotNull { recorded ->
-                            recorded.measurements.firstOrNull {
-                                it.parameterDefinitionId == definition.id
-                            }?.let { measurement ->
-                                TrendPoint(
-                                    sessionId = recorded.session.id,
-                                    occurredAtEpochMillis = recorded.session.occurredAtEpochMillis,
-                                    value = measurement.value,
-                                )
-                            }
-                        }.sortedBy(TrendPoint::occurredAtEpochMillis),
-                    )
-                },
-                events = records.mapNotNull { recorded ->
-                    if (recorded.maintenanceActions.isEmpty() && recorded.events.isEmpty()) return@mapNotNull null
-                    TrendEventMarker(
-                        sessionId = recorded.session.id,
-                        occurredAtEpochMillis = recorded.session.occurredAtEpochMillis,
-                        maintenanceActionTypes = recorded.maintenanceActions.map {
-                            MaintenanceActionType.fromStorageValue(it.type)
-                        },
-                        events = recorded.events.map {
-                            TrendEvent(EventType.fromStorageValue(it.type), it.note)
-                        },
-                    )
-                }.sortedBy(TrendEventMarker::occurredAtEpochMillis),
+                series = content.series,
+                events = content.events,
             )
         }
     }
@@ -963,6 +904,37 @@ private fun RecordedSessionEntity.toDomain() = RecordedSession(
     measurements = measurements.map(MeasurementEntity::toDomain),
     maintenanceActions = maintenanceActions.map(MaintenanceActionEntity::toDomain),
     events = events.map(SessionEventEntity::toDomain),
+)
+
+private data class TrendContent(
+    val series: List<ParameterTrendSeries>,
+    val events: List<TrendEventMarker>,
+)
+
+private fun mapTrendContent(setup: AquariumSetup, records: List<RecordedSession>): TrendContent = TrendContent(
+    series = setup.parameters.filter(ParameterDefinition::isActive).map { definition ->
+        ParameterTrendSeries(
+            definition = definition,
+            points = records.mapNotNull { recorded ->
+                recorded.measurements.firstOrNull { it.parameterDefinitionId == definition.id }?.let { measurement ->
+                    TrendPoint(
+                        sessionId = recorded.session.id,
+                        occurredAtEpochMillis = recorded.session.occurredAtEpochMillis,
+                        value = measurement.value,
+                    )
+                }
+            }.sortedBy(TrendPoint::occurredAtEpochMillis),
+        )
+    },
+    events = records.mapNotNull { recorded ->
+        if (recorded.maintenanceActions.isEmpty() && recorded.events.isEmpty()) return@mapNotNull null
+        TrendEventMarker(
+            sessionId = recorded.session.id,
+            occurredAtEpochMillis = recorded.session.occurredAtEpochMillis,
+            maintenanceActionTypes = recorded.maintenanceActions.map(MaintenanceAction::type),
+            events = recorded.events.map { TrendEvent(it.type, it.note) },
+        )
+    }.sortedBy(TrendEventMarker::occurredAtEpochMillis),
 )
 
 private const val DAY_MILLIS = 24L * 60L * 60L * 1_000L
