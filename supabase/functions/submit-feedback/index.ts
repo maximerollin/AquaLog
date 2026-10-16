@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { feedbackRpcStatus, validateFeedbackMessage } from "./service.ts";
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
@@ -10,7 +11,8 @@ Deno.serve(async (request) => {
   } catch {
     return new Response("Invalid JSON", { status: 400 });
   }
-  if (typeof message !== "string" || message.trim().length === 0 || message.length > 2000) {
+  const validatedMessage = validateFeedbackMessage(message);
+  if (validatedMessage === null) {
     return new Response("Invalid feedback", { status: 400 });
   }
   const client = createClient(
@@ -18,9 +20,9 @@ Deno.serve(async (request) => {
     Deno.env.get("SUPABASE_ANON_KEY")!,
     { global: { headers: { Authorization: authorization } } },
   );
-  const { error } = await client.rpc("submit_product_feedback", { feedback_message: message });
+  const { error } = await client.rpc("submit_product_feedback", { feedback_message: validatedMessage });
   if (error) {
-    const status = error.code === "42501" ? 401 : error.code === "P0001" ? 429 : 500;
+    const status = feedbackRpcStatus(error.code);
     return new Response(status === 500 ? "Feedback unavailable" : error.message, { status });
   }
   return new Response(null, { status: 204 });
