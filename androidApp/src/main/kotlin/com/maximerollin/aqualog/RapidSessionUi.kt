@@ -34,6 +34,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -45,8 +46,6 @@ import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.evaluateMeasurement
-import java.text.DateFormat
-import java.util.Date
 
 @Composable
 fun RapidSessionScreen(
@@ -55,6 +54,7 @@ fun RapidSessionScreen(
     viewModel: HomeViewModel,
     modifier: Modifier = Modifier,
 ) {
+    val formatter = currentLocalizedFormatters()
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
@@ -107,7 +107,7 @@ fun RapidSessionScreen(
         }
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize().testTag("rapid-session-list").padding(padding),
             contentPadding = PaddingValues(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -138,8 +138,7 @@ fun RapidSessionScreen(
                                 Text(stringResource(R.string.earlier_time))
                             }
                             Text(
-                                DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
-                                    .format(Date(state.occurredAtEpochMillis)),
+                                formatter.shortDateTime(state.occurredAtEpochMillis),
                                 modifier = Modifier.padding(top = 12.dp),
                             )
                             TextButton(onClick = { viewModel.shiftSessionTimeByMinutes(15) }) {
@@ -167,7 +166,15 @@ fun RapidSessionScreen(
                 OutlinedTextField(
                     value = input,
                     onValueChange = { viewModel.updateMeasurement(definition.id, it) },
-                    label = { Text("${definition.parameter.label()} (${definition.unit})") },
+                    label = {
+                        Text(
+                            stringResource(
+                                R.string.parameter_with_unit,
+                                definition.parameter.label(),
+                                definition.unit,
+                            ),
+                        )
+                    },
                     supportingText = {
                         when {
                             !feedback.isValid -> Text(stringResource(R.string.invalid_measurement))
@@ -175,7 +182,10 @@ fun RapidSessionScreen(
                             context.lastMeasurements[definition.id] != null -> Text(
                                 stringResource(
                                     R.string.last_measurement,
-                                    context.lastMeasurements.getValue(definition.id).displayValue(definition.precision),
+                                    formatter.number(
+                                        context.lastMeasurements.getValue(definition.id),
+                                        definition.precision,
+                                    ),
                                     definition.unit,
                                 ),
                             )
@@ -320,5 +330,3 @@ internal fun MaintenanceActionType.label(): String = stringResource(
         MaintenanceActionType.PRUNING -> R.string.action_pruning
     },
 )
-
-private fun Double.displayValue(precision: Int): String = "%1$.${precision}f".format(this)

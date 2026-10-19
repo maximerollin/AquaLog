@@ -17,6 +17,7 @@ import com.maximerollin.aqualog.shared.AccountDeletionReauthenticationResult
 import com.maximerollin.aqualog.shared.AccountControlFailure
 import com.maximerollin.aqualog.shared.AccountControlResult
 import com.maximerollin.aqualog.shared.AccountIdentity
+import com.maximerollin.aqualog.shared.parseDecimalInput
 import com.maximerollin.aqualog.shared.LocalCopyDecision
 import com.maximerollin.aqualog.shared.PendingAccountDeletion
 import com.maximerollin.aqualog.shared.AquariumRepository
@@ -2187,7 +2188,7 @@ private data class OptionalDecimal(val value: Double?)
 private fun String.toOptionalDecimal(): OptionalDecimal? =
     if (isBlank()) OptionalDecimal(null) else toDecimalOrNull()?.let(::OptionalDecimal)
 
-private fun String.toDecimalOrNull(): Double? = replace(',', '.').toDoubleOrNull()
+private fun String.toDecimalOrNull(): Double? = parseDecimalInput(this)
 
 private fun Double?.displayInput(): String = when {
     this == null -> ""

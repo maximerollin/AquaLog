@@ -290,6 +290,10 @@
     <string name="trends_indicative_target">Indicative target %1$s–%2$s %3$s · reference only, not a diagnosis</string>
     <string name="trends_chart_description">%1$s trend chart · solid line and circle point markers · hatched indicative target · diamond Event markers</string>
     <string name="trends_legend">● Measurements · ▧ hatched indicative target · ◆ Events</string>
+    <string name="trends_series_label">● %1$s series</string>
+    <string name="parameter_with_unit">%1$s (%2$s)</string>
+    <string name="value_with_unit">%1$s %2$s</string>
+    <string name="timeline_marker_line">%1$s · %2$s</string>
     <string name="trends_exact_values">Exact values</string>
     <string name="trends_exact_value_description">Exact value %1$s %2$s</string>
     <string name="trends_events">Context Events</string>

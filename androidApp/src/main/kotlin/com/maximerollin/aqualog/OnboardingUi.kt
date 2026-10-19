@@ -1,6 +1,5 @@
 package com.maximerollin.aqualog
 
-import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -36,7 +35,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -339,7 +337,7 @@ private fun PortableDataSettings(
     modifier: Modifier,
 ) {
     LazyColumn(
-        modifier = modifier.fillMaxSize().padding(horizontal = 24.dp),
+        modifier = modifier.fillMaxSize().testTag("settings-list").padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { Spacer(Modifier.height(8.dp)) }
@@ -978,7 +976,7 @@ private fun PracticeScreen(
             OutlinedTextField(
                 value = state.practiceValues[parameter.parameter].orEmpty(),
                 onValueChange = { onValueChanged(parameter.parameter, it) },
-                label = { Text("$label (${parameter.unit})") },
+                label = { Text(stringResource(R.string.parameter_with_unit, label, parameter.unit)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
                 modifier = Modifier
@@ -1008,7 +1006,10 @@ private fun PaywallScreen(
     onContinue: () -> Unit,
     modifier: Modifier,
 ) {
-    StandardScreen(modifier) {
+    Column(
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         ScreenHeading(R.string.paywall_title, R.string.paywall_description)
         PlanCard(R.string.free_plan, R.string.free_plan_description)
         PlanCard(R.string.pro_plan, R.string.pro_plan_description)
@@ -1105,7 +1106,7 @@ private fun PaywallScreen(
         ) {
             Text(stringResource(R.string.restore_purchase))
         }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(8.dp))
         Button(
             onClick = onContinue,
             enabled = !isSaving,
@@ -1465,10 +1466,7 @@ internal fun BuiltInParameter.label(): String = stringResource(
 
 @Composable
 private fun Aquarium.formattedVolume(): String {
-    val configuration = LocalConfiguration.current
-    @Suppress("DEPRECATION")
-    val locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) configuration.locales[0] else configuration.locale
-    val formatted = LocalizedFormatters(locale).number(volume)
+    val formatted = currentLocalizedFormatters().number(volume)
     return when (volumeUnit) {
         VolumeUnit.LITERS -> stringResource(R.string.volume_liters_format, formatted)
         VolumeUnit.US_GALLONS -> stringResource(R.string.volume_us_gallons_format, formatted)

@@ -38,25 +38,25 @@
     <string name="parameter_tds">TDS</string>
     <string name="parameter_phosphate">Fosfato</string>
     <string name="parameter_salinity">Salinità</string>
-    <string name="enabled_for_parameter">Abilitato per%1$s</string>
-    <string name="move_parameter_up">Sposta%1$sverso l\'alto</string>
-    <string name="move_parameter_down">Sposta%1$sverso il basso</string>
+    <string name="enabled_for_parameter">Abilitato per %1$s</string>
+    <string name="move_parameter_up">Sposta %1$s verso l\'alto</string>
+    <string name="move_parameter_down">Sposta %1$s verso il basso</string>
     <string name="move_up_symbol">↑</string>
     <string name="move_down_symbol">↓</string>
     <string name="parameter_unit">Unità</string>
-    <string name="unit_for_parameter">Unità per%1$s</string>
+    <string name="unit_for_parameter">Unità per %1$s</string>
     <string name="parameter_precision">Decimali</string>
-    <string name="precision_for_parameter">Precisione per%1$s</string>
+    <string name="precision_for_parameter">Precisione per %1$s</string>
     <string name="parameter_minimum">Minimo indicativo</string>
-    <string name="minimum_for_parameter">Minimo indicativo per%1$s</string>
+    <string name="minimum_for_parameter">Minimo indicativo per %1$s</string>
     <string name="parameter_maximum">Massimo indicativo</string>
-    <string name="maximum_for_parameter">Massimo indicativo per%1$s</string>
+    <string name="maximum_for_parameter">Massimo indicativo per %1$s</string>
     <string name="invalid_parameters">Mantieni attivo almeno un parametro. Le unità, la precisione e gli intervalli devono essere validi.</string>
     <string name="try_mini_session">Prova una mini sessione</string>
 
     <string name="practice_title">Prova la tua prima sessione</string>
     <string name="practice_description">Inserisci alcuni valori di esempio per sentire il flusso veloce. Questa pratica non viene mai salvata.</string>
-    <string name="practice_value_for_parameter">Valore pratico per%1$s</string>
+    <string name="practice_value_for_parameter">Valore pratico per %1$s</string>
     <string name="practice_not_saved">Solo pratica · non verrà creata alcuna sessione o misurazione</string>
     <string name="see_free_and_pro">Vedi Gratuito e Pro</string>
 
@@ -69,11 +69,11 @@
     <string name="continue_for_free">Continua gratuitamente</string>
     <string name="continue_with_pro">Continua con Pro</string>
     <string name="loading_google_play_offer">Caricamento dell\'offerta localizzata di Google Play…</string>
-    <string name="pro_offer_summary">%1$sall\'anno dopo una prova gratuita di%2$dgiorni. Prima data di fatturazione:%3$s.</string>
-    <string name="pro_lifetime_offer_summary">%1$suna volta. Accesso a vita, senza prova.</string>
-    <string name="buy_lifetime_in_google_play">Acquista Lifetime Pro su Google Play</string>
+    <string name="pro_offer_summary">%1$s all\'anno dopo %2$d giorni di prova gratuita. Primo addebito: %3$s.</string>
+    <string name="pro_lifetime_offer_summary">%1$s una volta. Accesso a vita, senza prova.</string>
+    <string name="buy_lifetime_in_google_play">Acquista Pro a vita su Google Play</string>
     <string name="start_trial_in_google_play">Controlla e conferma su Google Play</string>
-    <string name="google_play_offer_unavailable">L\'offerta localizzata di Google Play non è disponibile. Nessun processo è iniziato.</string>
+    <string name="google_play_offer_unavailable">L\'offerta localizzata di Google Play non è disponibile. Non è iniziata alcuna prova.</string>
     <string name="restore_purchase">Ripristina l\'acquisto di Google Play</string>
     <string name="back_to_settings">Torna alle Impostazioni</string>
     <string name="subscription_settings_description">La versione gratuita include 90 giorni di cronologia. Rivedi Pro, riprova un acquisto o ripristina un abbonamento esistente.</string>
@@ -94,17 +94,17 @@
     <string name="no_session_description">I valori della tua pratica non sono stati salvati. Inizia quando hai misurazioni o manutenzioni reali da registrare.</string>
     <string name="new_session">Nuova sessione</string>
     <string name="open_tasks">Attività e promemoria</string>
-    <string name="volume_liters_format">%1$sL</string>
-    <string name="volume_us_gallons_format">%1$sGal</string>
+    <string name="volume_liters_format">%1$s L</string>
+    <string name="volume_us_gallons_format">%1$s Gal</string>
 
     <string name="rapid_session_title">Nuova sessione</string>
     <string name="cancel">Cancellare</string>
-    <string name="session_aquarium">Acquario:%1$s</string>
+    <string name="session_aquarium">Acquario: %1$s</string>
     <string name="earlier_time">-15 minuti</string>
     <string name="later_time">+15 minuti</string>
     <string name="measurements_heading">Misure</string>
-    <string name="measurement_for_parameter">Misurazione per%1$s</string>
-    <string name="last_measurement">Ultimo:%1$s%2$s· il nuovo valore rimane vuoto</string>
+    <string name="measurement_for_parameter">Misurazione per %1$s</string>
+    <string name="last_measurement">Ultima misurazione: %1$s %2$s · il nuovo valore rimane vuoto</string>
     <string name="no_previous_measurement">Non ancora misurato · lasciare vuoto per saltare</string>
     <string name="invalid_measurement">Immettere un numero decimale utilizzando un punto o una virgola.</string>
     <string name="unusual_measurement">Al di fuori dell\'intervallo indicativo. Controllare il valore; il salvataggio rimane disponibile.</string>
@@ -112,7 +112,7 @@
     <string name="action_water_change">Cambio d\'acqua</string>
     <string name="action_fertilization">Fecondazione</string>
     <string name="action_filter">Manutenzione del filtro</string>
-    <string name="action_vacuum">Vuoto</string>
+    <string name="action_vacuum">Sifonatura del fondo</string>
     <string name="action_glass">Pulizia del vetro</string>
     <string name="action_pruning">Potatura</string>
     <string name="edit_action">Modificare</string>
@@ -127,7 +127,7 @@
     <string name="save_session">Salva sessione</string>
     <string name="session_save_error">Impossibile salvare la sessione. Le tue voci sono ancora qui; riprova.</string>
     <string name="session_saved">Sessione salvata</string>
-    <string name="session_saved_description">Conferma cronologia · Misurazioni%1$d· Azioni di manutenzione%2$d</string>
+    <string name="session_saved_description">Conferma cronologia · Misurazioni %1$d · Azioni di manutenzione %2$d</string>
     <string name="continue_after_session">Continuare</string>
 
     <string name="account_invitation_title">Assicurati la tua copia locale dell\'Acquario</string>
@@ -156,10 +156,10 @@
     <string name="back_to_aquarium">Torniamo all\'Acquario</string>
     <string name="view_session_details">Visualizza i dettagli della sessione</string>
     <string name="session_details">Dettagli della sessione</string>
-    <string name="session_date">Registrato su%1$s</string>
-    <string name="session_measurement_detail">%1$s·%2$s%3$s</string>
-    <string name="session_action_detail">%1$s·%2$s</string>
-    <string name="session_event_detail">%1$s·%2$s</string>
+    <string name="session_date">Registrata il %1$s</string>
+    <string name="session_measurement_detail">%1$s · %2$s %3$s</string>
+    <string name="session_action_detail">%1$s · %2$s</string>
+    <string name="session_event_detail">%1$s · %2$s</string>
     <string name="edit_session">Modifica sessione</string>
     <string name="save_changes">Salva modifiche</string>
     <string name="delete_session">Elimina sessione</string>
@@ -167,14 +167,14 @@
     <string name="delete_session_description">Anche le relative misurazioni, azioni di manutenzione ed eventi verranno rimossi da questo dispositivo.</string>
     <string name="delete">Eliminare</string>
 
-    <string name="navigation_home">Casa</string>
-    <string name="navigation_history">Storia</string>
+    <string name="navigation_home">Home</string>
+    <string name="navigation_history">Cronologia</string>
     <string name="navigation_settings">Impostazioni</string>
     <string name="settings_title">Impostazioni</string>
     <string name="aquariums_title">Acquari</string>
     <string name="add_aquarium">Aggiungi Acquario</string>
     <string name="edit_aquarium">Modifica Acquario</string>
-    <string name="archive_aquarium">Archivio Acquario</string>
+    <string name="archive_aquarium">Archivia Acquario</string>
     <string name="save_aquarium">Salva Acquario</string>
     <string name="free_one_aquarium_limit">Free conserva tutti i dati esistenti e consente un acquario. Pro sblocca acquari aggiuntivi.</string>
     <string name="settings_placeholder">Le impostazioni di account, unità e aspetto verranno aggiunte nelle sezioni dedicate.</string>
@@ -247,9 +247,9 @@
     <string name="privacy_policy_local">AquaLog memorizza i record dell\'acquario localmente e non include mai token di account o dati di fatturazione nelle esportazioni portatili. Le operazioni cloud sono disabilitate quando questa build non è configurata. Nessun URL di privacy ospitato è configurato per questa build.</string>
     <string name="support">Supporto</string>
     <string name="support_unconfigured">Nessun canale di supporto ospitato è configurato per questa build. I dati dell\'Acquario locale e l\'esportazione portatile rimangono disponibili.</string>
-    <string name="close">Vicino</string>
-    <string name="open_privacy_policy">Politica pubblicata aperta</string>
-    <string name="open_support">Supporto aperto</string>
+    <string name="close">Chiudi</string>
+    <string name="open_privacy_policy">Apri l\'informativa pubblicata</string>
+    <string name="open_support">Apri assistenza</string>
 
     <string name="timeline_title">Cronologia</string>
     <string name="timeline_offline_status">Pronto offline · memorizzato su questo dispositivo</string>
@@ -263,7 +263,7 @@
     <string name="timeline_empty_title">Nessuna cronologia corrispondente</string>
     <string name="timeline_empty_description">Registra una sessione o regola i filtri per vedere la cronologia locale qui.</string>
     <string name="timeline_loading">Caricamento della cronologia locale…</string>
-    <string name="timeline_error">Non è stato possibile leggere la storia locale. I tuoi dati salvati sono ancora su questo dispositivo.</string>
+    <string name="timeline_error">Non è stato possibile leggere la Cronologia locale. I dati salvati sono ancora su questo dispositivo.</string>
     <string name="retry">Riprova</string>
     <string name="timeline_session">Sessione</string>
     <string name="timeline_task">Occorrenza dell\'attività</string>
@@ -271,27 +271,31 @@
     <string name="back_to_timeline">Ritorniamo alla cronologia</string>
     <string name="timeline_events">Eventi</string>
     <plurals name="timeline_measurement_count">
-        <item quantity="one">%dMisurazione</item>
-        <item quantity="other">%dMisure</item>
+        <item quantity="one">%d misurazione</item>
+        <item quantity="other">%d misurazioni</item>
     </plurals>
     <plurals name="timeline_action_count">
-        <item quantity="one">%dazione di manutenzione</item>
-        <item quantity="other">%dazioni di manutenzione</item>
+        <item quantity="one">%d azione di manutenzione</item>
+        <item quantity="other">%d azioni di manutenzione</item>
     </plurals>
     <plurals name="timeline_event_count">
-        <item quantity="one">Evento%d</item>
-        <item quantity="other">%dEventi</item>
+        <item quantity="one">%d evento</item>
+        <item quantity="other">%d eventi</item>
     </plurals>
 
     <string name="trends_title">Tendenze</string>
     <string name="trends_heading">Tendenze recenti</string>
     <string name="trends_free_limit">Le tendenze gratuite vengono visualizzate fino a 90 giorni. I dati più vecchi rimangono salvati.</string>
-    <string name="trends_parameter_heading">Andamento%1$s</string>
-    <string name="trends_indicative_target">Target indicativo%1$s–%2$s%3$s· solo riferimento, non diagnosi</string>
-    <string name="trends_chart_description">Grafico di tendenza%1$s· indicatori di linee continue e punti circolari · target indicativo tratteggiato · indicatori di eventi a rombo</string>
+    <string name="trends_parameter_heading">Andamento %1$s</string>
+    <string name="trends_indicative_target">Target indicativo %1$s–%2$s %3$s · solo riferimento, non diagnosi</string>
+    <string name="trends_chart_description">Grafico di tendenza %1$s · indicatori di linee continue e punti circolari · target indicativo tratteggiato · indicatori di eventi a rombo</string>
     <string name="trends_legend">● Misurazioni · ▧ target indicativo tratteggiato · ◆ Eventi</string>
+    <string name="trends_series_label">● Serie %1$s</string>
+    <string name="parameter_with_unit">%1$s (%2$s)</string>
+    <string name="value_with_unit">%1$s %2$s</string>
+    <string name="timeline_marker_line">%1$s · %2$s</string>
     <string name="trends_exact_values">Valori esatti</string>
-    <string name="trends_exact_value_description">Valore esatto%1$s%2$s</string>
+    <string name="trends_exact_value_description">Valore esatto %1$s%2$s</string>
     <string name="trends_events">Eventi di contesto</string>
     <string name="trends_no_measurements">Nessuna misurazione per questo parametro nel periodo selezionato.</string>
     <string name="trends_no_events">Nessuna manutenzione o evento nel periodo selezionato.</string>
@@ -308,19 +312,19 @@
     <string name="trends_descriptive_disclaimer">Solo contesto descrittivo. AquaLog non diagnostica le condizioni dell\'acqua né consiglia il trattamento.</string>
     <string name="trends_choose_intervention">Scegli un intervento da confrontare prima e dopo</string>
     <string name="trends_before_after">Prima e dopo l\'intervento</string>
-    <string name="trends_before_after_values">%1$s· Prima della media%2$s· Dopo la media%3$s%4$s</string>
-    <string name="trends_before_after_insufficient">%1$s· Misurazioni insufficienti prima o dopo questo intervento.</string>
+    <string name="trends_before_after_values">%1$s · Prima della media %2$s · Dopo la media %3$s%4$s</string>
+    <string name="trends_before_after_insufficient">%1$s · Misurazioni insufficienti prima o dopo questo intervento.</string>
     <string name="trends_text_alternative">Alternativa al testo</string>
-    <string name="trends_period_description">Periodo: da%1$sa%2$s</string>
-    <string name="trends_compatible_comparison">Confronto parametri compatibili ·%1$s</string>
-    <string name="trends_comparison_chart_description">Tabella comparativa per%1$sin%2$s; ogni serie utilizza un colore etichettato distinto e include annotazioni di intervento%3$d.</string>
-    <string name="trends_before_after_chart_description">Grafico prima e dopo per%1$s. Prima della media%2$s, dopo la media%3$s%4$s. La linea centrale segna l\'intervento.</string>
+    <string name="trends_period_description">Periodo: da %1$s a %2$s</string>
+    <string name="trends_compatible_comparison">Confronto parametri compatibili · %1$s</string>
+    <string name="trends_comparison_chart_description">Tabella comparativa per %1$s in %2$s; ogni serie utilizza un colore etichettato distinto e include annotazioni di intervento %3$d.</string>
+    <string name="trends_before_after_chart_description">Grafico prima e dopo per %1$s. Prima della media %2$s, dopo la media %3$s%4$s. La linea centrale segna l\'intervento.</string>
     <string name="trends_before_label">Prima</string>
     <string name="trends_after_label">Dopo</string>
     <string name="trends_intervention_marker">Intervento</string>
-    <string name="trends_text_series_values">%1$s: valori%2$din%3$s. Primo%4$s, ultimo%5$s, minimo%6$s, massimo%7$s. Direzione descrittiva:%8$s.</string>
-    <string name="trends_text_series_no_data">%1$s: nessun valore in%2$s.</string>
-    <string name="trends_text_annotation">Annotazione su%1$s:%2$s</string>
+    <string name="trends_text_series_values">%1$s: valori %2$d in %3$s. Primo %4$s, ultimo %5$s, minimo %6$s, massimo %7$s. Direzione descrittiva:%8$s.</string>
+    <string name="trends_text_series_no_data">%1$s: nessun valore in %2$s.</string>
+    <string name="trends_text_annotation">Annotazione su %1$s:%2$s</string>
     <string name="trends_direction_rising">in aumento</string>
     <string name="trends_direction_falling">cadente</string>
     <string name="trends_direction_unchanged">invariato</string>
@@ -334,7 +338,7 @@
     <string name="task_due_date_hint">AAAA-MM-GG</string>
     <string name="task_time_label">Ora (facoltativo)</string>
     <string name="task_time_hint">HH:MM · promemoria senza orario, utilizzare 09:00</string>
-    <string name="clear_task_time">Tempo sereno</string>
+    <string name="clear_task_time">Cancella orario</string>
     <string name="task_once">Una volta</string>
     <string name="task_daily">Quotidiano</string>
     <string name="task_weekly">Settimanale</string>
@@ -343,7 +347,7 @@
     <string name="save_task">Salva attività</string>
     <string name="pending_tasks">Prossime occorrenze</string>
     <string name="no_pending_tasks">Nessuna attività in sospeso.</string>
-    <string name="task_due_value">Scadenza%1$s·%2$s</string>
+    <string name="task_due_value">Scadenza %1$s · %2$s</string>
     <string name="task_no_time">nessun orario prescelto</string>
     <string name="task_complete">Fatto</string>
     <string name="task_postpone">+1 giorno</string>
@@ -351,7 +355,7 @@
     <string name="task_completed">Completato</string>
     <string name="task_postponed">Rinviato</string>
     <string name="task_ignored">Ignorato</string>
-    <string name="task_resolved_value">%1$s· risolto su%2$s</string>
+    <string name="task_resolved_value">%1$s · risolto su %2$s</string>
     <string name="allow_notifications">Consenti notifiche</string>
     <string name="notification_permission_explanation">Per mostrare i promemoria delle attività è necessaria l\'autorizzazione alle notifiche Android. Se rifiuti, le attività rimangono disponibili in AquaLog.</string>
     <string name="battery_optimization_explanation">L\'ottimizzazione della batteria Android è attiva. Può ritardare i promemoria; Le attività e le relative date di scadenza rimangono archiviate localmente.</string>
