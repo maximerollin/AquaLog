@@ -127,7 +127,9 @@
     <string name="save_session">Save Session</string>
     <string name="session_save_error">The Session could not be saved. Your entries are still here; try again.</string>
     <string name="session_saved">Session saved</string>
-    <string name="session_saved_description">Chronology confirmation · %1$d Measurements · %2$d maintenance actions</string>
+    <string name="session_saved_description">Chronology confirmation · %1$s · %2$s</string>
+    <plurals name="session_measurement_count"><item quantity="one">%d Measurement</item><item quantity="other">%d Measurements</item></plurals>
+    <plurals name="session_maintenance_count"><item quantity="one">%d maintenance action</item><item quantity="other">%d maintenance actions</item></plurals>
     <string name="continue_after_session">Continue</string>
 
     <string name="account_invitation_title">Secure your local Aquarium copy</string>

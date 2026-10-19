@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -1006,6 +1007,7 @@ private fun PaywallScreen(
     onContinue: () -> Unit,
     modifier: Modifier,
 ) {
+    val formatter = currentLocalizedFormatters()
     Column(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -1041,7 +1043,7 @@ private fun PaywallScreen(
                             R.string.pro_offer_summary,
                             annualOffer.formattedPrice,
                             annualOffer.trialDays,
-                            annualOffer.formattedBillingDate,
+                            annualOffer.localizedBillingDate(formatter),
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                     )
@@ -1065,7 +1067,7 @@ private fun PaywallScreen(
                         R.string.pro_offer_summary,
                         pro.offer.formattedPrice,
                         pro.offer.trialDays,
-                        pro.offer.formattedBillingDate,
+                        pro.offer.localizedBillingDate(formatter),
                     ),
                     style = MaterialTheme.typography.bodyLarge,
                 )
@@ -1372,15 +1374,12 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                             style = MaterialTheme.typography.titleMedium,
                         )
                         Text(
-                            stringResource(
-                                if (state.latestSession == null) {
-                                    R.string.no_session_description
-                                } else {
-                                    R.string.session_saved_description
-                                },
-                                state.latestSession?.measurements?.size ?: 0,
-                                state.latestSession?.maintenanceActions?.size ?: 0,
-                            ),
+                            state.latestSession?.let { session ->
+                                sessionSavedDescription(
+                                    measurementCount = session.measurements.size,
+                                    actionCount = session.maintenanceActions.size,
+                                )
+                            } ?: stringResource(R.string.no_session_description),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -1407,6 +1406,13 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
         PrimaryButton(R.string.new_session, viewModel::openRapidSession)
     }
 }
+
+@Composable
+private fun sessionSavedDescription(measurementCount: Int, actionCount: Int): String = stringResource(
+    R.string.session_saved_description,
+    pluralStringResource(R.plurals.session_measurement_count, measurementCount, measurementCount),
+    pluralStringResource(R.plurals.session_maintenance_count, actionCount, actionCount),
+)
 
 @Composable
 private fun StandardScreen(

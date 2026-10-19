@@ -3,6 +3,8 @@ package com.maximerollin.aqualog
 import java.io.File
 import java.util.Locale
 import java.util.TimeZone
+import com.maximerollin.aqualog.shared.ANNUAL_PRO_PRODUCT_ID
+import com.maximerollin.aqualog.shared.AnnualProOffer
 import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -52,6 +54,11 @@ class LocalizationContractTest {
         glossary.forEach { (catalog, terms) ->
             terms.forEach { (key, term) -> assertTrue(stringValue(catalog, key).contains(term), "$catalog/$key") }
         }
+        assertEquals(
+            "Actions d'entretien",
+            stringValue("values-fr", "maintenance_heading").replace('’', '\'').replace("\\'", "'"),
+        )
+        assertTrue(stringValue("values-it", "tasks_title").startsWith("Attività"))
         catalogs.filterNot { it == "values" }.forEach { catalog ->
             assertEquals("TDS", stringValue(catalog, "parameter_tds"), "$catalog must preserve scientific abbreviations")
         }
@@ -66,12 +73,32 @@ class LocalizationContractTest {
     }
 
     @Test
+    fun `saved session composes localized zero one and many counts`() {
+        catalogs.forEach { catalog ->
+            assertEquals(
+                listOf("one", "other"),
+                pluralQuantities(catalog, "session_measurement_count"),
+                "$catalog measurement plural",
+            )
+            assertEquals(
+                listOf("one", "other"),
+                pluralQuantities(catalog, "session_maintenance_count"),
+                "$catalog maintenance plural",
+            )
+            assertEquals(
+                listOf("%1\$s", "%2\$s"),
+                Regex("%\\d+\\\$s").findAll(stringValue(catalog, "session_saved_description")).map { it.value }.toList(),
+            )
+        }
+    }
+
+    @Test
     fun `catalogs avoid known machine translation anti patterns`() {
         val forbidden = mapOf(
-            "values-fr" to listOf("Vélo", "procès n'a commencé", "Life Pro", ">Dos<", ">Maison<", ">Histoire<", "À payer"),
+            "values-fr" to listOf("Vélo", "procès n'a commencé", "Life Pro", ">Dos<", ">Maison<", ">Histoire<", "À payer", "actions de maintenance", "une maintenance"),
             "values-de" to listOf("Radfahren", "Proaktiv", "Lautstärke", "Prozess gestartet", ">Heim<", ">Geschichte<", "Archivaquarium", "Aufstand", "Klare Zeit"),
-            "values-it" to listOf("Ciclismo", "Nessun processo", ">Casa<", ">Storia<", "Archivio Acquario", ">Vicino<", "Tempo sereno"),
-            "values-es" to listOf("Ciclismo", ">SDT<", "ningún juicio", "Life Pro", ">Hogar<", ">Historia<", "Archivo Acuario", ">Cerca<", ">Rever<", "tiempo claro"),
+            "values-it" to listOf("Ciclismo", "Nessun processo", ">Casa<", ">Storia<", "Archivio Acquario", ">Vicino<", "Tempo sereno", "Fecondazione", "Ritorniamo"),
+            "values-es" to listOf("Ciclismo", ">SDT<", "ningún juicio", "Life Pro", ">Hogar<", ">Historia<", "Archivo Acuario", ">Cerca<", ">Rever<", "tiempo claro", ">7 dias<"),
         )
         forbidden.forEach { (catalog, fragments) ->
             val xml = File(res, "$catalog/strings.xml").readText()
@@ -81,8 +108,8 @@ class LocalizationContractTest {
 
     @Test
     fun `interface locale does not choose measurement units`() {
-        val frenchGallons = LocalizedFormatters(Locale.FRANCE).volume(12.5, com.maximerollin.aqualog.shared.VolumeUnit.US_GALLONS)
-        val englishLiters = LocalizedFormatters(Locale.US).volume(12.5, com.maximerollin.aqualog.shared.VolumeUnit.LITERS)
+        val frenchGallons = LocalizedFormatters(formatLocale = Locale.FRANCE).volume(12.5, com.maximerollin.aqualog.shared.VolumeUnit.US_GALLONS)
+        val englishLiters = LocalizedFormatters(formatLocale = Locale.US).volume(12.5, com.maximerollin.aqualog.shared.VolumeUnit.LITERS)
         assertEquals("12,5 US gal", frenchGallons)
         assertEquals("12.5 L", englishLiters)
     }
@@ -94,11 +121,38 @@ class LocalizationContractTest {
             Locale.ITALIAN to "1234,5", Locale.forLanguageTag("es") to "1234,5",
         )
         expectedNumbers.forEach { (locale, number) ->
-            val formatter = LocalizedFormatters(locale, TimeZone.getTimeZone("UTC"))
+            val formatter = LocalizedFormatters(formatLocale = locale, timeZone = TimeZone.getTimeZone("UTC"))
             assertEquals(number, formatter.number(1234.5, maximumFractionDigits = 1))
             assertTrue(formatter.dateTime(0).isNotBlank())
             assertTrue(formatter.time(9 * 60 + 5).contains("09") || formatter.time(9 * 60 + 5).contains("9"))
         }
+    }
+
+    @Test
+    fun `wall clock time does not shift with winter or summer timezone offsets`() {
+        val paris = LocalizedFormatters(Locale.FRANCE, TimeZone.getTimeZone("Europe/Paris"))
+        val utc = LocalizedFormatters(Locale.FRANCE, TimeZone.getTimeZone("UTC"))
+        assertEquals("09:05", paris.time(9 * 60 + 5, 1_768_435_200_000L))
+        assertEquals("09:05", paris.time(9 * 60 + 5, 1_784_073_600_000L))
+        assertEquals("09:05", utc.time(9 * 60 + 5))
+    }
+
+    @Test
+    fun `format locale remains independent from interface locale`() {
+        val interfaceLocales = listOf(Locale.ENGLISH, Locale.FRENCH, Locale.GERMAN, Locale.ITALIAN, Locale.forLanguageTag("es"))
+        interfaceLocales.forEach { uiLocale ->
+            assertEquals("1,5", LocalizedFormatters(Locale.FRANCE).number(1.5), "ui=$uiLocale")
+            assertEquals("1.5", LocalizedFormatters(Locale.US).number(1.5), "ui=$uiLocale")
+        }
+    }
+
+    @Test
+    fun `structured trial billing date is formatted only at presentation`() {
+        val offer = AnnualProOffer(ANNUAL_PRO_PRODUCT_ID, "14.99", 14, 1_767_225_600_000L)
+        val utc = TimeZone.getTimeZone("UTC")
+        assertTrue(offer.localizedBillingDate(LocalizedFormatters(Locale.US, utc)).contains("2026"))
+        assertTrue(offer.localizedBillingDate(LocalizedFormatters(Locale.FRANCE, utc)).contains("2026"))
+        assertFalse(offer.localizedBillingDate(LocalizedFormatters(Locale.US, utc)) == offer.localizedBillingDate(LocalizedFormatters(Locale.FRANCE, utc)))
     }
 
     @Test
@@ -156,6 +210,19 @@ class LocalizationContractTest {
         repeat(nodes.length) {
             val node = nodes.item(it)
             if (node.attributes.getNamedItem("name").nodeValue == name) return node.textContent
+        }
+        error("Missing $folder/$name")
+    }
+
+    private fun pluralQuantities(folder: String, name: String): List<String> {
+        val nodes = document(folder).getElementsByTagName("plurals")
+        repeat(nodes.length) {
+            val node = nodes.item(it)
+            if (node.attributes.getNamedItem("name").nodeValue == name) {
+                return (0 until node.childNodes.length).mapNotNull { index ->
+                    node.childNodes.item(index).attributes?.getNamedItem("quantity")?.nodeValue
+                }.sorted()
+            }
         }
         error("Missing $folder/$name")
     }

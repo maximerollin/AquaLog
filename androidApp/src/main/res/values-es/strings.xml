@@ -109,7 +109,7 @@
     <string name="invalid_measurement">Ingrese un número decimal usando un punto o una coma.</string>
     <string name="unusual_measurement">Fuera del intervalo indicativo. Comprueba el valor; aún puedes guardarlo.</string>
     <string name="maintenance_heading">Acciones de mantenimiento</string>
-    <string name="action_water_change">cambio de agua</string>
+    <string name="action_water_change">Cambio de agua</string>
     <string name="action_fertilization">Fertilización</string>
     <string name="action_filter">Mantenimiento del filtro</string>
     <string name="action_vacuum">Sifonado del fondo</string>
@@ -127,7 +127,9 @@
     <string name="save_session">Guardar sesión</string>
     <string name="session_save_error">No se pudo guardar la sesión. Tus entradas todavía están aquí; intentar otra vez.</string>
     <string name="session_saved">Sesión guardada</string>
-    <string name="session_saved_description">Confirmación de cronología · %1$d Mediciones · %2$d acciones de mantenimiento</string>
+    <string name="session_saved_description">Confirmación en la Cronología · %1$s · %2$s</string>
+    <plurals name="session_measurement_count"><item quantity="one">%d Medición</item><item quantity="other">%d Mediciones</item></plurals>
+    <plurals name="session_maintenance_count"><item quantity="one">%d Acción de mantenimiento</item><item quantity="other">%d Acciones de mantenimiento</item></plurals>
     <string name="continue_after_session">Continuar</string>
 
     <string name="account_invitation_title">Asegure su copia local del Acuario</string>
@@ -228,7 +230,7 @@
     <string name="account_sign_out_failed">No se pudo cerrar la sesión. Los datos locales no se modificaron.</string>
     <string name="account_deletion_resume_failed">No se pudo reanudar la eliminación de la cuenta. Los datos locales no se modificaron.</string>
     <string name="authentication_link_processing_failed">No se pudo procesar de forma segura el enlace de autenticación. Inténtalo de nuevo.</string>
-    <string name="sign_out">desconectar</string>
+    <string name="sign_out">Cerrar sesión</string>
     <string name="sign_out_copy_choice">Elija qué sucede con la copia local de este dispositivo. Mantenerlo desconecta la propiedad de la nube y las cargas pendientes. Al eliminarlo, se eliminan los datos del acuario local.</string>
     <string name="keep_local_copy">Mantener copia local</string>
     <string name="remove_local_copy">Eliminar copia local</string>
@@ -254,9 +256,9 @@
     <string name="timeline_title">Cronología</string>
     <string name="timeline_offline_status">Listo sin conexión · almacenado en este dispositivo</string>
     <string name="timeline_period_all">Todo el tiempo</string>
-    <string name="timeline_period_7">7 dias</string>
-    <string name="timeline_period_30">30 dias</string>
-    <string name="timeline_period_90">90 dias</string>
+    <string name="timeline_period_7">7 días</string>
+    <string name="timeline_period_30">30 días</string>
+    <string name="timeline_period_90">90 días</string>
     <string name="timeline_all_aquariums">Todos los acuarios</string>
     <string name="timeline_all_parameters">Todos los parámetros</string>
     <string name="timeline_all_actions">Todas las acciones</string>
@@ -298,7 +300,7 @@
     <string name="trends_exact_value_description">Valor exacto %1$s%2$s</string>
     <string name="trends_events">Eventos de contexto</string>
     <string name="trends_no_measurements">No hay mediciones para este parámetro en el período seleccionado.</string>
-    <string name="trends_no_events">Sin mantenimiento ni Eventos en el periodo seleccionado.</string>
+    <string name="trends_no_events">Sin mantenimiento ni Eventos en el período seleccionado.</string>
     <string name="trends_loading">Cargando tendencias locales…</string>
     <string name="trends_error">No se podían leer las tendencias locales. Tus datos guardados todavía están en este dispositivo.</string>
     <string name="trends_pro_complete_history">Pro muestra la historia local completa. Cambiar el estado Pro nunca elimina los datos guardados.</string>

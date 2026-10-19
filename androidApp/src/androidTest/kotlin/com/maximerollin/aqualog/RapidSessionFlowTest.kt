@@ -70,7 +70,9 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithText("Secure your local Aquarium copy").assertIsDisplayed()
         composeRule.onNodeWithText("Not now").performClick()
         composeRule.onNodeWithText("Session saved").assertIsDisplayed()
-        composeRule.onNodeWithText("Chronology confirmation · 3 Measurements · 1 maintenance actions")
+        val measurements = context.resources.getQuantityString(R.plurals.session_measurement_count, 3, 3)
+        val maintenance = context.resources.getQuantityString(R.plurals.session_maintenance_count, 1, 1)
+        composeRule.onNodeWithText(context.getString(R.string.session_saved_description, measurements, maintenance))
             .assertIsDisplayed()
         scenario.close()
     }

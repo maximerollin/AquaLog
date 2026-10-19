@@ -7,16 +7,23 @@ import android.content.res.Configuration
 import android.os.LocaleList
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasImeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.text.input.ImeAction
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximerollin.aqualog.shared.AquariumProfile
@@ -30,6 +37,7 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -49,6 +57,25 @@ class LocalizedAccessibilityFlowTest {
         localeManager.applicationLocales = LocaleList.getEmptyLocaleList()
         uiModeManager.setApplicationNightMode(UiModeManager.MODE_NIGHT_AUTO)
         instrumentation.uiAutomation.executeShellCommand("settings put system font_scale 1.0").close()
+    }
+
+    @Test
+    fun savedSessionPlurals_coverZeroOneAndManyInEveryLanguage() {
+        listOf("en", "fr", "de", "it", "es").forEach { language ->
+            val resources = localizedContext(language).resources
+            val singularMeasurements = resources.getQuantityString(R.plurals.session_measurement_count, 1, 1)
+            val pluralMeasurements = resources.getQuantityString(R.plurals.session_measurement_count, 2, 2)
+            val singularActions = resources.getQuantityString(R.plurals.session_maintenance_count, 1, 1)
+            val pluralActions = resources.getQuantityString(R.plurals.session_maintenance_count, 2, 2)
+            assertFalse("$language measurement forms", singularMeasurements.removePrefix("1 ") == pluralMeasurements.removePrefix("2 "))
+            assertFalse("$language maintenance forms", singularActions.removePrefix("1 ") == pluralActions.removePrefix("2 "))
+            listOf(0, 1, 2).forEach { count ->
+                val measurements = resources.getQuantityString(R.plurals.session_measurement_count, count, count)
+                val actions = resources.getQuantityString(R.plurals.session_maintenance_count, count, count)
+                assertTrue("$language measurements $count", measurements.startsWith(count.toString()))
+                assertTrue("$language actions $count", actions.startsWith(count.toString()))
+            }
+        }
     }
 
     @Test
@@ -90,8 +117,9 @@ class LocalizedAccessibilityFlowTest {
 
     @Test
     fun configuredCriticalScreens_haveFiveLocaleSmokeCaptures_andDarkLargeCoverage() {
-        val configurations = listOf("en", "fr", "de", "it", "es").map { Triple(it, "light", false) } +
-            Triple("en", "dark-large", true)
+        val configurations = listOf("en", "fr", "de", "it", "es").flatMap { language ->
+            listOf(Triple(language, "light", false), Triple(language, "dark-large", true))
+        }
         configurations.forEach { (language, mode, darkLarge) ->
             configure(language, darkLarge)
             val application = context.applicationContext as TestAquaLogApplication
@@ -130,9 +158,13 @@ class LocalizedAccessibilityFlowTest {
                 awaitText(saveSession)
                 assertAction(saveSession)
                 compose.onNodeWithText(localized.getString(R.string.measurements_heading)).assertIsDisplayed()
+                compose.onAllNodes(hasImeAction(ImeAction.Next)).onFirst().assertIsFocused().performImeAction()
                 captureAndInspect("rapid-session-$language-$mode.png")
-                compose.onNodeWithTag("rapid-session-list").performScrollToIndex(0)
-                compose.onNodeWithText(localized.getString(R.string.cancel)).performClick()
+                pressBack()
+                val cancel = localized.getString(R.string.cancel)
+                compose.onNodeWithTag("rapid-session-list").performScrollToNode(hasText(cancel))
+                awaitText(cancel)
+                compose.onNodeWithText(cancel).performClick()
 
                 val tasks = localized.getString(R.string.open_tasks)
                 compose.onNodeWithText(tasks).performClick()
@@ -219,7 +251,11 @@ class LocalizedAccessibilityFlowTest {
     private fun assertAction(label: String) {
         val action = compose.onNode(hasText(label) and hasClickAction())
         action.assertIsDisplayed()
-        assertMinimumTouchTarget(action.fetchSemanticsNode().boundsInRoot)
+        val bounds = action.fetchSemanticsNode().boundsInRoot
+        assertMinimumTouchTarget(bounds)
+        val viewport = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        assertTrue("$label must not be clipped horizontally", bounds.left >= viewport.left && bounds.right <= viewport.right)
+        assertTrue("$label must not be clipped vertically", bounds.top >= viewport.top && bounds.bottom <= viewport.bottom)
     }
 
     private fun scrollSettingsTo(label: String) {
@@ -249,7 +285,8 @@ class LocalizedAccessibilityFlowTest {
                 android.graphics.Color.blue(color) * 0.0722) / 255.0
         }
         assertTrue("capture must not be blank or uniformly clipped", colors.size >= 3)
-        assertTrue("capture must contain visually distinguishable foreground and background", luminance.max() - luminance.min() >= 0.08)
+        val sampledContrastRatio = (luminance.max() + 0.05) / (luminance.min() + 0.05)
+        assertTrue("capture must expose WCAG AA foreground/background contrast, was $sampledContrastRatio", sampledContrastRatio >= 4.5)
         val directory = File(context.getExternalFilesDir(null), "localized-captures").apply { mkdirs() }
         FileOutputStream(File(directory, name)).use { stream ->
             assertTrue(bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream))

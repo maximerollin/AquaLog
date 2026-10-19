@@ -110,12 +110,12 @@
     <string name="unusual_measurement">Al di fuori dell\'intervallo indicativo. Controllare il valore; il salvataggio rimane disponibile.</string>
     <string name="maintenance_heading">Azioni di manutenzione</string>
     <string name="action_water_change">Cambio d\'acqua</string>
-    <string name="action_fertilization">Fecondazione</string>
+    <string name="action_fertilization">Fertilizzazione</string>
     <string name="action_filter">Manutenzione del filtro</string>
     <string name="action_vacuum">Sifonatura del fondo</string>
     <string name="action_glass">Pulizia del vetro</string>
     <string name="action_pruning">Potatura</string>
-    <string name="edit_action">Modificare</string>
+    <string name="edit_action">Modifica</string>
     <string name="action_quantity">Quantità</string>
     <string name="action_product">Prodotto</string>
     <string name="add_observation">Aggiungi osservazione</string>
@@ -127,7 +127,9 @@
     <string name="save_session">Salva sessione</string>
     <string name="session_save_error">Impossibile salvare la sessione. Le tue voci sono ancora qui; riprova.</string>
     <string name="session_saved">Sessione salvata</string>
-    <string name="session_saved_description">Conferma cronologia · Misurazioni %1$d · Azioni di manutenzione %2$d</string>
+    <string name="session_saved_description">Conferma nella Cronologia · %1$s · %2$s</string>
+    <plurals name="session_measurement_count"><item quantity="one">%d Misurazione</item><item quantity="other">%d Misurazioni</item></plurals>
+    <plurals name="session_maintenance_count"><item quantity="one">%d Azione di manutenzione</item><item quantity="other">%d Azioni di manutenzione</item></plurals>
     <string name="continue_after_session">Continuare</string>
 
     <string name="account_invitation_title">Assicurati la tua copia locale dell\'Acquario</string>
@@ -163,9 +165,9 @@
     <string name="edit_session">Modifica sessione</string>
     <string name="save_changes">Salva modifiche</string>
     <string name="delete_session">Elimina sessione</string>
-    <string name="delete_session_title">Eliminare questa sessione?</string>
+    <string name="delete_session_title">Eliminare questa Sessione?</string>
     <string name="delete_session_description">Anche le relative misurazioni, azioni di manutenzione ed eventi verranno rimossi da questo dispositivo.</string>
-    <string name="delete">Eliminare</string>
+    <string name="delete">Elimina</string>
 
     <string name="navigation_home">Home</string>
     <string name="navigation_history">Cronologia</string>
@@ -268,7 +270,7 @@
     <string name="timeline_session">Sessione</string>
     <string name="timeline_task">Occorrenza dell\'attività</string>
     <string name="open_session_details">Apri i dettagli della sessione</string>
-    <string name="back_to_timeline">Ritorniamo alla cronologia</string>
+    <string name="back_to_timeline">Torna alla Cronologia</string>
     <string name="timeline_events">Eventi</string>
     <plurals name="timeline_measurement_count">
         <item quantity="one">%d misurazione</item>
@@ -306,7 +308,7 @@
     <string name="trends_start_date">Data di inizio</string>
     <string name="trends_end_date">Data di fine</string>
     <string name="date_format_hint">AAAA-MM-GG</string>
-    <string name="trends_apply_custom_period">Applicare un periodo personalizzato</string>
+    <string name="trends_apply_custom_period">Applica periodo personalizzato</string>
     <string name="trends_invalid_custom_period">Inserisci una data di inizio e di fine ordinate nel formato AAAA-MM-GG.</string>
     <string name="trends_advanced_analysis">Analisi professionale avanzata</string>
     <string name="trends_descriptive_disclaimer">Solo contesto descrittivo. AquaLog non diagnostica le condizioni dell\'acqua né consiglia il trattamento.</string>
@@ -351,11 +353,11 @@
     <string name="task_no_time">nessun orario prescelto</string>
     <string name="task_complete">Fatto</string>
     <string name="task_postpone">+1 giorno</string>
-    <string name="task_ignore">Ignorare</string>
+    <string name="task_ignore">Ignora</string>
     <string name="task_completed">Completato</string>
     <string name="task_postponed">Rinviato</string>
     <string name="task_ignored">Ignorato</string>
-    <string name="task_resolved_value">%1$s · risolto su %2$s</string>
+    <string name="task_resolved_value">%1$s · risolta il %2$s</string>
     <string name="allow_notifications">Consenti notifiche</string>
     <string name="notification_permission_explanation">Per mostrare i promemoria delle attività è necessaria l\'autorizzazione alle notifiche Android. Se rifiuti, le attività rimangono disponibili in AquaLog.</string>
     <string name="battery_optimization_explanation">L\'ottimizzazione della batteria Android è attiva. Può ritardare i promemoria; Le attività e le relative date di scadenza rimangono archiviate localmente.</string>

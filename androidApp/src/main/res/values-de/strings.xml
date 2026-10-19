@@ -127,7 +127,9 @@
     <string name="save_session">Sitzung speichern</string>
     <string name="session_save_error">Die Sitzung konnte nicht gespeichert werden. Ihre Einträge sind noch vorhanden; versuchen Sie es erneut.</string>
     <string name="session_saved">Sitzung gespeichert</string>
-    <string name="session_saved_description">Chronologiebestätigung · %1$d Messungen · %2$d Wartungsmaßnahmen</string>
+    <string name="session_saved_description">Chronologiebestätigung · %1$s · %2$s</string>
+    <plurals name="session_measurement_count"><item quantity="one">%d Messung</item><item quantity="other">%d Messungen</item></plurals>
+    <plurals name="session_maintenance_count"><item quantity="one">%d Wartungsaktion</item><item quantity="other">%d Wartungsaktionen</item></plurals>
     <string name="continue_after_session">Weitermachen</string>
 
     <string name="account_invitation_title">Sichern Sie sich Ihr lokales Aquarium-Exemplar</string>

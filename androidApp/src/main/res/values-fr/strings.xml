@@ -3,7 +3,7 @@
     <string name="app_name">AquaLog</string>
 
     <string name="welcome_title">Une Session. Toute votre routine.</string>
-    <string name="welcome_description">Enregistrez ensemble plusieurs mesures d’eau, actions de maintenance et une observation, sans créer de compte.</string>
+    <string name="welcome_description">Enregistrez ensemble plusieurs Mesures, Actions d’entretien et une observation, sans créer de compte.</string>
     <string name="get_started">Commencer</string>
 
     <string name="profile_title">Que suivez-vous ?</string>
@@ -91,7 +91,7 @@
     <string name="home_title">Votre aquarium</string>
     <string name="aquarium_ready">Prêt pour votre prochaine routine</string>
     <string name="no_session_yet">Pas encore de Session</string>
-    <string name="no_session_description">Les valeurs de votre pratique n\'ont pas été enregistrées. Commencez lorsque vous avez des mesures réelles ou une maintenance à enregistrer.</string>
+    <string name="no_session_description">Les valeurs de votre essai n\'ont pas été enregistrées. Commencez lorsque vous avez de vraies Mesures ou une Action d’entretien à enregistrer.</string>
     <string name="new_session">Nouvelle Session</string>
     <string name="open_tasks">Tâches et rappels</string>
     <string name="volume_liters_format">%1$s L</string>
@@ -127,7 +127,9 @@
     <string name="save_session">Enregistrer la session</string>
     <string name="session_save_error">La session n\'a pas pu être enregistrée. Vos entrées sont toujours là ; essayer à nouveau.</string>
     <string name="session_saved">Session enregistrée</string>
-    <string name="session_saved_description">Confirmation dans la Chronologie · %1$d mesures · %2$d actions d’entretien</string>
+    <string name="session_saved_description">Confirmation dans la Chronologie · %1$s · %2$s</string>
+    <plurals name="session_measurement_count"><item quantity="one">%d Mesure</item><item quantity="other">%d Mesures</item></plurals>
+    <plurals name="session_maintenance_count"><item quantity="one">%d Action d’entretien</item><item quantity="other">%d Actions d’entretien</item></plurals>
     <string name="continue_after_session">Continuer</string>
 
     <string name="account_invitation_title">Sécurisez votre copie de l\'Aquarium local</string>
@@ -164,7 +166,7 @@
     <string name="save_changes">Enregistrer les modifications</string>
     <string name="delete_session">Supprimer la Session</string>
     <string name="delete_session_title">Supprimer cette session ?</string>
-    <string name="delete_session_description">Ses mesures, actions de maintenance et événements seront également supprimés de cet appareil.</string>
+    <string name="delete_session_description">Ses Mesures, Actions d’entretien et Événements seront également supprimés de cet appareil.</string>
     <string name="delete">Supprimer</string>
 
     <string name="navigation_home">Accueil</string>
@@ -200,7 +202,7 @@
     <string name="export_data">Exporter des données</string>
     <string name="restore_from_export">Restaurer depuis l\'exportation</string>
     <string name="portable_import_confirmation_title">Remplacer les données locales de l\'Aquarium ?</string>
-    <string name="portable_import_confirmation_description">AquaLog valide d\'abord l\'intégralité de l\'exportation. S\'il est valide, les Aquariums, Paramètres, Sessions, Mesures, Actions de maintenance, Événements, Tâches et Occurrences sont remplacés ensemble. La connexion à votre compte et vos jetons sécurisés restent sur cet appareil.</string>
+    <string name="portable_import_confirmation_description">AquaLog valide d\'abord l\'intégralité de l\'exportation. Si elle est valide, les Aquariums, Paramètres, Sessions, Mesures, Actions d’entretien, Événements, Tâches et Occurrences sont remplacés ensemble. La connexion à votre compte et vos jetons sécurisés restent sur cet appareil.</string>
     <string name="choose_export_file">Choisissez le fichier d\'exportation</string>
     <string name="portable_export_ready">Prêt à exporter</string>
     <string name="portable_import_complete">Restauration terminée</string>
@@ -214,7 +216,7 @@
     <string name="portable_problem_parameters">L\'exportation doit contenir tous les paramètres intégrés dans l\'ordre, avec au moins un actif. Vos données locales n\'ont pas été modifiées.</string>
     <string name="portable_problem_sessions">Cet export contient une session vide ou une relation Aquarium non valide. Vos données locales n\'ont pas été modifiées.</string>
     <string name="portable_problem_measurements">Cette exportation contient une mesure non valide ou des relations session/paramètre rompues. Vos données locales n\'ont pas été modifiées.</string>
-    <string name="portable_problem_actions">Cette exportation contient une action de maintenance ou une relation de session non valide. Vos données locales n\'ont pas été modifiées.</string>
+    <string name="portable_problem_actions">Cette exportation contient une Action d’entretien ou une relation de Session non valide. Vos données locales n\'ont pas été modifiées.</string>
     <string name="portable_problem_events">Cette exportation contient une relation d\'événement ou de session non valide. Vos données locales n\'ont pas été modifiées.</string>
     <string name="portable_problem_tasks">Cette exportation contient une relation Tâche ou Aquarium non valide. Vos données locales n\'ont pas été modifiées.</string>
     <string name="portable_problem_occurrences">Cette exportation contient une occurrence de tâche non valide ou une relation rompue. Vos données locales n\'ont pas été modifiées.</string>
@@ -298,7 +300,7 @@
     <string name="trends_exact_value_description">Valeur exacte %1$s%2$s</string>
     <string name="trends_events">Événements contextuels</string>
     <string name="trends_no_measurements">Aucune mesure pour ce paramètre dans la période sélectionnée.</string>
-    <string name="trends_no_events">Pas de maintenance ni d\'événements dans la période sélectionnée.</string>
+    <string name="trends_no_events">Aucune Action d’entretien ni aucun Événement dans la période sélectionnée.</string>
     <string name="trends_loading">Chargement des tendances locales…</string>
     <string name="trends_error">Les tendances locales n\'ont pas pu être lues. Vos données enregistrées sont toujours sur cet appareil.</string>
     <string name="trends_pro_complete_history">Pro affiche l\'histoire locale complète. Changer le statut Pro ne supprime jamais les données enregistrées.</string>
