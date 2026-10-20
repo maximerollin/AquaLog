@@ -1,6 +1,8 @@
 package com.maximerollin.aqualog.ui.theme
 
 import android.os.Build
+import android.content.Context
+import androidx.compose.material3.ColorScheme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -18,14 +20,16 @@ fun AquaLogTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val context = LocalContext.current
+    val colorScheme = aquaLogColorScheme(LocalContext.current, darkTheme)
+
+    MaterialTheme(colorScheme = colorScheme, content = content)
+}
+
+internal fun aquaLogColorScheme(context: Context, darkTheme: Boolean): ColorScheme =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else if (darkTheme) {
         DarkColors
     } else {
         LightColors
     }
-
-    MaterialTheme(colorScheme = colorScheme, content = content)
-}

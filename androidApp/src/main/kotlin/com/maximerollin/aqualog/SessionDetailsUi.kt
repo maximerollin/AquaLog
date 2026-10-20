@@ -22,8 +22,6 @@ import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.RecordedSession
-import java.text.DateFormat
-import java.util.Date
 
 @Composable
 fun SessionDetailsScreen(
@@ -34,6 +32,7 @@ fun SessionDetailsScreen(
     viewModel: HomeViewModel,
     modifier: Modifier = Modifier,
 ) {
+    val formatter = currentLocalizedFormatters()
     val parametersById = setup.parameters.associateBy { it.id }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -56,8 +55,7 @@ fun SessionDetailsScreen(
             Text(
                 stringResource(
                     R.string.session_date,
-                    DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
-                        .format(Date(recorded.session.occurredAtEpochMillis)),
+                    formatter.shortDateTime(recorded.session.occurredAtEpochMillis),
                 ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -70,7 +68,7 @@ fun SessionDetailsScreen(
                         stringResource(
                             R.string.session_measurement_detail,
                             definition.parameter.label(),
-                            measurement.value.displaySessionValue(),
+                            formatter.number(measurement.value),
                             definition.unit,
                         ),
                     )
@@ -80,7 +78,7 @@ fun SessionDetailsScreen(
         recorded.maintenanceActions.forEach { action ->
             item(action.id) {
                 val detail = listOf(
-                    action.quantity?.displaySessionValue().orEmpty(),
+                    action.quantity?.let(formatter::number).orEmpty(),
                     action.unit.orEmpty(),
                     action.product.orEmpty(),
                 ).filter(String::isNotBlank).joinToString(" ")
@@ -136,6 +134,3 @@ fun SessionDetailsScreen(
         )
     }
 }
-
-private fun Double.displaySessionValue(): String =
-    if (this % 1.0 == 0.0) toLong().toString() else toString()

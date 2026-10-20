@@ -1,11 +1,14 @@
 package com.maximerollin.aqualog
 
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -42,6 +45,7 @@ class PrivacyFlowTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
             composeRule.onNodeWithText("Settings").performClick()
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Send feedback") and hasClickAction())
             composeRule.onNode(hasText("Send feedback") and hasClickAction())
                 .performScrollTo()
                 .performClick()
@@ -51,7 +55,7 @@ class PrivacyFlowTest {
             )
             val privateMessage = "My pH note for Private Aquarium is 7.2"
             composeRule.onNodeWithText("Feedback message").performTextInput(privateMessage)
-            composeRule.onNode(hasText("Send feedback") and hasClickAction()).performClick()
+            composeRule.onNodeWithTag("submit-feedback").performClick()
             composeRule.waitUntil(timeoutMillis = 5_000) {
                 application.recordedFeedback.any { it.message == privateMessage }
             }

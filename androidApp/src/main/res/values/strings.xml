@@ -79,6 +79,13 @@
     <string name="subscription_settings_description">Free includes 90 days of history. Review Pro, retry a purchase or restore an existing subscription.</string>
     <string name="view_free_and_pro">View Free and Pro</string>
     <string name="pro_active">Pro active</string>
+    <string name="pro_message_play_unavailable">Google Play is unavailable. No purchase has started.</string>
+    <string name="pro_message_purchase_pending">Google Play is still processing this purchase. You can restore it later.</string>
+    <string name="pro_message_purchase_cancelled">Purchase cancelled. You can continue free or try again.</string>
+    <string name="pro_message_authentication_required">Sign in again to bind or refresh this Google Play purchase. Pro stays locked until verification succeeds.</string>
+    <string name="pro_message_active">Pro is active on this account.</string>
+    <string name="pro_message_verification_failed">The purchase could not be verified. Try restoring it later.</string>
+    <string name="pro_message_save_failed">Purchase confirmed, but the Aquarium could not be saved. Try restoring later.</string>
     <string name="unlock_history_beyond_90_days">View Pro for history beyond 90 days</string>
 
     <string name="home_title">Your Aquarium</string>
@@ -120,7 +127,9 @@
     <string name="save_session">Save Session</string>
     <string name="session_save_error">The Session could not be saved. Your entries are still here; try again.</string>
     <string name="session_saved">Session saved</string>
-    <string name="session_saved_description">Chronology confirmation · %1$d Measurements · %2$d maintenance actions</string>
+    <string name="session_saved_description">Chronology confirmation · %1$s · %2$s</string>
+    <plurals name="session_measurement_count"><item quantity="one">%d Measurement</item><item quantity="other">%d Measurements</item></plurals>
+    <plurals name="session_maintenance_count"><item quantity="one">%d maintenance action</item><item quantity="other">%d maintenance actions</item></plurals>
     <string name="continue_after_session">Continue</string>
 
     <string name="account_invitation_title">Secure your local Aquarium copy</string>
@@ -218,6 +227,9 @@
     <string name="account_local_only">Local-only</string>
     <string name="account_local_only_description">No cloud account is linked. AquaLog remains fully usable with data stored on this device.</string>
     <string name="account_actions">Account actions</string>
+    <string name="account_sign_out_failed">Sign out could not be completed. Your local data was not changed.</string>
+    <string name="account_deletion_resume_failed">Account deletion could not be resumed. Your local data was not changed.</string>
+    <string name="authentication_link_processing_failed">The authentication link could not be processed safely. Try again.</string>
     <string name="sign_out">Sign out</string>
     <string name="sign_out_copy_choice">Choose what happens to this device’s local copy. Keeping it disconnects cloud ownership and pending uploads. Removing it deletes the local Aquarium data.</string>
     <string name="keep_local_copy">Keep local copy</string>
@@ -280,6 +292,10 @@
     <string name="trends_indicative_target">Indicative target %1$s–%2$s %3$s · reference only, not a diagnosis</string>
     <string name="trends_chart_description">%1$s trend chart · solid line and circle point markers · hatched indicative target · diamond Event markers</string>
     <string name="trends_legend">● Measurements · ▧ hatched indicative target · ◆ Events</string>
+    <string name="trends_series_label">● %1$s series</string>
+    <string name="parameter_with_unit">%1$s (%2$s)</string>
+    <string name="value_with_unit">%1$s %2$s</string>
+    <string name="timeline_marker_line">%1$s · %2$s</string>
     <string name="trends_exact_values">Exact values</string>
     <string name="trends_exact_value_description">Exact value %1$s %2$s</string>
     <string name="trends_events">Context Events</string>

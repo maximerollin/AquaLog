@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
@@ -33,6 +35,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -301,7 +305,10 @@ private fun WelcomeScreen(
     onRequestImport: () -> Unit,
     modifier: Modifier,
 ) {
-    StandardScreen(modifier) {
+    Column(
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         Spacer(Modifier.weight(1f))
         ScreenHeading(R.string.welcome_title, R.string.welcome_description)
         PortableDataMessage(state)
@@ -331,7 +338,7 @@ private fun PortableDataSettings(
     modifier: Modifier,
 ) {
     LazyColumn(
-        modifier = modifier.fillMaxSize().padding(horizontal = 24.dp),
+        modifier = modifier.fillMaxSize().testTag("settings-list").padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { Spacer(Modifier.height(8.dp)) }
@@ -435,7 +442,7 @@ private fun PortableDataSettings(
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.account_deletion_pending), style = MaterialTheme.typography.titleMedium)
-                        Text(accountState.safeDetail ?: stringResource(R.string.account_deletion_pending_description))
+                        Text(accountState.localizedSafeDetail() ?: stringResource(R.string.account_deletion_pending_description))
                         if (accountState.showDeletionReauthenticationAction) {
                             Button(
                                 onClick = viewModel::reauthenticateAccountDeletionWithGoogle,
@@ -534,7 +541,7 @@ private fun PortableDataSettings(
         }
         item {
             if (state.isWorking || accountState.isWorking) CircularProgressIndicator()
-            accountState.safeDetail?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            accountState.localizedSafeDetail()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Spacer(Modifier.height(16.dp))
         }
     }
@@ -632,7 +639,7 @@ private fun AccountDeletionCleanupScreen(
 ) {
     StandardScreen(modifier) {
         ScreenHeading(R.string.account_deleted_cleanup_title, R.string.account_deleted_cleanup_description)
-        state.safeDetail?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        state.localizedSafeDetail()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Spacer(Modifier.weight(1f))
         Button(
             onClick = viewModel::retryAccountDeletion,
@@ -713,7 +720,10 @@ private fun ProfileScreen(
     onContinue: () -> Unit,
     modifier: Modifier,
 ) {
-    StandardScreen(modifier) {
+    Column(
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         ScreenHeading(R.string.profile_title, R.string.profile_description)
         Column(
             modifier = Modifier.selectableGroup(),
@@ -738,7 +748,7 @@ private fun ProfileScreen(
                 onClick = { onSelected(AquariumProfile.PLANTED_SHRIMP) },
             )
         }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(8.dp))
         PrimaryButton(R.string.continue_to_aquarium, onContinue)
     }
 }
@@ -967,7 +977,7 @@ private fun PracticeScreen(
             OutlinedTextField(
                 value = state.practiceValues[parameter.parameter].orEmpty(),
                 onValueChange = { onValueChanged(parameter.parameter, it) },
-                label = { Text("$label (${parameter.unit})") },
+                label = { Text(stringResource(R.string.parameter_with_unit, label, parameter.unit)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
                 modifier = Modifier
@@ -997,7 +1007,11 @@ private fun PaywallScreen(
     onContinue: () -> Unit,
     modifier: Modifier,
 ) {
-    StandardScreen(modifier) {
+    val formatter = currentLocalizedFormatters()
+    Column(
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         ScreenHeading(R.string.paywall_title, R.string.paywall_description)
         PlanCard(R.string.free_plan, R.string.free_plan_description)
         PlanCard(R.string.pro_plan, R.string.pro_plan_description)
@@ -1029,7 +1043,7 @@ private fun PaywallScreen(
                             R.string.pro_offer_summary,
                             annualOffer.formattedPrice,
                             annualOffer.trialDays,
-                            annualOffer.formattedBillingDate,
+                            annualOffer.localizedBillingDate(formatter),
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                     )
@@ -1053,7 +1067,7 @@ private fun PaywallScreen(
                         R.string.pro_offer_summary,
                         pro.offer.formattedPrice,
                         pro.offer.trialDays,
-                        pro.offer.formattedBillingDate,
+                        pro.offer.localizedBillingDate(formatter),
                     ),
                     style = MaterialTheme.typography.bodyLarge,
                 )
@@ -1079,7 +1093,7 @@ private fun PaywallScreen(
         }
         pro.message?.let { message ->
             Text(
-                message,
+                stringResource(message.resourceId()),
                 color = if (pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
                     MaterialTheme.colorScheme.primary
                 } else {
@@ -1094,7 +1108,7 @@ private fun PaywallScreen(
         ) {
             Text(stringResource(R.string.restore_purchase))
         }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(8.dp))
         Button(
             onClick = onContinue,
             enabled = !isSaving,
@@ -1116,6 +1130,27 @@ private fun PaywallScreen(
         }
     }
 }
+
+private fun ProMessage.resourceId(): Int = when (this) {
+    ProMessage.PLAY_UNAVAILABLE -> R.string.pro_message_play_unavailable
+    ProMessage.PURCHASE_PENDING -> R.string.pro_message_purchase_pending
+    ProMessage.PURCHASE_CANCELLED -> R.string.pro_message_purchase_cancelled
+    ProMessage.AUTHENTICATION_REQUIRED -> R.string.pro_message_authentication_required
+    ProMessage.ACTIVE -> R.string.pro_message_active
+    ProMessage.VERIFICATION_FAILED -> R.string.pro_message_verification_failed
+    ProMessage.SAVE_FAILED -> R.string.pro_message_save_failed
+}
+
+@Composable
+private fun AccountSettingsUiState.localizedSafeDetail(): String? = safeMessage?.let {
+    stringResource(
+        when (it) {
+            AccountSafeMessage.SIGN_OUT_FAILED -> R.string.account_sign_out_failed
+            AccountSafeMessage.DELETION_RESUME_FAILED -> R.string.account_deletion_resume_failed
+            AccountSafeMessage.AUTHENTICATION_LINK_FAILED -> R.string.authentication_link_processing_failed
+        },
+    )
+} ?: safeDetail
 
 @Composable
 private fun FeedbackDialog(
@@ -1155,7 +1190,7 @@ private fun FeedbackDialog(
             TextButton(
                 onClick = onSubmit,
                 enabled = state.message.isNotBlank(),
-                modifier = Modifier.heightIn(min = 48.dp),
+                modifier = Modifier.testTag("submit-feedback").heightIn(min = 48.dp),
             ) {
                 Text(stringResource(R.string.send_feedback))
             }
@@ -1339,15 +1374,12 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                             style = MaterialTheme.typography.titleMedium,
                         )
                         Text(
-                            stringResource(
-                                if (state.latestSession == null) {
-                                    R.string.no_session_description
-                                } else {
-                                    R.string.session_saved_description
-                                },
-                                state.latestSession?.measurements?.size ?: 0,
-                                state.latestSession?.maintenanceActions?.size ?: 0,
-                            ),
+                            state.latestSession?.let { session ->
+                                sessionSavedDescription(
+                                    measurementCount = session.measurements.size,
+                                    actionCount = session.maintenanceActions.size,
+                                )
+                            } ?: stringResource(R.string.no_session_description),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -1374,6 +1406,13 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
         PrimaryButton(R.string.new_session, viewModel::openRapidSession)
     }
 }
+
+@Composable
+private fun sessionSavedDescription(measurementCount: Int, actionCount: Int): String = stringResource(
+    R.string.session_saved_description,
+    pluralStringResource(R.plurals.session_measurement_count, measurementCount, measurementCount),
+    pluralStringResource(R.plurals.session_maintenance_count, actionCount, actionCount),
+)
 
 @Composable
 private fun StandardScreen(
@@ -1432,10 +1471,10 @@ internal fun BuiltInParameter.label(): String = stringResource(
 )
 
 @Composable
-private fun Aquarium.formattedVolume(): String = when (volumeUnit) {
-    VolumeUnit.LITERS -> stringResource(R.string.volume_liters_format, volume.displayValue())
-    VolumeUnit.US_GALLONS -> stringResource(R.string.volume_us_gallons_format, volume.displayValue())
+private fun Aquarium.formattedVolume(): String {
+    val formatted = currentLocalizedFormatters().number(volume)
+    return when (volumeUnit) {
+        VolumeUnit.LITERS -> stringResource(R.string.volume_liters_format, formatted)
+        VolumeUnit.US_GALLONS -> stringResource(R.string.volume_us_gallons_format, formatted)
+    }
 }
-
-private fun Double.displayValue(): String =
-    if (this % 1.0 == 0.0) toLong().toString() else toString()

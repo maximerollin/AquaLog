@@ -33,7 +33,6 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
-import java.text.DateFormat
 import java.util.Calendar
 import java.lang.ref.WeakReference
 import kotlin.coroutines.resume
@@ -107,7 +106,7 @@ class GooglePlayBillingGateway(
             productId = details.productId,
             formattedPrice = recurring.formattedPrice,
             trialDays = TRIAL_DAYS,
-            formattedBillingDate = formattedDateAfterTrial(),
+            billingDateEpochMillis = billingDateAfterTrial(),
         )
     }
 
@@ -281,10 +280,9 @@ class GooglePlayBillingGateway(
         }
     }
 
-    private fun formattedDateAfterTrial(): String {
-        val billingDate = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, TRIAL_DAYS) }.time
-        return DateFormat.getDateInstance(DateFormat.LONG).format(billingDate)
-    }
+    private fun billingDateAfterTrial(): Long = Calendar.getInstance().apply {
+        add(Calendar.DAY_OF_YEAR, TRIAL_DAYS)
+    }.timeInMillis
 
     private fun playMessage(result: BillingResult, fallback: String): String =
         result.debugMessage.takeIf(String::isNotBlank) ?: fallback

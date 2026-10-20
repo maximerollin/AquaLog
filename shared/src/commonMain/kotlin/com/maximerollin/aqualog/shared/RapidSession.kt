@@ -101,11 +101,11 @@ data class MeasurementFeedback(
 
 fun evaluateMeasurement(input: String, definition: ParameterDefinition): MeasurementFeedback {
     if (input.isBlank()) return MeasurementFeedback(null, isValid = true, isOutsideIndicativeRange = false)
-    val value = input.normalizedDecimalOrNull()
+    val value = parseDecimalInput(input)
         ?: return MeasurementFeedback(null, isValid = false, isOutsideIndicativeRange = false)
     val outside = definition.indicativeMinimum?.let { value < it } == true ||
         definition.indicativeMaximum?.let { value > it } == true
     return MeasurementFeedback(value, isValid = value.isFinite(), isOutsideIndicativeRange = outside)
 }
 
-internal fun String.normalizedDecimalOrNull(): Double? = replace(',', '.').toDoubleOrNull()
+fun parseDecimalInput(input: String): Double? = input.trim().replace(',', '.').toDoubleOrNull()

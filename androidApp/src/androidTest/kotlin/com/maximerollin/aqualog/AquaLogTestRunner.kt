@@ -67,6 +67,11 @@ class TestAquaLogApplication : AquaLogApplication() {
     override val feedbackGateway: FeedbackGateway = FeedbackGateway(recordedFeedback::add)
     private var verifiedProEntitlement: ProEntitlement? = null
 
+    override fun onCreate() {
+        super.onCreate()
+        resetRepository()
+    }
+
     override val taskReminderScheduler: TaskReminderScheduler
         get() = recordingTaskReminderScheduler
 
@@ -80,7 +85,7 @@ class TestAquaLogApplication : AquaLogApplication() {
                 productId = ANNUAL_PRO_PRODUCT_ID,
                 formattedPrice = "€14.99",
                 trialDays = 14,
-                formattedBillingDate = "October 21, 2026",
+                billingDateEpochMillis = 1_792_528_000_000L,
             )
             override suspend fun launchAnnualPurchase(obfuscatedAccountId: String) = BillingLaunchResult.Started
             override suspend fun restoreAnnualPurchase(): PlayPurchaseUpdate? = null

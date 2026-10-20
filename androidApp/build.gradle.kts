@@ -38,6 +38,7 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "com.maximerollin.aqualog.AquaLogTestRunner"
+        testInstrumentationRunnerArguments["useTestStorageService"] = "true"
         buildConfigField("String", "SUPABASE_URL", supabaseUrl.asBuildConfigString())
         buildConfigField("String", "SUPABASE_ANON_KEY", supabaseAnonKey.asBuildConfigString())
         buildConfigField("String", "PRIVACY_URL", privacyUrl.asBuildConfigString())
@@ -94,4 +95,19 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.test.espresso.intents)
     androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.services.storage)
+    androidTestUtil(libs.androidx.test.services)
+}
+
+val collectLocalizedAccessibilityReports by tasks.registering(Copy::class) {
+    from(layout.buildDirectory.dir("outputs/connected_android_test_additional_output/debugAndroidTest/connected")) {
+        include("**/localized-accessibility/*.png")
+        eachFile { relativePath = org.gradle.api.file.RelativePath(true, name) }
+        includeEmptyDirs = false
+    }
+    into(layout.buildDirectory.dir("reports/localized-accessibility"))
+}
+
+tasks.matching { it.name == "connectedDebugAndroidTest" }.configureEach {
+    finalizedBy(collectLocalizedAccessibilityReports)
 }

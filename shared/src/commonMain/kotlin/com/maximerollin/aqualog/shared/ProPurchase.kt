@@ -9,7 +9,7 @@ data class AnnualProOffer(
     val productId: String,
     val formattedPrice: String,
     val trialDays: Int,
-    val formattedBillingDate: String,
+    val billingDateEpochMillis: Long,
 )
 
 data class LifetimeProOffer(

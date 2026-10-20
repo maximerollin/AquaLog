@@ -35,9 +35,6 @@ import com.maximerollin.aqualog.shared.SessionEvent
 import com.maximerollin.aqualog.shared.TimelineSession
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.TaskResolution
-import java.text.DateFormat
-import java.util.Date
-import java.util.Locale
 
 private sealed interface TimelineListItem {
     val timestamp: Long
@@ -171,6 +168,7 @@ private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel) {
 
 @Composable
 private fun TimelineTaskCard(occurrence: TaskOccurrence) {
+    val formatter = currentLocalizedFormatters()
     val resolutionLabel = when (occurrence.resolution) {
         TaskResolution.COMPLETED -> stringResource(R.string.task_completed)
         TaskResolution.POSTPONED -> stringResource(R.string.task_postponed)
@@ -185,7 +183,7 @@ private fun TimelineTaskCard(occurrence: TaskOccurrence) {
                 stringResource(
                     R.string.task_resolved_value,
                     resolutionLabel,
-                    DateFormat.getDateTimeInstance().format(Date(requireNotNull(occurrence.resolvedAtEpochMillis))),
+                    formatter.dateTime(requireNotNull(occurrence.resolvedAtEpochMillis)),
                 ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -274,6 +272,7 @@ private fun FilterRow(content: @Composable RowScope.() -> Unit) {
 
 @Composable
 private fun TimelineSessionCard(entry: TimelineSession, onClick: () -> Unit) {
+    val formatter = currentLocalizedFormatters()
     val description = stringResource(R.string.open_session_details)
     Card(
         onClick = onClick,
@@ -281,7 +280,7 @@ private fun TimelineSessionCard(entry: TimelineSession, onClick: () -> Unit) {
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(stringResource(R.string.timeline_session), style = MaterialTheme.typography.titleMedium)
-            Text(entry.effectiveDate(), style = MaterialTheme.typography.bodyMedium)
+            Text(formatter.dateTime(entry.session.occurredAtEpochMillis), style = MaterialTheme.typography.bodyMedium)
             Text(entry.aquarium.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(
                 sessionSummary(entry),
@@ -294,6 +293,7 @@ private fun TimelineSessionCard(entry: TimelineSession, onClick: () -> Unit) {
 
 @Composable
 private fun TimelineDetail(entry: TimelineSession, viewModel: HomeViewModel, modifier: Modifier) {
+    val formatter = currentLocalizedFormatters()
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(24.dp),
@@ -306,7 +306,7 @@ private fun TimelineDetail(entry: TimelineSession, viewModel: HomeViewModel, mod
         }
         item {
             Text(stringResource(R.string.session_details), style = MaterialTheme.typography.headlineMedium)
-            Text(entry.effectiveDate(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(formatter.dateTime(entry.session.occurredAtEpochMillis), color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(entry.aquarium.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (entry.measurements.isNotEmpty()) {
@@ -314,7 +314,7 @@ private fun TimelineDetail(entry: TimelineSession, viewModel: HomeViewModel, mod
             items(entry.measurements, key = { it.measurement.id }) { item ->
                 DetailCard(
                     "${item.definition.parameter.label()} · " +
-                        "${item.measurement.value.displayValue(item.definition.precision)} ${item.definition.unit}",
+                        "${formatter.number(item.measurement.value, item.definition.precision)} ${item.definition.unit}",
                 )
             }
         }
@@ -322,7 +322,7 @@ private fun TimelineDetail(entry: TimelineSession, viewModel: HomeViewModel, mod
             item { Text(stringResource(R.string.maintenance_heading), style = MaterialTheme.typography.titleLarge) }
             items(entry.maintenanceActions, key = MaintenanceAction::id) { action ->
                 val details = listOfNotNull(
-                    action.quantity?.displayValue(2),
+                    action.quantity?.let { formatter.number(it, 2) },
                     action.unit,
                     action.product,
                 ).joinToString(" ")
@@ -397,9 +397,3 @@ private fun MaintenanceActionType.timelineLabel(): String = stringResource(
         MaintenanceActionType.PRUNING -> R.string.action_pruning
     },
 )
-
-private fun TimelineSession.effectiveDate(): String =
-    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(session.occurredAtEpochMillis))
-
-private fun Double.displayValue(maximumPrecision: Int): String =
-    String.format(Locale.US, "%.${maximumPrecision}f", this).trimEnd('0').trimEnd('.')

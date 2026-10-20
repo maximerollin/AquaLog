@@ -194,7 +194,7 @@ private class DeterministicBillingGateway(
         productId = ANNUAL_PRO_PRODUCT_ID,
         formattedPrice = "14,99 €",
         trialDays = 14,
-        formattedBillingDate = "21 octobre 2026",
+        billingDateEpochMillis = 1_792_528_000_000L,
     )
 
     override suspend fun launchAnnualPurchase(obfuscatedAccountId: String): BillingLaunchResult {

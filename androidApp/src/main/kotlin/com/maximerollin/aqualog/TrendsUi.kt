@@ -48,9 +48,6 @@ import com.maximerollin.aqualog.shared.AdvancedTrendAnalysisResult
 import com.maximerollin.aqualog.shared.ComparableTrendGroup
 import com.maximerollin.aqualog.shared.InterventionSeriesComparison
 import com.maximerollin.aqualog.shared.DescriptiveTrendDirection
-import java.text.DateFormat
-import java.util.Date
-import java.util.Locale
 import kotlin.math.max
 
 @Composable
@@ -167,8 +164,11 @@ private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier:
                             },
                     ) {
                         Text(
-                            "${point.occurredAtEpochMillis.displayTrendDate()} · " +
-                                "$value ${selected.definition.unit}",
+                            stringResource(
+                                R.string.timeline_marker_line,
+                                point.occurredAtEpochMillis.displayTrendDate(),
+                                stringResource(R.string.value_with_unit, value, selected.definition.unit),
+                            ),
                             modifier = Modifier.padding(16.dp),
                         )
                     }
@@ -181,7 +181,11 @@ private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier:
                 items(snapshot.events, key = { "trend-event-${it.sessionId}" }) { marker ->
                     Card(Modifier.fillMaxWidth()) {
                         Text(
-                            "${marker.occurredAtEpochMillis.displayTrendDate()} · ${marker.displayText()}",
+                            stringResource(
+                                R.string.timeline_marker_line,
+                                marker.occurredAtEpochMillis.displayTrendDate(),
+                                marker.displayText(),
+                            ),
                             modifier = Modifier.padding(16.dp),
                         )
                     }
@@ -223,7 +227,13 @@ private fun AdvancedAnalysis(
                         .heightIn(min = 48.dp)
                         .testTag("trend-intervention-${marker.sessionId}"),
                 ) {
-                    Text("${marker.occurredAtEpochMillis.displayTrendDate()} · ${marker.displayText()}")
+                    Text(
+                        stringResource(
+                            R.string.timeline_marker_line,
+                            marker.occurredAtEpochMillis.displayTrendDate(),
+                            marker.displayText(),
+                        ),
+                    )
                 }
             }
         }
@@ -380,7 +390,10 @@ private fun ComparisonChart(
                 }
             }
             group.series.forEachIndexed { index, series ->
-                Text("● ${series.definition.parameter.label()}", color = colors[index % colors.size])
+                Text(
+                    stringResource(R.string.trends_series_label, series.definition.parameter.label()),
+                    color = colors[index % colors.size],
+                )
             }
         }
     }
@@ -675,10 +688,10 @@ private fun MaintenanceActionType.trendLabel(): String = stringResource(
     },
 )
 
-private fun Long.displayTrendDate(): String =
-    DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(this))
+@Composable
+private fun Long.displayTrendDate(): String = currentLocalizedFormatters().dateTime(this)
 
+@Composable
 private fun Double.displayTrendValue(precision: Int): String {
-    val formatted = String.format(Locale.US, "%.${precision}f", this)
-    return if (precision == 0) formatted else formatted.trimEnd('0').trimEnd('.')
+    return currentLocalizedFormatters().number(this, precision)
 }

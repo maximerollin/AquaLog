@@ -17,6 +17,7 @@ import com.maximerollin.aqualog.shared.AccountDeletionReauthenticationResult
 import com.maximerollin.aqualog.shared.AccountControlFailure
 import com.maximerollin.aqualog.shared.AccountControlResult
 import com.maximerollin.aqualog.shared.AccountIdentity
+import com.maximerollin.aqualog.shared.parseDecimalInput
 import com.maximerollin.aqualog.shared.LocalCopyDecision
 import com.maximerollin.aqualog.shared.PendingAccountDeletion
 import com.maximerollin.aqualog.shared.AquariumRepository
@@ -224,9 +225,14 @@ data class ProUiState(
     val offer: AnnualProOffer? = null,
 val lifetimeOffer: LifetimeProOffer? = null,
     val purchaseStatus: ProPurchaseStatus = ProPurchaseStatus.IDLE,
-    val message: String? = null,
+    val message: ProMessage? = null,
     val actionAfterAuthentication: ProAuthenticationContinuation? = null,
 )
+
+enum class ProMessage {
+    PLAY_UNAVAILABLE, PURCHASE_PENDING, PURCHASE_CANCELLED, AUTHENTICATION_REQUIRED,
+    ACTIVE, VERIFICATION_FAILED, SAVE_FAILED,
+}
 
 enum class PortableDataMessage {
     EXPORT_READY,
@@ -257,11 +263,14 @@ data class AccountSettingsUiState(
     val dialog: AccountSettingsDialog = AccountSettingsDialog.NONE,
     val failure: AccountControlFailure? = null,
     val safeDetail: String? = null,
+    val safeMessage: AccountSafeMessage? = null,
     val requiresDeletionReauthentication: Boolean = false,
 ) {
     val showDeletionReauthenticationAction: Boolean
         get() = pendingDeletion?.phase == AccountDeletionPhase.CLOUD_PENDING && requiresDeletionReauthentication
 }
+
+enum class AccountSafeMessage { SIGN_OUT_FAILED, DELETION_RESUME_FAILED, AUTHENTICATION_LINK_FAILED }
 
 internal enum class AuthenticationCallbackTarget { ACCOUNT_ACTIVATION, ACCOUNT_DELETION }
 
@@ -774,6 +783,7 @@ class HomeViewModel(
                                     isWorking = false,
                                     failure = result.failure,
                                     safeDetail = result.safeDetail,
+                                    safeMessage = null,
                                 ),
                             )
                         }
@@ -787,7 +797,7 @@ class HomeViewModel(
                             accountSettings = state.accountSettings.copy(
                                 isWorking = false,
                                 failure = AccountControlFailure.LOCAL_DATA,
-                                safeDetail = "Sign out could not be completed. Your local data was not changed.",
+                                safeMessage = AccountSafeMessage.SIGN_OUT_FAILED,
                             ),
                         )
                     }
@@ -807,7 +817,7 @@ class HomeViewModel(
                         accountSettings = state.accountSettings.copy(
                             isWorking = false,
                             failure = AccountControlFailure.LOCAL_DATA,
-                            safeDetail = "Account deletion could not be resumed. Your local data was not changed.",
+                            safeMessage = AccountSafeMessage.DELETION_RESUME_FAILED,
                         ),
                     )
                 }
@@ -826,6 +836,7 @@ class HomeViewModel(
                                 isWorking = false,
                                 failure = result.failure,
                                 safeDetail = result.safeDetail,
+                                safeMessage = null,
                                 requiresDeletionReauthentication = requiresReauthentication,
                             ),
                         )
@@ -851,7 +862,7 @@ class HomeViewModel(
     ) {
         if (accountControlCoordinator == null) return
         mutableUiState.update { state ->
-            state.copy(accountSettings = state.accountSettings.copy(isWorking = true, safeDetail = null))
+            state.copy(accountSettings = state.accountSettings.copy(isWorking = true, safeDetail = null, safeMessage = null))
         }
         viewModelScope.launch {
             handleDeletionReauthentication(
@@ -877,6 +888,7 @@ class HomeViewModel(
                                 isWorking = false,
                                 failure = deletion.failure,
                                 safeDetail = deletion.safeDetail,
+                                safeMessage = null,
                                 requiresDeletionReauthentication = requiresReauthentication,
                             ),
                         )
@@ -911,7 +923,13 @@ class HomeViewModel(
 
     private fun updateDeletionAuthenticationMessage(message: String) {
         mutableUiState.update { state ->
-            state.copy(accountSettings = state.accountSettings.copy(isWorking = false, safeDetail = message))
+            state.copy(
+                accountSettings = state.accountSettings.copy(
+                    isWorking = false,
+                    safeDetail = message,
+                    safeMessage = null,
+                ),
+            )
         }
     }
 
@@ -1044,7 +1062,7 @@ class HomeViewModel(
     fun loadProOffer() {
         val coordinator = proPurchaseCoordinator ?: run {
             mutableUiState.update {
-                it.copy(pro = it.pro.copy(isLoadingOffer = false, purchaseStatus = ProPurchaseStatus.ERROR, message = "Google Play is unavailable"))
+                it.copy(pro = it.pro.copy(isLoadingOffer = false, purchaseStatus = ProPurchaseStatus.ERROR, message = ProMessage.PLAY_UNAVAILABLE))
             }
             return
         }
@@ -1079,7 +1097,7 @@ class HomeViewModel(
                                 } else {
                                     ProPurchaseStatus.ERROR
                                 },
-                                message = "Google Play offer unavailable. Try again.",
+                                message = ProMessage.PLAY_UNAVAILABLE,
                             ),
                         )
                     }
@@ -1644,7 +1662,7 @@ class HomeViewModel(
                         accountSettings = state.accountSettings.copy(
                             isWorking = false,
                             failure = AccountControlFailure.LOCAL_DATA,
-                            safeDetail = "The authentication link could not be processed safely. Try again.",
+                            safeMessage = AccountSafeMessage.AUTHENTICATION_LINK_FAILED,
                         ),
                     )
                 }
@@ -1716,15 +1734,15 @@ class HomeViewModel(
     ) {
         when (outcome) {
             ProPurchaseOutcome.AwaitingPlayConfirmation -> updatePro(ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION)
-            ProPurchaseOutcome.Pending -> updatePro(ProPurchaseStatus.PENDING, "Google Play is still processing this purchase. You can restore it later.")
-            ProPurchaseOutcome.Cancelled -> updatePro(ProPurchaseStatus.CANCELLED, "Purchase cancelled. You can continue free or try again.")
+            ProPurchaseOutcome.Pending -> updatePro(ProPurchaseStatus.PENDING, ProMessage.PURCHASE_PENDING)
+            ProPurchaseOutcome.Cancelled -> updatePro(ProPurchaseStatus.CANCELLED, ProMessage.PURCHASE_CANCELLED)
             ProPurchaseOutcome.NotEntitled -> updatePro(ProPurchaseStatus.IDLE)
             ProPurchaseOutcome.AuthenticationRequired -> {
                 mutableUiState.update { state ->
                     state.copy(
                         pro = state.pro.copy(
                             purchaseStatus = ProPurchaseStatus.ERROR,
-                            message = "Sign in to bind this Google Play purchase to your AquaLog account.",
+                            message = ProMessage.AUTHENTICATION_REQUIRED,
                             actionAfterAuthentication = continuation,
                         ),
                     )
@@ -1737,9 +1755,9 @@ class HomeViewModel(
                 outcome.entitlement.analyticsProductOrNull()?.let {
                     recordProductEvent(ProductEvent.EntitlementConfirmed(active = true, product = it))
                 }
-                updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
+                updatePro(ProPurchaseStatus.ACTIVE, ProMessage.ACTIVE)
             }
-            is ProPurchaseOutcome.Failed -> updatePro(ProPurchaseStatus.ERROR, outcome.reason)
+            is ProPurchaseOutcome.Failed -> updatePro(ProPurchaseStatus.ERROR, ProMessage.VERIFICATION_FAILED)
         }
     }
 
@@ -1750,24 +1768,24 @@ class HomeViewModel(
                 outcome.entitlement.analyticsProductOrNull()?.let {
                     recordProductEvent(ProductEvent.EntitlementConfirmed(active = true, product = it))
                 }
-                updatePro(ProPurchaseStatus.ACTIVE, "Pro is active on this account.")
+                updatePro(ProPurchaseStatus.ACTIVE, ProMessage.ACTIVE)
             }
             ProPurchaseOutcome.NotEntitled -> {
                 updatePro(ProPurchaseStatus.IDLE)
             }
             ProPurchaseOutcome.AuthenticationRequired -> updatePro(
                 ProPurchaseStatus.ERROR,
-                "Sign in again to refresh your Pro status. Pro features stay locked until verification succeeds.",
+                ProMessage.AUTHENTICATION_REQUIRED,
             )
             is ProPurchaseOutcome.Failed -> updatePro(
                 ProPurchaseStatus.ERROR,
-                "Pro status could not be refreshed. Pro features stay locked until verification succeeds.",
+                ProMessage.VERIFICATION_FAILED,
             )
             else -> Unit
         }
     }
 
-    private fun updatePro(status: ProPurchaseStatus, message: String? = null) {
+    private fun updatePro(status: ProPurchaseStatus, message: ProMessage? = null) {
         mutableUiState.update { state ->
             state.copy(
                 pro = state.pro.copy(
@@ -1810,7 +1828,7 @@ class HomeViewModel(
                         isSaving = false,
                         pro = current.pro.copy(
                             purchaseStatus = ProPurchaseStatus.ERROR,
-                            message = "Purchase confirmed, but the Aquarium could not be saved. Try restoring later.",
+                            message = ProMessage.SAVE_FAILED,
                         ),
                     )
                 }
@@ -2170,7 +2188,7 @@ private data class OptionalDecimal(val value: Double?)
 private fun String.toOptionalDecimal(): OptionalDecimal? =
     if (isBlank()) OptionalDecimal(null) else toDecimalOrNull()?.let(::OptionalDecimal)
 
-private fun String.toDecimalOrNull(): Double? = replace(',', '.').toDoubleOrNull()
+private fun String.toDecimalOrNull(): Double? = parseDecimalInput(this)
 
 private fun Double?.displayInput(): String = when {
     this == null -> ""

@@ -65,9 +65,10 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithText("Free").assertIsDisplayed()
         composeRule.onNodeWithText("Pro · annual or lifetime").assertIsDisplayed()
         composeRule.onNodeWithText("€34.99 once. Lifetime access, with no trial.").assertIsDisplayed()
-        composeRule.onNodeWithText(
-            "€14.99 per year after a 14-day free trial. First billing date: October 21, 2026.",
-        ).assertIsDisplayed()
+        val billingDate = LocalizedFormatters(java.util.Locale.getDefault(java.util.Locale.Category.FORMAT))
+            .date(1_792_528_000_000L)
+        composeRule.onNodeWithText(context.getString(R.string.pro_offer_summary, "€14.99", 14, billingDate))
+            .assertIsDisplayed()
         composeRule.onNodeWithText("Continue for free").performClick()
 
         waitForText("Amazonien")

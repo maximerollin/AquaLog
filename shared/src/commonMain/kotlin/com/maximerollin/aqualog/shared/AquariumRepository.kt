@@ -264,7 +264,7 @@ class RoomAquariumRepository(
             )
         }
         val actions = input.maintenanceActions.map { draft ->
-            val quantity = if (draft.quantity.isBlank()) null else draft.quantity.normalizedDecimalOrNull()
+            val quantity = if (draft.quantity.isBlank()) null else parseDecimalInput(draft.quantity)
             require(draft.quantity.isBlank() || quantity?.isFinite() == true) { "Action quantity must be a decimal value" }
             MaintenanceAction(
                 id = generateId(),
@@ -324,7 +324,7 @@ class RoomAquariumRepository(
             )
         }
         val actions = input.maintenanceActions.map { draft ->
-            val quantity = if (draft.quantity.isBlank()) null else draft.quantity.normalizedDecimalOrNull()
+            val quantity = if (draft.quantity.isBlank()) null else parseDecimalInput(draft.quantity)
             require(draft.quantity.isBlank() || quantity?.isFinite() == true) { "Action quantity must be a decimal value" }
             MaintenanceAction(
                 id = existingActions[draft.type]?.id ?: generateId(),

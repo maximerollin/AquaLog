@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -42,6 +43,7 @@ import java.time.LocalTime
 @Composable
 fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val formatter = currentLocalizedFormatters()
     val requestNotifications = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { }
@@ -56,7 +58,10 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(stringResource(R.string.tasks_title), style = MaterialTheme.typography.headlineMedium)
-                TextButton(onClick = viewModel::closeTasks, modifier = Modifier.heightIn(min = 48.dp)) {
+                TextButton(
+                    onClick = viewModel::closeTasks,
+                    modifier = Modifier.testTag("tasks-back").requiredSizeIn(minWidth = 48.dp, minHeight = 48.dp),
+                ) {
                     Text(stringResource(R.string.back))
                 }
             }
@@ -108,7 +113,10 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
                     ) {
                         Column {
                             Text(stringResource(R.string.task_due_date_label))
-                            Text(state.dueDate, style = MaterialTheme.typography.bodySmall)
+                            Text(
+                                formatter.date(selectedDate.year, selectedDate.monthValue, selectedDate.dayOfMonth),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
                         }
                     }
                     val selectedTime = runCatching { LocalTime.parse(state.time) }
@@ -130,7 +138,8 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
                         Column {
                             Text(stringResource(R.string.task_time_label))
                             Text(
-                                state.time.ifBlank { stringResource(R.string.task_no_time) },
+                                state.time.toMinuteOfDayOrNull()?.let(formatter::time)
+                                    ?: stringResource(R.string.task_no_time),
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         }
@@ -190,14 +199,15 @@ private fun ReminderInformationCard(message: String, action: (@Composable () -> 
 
 @Composable
 private fun TaskOccurrenceCard(occurrence: TaskOccurrence, viewModel: HomeViewModel) {
+    val formatter = currentLocalizedFormatters()
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(occurrence.title, style = MaterialTheme.typography.titleMedium)
             Text(
                 stringResource(
                     R.string.task_due_value,
-                    occurrence.dueDate.toIsoText(),
-                    occurrence.minuteOfDay?.toTimeText() ?: stringResource(R.string.task_no_time),
+                    formatter.date(occurrence.dueDate.year, occurrence.dueDate.month, occurrence.dueDate.day),
+                    occurrence.minuteOfDay?.let(formatter::time) ?: stringResource(R.string.task_no_time),
                 ),
             )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -231,4 +241,10 @@ private fun TaskRecurrence.label(): String = stringResource(
 internal fun com.maximerollin.aqualog.shared.TaskDate.toIsoText(): String =
     "%04d-%02d-%02d".format(year, month, day)
 
-private fun Int.toTimeText(): String = "%02d:%02d".format(this / 60, this % 60)
+private fun String.toMinuteOfDayOrNull(): Int? {
+    val parts = split(':')
+    if (parts.size != 2) return null
+    val hour = parts[0].toIntOrNull() ?: return null
+    val minute = parts[1].toIntOrNull() ?: return null
+    return if (hour in 0..23 && minute in 0..59) hour * 60 + minute else null
+}
