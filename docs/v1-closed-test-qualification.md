@@ -10,7 +10,8 @@ ne sont pas acquises. Aucun service externe n’a été créé, déployé ou con
 Références : [ticket #19](https://github.com/maximerollin/AquaLog/issues/19),
 [spec #1](https://github.com/maximerollin/AquaLog/issues/1).
 Base de qualification : `f0c67bb` sur `integration/aqualog-v1`.
-Implémentation locale initiale : `6b97b7b` ; verdict de distribution toujours bloqué.
+Implémentation locale initiale : `6b97b7b`, correctifs de qualification : `ba82003` ;
+verdict de distribution toujours bloqué.
 
 ## Critères et limites des preuves
 
@@ -84,6 +85,23 @@ L’instrumentation Play est opt-in et exige un reçu authentique ; voir
 [le protocole Play](google-play-test-transaction.md). Son absence est un skip
 environnemental, jamais une restauration validée. Les scénarios ordinaires
 utilisent des doubles de facturation explicitement déterministes.
+
+### Protocole entre installations
+
+```sh
+python3 tools/qualification/installations.py --serial emulator-5554 \
+  --adb "$ANDROID_HOME/platform-tools/adb"
+```
+
+Le script exige Pixel_9a API 36, installe les APK dev/bêta sans effacer leurs
+bases, puis exécute quatre phases instrumentées dans des processus distincts :
+seed dev → force-stop → vérification dev → transfert du JSON par `run-as` →
+import bêta → force-stop → vérification bêta. Les assertions passent par les
+repositories publics et l’UI. La base `aqualog-qualification-19.db` est dédiée au
+protocole et ne remplace pas la base utilisateur `aqualog.db`. Le seed et l’import
+refusent une base de qualification déjà remplie : ce protocole est volontairement
+sans nettoyage destructif automatique. Il n’est pas une preuve de transfert
+physique entre téléphones ni de restauration Google Play.
 
 ### Supabase local isolé
 
@@ -173,6 +191,19 @@ Session rapide, synchronisation, export, récupération d’erreur et sécurité
 données restent non négociables. Ne pas déclarer « aucun blocage » lorsque leur
 preuve de qualification manque.
 
+## Corrections issues de la qualification locale
+
+- Callback d’authentification limité au schéma/hôte/port/chemin du build.
+- Identité des Réglages rafraîchie après activation du premier compte ; le
+  parcours Compose complet détectait une identité locale obsolète.
+- Services du runner de test reconnectés au repository injecté ; le test
+  Supabase lisait auparavant une base déjà fermée.
+- Tests hérités des Réglages et de plusieurs Aquariums : défilements et attentes
+  explicites avant les actions, sans retirer les assertions ni ajouter de sommeil.
+- Restauration : hauteur minimale de 48 dp permettant un libellé allemand complet
+  en texte agrandi ; RED observé par le contrôle public du débordement de texte,
+  puis GREEN et inspection de la capture corrigée.
+
 ## Registre d’exécution du 20 octobre 2026
 
 La première suite complète a été interrompue le matin : elle n’est pas comptée
@@ -191,8 +222,14 @@ logs locaux ne sont pas des reçus de validation externe.
 | Migration depuis schémas Room archivés 3–13 | PASS, 11 cas vers la version 14 puis réouverture |
 | Callback réservé à l’installation | RED observé : callback production accepté en dev ; GREEN après correction |
 | APK dev/bêta/release : package et callback dans le manifest | PASS, inspection des trois APK |
-| Instrumentation complète de reprise | En cours ; échec observé sur `pending_deletion_keeps_export_available_and_shows_truthful_retry`, à résoudre |
-| Transfert entre installations et arrêt de processus | À exécuter séparément via le protocole opt-in |
+| Première suite complète de reprise | 30 tests : 24 réussites, 4 échecs, 2 skips ; échecs conservés puis corrigés |
+| Régression ciblée après corrections | PASS, 5/5 : suppression partielle, multi-Aquarium, premier compte, adaptateur Supabase et libellé allemand |
+| Suite complète après corrections | PASS : 31 tests Android, 29 réussites, 2 skips expliqués, 0 échec ; 131 captures diagnostiques |
+| JVM / unités Android | PASS : 111 JVM ; 29 unités sur chacun des profils debug/bêta/release |
+| Assemblage et lint | PASS sur debug, bêta et release |
+| Transfert entre installations et arrêt de processus | PASS, 4 phases réelles dev/bêta, repositories et UI ; base dédiée |
+| Gardes de configuration Gradle | PASS, 5 tests (dont sous-cas d’observabilité) |
+| Arrêt des ressources locales | Pixel_9a arrêté ; pile #19 arrêtée ; six conteneurs #10 toujours actifs, intacts |
 | Gates humaines et externes ci-dessus | NON EXÉCUTÉES ; #19 reste ouverte |
 
 Preuves héritées, à ne pas confondre avec les réexécutions présentes : #18 annonce
@@ -205,3 +242,9 @@ en attente (≥7), avec une seconde ouverture après migration. Il ne s’agit p
 sauvegardes collectées sur des appareils historiques ; les états de suppression
 en cours et chaque combinaison de métadonnées serveur ne sont pas inventoriés
 dans ces fixtures.
+
+Les deux skips de la suite complète sont la transaction Play réelle (gate externe)
+et le protocole d’installations opt-in (exécuté séparément, quatre phases PASS).
+Le compteur de progression Gradle affiche 33 en fin de run ; le rapport JUnit
+agrégé fait foi : 31 cas, dont 2 skips. Aucune validation externe n’est déduite
+d’un skip.
