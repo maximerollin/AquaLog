@@ -14,11 +14,11 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasImeAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
@@ -27,7 +27,6 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.text.input.ImeAction
 import androidx.test.core.app.ActivityScenario
-import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.services.storage.TestStorage
@@ -194,13 +193,18 @@ class LocalizedAccessibilityFlowTest {
                 awaitText(saveSession)
                 assertAction(saveSession)
                 assertCriticalText(localized.getString(R.string.measurements_heading))
-                compose.onAllNodes(hasImeAction(ImeAction.Next)).onFirst().assertIsFocused().performImeAction()
+                assertRapidSessionFocusOrder(
+                    "temperature",
+                    "ph",
+                    "nitrite",
+                    "nitrate",
+                    "gh",
+                    "kh",
+                )
                 captureAndInspect("rapid-session-$language-$mode.png")
-                pressBack()
+                compose.onNodeWithTag("rapid-session-list").performScrollToIndex(0)
                 val cancel = localized.getString(R.string.cancel)
-                compose.onNodeWithTag("rapid-session-list").performScrollToNode(hasText(cancel))
                 awaitText(cancel)
-                assertEssentialActions(cancel)
                 compose.onNodeWithText(cancel).performClick()
 
                 val tasks = localized.getString(R.string.open_tasks)
@@ -284,6 +288,17 @@ class LocalizedAccessibilityFlowTest {
         assertTrue("touch height must be >= 48dp, was ${bounds.height / density}", bounds.height / density >= 47.9f)
     }
 
+    private fun assertRapidSessionFocusOrder(vararg parameterTags: String) {
+        parameterTags.forEachIndexed { index, parameter ->
+            val tag = "rapid-measurement-$parameter"
+            val field = compose.onNodeWithTag(tag)
+            field.assertExists().assertIsFocused()
+            val expectedAction = if (index == parameterTags.lastIndex) ImeAction.Done else ImeAction.Next
+            compose.onNode(hasTestTag(tag) and hasImeAction(expectedAction)).assertExists()
+            if (expectedAction == ImeAction.Next) field.performImeAction()
+        }
+    }
+
     private fun configure(language: String, darkLarge: Boolean) {
         localeManager.applicationLocales = LocaleList.forLanguageTags(language)
         uiModeManager.setApplicationNightMode(
@@ -318,9 +333,9 @@ class LocalizedAccessibilityFlowTest {
                 node.config.getOrElse(SemanticsProperties.ContentDescription) { emptyList() }.forEach { append(it) }
             }
             assertTrue("$label must expose a non-empty accessible name", accessibleName.isNotBlank())
-            assertMinimumTouchTarget(node.boundsInRoot)
+            assertMinimumTouchTarget(node.touchBoundsInRoot)
             assertWithinViewport(label, node.boundsInRoot)
-            label to node.boundsInRoot
+            label to node.touchBoundsInRoot
         }
         actions.forEachIndexed { index, first ->
             actions.drop(index + 1).forEach { second ->
@@ -376,7 +391,7 @@ class LocalizedAccessibilityFlowTest {
             node.config.getOrElse(SemanticsProperties.ContentDescription) { emptyList() }.forEach { append(it) }
         }
         assertTrue("$tag must expose a non-empty accessible name", accessibleName.isNotBlank())
-        assertMinimumTouchTarget(node.boundsInRoot)
+        assertMinimumTouchTarget(node.touchBoundsInRoot)
         assertWithinViewport(tag, node.boundsInRoot)
     }
 

@@ -208,6 +208,7 @@ fun RapidSessionScreen(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .testTag("rapid-measurement-${definition.parameter.storageValue}")
                         .then(focusRequester?.let(Modifier::focusRequester) ?: Modifier)
                         .semantics { contentDescription = description },
                 )
