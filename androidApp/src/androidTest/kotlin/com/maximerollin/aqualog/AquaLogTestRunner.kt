@@ -6,6 +6,7 @@ import android.content.Context
 import androidx.test.runner.AndroidJUnitRunner
 import com.maximerollin.aqualog.shared.ANNUAL_PRO_PRODUCT_ID
 import com.maximerollin.aqualog.shared.AccountControlCoordinator
+import com.maximerollin.aqualog.shared.AccountActivationCoordinator
 import com.maximerollin.aqualog.shared.AccountDeletionGateway
 import com.maximerollin.aqualog.shared.AccountOperationGate
 import com.maximerollin.aqualog.shared.AllowlistedAnalyticsAdapter
@@ -49,6 +50,9 @@ class AquaLogTestRunner : AndroidJUnitRunner() {
 }
 
 class TestAquaLogApplication : AquaLogApplication() {
+    var qualificationAccountCoordinator: AccountActivationCoordinator? = null
+    override val accountCoordinator: AccountActivationCoordinator
+        get() = qualificationAccountCoordinator ?: super.accountCoordinator
     private var database: AquaLogDatabase? = null
     private var repository: AquariumRepository? = null
     private var portableService: PortableDataService? = null
@@ -128,6 +132,7 @@ class TestAquaLogApplication : AquaLogApplication() {
     }
 
     fun resetRepository() {
+        qualificationAccountCoordinator = null
         database?.close()
         val databaseName = "aqualog-test-${databaseSequence++}.db"
         deleteDatabase(databaseName)
@@ -138,6 +143,15 @@ class TestAquaLogApplication : AquaLogApplication() {
             generateId = { UUID.randomUUID().toString() },
             currentTimeMillis = System::currentTimeMillis,
         )
+        bindRepository(newRepository, newDatabase)
+        deletionResult = CloudAccountDeletionResult.Completed
+        recordingTaskReminderScheduler.reset()
+        analyticsPayloads.clear()
+        recordedFeedback.clear()
+        verifiedProEntitlement = null
+    }
+
+    private fun bindRepository(newRepository: RoomAquariumRepository, newDatabase: AquaLogDatabase) {
         roomRepository = newRepository
         repository = newRepository
         portableService = PortableDataService(newDatabase)
@@ -156,11 +170,6 @@ class TestAquaLogApplication : AquaLogApplication() {
             operationGate = accountOperationGate,
             generateOperationKey = { "test-deletion-operation" },
         )
-        deletionResult = CloudAccountDeletionResult.Completed
-        recordingTaskReminderScheduler.reset()
-        analyticsPayloads.clear()
-        recordedFeedback.clear()
-        verifiedProEntitlement = null
     }
 
     fun grantPro(entitlement: ProEntitlement) {
@@ -171,11 +180,11 @@ class TestAquaLogApplication : AquaLogApplication() {
         verifiedProEntitlement = null
     }
 
-    fun installRepository(value: AquariumRepository) {
+    fun installRepository(value: RoomAquariumRepository, installedDatabase: AquaLogDatabase) {
+        qualificationAccountCoordinator = null
         database?.close()
-        database = null
-        repository = value
-        roomRepository = value as? RoomAquariumRepository
+        database = installedDatabase
+        bindRepository(value, installedDatabase)
         recordingTaskReminderScheduler.reset()
     }
 

@@ -77,7 +77,7 @@ class SupabaseTwoDeviceSyncTest {
         }
 
         val application = context.applicationContext as TestAquaLogApplication
-        application.installRepository(second)
+        application.installRepository(second, secondDatabase)
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         composeRule.onNodeWithText("History").performClick()
         composeRule.onNodeWithText("Chronology").assertIsDisplayed()

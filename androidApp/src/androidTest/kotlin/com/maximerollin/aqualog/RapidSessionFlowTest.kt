@@ -18,6 +18,17 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.maximerollin.aqualog.shared.AccountActivationCoordinator
+import com.maximerollin.aqualog.shared.AuthGateway
+import com.maximerollin.aqualog.shared.AuthTokens
+import com.maximerollin.aqualog.shared.AuthenticatedAccount
+import com.maximerollin.aqualog.shared.AuthenticationResult
+import com.maximerollin.aqualog.shared.CloudRepository
+import com.maximerollin.aqualog.shared.InitialAccountCopy
+import com.maximerollin.aqualog.shared.MagicLinkRequestResult
+import com.maximerollin.aqualog.shared.RoomAquariumRepository
+import com.maximerollin.aqualog.shared.SecureTokenStorage
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,6 +37,62 @@ import org.junit.runner.RunWith
 class RapidSessionFlowTest {
     @get:Rule
     val composeRule = createEmptyComposeRule()
+
+    @Test
+    fun onboardingToFirstAccount_uploadsTheRecordedLocalSession_andKeepsItsChronology() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val application = context.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        val received = java.util.concurrent.CopyOnWriteArrayList<InitialAccountCopy>()
+        var savedTokens: AuthTokens? = null
+        application.qualificationAccountCoordinator = AccountActivationCoordinator(
+            authGateway = object : AuthGateway {
+                override suspend fun signInWithGoogle() = AuthenticationResult.Authenticated(
+                    AuthenticatedAccount("qualification-account", "synthetic-access", "synthetic-refresh", "qualification@example.com"),
+                )
+                override suspend fun requestMagicLink(email: String) = MagicLinkRequestResult.Sent
+                override suspend fun completeMagicLink(callbackUrl: String) = AuthenticationResult.IgnoredCallback
+                override suspend fun refreshSession(refreshToken: String) = AuthenticationResult.Failed("Not used")
+            },
+            cloudRepository = object : CloudRepository {
+                override suspend fun upsertInitialCopy(accountId: String, copy: InitialAccountCopy, accessToken: String) {
+                    received += copy
+                }
+            },
+            localData = application.aquariumRepository as RoomAquariumRepository,
+            tokenStorage = object : SecureTokenStorage {
+                override suspend fun save(tokens: AuthTokens) { savedTokens = tokens }
+                override suspend fun read() = savedTokens
+                override suspend fun clear() { savedTokens = null }
+            },
+        )
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            waitForText("Get started")
+            completeMinimalOnboarding()
+            composeRule.onNodeWithText("New Session").performClick()
+            waitForText("Measurements")
+            composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
+            composeRule.onNodeWithText("Save Session").performClick()
+            waitForText("Session saved")
+            composeRule.onNodeWithText("Continue").performClick()
+            composeRule.onNodeWithText("Create an account").performClick()
+            composeRule.onNodeWithText("Continue with Google").performClick()
+            composeRule.waitUntil(timeoutMillis = 10_000) { received.isNotEmpty() }
+            assertEquals(1, received.single().sessions.size)
+            assertEquals(24.5, received.single().measurements.single().value, 0.0)
+            composeRule.onNodeWithText("History").performClick()
+            waitForText("Chronology")
+            composeRule.onNodeWithContentDescription("Open Session details").performClick()
+            composeRule.onNodeWithText("Temperature · 24.5 °C").assertIsDisplayed()
+            composeRule.onNodeWithText("Back to Chronology").performClick()
+            composeRule.onNodeWithText("Settings").performClick()
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("qualification@example.com"))
+            composeRule.onNodeWithText("qualification@example.com").assertIsDisplayed()
+        } finally {
+            scenario.close()
+        }
+    }
 
     @Test
     fun routine_recordsThreeMeasurementsAndWaterChange_inOneContinuousView() {

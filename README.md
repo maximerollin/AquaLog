@@ -5,6 +5,9 @@ slices let a new user complete the offline onboarding, configure an Aquarium
 and its built-in Parameters, try a non-persisted mini-session, skip the
 provisional paywall and return to the configured Aquarium after a restart.
 
+For the V1 qualification verdict, environment matrix, isolated local backend and
+closed-test protocol, see [the #19 qualification dossier](docs/v1-closed-test-qualification.md).
+
 ## Development setup
 
 - JDK 17
@@ -55,12 +58,13 @@ Supabase project URL and anonymous client key. Supply them as Gradle properties
 or environment variables; never commit values to the repository:
 
 ```shell
-AQUALOG_SUPABASE_URL=https://PROJECT.supabase.co \
-AQUALOG_SUPABASE_ANON_KEY=PUBLIC_ANON_KEY \
+AQUALOG_DEV_SUPABASE_URL=https://PROJECT.supabase.co \
+AQUALOG_DEV_SUPABASE_ANON_KEY=PUBLIC_ANON_KEY \
 ./gradlew :androidApp:assembleDebug
 ```
 
-Configure `aqualog://auth/callback` as an allowed Auth redirect in Supabase and
+Configure `aqualog-dev://auth/callback` for development (`aqualog-beta://auth/callback`
+for beta and `aqualog://auth/callback` for production) as an allowed Auth redirect in Supabase and
 enable Google plus email OTP providers. The application uses PKCE, correlates
 the callback with an encrypted pending attempt, rejects implicit callback
 tokens, and exchanges only the matching one-time authorization code. Access and
@@ -80,11 +84,14 @@ PostgREST calls. Local edits remain available immediately; a unique WorkManager
 chain drains pending operations when connectivity returns and downloads the
 account copy into the device Timeline.
 
-The local backend contract is verified with:
+The local backend contract must use a dedicated project ID and ports. The checked-in
+configuration names an older ticket: do not start, reset or stop it for another task.
+Prepare a separate validation directory as described in the
+[qualification dossier](docs/v1-closed-test-qualification.md#supabase-local-isolé), then run:
 
 ```shell
-supabase start
-supabase test db
+supabase start --workdir build/qualification-19/backend
+supabase test db --workdir build/qualification-19/backend
 npx --yes deno test supabase/functions/migrate-initial-copy/service_test.ts
 ```
 
@@ -92,8 +99,8 @@ The production Android adapter/two-store Chronology integration test runs agains
 the local backend from an emulator. Use the emulator host alias when building it:
 
 ```shell
-AQUALOG_SUPABASE_URL=http://10.0.2.2:54321 \
-AQUALOG_SUPABASE_ANON_KEY=LOCAL_PUBLIC_ANON_KEY \
+AQUALOG_DEV_SUPABASE_URL=http://10.0.2.2:57321 \
+AQUALOG_DEV_SUPABASE_ANON_KEY=LOCAL_PUBLIC_ANON_KEY \
 ./gradlew :androidApp:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.class=com.maximerollin.aqualog.SupabaseTwoDeviceSyncTest
 ```

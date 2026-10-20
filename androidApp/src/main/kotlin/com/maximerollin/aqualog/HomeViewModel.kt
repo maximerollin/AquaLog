@@ -1715,6 +1715,7 @@ class HomeViewModel(
             }
         }
         if (result == AccountActivationResult.Activated) {
+            refreshAccountSettings()
             val continuation = mutableUiState.value.pro.actionAfterAuthentication
             viewModelScope.launch {
                 refreshProEntitlement()

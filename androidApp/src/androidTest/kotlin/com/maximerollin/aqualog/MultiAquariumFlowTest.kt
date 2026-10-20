@@ -5,6 +5,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
@@ -46,19 +47,21 @@ class MultiAquariumFlowTest {
         waitForText("Salon")
         composeRule.onNodeWithText("Settings").performClick()
         waitForText("Pro active")
-        composeRule.onNodeWithText("Add Aquarium").performClick()
+        composeRule.onNodeWithText("Add Aquarium").performScrollTo().performClick()
+        waitForText("Aquarium name")
         composeRule.onNodeWithText("Aquarium name").performTextInput("Crevettes")
         composeRule.onNodeWithText("Volume").performTextInput("30")
         composeRule.onNodeWithText("Save Aquarium").performClick()
 
         waitForText("Crevettes")
         composeRule.onNodeWithText("Salon").assertIsDisplayed()
-        composeRule.onNodeWithText("Edit Aquarium").performClick()
+        composeRule.onNodeWithText("Edit Aquarium").performScrollTo().performClick()
+        waitForText("Aquarium name")
         composeRule.onNodeWithText("Aquarium name").performTextClearance()
         composeRule.onNodeWithText("Aquarium name").performTextInput("Nano")
         composeRule.onNodeWithText("Save Aquarium").performClick()
         waitForText("Nano")
-        composeRule.onNodeWithText("Archive Aquarium").performClick()
+        composeRule.onNodeWithText("Archive Aquarium").performScrollTo().performClick()
         waitForText("Salon")
 
         runBlocking {

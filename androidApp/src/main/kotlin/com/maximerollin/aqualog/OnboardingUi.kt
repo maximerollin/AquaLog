@@ -317,7 +317,7 @@ private fun WelcomeScreen(
         OutlinedButton(
             onClick = onRequestImport,
             enabled = !state.isWorking,
-            modifier = Modifier.fillMaxWidth().height(48.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
         ) {
             Text(stringResource(R.string.restore_from_export))
         }
@@ -484,7 +484,7 @@ private fun PortableDataSettings(
                 OutlinedButton(
                     onClick = onRequestImport,
                     enabled = !state.isWorking,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                 ) {
                     Text(stringResource(R.string.restore_from_export))
                 }

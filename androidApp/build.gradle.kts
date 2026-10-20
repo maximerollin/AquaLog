@@ -4,27 +4,34 @@ plugins {
     alias(libs.plugins.firebase.crashlytics)
 }
 
-val supabaseUrl = providers.gradleProperty("AQUALOG_SUPABASE_URL")
-    .orElse(providers.environmentVariable("AQUALOG_SUPABASE_URL"))
-    .getOrElse("")
-val supabaseAnonKey = providers.gradleProperty("AQUALOG_SUPABASE_ANON_KEY")
-    .orElse(providers.environmentVariable("AQUALOG_SUPABASE_ANON_KEY"))
-    .getOrElse("")
-val privacyUrl = providers.gradleProperty("AQUALOG_PRIVACY_URL")
-    .orElse(providers.environmentVariable("AQUALOG_PRIVACY_URL"))
-    .getOrElse("")
-val supportUrl = providers.gradleProperty("AQUALOG_SUPPORT_URL")
-    .orElse(providers.environmentVariable("AQUALOG_SUPPORT_URL"))
-    .getOrElse("")
 fun configuredValue(name: String) = providers.gradleProperty(name)
     .orElse(providers.environmentVariable(name))
     .getOrElse("")
-val postHogApiKey = configuredValue("AQUALOG_POSTHOG_API_KEY")
-val postHogHost = configuredValue("AQUALOG_POSTHOG_HOST")
-val firebaseApplicationId = configuredValue("AQUALOG_FIREBASE_APPLICATION_ID")
-val firebaseApiKey = configuredValue("AQUALOG_FIREBASE_API_KEY")
-val firebaseProjectId = configuredValue("AQUALOG_FIREBASE_PROJECT_ID")
-val feedbackUrl = configuredValue("AQUALOG_FEEDBACK_URL")
+val externalFields = listOf(
+    "SUPABASE_URL", "SUPABASE_ANON_KEY", "PRIVACY_URL", "SUPPORT_URL",
+    "POSTHOG_API_KEY", "POSTHOG_HOST", "FIREBASE_APPLICATION_ID", "FIREBASE_API_KEY",
+    "FIREBASE_PROJECT_ID", "FEEDBACK_URL",
+)
+val environments = listOf("DEV", "BETA", "PROD")
+require(externalFields.none { configuredValue("AQUALOG_$it").isNotBlank() }) {
+    "Use environment-scoped AQUALOG_DEV_, AQUALOG_BETA_ or AQUALOG_PROD_ configuration"
+}
+environments.forEach { environment ->
+    mapOf(
+        "SUPABASE" to listOf("SUPABASE_URL", "SUPABASE_ANON_KEY"),
+        "POSTHOG" to listOf("POSTHOG_HOST", "POSTHOG_API_KEY"),
+        "FIREBASE" to listOf("FIREBASE_APPLICATION_ID", "FIREBASE_API_KEY", "FIREBASE_PROJECT_ID"),
+    ).forEach { (service, fields) ->
+        val configured = fields.count { configuredValue("AQUALOG_${environment}_$it").isNotBlank() }
+        require(configured == 0 || configured == fields.size) { "$environment $service configuration is incomplete" }
+    }
+}
+listOf("SUPABASE_URL", "SUPABASE_ANON_KEY", "POSTHOG_API_KEY", "FIREBASE_APPLICATION_ID", "FIREBASE_PROJECT_ID")
+    .forEach { field ->
+        val values = environments.map { configuredValue("AQUALOG_${it}_$field").trim().trimEnd('/') }
+            .filter(String::isNotBlank)
+        require(values.distinct().size == values.size) { "$field must differ between environments" }
+    }
 fun String.asBuildConfigString(): String = "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {
@@ -39,21 +46,42 @@ android {
         versionName = "0.1.0"
         testInstrumentationRunner = "com.maximerollin.aqualog.AquaLogTestRunner"
         testInstrumentationRunnerArguments["useTestStorageService"] = "true"
-        buildConfigField("String", "SUPABASE_URL", supabaseUrl.asBuildConfigString())
-        buildConfigField("String", "SUPABASE_ANON_KEY", supabaseAnonKey.asBuildConfigString())
-        buildConfigField("String", "PRIVACY_URL", privacyUrl.asBuildConfigString())
-        buildConfigField("String", "SUPPORT_URL", supportUrl.asBuildConfigString())
-        buildConfigField("String", "POSTHOG_API_KEY", postHogApiKey.asBuildConfigString())
-        buildConfigField("String", "POSTHOG_HOST", postHogHost.asBuildConfigString())
-        buildConfigField("String", "FIREBASE_APPLICATION_ID", firebaseApplicationId.asBuildConfigString())
-        buildConfigField("String", "FIREBASE_API_KEY", firebaseApiKey.asBuildConfigString())
-        buildConfigField("String", "FIREBASE_PROJECT_ID", firebaseProjectId.asBuildConfigString())
-        buildConfigField("String", "FEEDBACK_URL", feedbackUrl.asBuildConfigString())
+
     }
 
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+
+    testBuildType = providers.gradleProperty("aqualogTestBuildType").getOrElse("debug")
+
+    buildTypes {
+        debug {
+            applicationIdSuffix = ".dev"
+        }
+        create("beta") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".beta"
+            matchingFallbacks += "debug"
+        }
+        all {
+            val environment = when (name) {
+                "debug" -> "DEV"
+                "beta" -> "BETA"
+                else -> "PROD"
+            }
+            val authScheme = when (name) {
+                "debug" -> "aqualog-dev"
+                "beta" -> "aqualog-beta"
+                else -> "aqualog"
+            }
+            manifestPlaceholders["authScheme"] = authScheme
+            buildConfigField("String", "AUTH_REDIRECT_URL", "$authScheme://auth/callback".asBuildConfigString())
+            externalFields.forEach { field ->
+                buildConfigField("String", field, configuredValue("AQUALOG_${environment}_$field").asBuildConfigString())
+            }
+        }
     }
 
     compileOptions {
@@ -64,6 +92,12 @@ android {
 
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+    }
+}
+
+androidComponents {
+    beforeVariants { variant ->
+        (variant as com.android.build.api.variant.HasUnitTestBuilder).enableUnitTest = true
     }
 }
 

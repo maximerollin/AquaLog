@@ -53,6 +53,7 @@ data class SupabaseConfiguration(
         fun fromBuildConfig() = SupabaseConfiguration(
             projectUrl = BuildConfig.SUPABASE_URL.trimEnd('/'),
             anonymousKey = BuildConfig.SUPABASE_ANON_KEY,
+            redirectUrl = BuildConfig.AUTH_REDIRECT_URL,
         )
     }
 }
@@ -229,10 +230,12 @@ class SupabaseAuthGateway(
     override suspend fun completeMagicLink(callbackUrl: String): AuthenticationResult {
         if (!configuration.isConfigured) return AuthenticationResult.Failed(CONFIGURATION_ERROR)
         val callbackUri = Uri.parse(callbackUrl)
+        val expectedCallback = Uri.parse(configuration.redirectUrl)
         if (
-            callbackUri.scheme != "aqualog" ||
-            callbackUri.host != "auth" ||
-            callbackUri.path != "/callback"
+            callbackUri.scheme != expectedCallback.scheme ||
+            callbackUri.host != expectedCallback.host ||
+            callbackUri.port != expectedCallback.port ||
+            callbackUri.path != expectedCallback.path
         ) {
             return AuthenticationResult.IgnoredCallback
         }
