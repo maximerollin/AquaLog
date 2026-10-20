@@ -334,7 +334,7 @@
     <string name="trends_direction_no_data">nessun dato</string>
 
     <string name="tasks_title">Attività e promemoria</string>
-    <string name="new_task">Nuovo compito</string>
+    <string name="new_task">Nuova attività</string>
     <string name="task_title_label">Titolo dell\'attività</string>
     <string name="task_due_date_label">Prima data di scadenza</string>
     <string name="task_due_date_hint">AAAA-MM-GG</string>

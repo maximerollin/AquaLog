@@ -59,6 +59,30 @@ class LocalizationContractTest {
             stringValue("values-fr", "maintenance_heading").replace('’', '\'').replace("\\'", "'"),
         )
         assertTrue(stringValue("values-it", "tasks_title").startsWith("Attività"))
+        listOf("open_tasks", "tasks_title", "new_task", "task_title_label", "save_task", "no_pending_tasks").forEach { key ->
+            assertTrue(
+                stringValue("values-it", key).contains("attività", ignoreCase = true),
+                "values-it/$key must use the canonical Task term Attività",
+            )
+        }
+        listOf(
+            "welcome_description",
+            "maintenance_heading",
+            "delete_session_description",
+            "portable_import_confirmation_description",
+            "portable_problem_actions",
+        ).forEach { key ->
+            assertTrue(
+                stringValue("values-de", key).contains("Wartungsaktion", ignoreCase = true),
+                "values-de/$key must use the canonical Maintenance action term Wartungsaktion",
+            )
+        }
+        listOf("session_maintenance_count", "timeline_action_count").forEach { key ->
+            assertTrue(
+                pluralText("values-de", key).contains("Wartungsaktion"),
+                "values-de/$key must use the canonical Maintenance action term Wartungsaktion",
+            )
+        }
         catalogs.filterNot { it == "values" }.forEach { catalog ->
             assertEquals("TDS", stringValue(catalog, "parameter_tds"), "$catalog must preserve scientific abbreviations")
         }
@@ -223,6 +247,15 @@ class LocalizationContractTest {
                     node.childNodes.item(index).attributes?.getNamedItem("quantity")?.nodeValue
                 }.sorted()
             }
+        }
+        error("Missing $folder/$name")
+    }
+
+    private fun pluralText(folder: String, name: String): String {
+        val nodes = document(folder).getElementsByTagName("plurals")
+        repeat(nodes.length) {
+            val node = nodes.item(it)
+            if (node.attributes.getNamedItem("name").nodeValue == name) return node.textContent
         }
         error("Missing $folder/$name")
     }

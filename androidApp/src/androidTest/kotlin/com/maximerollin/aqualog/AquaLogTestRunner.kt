@@ -67,6 +67,11 @@ class TestAquaLogApplication : AquaLogApplication() {
     override val feedbackGateway: FeedbackGateway = FeedbackGateway(recordedFeedback::add)
     private var verifiedProEntitlement: ProEntitlement? = null
 
+    override fun onCreate() {
+        super.onCreate()
+        resetRepository()
+    }
+
     override val taskReminderScheduler: TaskReminderScheduler
         get() = recordingTaskReminderScheduler
 

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -57,7 +58,10 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(stringResource(R.string.tasks_title), style = MaterialTheme.typography.headlineMedium)
-                TextButton(onClick = viewModel::closeTasks, modifier = Modifier.heightIn(min = 48.dp)) {
+                TextButton(
+                    onClick = viewModel::closeTasks,
+                    modifier = Modifier.testTag("tasks-back").requiredSizeIn(minWidth = 48.dp, minHeight = 48.dp),
+                ) {
                     Text(stringResource(R.string.back))
                 }
             }

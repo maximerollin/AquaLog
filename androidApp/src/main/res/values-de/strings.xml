@@ -3,7 +3,7 @@
     <string name="app_name">AquaLog</string>
 
     <string name="welcome_title">Eine Sitzung. Deine ganze Routine.</string>
-    <string name="welcome_description">Erfassen Sie mehrere Wassermessungen, Wartungsmaßnahmen und eine Beobachtung gemeinsam – ohne ein Konto anzulegen.</string>
+    <string name="welcome_description">Erfassen Sie mehrere Wassermessungen, Wartungsaktionen und eine Beobachtung gemeinsam – ohne ein Konto anzulegen.</string>
     <string name="get_started">Fangen Sie an</string>
 
     <string name="profile_title">Was verfolgen Sie?</string>
@@ -108,7 +108,7 @@
     <string name="no_previous_measurement">Noch nicht gemessen · Zum Überspringen leer lassen</string>
     <string name="invalid_measurement">Geben Sie eine Dezimalzahl mit einem Punkt oder Komma ein.</string>
     <string name="unusual_measurement">Außerhalb deines Richtbereichs. Prüfe den Wert; Speichern ist weiterhin möglich.</string>
-    <string name="maintenance_heading">Wartungsmaßnahmen</string>
+    <string name="maintenance_heading">Wartungsaktionen</string>
     <string name="action_water_change">Wasserwechsel</string>
     <string name="action_fertilization">Düngung</string>
     <string name="action_filter">Filterwartung</string>
@@ -166,7 +166,7 @@
     <string name="save_changes">Änderungen speichern</string>
     <string name="delete_session">Sitzung löschen</string>
     <string name="delete_session_title">Diese Sitzung löschen?</string>
-    <string name="delete_session_description">Seine Messungen, Wartungsmaßnahmen und Ereignisse werden ebenfalls von diesem Gerät entfernt.</string>
+    <string name="delete_session_description">Seine Messungen, Wartungsaktionen und Ereignisse werden ebenfalls von diesem Gerät entfernt.</string>
     <string name="delete">Löschen</string>
 
     <string name="navigation_home">Start</string>

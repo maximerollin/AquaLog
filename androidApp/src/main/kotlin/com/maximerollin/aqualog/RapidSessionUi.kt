@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -126,7 +127,10 @@ fun RapidSessionScreen(
                         )
                         Text(aquarium.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    TextButton(onClick = viewModel::closeRapidSession) { Text(stringResource(R.string.cancel)) }
+                    TextButton(
+                        onClick = viewModel::closeRapidSession,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    ) { Text(stringResource(R.string.cancel)) }
                 }
             }
             item {

@@ -1190,7 +1190,7 @@ private fun FeedbackDialog(
             TextButton(
                 onClick = onSubmit,
                 enabled = state.message.isNotBlank(),
-                modifier = Modifier.heightIn(min = 48.dp).testTag("submit-feedback"),
+                modifier = Modifier.testTag("submit-feedback").heightIn(min = 48.dp),
             ) {
                 Text(stringResource(R.string.send_feedback))
             }
