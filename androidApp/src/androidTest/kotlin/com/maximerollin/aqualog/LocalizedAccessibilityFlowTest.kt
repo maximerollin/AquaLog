@@ -9,6 +9,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.hasClickAction
@@ -25,6 +26,8 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.ImeAction
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -54,6 +57,34 @@ class LocalizedAccessibilityFlowTest {
     private val context = instrumentation.targetContext
     private val localeManager = context.getSystemService(LocaleManager::class.java)
     private val uiModeManager = context.getSystemService(UiModeManager::class.java)
+
+    @Test
+    fun restoreAction_keepsItsCompleteVisibleLabel_withGermanLargeText() {
+        configure("de", darkLarge = true)
+        val application = context.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        runBlocking {
+            application.aquariumRepository.createConfiguredAquarium(
+                "Qualification", 120.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+        }
+        ActivityScenario.launch(MainActivity::class.java).use {
+            val localized = localizedContext("de")
+            val settings = localized.getString(R.string.navigation_settings)
+            awaitText(settings)
+            compose.onNodeWithText(settings).performClick()
+            val restore = localized.getString(R.string.restore_from_export)
+            scrollSettingsTo(restore)
+            compose.onNode(hasText(restore) and hasClickAction()).performScrollTo()
+            val layouts = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithText(restore, useUnmergedTree = true)
+                .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action -> action(layouts) }
+            assertTrue("Restore action must render its text", layouts.isNotEmpty())
+            assertFalse("Restore action must not clip its visible label", layouts.any { it.hasVisualOverflow })
+            captureAndInspect("restore-complete-de-dark-large.png")
+        }
+    }
 
     @After
     fun restoreDeviceConfiguration() {

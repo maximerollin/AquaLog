@@ -74,6 +74,9 @@ class AccountControlSettingsTest {
             composeRule.onNodeWithText("Delete account").performScrollTo().performClick()
             composeRule.onNodeWithText("Delete account and data").performClick()
             composeRule.waitUntil(5_000) {
+                runCatching {
+                    composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Account deletion incomplete"))
+                }
                 composeRule.onAllNodesWithText("Account deletion incomplete").fetchSemanticsNodes().isNotEmpty()
             }
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Service temporarily unavailable"))

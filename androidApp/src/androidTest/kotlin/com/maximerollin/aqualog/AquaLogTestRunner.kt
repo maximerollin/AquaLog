@@ -143,6 +143,15 @@ class TestAquaLogApplication : AquaLogApplication() {
             generateId = { UUID.randomUUID().toString() },
             currentTimeMillis = System::currentTimeMillis,
         )
+        bindRepository(newRepository, newDatabase)
+        deletionResult = CloudAccountDeletionResult.Completed
+        recordingTaskReminderScheduler.reset()
+        analyticsPayloads.clear()
+        recordedFeedback.clear()
+        verifiedProEntitlement = null
+    }
+
+    private fun bindRepository(newRepository: RoomAquariumRepository, newDatabase: AquaLogDatabase) {
         roomRepository = newRepository
         repository = newRepository
         portableService = PortableDataService(newDatabase)
@@ -161,11 +170,6 @@ class TestAquaLogApplication : AquaLogApplication() {
             operationGate = accountOperationGate,
             generateOperationKey = { "test-deletion-operation" },
         )
-        deletionResult = CloudAccountDeletionResult.Completed
-        recordingTaskReminderScheduler.reset()
-        analyticsPayloads.clear()
-        recordedFeedback.clear()
-        verifiedProEntitlement = null
     }
 
     fun grantPro(entitlement: ProEntitlement) {
@@ -176,11 +180,11 @@ class TestAquaLogApplication : AquaLogApplication() {
         verifiedProEntitlement = null
     }
 
-    fun installRepository(value: AquariumRepository) {
+    fun installRepository(value: RoomAquariumRepository, installedDatabase: AquaLogDatabase) {
+        qualificationAccountCoordinator = null
         database?.close()
-        database = null
-        repository = value
-        roomRepository = value as? RoomAquariumRepository
+        database = installedDatabase
+        bindRepository(value, installedDatabase)
         recordingTaskReminderScheduler.reset()
     }
 

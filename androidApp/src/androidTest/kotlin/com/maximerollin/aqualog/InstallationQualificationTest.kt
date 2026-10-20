@@ -76,7 +76,7 @@ class InstallationQualificationTest {
             assertEquals(24.5, session.measurements.single().value, 0.0)
             assertEquals(MaintenanceActionType.WATER_CHANGE, session.maintenanceActions.single().type)
             assertEquals(20.0, session.maintenanceActions.single().quantity!!, 0.0)
-            (context.applicationContext as TestAquaLogApplication).installRepository(repository)
+            (context.applicationContext as TestAquaLogApplication).installRepository(repository, database)
             val scenario = ActivityScenario.launch(MainActivity::class.java)
             try {
                 composeRule.waitUntil(timeoutMillis = 10_000) {
