@@ -17,6 +17,31 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SupabaseAuthGatewayTest {
     @Test
+    fun authenticationCallback_isRestrictedToTheConfiguredInstallation() = runTest {
+        val attempts = InMemoryAuthenticationAttemptStorage()
+        val gateway = SupabaseAuthGateway(
+            context = InstrumentationRegistry.getInstrumentation().targetContext,
+            configuration = SupabaseConfiguration(
+                "https://example.supabase.co", "public-anon-key", "aqualog-dev://auth/callback",
+            ),
+            attemptStorage = attempts,
+            openBrowser = {},
+        )
+        assertEquals(AuthenticationResult.AwaitingCallback, gateway.signInWithGoogle())
+        val pending = requireNotNull(attempts.readAttempt())
+        assertEquals(
+            AuthenticationResult.IgnoredCallback,
+            gateway.completeMagicLink("aqualog://auth/callback?state=${pending.state}&error=access_denied"),
+        )
+        assertEquals(pending, attempts.readAttempt())
+        assertEquals(
+            AuthenticationResult.Cancelled,
+            gateway.completeMagicLink("aqualog-dev://auth/callback?state=${pending.state}&error=access_denied"),
+        )
+        assertNull(attempts.readAttempt())
+    }
+
+    @Test
     fun cancellationAndExpiration_allowFreshAuthenticationAttempts() = runTest {
         val launchedUris = mutableListOf<Uri>()
         val attempts = InMemoryAuthenticationAttemptStorage()
