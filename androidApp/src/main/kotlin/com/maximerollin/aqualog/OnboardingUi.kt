@@ -1281,25 +1281,25 @@ private fun PlanCard(title: Int, description: Int) {
 private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
     val aquarium = requireNotNull(state.setup).aquarium
     Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         LazyColumn(
             modifier = Modifier.weight(1f).testTag("home-list"),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item {
                 Card(
                     Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                 ) {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                Text(aquarium.name, style = MaterialTheme.typography.headlineMedium)
+                                Text(aquarium.name, style = MaterialTheme.typography.headlineSmall)
                                 Text(aquarium.formattedVolume(), color = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
-                            AquariumArtwork(Modifier.size(88.dp))
+                            AquariumArtwork(Modifier.size(72.dp))
                         }
                         Text(
                             stringResource(
@@ -1321,7 +1321,7 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
             }
             item {
                 Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             stringResource(
                                 if (state.latestSession == null) R.string.no_session_yet else R.string.session_saved,
@@ -1355,7 +1355,7 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
             if (state.syncState.status == SyncStatus.FAILED) {
                 item {
                     Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 stringResource(
                                     when (state.syncState.failure?.category) {
@@ -1405,7 +1405,7 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
             if (state.accountInvitationPrompt == AccountInvitationPrompt.REMINDER) {
                 item {
                     Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 stringResource(R.string.account_invitation_title),
                                 style = MaterialTheme.typography.titleMedium,
@@ -1427,7 +1427,7 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
             }
 
         }
-        OutlinedButton(
+        TextButton(
             onClick = viewModel::openTasks,
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
         ) {
@@ -1470,7 +1470,11 @@ private fun ScreenHeading(title: Int, description: Int) {
 
 @Composable
 private fun PrimaryButton(label: Int, onClick: () -> Unit) {
-    Button(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)) {
+    Button(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+    ) {
         Text(stringResource(label))
     }
 }

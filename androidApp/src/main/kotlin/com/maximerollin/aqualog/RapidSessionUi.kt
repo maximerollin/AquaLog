@@ -69,13 +69,14 @@ fun RapidSessionScreen(
             Surface(color = MaterialTheme.colorScheme.background) {
                 Button(
                     onClick = viewModel::saveRapidSession,
+                    shape = MaterialTheme.shapes.medium,
                     enabled = state.canSave,
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
                         .imePadding()
-                        .padding(16.dp)
-                        .heightIn(min = 54.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .heightIn(min = 48.dp),
                 ) {
                     if (state.isSaving) {
                         CircularProgressIndicator()
@@ -116,8 +117,8 @@ fun RapidSessionScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize().testTag("rapid-session-list").padding(padding),
-            contentPadding = PaddingValues(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {

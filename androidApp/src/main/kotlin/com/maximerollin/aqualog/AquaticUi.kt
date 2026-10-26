@@ -62,11 +62,11 @@ internal fun HomeMeasurements(state: HomeUiState) {
                 row.forEach { measurement ->
                     val definition = definitions.getValue(measurement.parameterDefinitionId)
                     Card(Modifier.weight(1f)) {
-                        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(definition.parameter.label(), style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text(formatter.number(measurement.value, definition.precision),
-                                style = MaterialTheme.typography.headlineMedium)
+                                style = MaterialTheme.typography.headlineSmall)
                             if (definition.unit.isNotBlank()) Text(definition.unit, style = MaterialTheme.typography.bodySmall)
                         }
                     }

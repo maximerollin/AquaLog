@@ -32,3 +32,9 @@ Validation de la version finale :
 Appareil exclusif : Pixel_9a API 36, sans wipe, arrêté après usage. Journaux et preuves locales sous `/Users/maximerollin/.codex/validation-artifacts/aqualog-ui-20261026`.
 
 Ces contrôles ne valent pas qualification Play, preuve humaine de routine <30 s ou validation manuelle TalkBack. Les preuves backend héritées ne sont pas réexécutées pour cette modification de présentation.
+
+## Ajustement de densité après retour du propriétaire
+
+La direction est conservée. Boutons principaux ramenés de 54 à 48 dp minimum avec des angles moins enveloppants ; bouton Tâches secondaire sans contour. Accueil avec marges de 16 dp, espaces de 10 dp, illustration et titres réduits ; Session rapide avec marges de 16 dp et espaces de 12 dp. Les composants peuvent toujours grandir avec le texte système et les cibles interactives restent d’au moins 48 dp.
+
+Vérification de cet ajustement : assemblage debug réussi ; test instrumenté `configuredCriticalScreens_haveFiveLocaleSmokeCaptures_andDarkLargeCoverage` réussi (cinq langues × clair normal/sombre à 150 %, cibles et libellés essentiels, focus/IME). Captures Accueil FR clair et sombre agrandi inspectées. Preuves sous le sous-dossier `density` des artefacts ci-dessus. Aucun test métier supplémentaire ajouté pour ce changement de dimensions.
