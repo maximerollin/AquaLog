@@ -246,7 +246,7 @@
     <string name="account_deleted_cleanup_description">Cloud deletion is confirmed and account tokens are cleared. Finish removing the local copy before using AquaLog again.</string>
     <string name="finish_local_cleanup">Finish local cleanup</string>
     <string name="privacy_policy">Privacy</string>
-    <string name="privacy_policy_local">AquaLog stores Aquarium records locally. When purchases are configured, RevenueCat processes purchase information and an opaque account identifier to manage Pro access. Aquarium records are not sent to RevenueCat. Portable exports exclude account tokens and billing data. The published policy is available when configured.</string>
+    <string name="privacy_policy_local">AquaLog stores Aquarium records locally. When purchases are configured, RevenueCat processes purchase information and an opaque account identifier to manage Pro access. Aquarium records are not sent to RevenueCat. Portable exports exclude account tokens and billing data. The published policy is available when configured. LogSnag receives payment status and review-flow request events without an account identifier or Aquarium content.</string>
     <string name="support">Support</string>
     <string name="support_unconfigured">No hosted support channel is configured for this build. Your local Aquarium data and portable export remain available.</string>
     <string name="close">Close</string>

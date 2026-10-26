@@ -29,8 +29,8 @@ Deno.test("expired, refunded, foreign-store and cross-environment purchases cann
     const subscription = value.subscriber.subscriptions.aqualog_pro_annual;
     if (kind === "refund") subscription.refunded_at = past;
     if (kind === "store") subscription.store = "app_store";
-    if (kind === "environment") subscription.is_sandbox = false;
-    assert(!interpretRevenueCatCustomer(value, true, now).active, kind);
+    if (kind === "environment") subscription.is_sandbox = true;
+    assert(!interpretRevenueCatCustomer(value, kind !== "environment", now).active, kind);
   }
 });
 Deno.test("grace period extends access only as far as both authoritative records agree", () => {
@@ -56,7 +56,7 @@ Deno.test("refunded and wrong-environment lifetime purchases are inactive", () =
   const value = customer("aqualog_pro_lifetime", null);
   value.subscriber.non_subscriptions.aqualog_pro_lifetime[0].refunded_at = past;
   assert(!interpretRevenueCatCustomer(value, true, now).active);
-  assert(!interpretRevenueCatCustomer(customer("aqualog_pro_lifetime", null, false), true, now).active);
+  assert(!interpretRevenueCatCustomer(customer("aqualog_pro_lifetime", null, true), false, now).active);
 });
 Deno.test("missing Pro entitlement revokes access; unknown products and annual null expiry do not grant", () => {
   const value = customer();
@@ -126,4 +126,24 @@ Deno.test("webhook retries on reconciliation failure and ignores deleted or unkn
   const dependencies = { authorization: "secret", accountIds: () => Promise.resolve(["a"]), refresh: () => Promise.reject(new Error("unavailable")) };
   assert((await handleRevenueCatWebhook(request(), dependencies)).status === 503);
   assert((await handleRevenueCatWebhook(request(), { ...dependencies, accountIds: () => Promise.resolve([]) })).status === 200);
+});
+
+Deno.test("one backend accepts production purchases and restricts sandbox grants to approved test accounts", () => {
+  assert(interpretRevenueCatCustomer(customer("aqualog_pro_annual", future, false), false, now).active);
+  assert(!interpretRevenueCatCustomer(customer(), false, now).active);
+  assert(interpretRevenueCatCustomer(customer(), true, now).active);
+  assert(interpretRevenueCatCustomer(customer("aqualog_pro_lifetime", null, false), false, now).active);
+});
+
+Deno.test("notification retries never roll back reconciled rights or notify unknown accounts", async () => {
+  const request = () => new Request("https://edge.invalid", { method: "POST", headers: { authorization: "secret" }, body: JSON.stringify({ event: { app_user_id: "a".repeat(64) } }) });
+  let reads = 0; let notifications = 0;
+  const dependencies = {
+    authorization: "secret", accountIds: async () => ["a"],
+    refresh: async () => { reads++; }, notify: async () => { notifications++; throw new Error("offline"); },
+  };
+  assert((await handleRevenueCatWebhook(request(), dependencies)).status === 503);
+  assert(reads === 1 && notifications === 1);
+  assert((await handleRevenueCatWebhook(request(), { ...dependencies, accountIds: async () => [] })).status === 200);
+  assert(reads === 1 && notifications === 1);
 });

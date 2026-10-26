@@ -69,6 +69,7 @@ class PortableDataFlowTest {
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 output.exists() && output.readText().contains("\"formatVersion\": 1")
             }
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Export ready"))
             composeRule.onNodeWithText("Export ready").assertIsDisplayed()
         } finally {
             scenario.close()

@@ -10,34 +10,28 @@ fun configuredValue(name: String) = providers.gradleProperty(name)
 val externalFields = listOf(
     "SUPABASE_URL", "SUPABASE_ANON_KEY", "PRIVACY_URL", "SUPPORT_URL",
     "POSTHOG_API_KEY", "POSTHOG_HOST", "FIREBASE_APPLICATION_ID", "FIREBASE_API_KEY",
-    "FIREBASE_PROJECT_ID", "FEEDBACK_URL", "REVENUECAT_PUBLIC_API_KEY",
+    "FIREBASE_PROJECT_ID", "FEEDBACK_URL", "REVENUECAT_PUBLIC_API_KEY", "LOGSNAG_PROJECT", "LOGSNAG_REVIEW_PUBLIC_TOKEN",
 )
-val environments = listOf("DEV", "BETA", "PROD")
-require(externalFields.none { configuredValue("AQUALOG_$it").isNotBlank() }) {
-    "Use environment-scoped AQUALOG_DEV_, AQUALOG_BETA_ or AQUALOG_PROD_ configuration"
+require(externalFields.none { field -> listOf("DEV", "BETA", "PROD").any { configuredValue("AQUALOG_${it}_$field").isNotBlank() } }) {
+    "Use the shared AQUALOG_ configuration; separate DEV/BETA/PROD projects are retired"
 }
-environments.forEach { environment ->
-    mapOf(
-        "SUPABASE" to listOf("SUPABASE_URL", "SUPABASE_ANON_KEY"),
-        "POSTHOG" to listOf("POSTHOG_HOST", "POSTHOG_API_KEY"),
-        "FIREBASE" to listOf("FIREBASE_APPLICATION_ID", "FIREBASE_API_KEY", "FIREBASE_PROJECT_ID"),
-    ).forEach { (service, fields) ->
-        val configured = fields.count { configuredValue("AQUALOG_${environment}_$it").isNotBlank() }
-        require(configured == 0 || configured == fields.size) { "$environment $service configuration is incomplete" }
-    }
+mapOf(
+    "SUPABASE" to listOf("SUPABASE_URL", "SUPABASE_ANON_KEY"),
+    "POSTHOG" to listOf("POSTHOG_HOST", "POSTHOG_API_KEY"),
+    "FIREBASE" to listOf("FIREBASE_APPLICATION_ID", "FIREBASE_API_KEY", "FIREBASE_PROJECT_ID"),
+    "LOGSNAG_REVIEW" to listOf("LOGSNAG_PROJECT", "LOGSNAG_REVIEW_PUBLIC_TOKEN"),
+).forEach { (service, fields) ->
+    val count = fields.count { configuredValue("AQUALOG_$it").isNotBlank() }
+    require(count == 0 || count == fields.size) { "$service configuration is incomplete" }
 }
-listOf("SUPABASE_URL", "SUPABASE_ANON_KEY", "POSTHOG_API_KEY", "FIREBASE_APPLICATION_ID", "FIREBASE_PROJECT_ID", "REVENUECAT_PUBLIC_API_KEY")
-    .forEach { field ->
-        val values = environments.map { configuredValue("AQUALOG_${it}_$field").trim().trimEnd('/') }
-            .filter(String::isNotBlank)
-        require(values.distinct().size == values.size) { "$field must differ between environments" }
-    }
-environments.forEach { environment ->
-    val key = configuredValue("AQUALOG_${environment}_REVENUECAT_PUBLIC_API_KEY")
-    require(key.isBlank() || key.startsWith("goog_")) {
-        "$environment RevenueCat requires a public Google Play SDK key (goog_), never a secret or Test Store key"
-    }
+val revenueCatKey = configuredValue("AQUALOG_REVENUECAT_PUBLIC_API_KEY")
+require(revenueCatKey.isBlank() || revenueCatKey.startsWith("goog_")) {
+    "RevenueCat requires a public Google Play SDK key (goog_), never a secret or Test Store key"
 }
+val distributionTrack = configuredValue("AQUALOG_DISTRIBUTION_TRACK").ifBlank { "local" }
+require(distributionTrack in setOf("local", "internal", "alpha", "production")) { "Invalid distribution track" }
+val aqualogVersionCode = providers.gradleProperty("AQUALOG_VERSION_CODE").map(String::toInt).orElse(1)
+val aqualogVersionName = providers.gradleProperty("AQUALOG_VERSION_NAME").orElse("0.1.0")
 fun String.asBuildConfigString(): String = "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {
@@ -48,8 +42,8 @@ android {
         applicationId = "com.maximerollin.aqualog"
         minSdk = 23
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = aqualogVersionCode.get()
+        versionName = aqualogVersionName.get()
         testInstrumentationRunner = "com.maximerollin.aqualog.AquaLogTestRunner"
         testInstrumentationRunnerArguments["useTestStorageService"] = "true"
 
@@ -63,29 +57,12 @@ android {
     testBuildType = providers.gradleProperty("aqualogTestBuildType").getOrElse("debug")
 
     buildTypes {
-        debug {
-            applicationIdSuffix = ".dev"
-        }
-        create("beta") {
-            initWith(getByName("debug"))
-            applicationIdSuffix = ".beta"
-            matchingFallbacks += "debug"
-        }
         all {
-            val environment = when (name) {
-                "debug" -> "DEV"
-                "beta" -> "BETA"
-                else -> "PROD"
-            }
-            val authScheme = when (name) {
-                "debug" -> "aqualog-dev"
-                "beta" -> "aqualog-beta"
-                else -> "aqualog"
-            }
-            manifestPlaceholders["authScheme"] = authScheme
-            buildConfigField("String", "AUTH_REDIRECT_URL", "$authScheme://auth/callback".asBuildConfigString())
+            manifestPlaceholders["authScheme"] = "aqualog"
+            buildConfigField("String", "AUTH_REDIRECT_URL", "aqualog://auth/callback".asBuildConfigString())
+            buildConfigField("String", "DISTRIBUTION_TRACK", distributionTrack.asBuildConfigString())
             externalFields.forEach { field ->
-                buildConfigField("String", field, configuredValue("AQUALOG_${environment}_$field").asBuildConfigString())
+                buildConfigField("String", field, configuredValue("AQUALOG_$field").asBuildConfigString())
             }
         }
     }

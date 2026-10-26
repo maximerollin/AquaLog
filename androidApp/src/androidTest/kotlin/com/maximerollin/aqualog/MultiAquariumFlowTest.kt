@@ -44,31 +44,42 @@ class MultiAquariumFlowTest {
         application.grantPro(ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null))
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        waitForText("Salon")
-        composeRule.onNodeWithText("Settings").performClick()
-        waitForText("Pro active")
-        composeRule.onNodeWithText("Add Aquarium").performScrollTo().performClick()
-        waitForText("Aquarium name")
-        composeRule.onNodeWithText("Aquarium name").performTextInput("Crevettes")
-        composeRule.onNodeWithText("Volume").performTextInput("30")
-        composeRule.onNodeWithText("Save Aquarium").performClick()
+        try {
+            waitForText("Salon")
+            composeRule.onNodeWithText("Settings").performClick()
+            waitForText("Pro active")
+            composeRule.onNodeWithText("Add Aquarium").performScrollTo().performClick()
+            waitForText("Aquarium name")
+            composeRule.onNodeWithText("Aquarium name").performTextInput("Crevettes")
+            composeRule.onNodeWithText("Volume").performTextInput("30")
+            composeRule.onNodeWithText("Save Aquarium").performClick()
+            waitForEditorClosed()
 
-        waitForText("Crevettes")
-        composeRule.onNodeWithText("Salon").assertIsDisplayed()
-        composeRule.onNodeWithText("Edit Aquarium").performScrollTo().performClick()
-        waitForText("Aquarium name")
-        composeRule.onNodeWithText("Aquarium name").performTextClearance()
-        composeRule.onNodeWithText("Aquarium name").performTextInput("Nano")
-        composeRule.onNodeWithText("Save Aquarium").performClick()
-        waitForText("Nano")
-        composeRule.onNodeWithText("Archive Aquarium").performScrollTo().performClick()
-        waitForText("Salon")
+            waitForText("Crevettes")
+            composeRule.onNodeWithText("Salon").assertIsDisplayed()
+            composeRule.onNodeWithText("Edit Aquarium").performScrollTo().performClick()
+            waitForText("Aquarium name")
+            composeRule.onNodeWithText("Aquarium name").performTextClearance()
+            composeRule.onNodeWithText("Aquarium name").performTextInput("Nano")
+            composeRule.onNodeWithText("Save Aquarium").performClick()
+            waitForEditorClosed()
+            waitForText("Nano")
+            composeRule.onNodeWithText("Archive Aquarium").performScrollTo().performClick()
+            waitForText("Salon")
 
-        runBlocking {
-            val all = application.aquariumRepository.observeAquariums(includeArchived = true).first()
-            check(all.size == 2 && all.single { it.name == "Nano" }.isArchived)
+            runBlocking {
+                val all = application.aquariumRepository.observeAquariums(includeArchived = true).first()
+                check(all.size == 2 && all.single { it.name == "Nano" }.isArchived)
+            }
+        } finally {
+            scenario.close()
         }
-        scenario.close()
+    }
+
+    private fun waitForEditorClosed() {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasText("Aquarium name")).fetchSemanticsNodes().isEmpty()
+        }
     }
 
     private fun waitForText(text: String) {

@@ -135,5 +135,5 @@ open class AquaLogApplication : Application() {
     }
 
     open fun reviewCoordinator(activity: Activity): ReviewCoordinator =
-        androidReviewCoordinator(this, activity)
+        androidReviewCoordinator(this, activity, telemetry = productTelemetry)
 }

@@ -2,6 +2,12 @@ package com.maximerollin.aqualog
 
 import android.app.Activity
 import android.content.Context
+import androidx.lifecycle.lifecycleScope
+import com.maximerollin.aqualog.shared.ProductEvent
+import com.maximerollin.aqualog.shared.ProductTelemetry
+import com.maximerollin.aqualog.shared.DisabledProductTelemetry
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import com.google.android.play.core.review.ReviewManagerFactory
 import com.maximerollin.aqualog.shared.InAppReviewGateway
 import com.maximerollin.aqualog.shared.ReviewCoordinator
@@ -39,7 +45,7 @@ internal class AndroidReviewHistoryStore(context: Context) : ReviewHistoryStore 
     }
 }
 
-internal class GooglePlayInAppReviewGateway(activity: Activity) : InAppReviewGateway {
+internal class GooglePlayInAppReviewGateway(activity: Activity, private val telemetry: ProductTelemetry = DisabledProductTelemetry) : InAppReviewGateway {
     private val activityReference = WeakReference(activity)
 
     override fun requestReview() {
@@ -47,7 +53,12 @@ internal class GooglePlayInAppReviewGateway(activity: Activity) : InAppReviewGat
         val manager = ReviewManagerFactory.create(activity.applicationContext)
         manager.requestReviewFlow().addOnCompleteListener { request ->
             if (request.isSuccessful) {
+                if (activity.isFinishing || activity.isDestroyed) return@addOnCompleteListener
                 manager.launchReviewFlow(activity, request.result)
+                runCatching { telemetry.record(ProductEvent.ReviewRequested) }
+                (activity as? androidx.lifecycle.LifecycleOwner)?.lifecycleScope?.launch(Dispatchers.IO) {
+                    runCatching { notifyLogSnagReview() }
+                }
             }
         }
     }
@@ -57,9 +68,10 @@ internal fun androidReviewCoordinator(
     context: Context,
     activity: Activity,
     currentTimeMillis: () -> Long = System::currentTimeMillis,
+    telemetry: ProductTelemetry = DisabledProductTelemetry,
 ) = ReviewCoordinator(
     policy = ReviewEligibilityPolicy(),
     store = AndroidReviewHistoryStore(context),
-    gateway = GooglePlayInAppReviewGateway(activity),
+    gateway = GooglePlayInAppReviewGateway(activity, telemetry),
     currentTimeMillis = currentTimeMillis,
 )

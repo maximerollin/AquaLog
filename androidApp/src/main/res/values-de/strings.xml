@@ -246,7 +246,7 @@
     <string name="account_deleted_cleanup_description">Das Löschen der Cloud wird bestätigt und die Konto-Tokens werden gelöscht. Entfernen Sie die lokale Kopie vollständig, bevor Sie AquaLog erneut verwenden.</string>
     <string name="finish_local_cleanup">Beenden Sie die lokale Bereinigung</string>
     <string name="privacy_policy">Privatsphäre</string>
-    <string name="privacy_policy_local">AquaLog speichert Aquariendaten lokal. Wenn Käufe eingerichtet sind, verarbeitet RevenueCat Kaufinformationen und eine nicht direkt zuordenbare Kontokennung, um Pro zu verwalten. Aquariendaten werden nicht an RevenueCat gesendet. Exporte enthalten weder Kontotokens noch Abrechnungsdaten. Die veröffentlichte Datenschutzerklärung ist verfügbar, wenn sie eingerichtet wurde.</string>
+    <string name="privacy_policy_local">AquaLog speichert Aquariendaten lokal. Wenn Käufe eingerichtet sind, verarbeitet RevenueCat Kaufinformationen und eine nicht direkt zuordenbare Kontokennung, um Pro zu verwalten. Aquariendaten werden nicht an RevenueCat gesendet. Exporte enthalten weder Kontotokens noch Abrechnungsdaten. Die veröffentlichte Datenschutzerklärung ist verfügbar, wenn sie eingerichtet wurde. LogSnag erhält Zahlungsstatus und Anfragen zum Bewertungsdialog ohne Kontokennung oder Aquarieninhalte.</string>
     <string name="support">Unterstützung</string>
     <string name="support_unconfigured">Für diesen Build ist kein gehosteter Supportkanal konfiguriert. Ihre lokalen Aquarium-Daten und der tragbare Export bleiben weiterhin verfügbar.</string>
     <string name="close">Schließen</string>

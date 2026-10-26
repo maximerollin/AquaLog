@@ -68,7 +68,7 @@ internal data class ObservabilityConfiguration(
 }
 
 internal fun createProductTelemetry(context: Context, config: ObservabilityConfiguration): ProductTelemetry {
-    if (!config.hasPostHog) return DisabledProductTelemetry
+    if (!config.hasPostHog || BuildConfig.DEBUG || isFirebaseTestLab(context)) return DisabledProductTelemetry
     val postHogConfig = PostHogAndroidConfig(config.postHogApiKey, config.postHogHost).apply {
         captureApplicationLifecycleEvents = false
         captureDeepLinks = false
@@ -85,7 +85,7 @@ internal fun createProductTelemetry(context: Context, config: ObservabilityConfi
     }
     PostHogAndroid.setup(context.applicationContext, postHogConfig)
     return AllowlistedProductTelemetry(
-        AllowlistedAnalyticsAdapter(PostHogAnalyticsSink()),
+        AllowlistedAnalyticsAdapter(PostHogAnalyticsSink(releaseChannel = BuildConfig.DISTRIBUTION_TRACK)),
         enabled = true,
     )
 }
@@ -95,15 +95,20 @@ internal fun interface PostHogCaptureClient {
 }
 
 internal class PostHogAnalyticsSink(
+    private val releaseChannel: String? = null,
     private val client: PostHogCaptureClient = PostHogCaptureClient { name, properties ->
         PostHog.capture(event = name, properties = properties)
     },
 ) : AnalyticsPayloadSink {
     override fun send(payload: AnalyticsPayload) {
         require(ProductAnalyticsSchema.isAllowed(payload))
+        val tagged = if (releaseChannel == null) payload else payload.copy(
+            properties = payload.properties + ("release_channel" to AnalyticsValue.Category(releaseChannel)),
+        )
+        require(ProductAnalyticsSchema.isAllowed(tagged))
         client.capture(
-            payload.name,
-            payload.properties.mapValues { (_, value) ->
+            tagged.name,
+            tagged.properties.mapValues { (_, value) ->
                 when (value) {
                     is AnalyticsValue.Flag -> value.value
                     is AnalyticsValue.Category -> value.value
@@ -114,6 +119,7 @@ internal class PostHogAnalyticsSink(
 }
 
 internal fun createCrashReporter(context: Context, config: ObservabilityConfiguration): CrashReporter {
+    if (BuildConfig.DEBUG || isFirebaseTestLab(context)) return DisabledCrashReporter
     return createCrashReporter(config) {
         if (runCatching { FirebaseApp.getInstance() }.getOrNull() == null) {
             FirebaseApp.initializeApp(
@@ -214,3 +220,6 @@ private fun String.isSafeEndpoint(): Boolean = runCatching {
     parsed.protocol == "https" ||
         (parsed.protocol == "http" && parsed.host in setOf("localhost", "127.0.0.1", "10.0.2.2"))
 }.getOrDefault(false)
+
+internal fun isFirebaseTestLab(context: Context): Boolean =
+    android.provider.Settings.System.getString(context.contentResolver, "firebase.test.lab") == "true"

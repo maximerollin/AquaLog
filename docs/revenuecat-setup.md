@@ -1,64 +1,58 @@
-# Configuration RevenueCat pour AquaLog
+# RevenueCat : configuration AquaLog
 
-Choix du propriétaire : RevenueCat, le 26 octobre 2026. Le code Android utilise le SDK RevenueCat ; Google Play reste le store qui présente et traite le paiement. Supabase garde Auth, les Aquariums et le contrôle serveur du Droit Pro. Aucun projet externe n’a été créé ou déployé par cette migration.
+Configuration actuelle : **une app Play `com.maximerollin.aqualog`, un projet RevenueCat AquaLog et un projet Supabase**. Les pistes Play internal, alpha (test fermé) et production utilisent la même clé publique Google Play `goog_…`. Aucun projet « Beta » n’est nécessaire.
 
-## À créer maintenant
+## Produits et default offering
 
-1. Dans RevenueCat, créer **AquaLog Beta**, un projet dédié. Le futur projet de production sera distinct, avec ses propres clés et un autre secret d’identité.
-2. Ajouter une application **Google Play** avec le package **`com.maximerollin.aqualog.beta`**. Le package production est `com.maximerollin.aqualog` ; le build debug utilise `.dev` et ne doit pas emprunter les identifiants bêta.
-3. Dans Play Console, préparer l’application bêta, son candidat signé, les testeurs de licence et la piste fermée. Connecter à RevenueCat le compte de service Google demandé par son assistant de configuration et lui accorder les permissions Play requises. Cette clé JSON reste côté RevenueCat, jamais dans l’APK ou Git.
-4. Créer/importer les produits Play et les rattacher au droit RevenueCat **`aqualog_pro`** :
-   - **`aqualog_pro_annual`** : abonnement annuel, 14,99 € en France, avec offre d’essai gratuit de 14 jours ; phase récurrente annuelle après l’essai.
-   - **`aqualog_pro_lifetime`** : achat intégré non consommable à 34,99 € en France.
-   Les prix effectivement affichés viennent du catalogue Play localisé. L’app conserve son paywall Compose et récupère directement les produits ; un Offering RevenueCat n’est pas nécessaire pour cette version. Elle sélectionne explicitement l’option annuelle avec essai et ne la remplace pas silencieusement par un abonnement immédiatement payant.
-5. Dans les réglages de restauration RevenueCat, choisir **Keep with original App User ID**. Chaque achat reste attaché au compte AquaLog d’origine ; changer de compte Play/AquaLog ne doit pas transférer Pro à un autre compte.
-6. Configurer les **Google Real-time Developer Notifications** vers RevenueCat selon son assistant, puis vérifier la réception d’un événement réel de test. Le raccordement des notifications du store reste nécessaire pour les remboursements et changements survenant lorsque l’app est fermée.
+| Package dans l’offering | Produit Google Play | Prix de référence | Configuration |
+| --- | --- | --- | --- |
+| Yearly (`$rc_annual`) | `aqualog_pro_annual` | 14,99 €/an | Abonnement annuel, offre d’essai gratuit de 14 jours pour les utilisateurs éligibles |
+| Lifetime (`$rc_lifetime`) | `aqualog_pro_lifetime` | 34,99 € | Achat unique non consommable |
 
-## Clés et environnements
+Ne pas créer de package Monthly. Rattacher les deux produits au même entitlement **`aqualog_pro`** et à l’offering **`default`**, marqué current. Les prix affichés dans l’app viennent de Google Play ; configurer les prix locaux dans la console. Le code charge actuellement les produits par leurs identifiants canoniques : changer seulement l’offering ne change pas les produits disponibles dans l’app.
 
-La clé publique Android RevenueCat (`goog_…`) se renseigne via la propriété Gradle ou variable d’environnement **`AQUALOG_BETA_REVENUECAT_PUBLIC_API_KEY`**. Les préfixes `AQUALOG_DEV_` et `AQUALOG_PROD_` correspondent aux deux autres builds. Une clé identique entre environnements, une clé secrète `sk_…` ou une clé de Test Store `test_…` provoque un refus du build. Sans clé, la copie locale et le mode Free restent utilisables ; les achats sont indisponibles.
+1. Ajouter l’application **Google Play** dans RevenueCat, avec `com.maximerollin.aqualog`.
+2. Relier Google Play avec le compte de service et les autorisations demandées par RevenueCat ; activer les notifications serveur Play selon son assistant.
+3. Régler la restauration sur **Keep with original App User ID** pour éviter de transférer un achat vers un autre compte AquaLog. Créer/activer les produits dans Play, puis les importer dans RevenueCat. Pour l’annuel, activer le base plan annuel et son offre d’essai de 14 jours. Pour le lifetime, conserver un achat non consommable.
+4. Donner à l’app la clé publique SDK via `AQUALOG_REVENUECAT_PUBLIC_API_KEY`. Ni clé `sk_…`, ni clé Test Store `test_…` dans le build.
 
-Secrets à renseigner uniquement dans le projet Supabase bêta :
+## Supabase : secrets serveur
 
-| Nom | Valeur attendue |
-|---|---|
-| `REVENUECAT_SECRET_API_KEY` | Clé **secrète API v1** du projet RevenueCat bêta, autorisée à lire les clients et à les supprimer. |
-| `REVENUECAT_APP_USER_ID_SECRET` | Secret aléatoire d’au moins 32 caractères, unique à cet environnement. Il produit un identifiant HMAC opaque pour chaque compte Supabase. |
-| `REVENUECAT_ENVIRONMENT` | `sandbox` pour les transactions de test bêta ; `production` dans le backend de production. |
-| `REVENUECAT_WEBHOOK_AUTHORIZATION` | Valeur d’en-tête complète, par exemple `Bearer <secret-aléatoire>`, identique à celle du webhook RevenueCat. |
+| Secret | Usage |
+| --- | --- |
+| `REVENUECAT_SECRET_API_KEY` | Clé secrète API **V1** `sk_…` utilisée pour lire les droits côté serveur |
+| `REVENUECAT_APP_USER_ID_SECRET` | Secret aléatoire stable d’au moins 32 caractères pour dériver un identifiant opaque par compte ; ne pas changer après lancement |
+| `REVENUECAT_WEBHOOK_AUTHORIZATION` | Valeur Authorization forte et identique dans le webhook RevenueCat et Supabase |
+| `REVENUECAT_SANDBOX_APP_USER_IDS` | Liste séparée par espaces/virgules des identifiants opaques de comptes de test autorisés ; vide par défaut |
 
-Les secrets Supabase existants et `AQUALOG_DELETION_SIGNING_SECRET` restent requis. Ne transmettre aucune clé secrète dans une conversation ou un commit. La clé publique SDK est la seule clé RevenueCat embarquée.
+Les secrets Supabase existants et `AQUALOG_DELETION_SIGNING_SECRET` restent nécessaires. Aucune clé privilégiée dans l’APK ni dans Git. L’identifiant RevenueCat est dérivé côté serveur ; ne pas utiliser l’adresse email ni l’UUID Supabase dans l’allowlist.
 
-Ne pas changer le secret d’identité à la légère : la base refuse le remplacement de l’App User ID d’un compte déjà enregistré. Une rotation exige une migration des identités RevenueCat, pas seulement une nouvelle variable.
+Appliquer les migrations versionnées, puis déployer `migrate-initial-copy`, `verify-pro-purchase`, `revenuecat-webhook`, `delete-account` et `submit-feedback`. Ajouter `aqualog://auth/callback` aux redirections Auth et configurer Google et email OTP.
 
-## Raccordement Supabase
+Créer le webhook RevenueCat vers `https://<project>.supabase.co/functions/v1/revenuecat-webhook`, pour les événements sandbox **et** production, avec l’Authorization partagée. Cette fonction vérifie son secret de webhook ; les endpoints de l’app vérifient la session Supabase. Une notification ne suffit jamais à accorder Pro : le serveur relit les droits RevenueCat, vérifie le produit, le store, l’expiration et l’accès sandbox avant de stocker le résultat.
 
-Après identification explicite du projet bêta cible :
+## Tests et production dans le même projet
 
-1. Appliquer les migrations du dépôt, dont `20261026120000_revenuecat_pro_entitlements.sql`.
-2. Déployer `verify-pro-purchase`, `revenuecat-webhook` et la version actualisée de `delete-account`.
-3. Dans RevenueCat, créer un webhook vers **`https://<projet-beta>.supabase.co/functions/v1/revenuecat-webhook`**, avec l’en-tête Authorization ci-dessus et les événements sandbox du projet bêta. La fonction ne vérifie pas un JWT Supabase : elle vérifie son secret de webhook. Les fonctions appelées par l’app continuent à authentifier le compte AquaLog.
-4. Envoyer l’événement de test du dashboard et contrôler la réponse. Ce test de câblage ne remplace pas une transaction Google Play de test.
+Utiliser des comptes AquaLog de qualification distincts des comptes réels. Après leur connexion, relever leur identifiant opaque dans `revenuecat_customers` avec un accès administrateur. Ajouter les mêmes IDs :
 
-L’API interne `verify-pro-purchase` garde son URL mais n’accepte plus de token Play fourni par le client. Elle expose uniquement `purchaseIdentity` et `loadEntitlement`. Le serveur déduit l’identité du JWT Supabase, interroge RevenueCat et conserve le résultat dans `pro_entitlements`. Un callback SDK déclenche une relecture serveur ; son contenu ne débloque jamais Pro à lui seul.
+- dans RevenueCat → Project settings → General → Sandbox Testing Access → **Allowed App User IDs only** ;
+- dans le secret Supabase `REVENUECAT_SANDBOX_APP_USER_IDS`.
 
-Le webhook réinterroge lui aussi RevenueCat, au lieu d’appliquer directement les dates du payload. La base rejette les snapshots plus anciens, bloque les identités en cours de suppression et ne permet ni la lecture des identités de facturation ni l’écriture des Droits Pro par un client.
+Les achats production valides sont acceptés pour tous les comptes ; les achats sandbox seulement pour ces comptes de qualification. Ne pas utiliser l’ancien `REVENUECAT_ENVIRONMENT`. Ne pas réutiliser un compte de test comme compte client.
 
-Les anciens secrets `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`, `GOOGLE_PLAY_PACKAGE_NAME` et `GOOGLE_PLAY_ACCOUNT_HMAC_SECRET` ne sont plus utilisés par les fonctions de cette version. Les tables/migrations Play historiques sont conservées pour l’audit et les données existantes. Cette migration vise l’état actuel, sans clientèle Play payante qualifiée ; si des ventes réelles existent déjà, importer leurs reçus dans RevenueCat avant ce basculement et qualifier leur conservation.
+Dans Play Console, ajouter le compte Google aux **license testers**, puis installer depuis la piste internal/alpha et sélectionner une **carte de test**. La piste de test seule ne garantit pas l’absence de débit. Tester achat annuel/essai, renouvellement, annulation, expiration, lifetime, restauration et changement de compte avec le [protocole réel](google-play-test-transaction.md). Une simulation ou un achat Test Store RevenueCat ne valide pas Google Play.
 
-## Validation externe avant distribution
+## LogSnag
 
-Sur le candidat bêta signé installé depuis Play, avec un compte de licence :
+Décision du 26 octobre 2026 : LogSnag est réintroduit pour les paiements et les demandes de flux d’avis, après son retrait du périmètre initial V1.
 
-- S’authentifier dans AquaLog, acheter l’annuel, confirmer la feuille Play et contrôler `aqualog_pro` dans RevenueCat puis le Droit Pro Supabase.
-- Vérifier l’essai explicite, annulation du paiement, paiement en attente, renouvellement, annulation de l’abonnement avec accès jusqu’à expiration, grâce de paiement, expiration et remboursement/révocation.
-- Tester l’achat à vie et sa restauration après réinstallation ; tenter une restauration sous un autre compte AquaLog et vérifier son refus selon Keep with original App User ID.
-- Contrôler les deux chaînes de notifications : Google → RevenueCat et RevenueCat → Supabase, y compris un changement lorsque l’app est fermée, la répétition d’un webhook et une panne/reprise du backend.
-- Tester la suppression d’un compte : suppression du client RevenueCat avant les données/Auth Supabase, reprise après échec, plus de mapping après réussite. Cette suppression de données ne constitue pas l’annulation d’un abonnement Google Play ; l’utilisateur doit gérer celui-ci dans Play.
-- Vérifier les projets séparés et le refus d’une transaction sandbox en production. Le Test Store RevenueCat ne constitue pas une preuve Google Play.
+Créer le projet slug `aqualog`, avec les channels `payments`, `payments-test` et `reviews`.
 
-L’opt-in `GooglePlayTestTransactionTest` restaure via RevenueCat puis exige la confirmation du backend. Voir [le protocole](google-play-test-transaction.md).
+- Supabase uniquement : `LOGSNAG_PROJECT=aqualog`, `LOGSNAG_PRIVATE_TOKEN` limité aux channels de paiement.
+- Build Android : `AQUALOG_LOGSNAG_PROJECT=aqualog`, `AQUALOG_LOGSNAG_REVIEW_PUBLIC_TOKEN` de type **Public**, limité au projet et au channel `reviews`. Jamais le token privé serveur dans ces champs.
 
-Références : [SDK Android](https://www.revenuecat.com/docs/getting-started/installation/android), [identités](https://www.revenuecat.com/docs/customers/identifying-customers), [notifications du store](https://www.revenuecat.com/docs/platform-resources/server-notifications), [modèle Customer Info API v1](https://www.revenuecat.com/docs/api-v1/customer-info-model).
+Les paiements proviennent des webhooks authentifiés après réconciliation des droits. Les essais ont un libellé distinct. Les événements sandbox vont dans `payments-test`, sans notification push. Les reçus SHA-256 privés limitent les doublons et permettent les reprises ; une panne entre acceptation HTTP par LogSnag et enregistrement du reçu peut encore produire un doublon. Une indisponibilité LogSnag retourne 503 au webhook pour reprise sans annuler le droit déjà réconcilié.
 
-Les vérifications locales et leurs limites sont consignées dans [le bilan de migration](revenuecat-validation.md).
+Les avis indiquent une **demande de flux d’avis**, sans affirmer l’affichage du dialogue ni la publication d’un avis. Aucun identifiant de compte, email, contenu d’aquarium ou token de transaction n’est envoyé à LogSnag. Les événements d’avis sont best effort et ne bloquent jamais le flux Google Play. Voir [déploiement](deployment.md) pour la CI.
+
+Références : [sandbox RevenueCat](https://www.revenuecat.com/docs/projects/sandbox-access), [tests Play Billing](https://developer.android.com/google/play/billing/test), [tokens publics LogSnag](https://docs.logsnag.com/quick-start), [limites des avis Play](https://developer.android.com/guide/playcore/in-app-review/kotlin-java).

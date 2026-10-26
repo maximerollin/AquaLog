@@ -32,12 +32,16 @@ class InstallationQualificationTest {
     @get:Rule val composeRule = createEmptyComposeRule()
 
     @Test
-    fun portableCopy_survivesProcessDeath_andCrossesInstallationSandboxes(): Unit = runBlocking {
+    fun portableCopy_survivesProcessDeath_andImportsIntoFreshDatabase(): Unit = runBlocking {
         val arguments = InstrumentationRegistry.getArguments()
         assumeTrue("Run only through the #19 qualification protocol", arguments.getString("runInstallationQualification") == "true")
         val phase = arguments.getString("qualificationPhase") ?: error("Missing qualificationPhase")
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val database = createAquaLogDatabase(createAndroidDatabaseBuilder(context, "aqualog-qualification-19.db"))
+        val copy = arguments.getString("qualificationCopy") ?: error("Missing qualificationCopy")
+        require(copy in setOf("source", "destination"))
+        val runId = arguments.getString("qualificationRunId") ?: error("Missing qualificationRunId")
+        require(runId.matches(Regex("[A-Za-z0-9-]{1,48}")))
+        val database = createAquaLogDatabase(createAndroidDatabaseBuilder(context, "aqualog-qualification-19-$runId-$copy.db"))
         val repository = RoomAquariumRepository(database, { UUID.randomUUID().toString() }, System::currentTimeMillis)
         val portable = PortableDataService(database)
         try {
@@ -66,7 +70,7 @@ class InstallationQualificationTest {
                 "verify" -> Unit
                 else -> error("Unknown qualification phase")
             }
-            if (BuildConfig.APPLICATION_ID.endsWith(".dev")) {
+            if (copy == "source") {
                 assertTrue("Pending sync work must survive process death", repository.pendingSyncBatch().operations.isNotEmpty())
             }
             val aquarium = requireNotNull(repository.observeCurrentAquarium().first())

@@ -1,5 +1,7 @@
 package com.maximerollin.aqualog
 
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -92,7 +94,7 @@ class TaskFlowTest {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
-            composeRule.onNodeWithText("Tasks & reminders").performClick()
+            composeRule.onNode(hasText("Tasks & reminders") and hasClickAction()).performClick()
             composeRule.onNodeWithText("Change filter wool").performScrollTo().assertIsDisplayed()
             composeRule.onNodeWithText("Done").performScrollTo().assertIsDisplayed().performClick()
             composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -154,7 +156,7 @@ class TaskFlowTest {
             )
         }
         return ActivityScenario.launch<MainActivity>(MainActivity::class.java).also {
-            composeRule.onNodeWithText("Tasks & reminders").performClick()
+            composeRule.onNode(hasText("Tasks & reminders") and hasClickAction()).performClick()
         }
     }
 }

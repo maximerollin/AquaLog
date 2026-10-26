@@ -70,6 +70,18 @@ class ObservabilityInfrastructureTest {
     }
 
     @Test
+    fun `release channel distinguishes tracks without allowing free text`() {
+        val captured = mutableListOf<Map<String, Any>>()
+        val sink = PostHogAnalyticsSink("internal") { _, properties -> captured += properties }
+        sink.send(AnalyticsPayload("review_requested"))
+        assertEquals(listOf(mapOf<String, Any>("release_channel" to "internal")), captured)
+        assertFailsWith<IllegalArgumentException> {
+            PostHogAnalyticsSink("private@example.com") { _, _ -> error("must not send") }
+                .send(AnalyticsPayload("review_requested"))
+        }
+    }
+
+    @Test
     fun `Crashlytics sink forwards only closed technical context`() {
         val captured = mutableListOf<RawTechnicalFailure>()
         val sink = FirebaseTechnicalFailureSink(captured::add)

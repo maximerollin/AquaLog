@@ -58,13 +58,12 @@ Supabase project URL and anonymous client key. Supply them as Gradle properties
 or environment variables; never commit values to the repository:
 
 ```shell
-AQUALOG_DEV_SUPABASE_URL=https://PROJECT.supabase.co \
-AQUALOG_DEV_SUPABASE_ANON_KEY=PUBLIC_ANON_KEY \
+AQUALOG_SUPABASE_URL=https://PROJECT.supabase.co \
+AQUALOG_SUPABASE_ANON_KEY=PUBLIC_ANON_KEY \
 ./gradlew :androidApp:assembleDebug
 ```
 
-Configure `aqualog-dev://auth/callback` for development (`aqualog-beta://auth/callback`
-for beta and `aqualog://auth/callback` for production) as an allowed Auth redirect in Supabase and
+Configure `aqualog://auth/callback` as an allowed Auth redirect in Supabase and
 enable Google plus email OTP providers. The application uses PKCE, correlates
 the callback with an encrypted pending attempt, rejects implicit callback
 tokens, and exchanges only the matching one-time authorization code. Access and
@@ -99,12 +98,12 @@ The production Android adapter/two-store Chronology integration test runs agains
 the local backend from an emulator. Use the emulator host alias when building it:
 
 ```shell
-AQUALOG_DEV_SUPABASE_URL=http://10.0.2.2:57321 \
-AQUALOG_DEV_SUPABASE_ANON_KEY=LOCAL_PUBLIC_ANON_KEY \
+AQUALOG_SUPABASE_URL=http://10.0.2.2:57321 \
+AQUALOG_SUPABASE_ANON_KEY=LOCAL_PUBLIC_ANON_KEY \
 ./gradlew :androidApp:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.class=com.maximerollin.aqualog.SupabaseTwoDeviceSyncTest
 ```
 
 ## RevenueCat
 
-Les nouveaux builds utilisent RevenueCat pour les achats Google Play et Supabase pour confirmer le Droit Pro. Voir [la configuration bêta, les secrets serveur et les validations réelles attendues](docs/revenuecat-setup.md). Aucun projet RevenueCat n’est supposé déjà créé.
+Les nouveaux builds utilisent RevenueCat pour les achats Google Play et Supabase pour confirmer le Droit Pro. Voir [la configuration commune, les secrets serveur et les validations réelles attendues](docs/revenuecat-setup.md). Voir aussi [la CI et le déploiement](docs/deployment.md).

@@ -55,6 +55,7 @@ sealed interface ProductEvent {
     data class SessionSaved(val usage: SessionUsage) : ProductEvent
     data class TaskUsed(val usage: TaskUsage) : ProductEvent
     data class GraphViewed(val period: GraphPeriod) : ProductEvent
+    data object ReviewRequested : ProductEvent
     data object ExportCompleted : ProductEvent
     data class SyncFinished(
         val outcome: SyncOutcome,
@@ -136,6 +137,7 @@ object ProductAnalyticsSchema {
         "graph_viewed" to mapOf(
             "period" to PropertyRule(allowedCategories = GraphPeriod.entries.mapTo(mutableSetOf()) { it.wireValue }),
         ),
+        "review_requested" to emptyMap(),
         "export_completed" to emptyMap(),
         "sync_finished" to mapOf(
             "outcome" to PropertyRule(allowedCategories = SyncOutcome.entries.mapTo(mutableSetOf()) { it.wireValue }),
@@ -162,6 +164,7 @@ object ProductAnalyticsSchema {
                 "onboarding_progress",
                 mapOf("milestone" to AnalyticsValue.Category(event.milestone.wireValue)),
             )
+            ProductEvent.ReviewRequested -> AnalyticsPayload("review_requested")
             ProductEvent.FirstSessionSaved -> AnalyticsPayload("first_session_saved")
             is ProductEvent.SessionSaved -> AnalyticsPayload(
                 "session_saved",
@@ -206,7 +209,9 @@ object ProductAnalyticsSchema {
     }
 
     fun isAllowed(payload: AnalyticsPayload): Boolean {
-        val eventRules = rules[payload.name] ?: return false
+        val eventRules = (rules[payload.name] ?: return false) + mapOf(
+            "release_channel" to PropertyRule(required = false, allowedCategories = setOf("local", "internal", "alpha", "production")),
+        )
         if (!eventRules.keys.containsAll(payload.properties.keys)) return false
         if (eventRules.any { (key, rule) -> rule.required && key !in payload.properties }) return false
         if (!payload.properties.all { (key, value) ->

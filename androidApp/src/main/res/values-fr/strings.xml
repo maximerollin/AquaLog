@@ -246,7 +246,7 @@
     <string name="account_deleted_cleanup_description">La suppression du cloud est confirmée et les jetons de compte sont effacés. Terminez de supprimer la copie locale avant d\'utiliser à nouveau AquaLog.</string>
     <string name="finish_local_cleanup">Terminer le nettoyage local</string>
     <string name="privacy_policy">Confidentialité</string>
-    <string name="privacy_policy_local">AquaLog conserve les données des Aquariums sur cet appareil. Si les achats sont configurés, RevenueCat traite les informations d’achat et un identifiant de compte opaque pour gérer Pro. Les données des Aquariums ne sont pas envoyées à RevenueCat. Les exports excluent les jetons de compte et les données de facturation. La politique publiée est accessible si elle est configurée.</string>
+    <string name="privacy_policy_local">AquaLog conserve les données des Aquariums sur cet appareil. Si les achats sont configurés, RevenueCat traite les informations d’achat et un identifiant de compte opaque pour gérer Pro. Les données des Aquariums ne sont pas envoyées à RevenueCat. Les exports excluent les jetons de compte et les données de facturation. La politique publiée est accessible si elle est configurée. LogSnag reçoit les statuts de paiement et les demandes de flux d’avis, sans identifiant de compte ni contenu des Aquariums.</string>
     <string name="support">Assistance</string>
     <string name="support_unconfigured">Aucun canal de support hébergé n\'est configuré pour cette version. Vos données d\'aquarium locales et votre exportation portable restent disponibles.</string>
     <string name="close">Fermer</string>

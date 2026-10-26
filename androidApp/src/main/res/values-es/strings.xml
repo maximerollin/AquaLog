@@ -246,7 +246,7 @@
     <string name="account_deleted_cleanup_description">Se confirma la eliminación de la nube y se borran los tokens de la cuenta. Termine de eliminar la copia local antes de volver a utilizar AquaLog.</string>
     <string name="finish_local_cleanup">Terminar la limpieza local</string>
     <string name="privacy_policy">Privacidad</string>
-    <string name="privacy_policy_local">AquaLog guarda los datos de los Acuarios en el dispositivo. Si las compras están configuradas, RevenueCat procesa información de compra y un identificador opaco de cuenta para gestionar Pro. Los datos de los Acuarios no se envían a RevenueCat. Las exportaciones excluyen tokens de cuenta y datos de facturación. La política publicada está disponible si se ha configurado.</string>
+    <string name="privacy_policy_local">AquaLog guarda los datos de los Acuarios en el dispositivo. Si las compras están configuradas, RevenueCat procesa información de compra y un identificador opaco de cuenta para gestionar Pro. Los datos de los Acuarios no se envían a RevenueCat. Las exportaciones excluyen tokens de cuenta y datos de facturación. La política publicada está disponible si se ha configurado. LogSnag recibe estados de pago y solicitudes del flujo de reseñas sin identificadores de cuenta ni contenido de los Acuarios.</string>
     <string name="support">Soporte</string>
     <string name="support_unconfigured">No hay ningún canal de soporte alojado configurado para esta compilación. Los datos de su acuario local y la exportación portátil permanecen disponibles.</string>
     <string name="close">Cerrar</string>

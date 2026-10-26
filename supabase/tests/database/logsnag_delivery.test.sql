@@ -1,0 +1,18 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+select plan(8);
+set local role service_role;
+select is(public.claim_logsnag_delivery(repeat('a',64)), 'claimed', 'first delivery is claimed');
+select is(public.claim_logsnag_delivery(repeat('a',64)), 'busy', 'concurrent delivery cannot claim live lease');
+select public.complete_logsnag_delivery(repeat('a',64), false);
+select is(public.claim_logsnag_delivery(repeat('a',64)), 'claimed', 'failed send can retry');
+select public.complete_logsnag_delivery(repeat('a',64), true);
+select is(public.claim_logsnag_delivery(repeat('a',64)), 'sent', 'acknowledged delivery deduplicates');
+select public.complete_logsnag_delivery(repeat('a',64), false);
+select is(public.claim_logsnag_delivery(repeat('a',64)), 'sent', 'late failure cannot undo receipt');
+reset role;
+select ok(not has_function_privilege('anon','public.claim_logsnag_delivery(text)','execute'), 'anonymous cannot claim');
+select ok(not has_function_privilege('authenticated','public.complete_logsnag_delivery(text,boolean)','execute'), 'account cannot acknowledge');
+select ok(not has_table_privilege('authenticated','public.logsnag_deliveries','select'), 'receipts are private');
+select * from finish();
+rollback;

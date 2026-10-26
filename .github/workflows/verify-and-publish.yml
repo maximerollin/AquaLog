@@ -1,0 +1,161 @@
+name: Verify and publish
+
+on:
+  pull_request:
+  push:
+    branches: [main, integration/aqualog-v1]
+  workflow_dispatch:
+    inputs:
+      track:
+        description: Google Play track
+        type: choice
+        default: internal
+        options: [internal, alpha, production]
+      confirm_production:
+        description: Prepare a production draft (main only)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aqualog-${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.track || 'checks' }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+jobs:
+  verify:
+    name: JVM, Android, backend and configuration checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v6
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.108.0
+      - name: Install compile SDK
+        run: sdkmanager 'platforms;android-37'
+      - name: Bound Gradle memory
+        run: |
+          mkdir -p ~/.gradle
+          printf 'org.gradle.jvmargs=-Xmx4096M -Dfile.encoding=UTF-8\nkotlin.daemon.jvmargs=-Xmx2048M\norg.gradle.workers.max=2\norg.gradle.parallel=false\n' >> ~/.gradle/gradle.properties
+      - name: Unit tests, lint and release assembly
+        run: ./gradlew :shared:jvmTest :androidApp:testDebugUnitTest :androidApp:testReleaseUnitTest :androidApp:lintDebug :androidApp:lintRelease :androidApp:assembleRelease --console=plain
+      - name: Build configuration guards
+        run: python3 tools/qualification/test_environment_configuration.py
+      - name: Edge unit tests and types
+        run: |
+          deno test supabase/functions/migrate-initial-copy/service_test.ts supabase/functions/verify-pro-purchase/service_test.ts supabase/functions/delete-account/service_test.ts supabase/functions/submit-feedback/service_test.ts supabase/functions/_shared/logsnag_test.ts
+          deno check supabase/functions/migrate-initial-copy/index.ts supabase/functions/verify-pro-purchase/index.ts supabase/functions/revenuecat-webhook/index.ts supabase/functions/delete-account/index.ts supabase/functions/submit-feedback/index.ts
+      - name: Start isolated local backend
+        run: python3 tools/ci/backend.py prepare
+      - name: Database and authenticated HTTP integration
+        run: python3 tools/ci/backend.py verify
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Android instrumented checks
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_9a
+          avd-name: Pixel_9a
+          disable-animations: true
+          script: ./gradlew :androidApp:connectedDebugAndroidTest --console=plain
+      - name: Stop only this job's backend
+        if: always()
+        run: python3 tools/ci/backend.py stop
+      - name: Keep verification reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: verification-reports
+          path: |
+            shared/build/reports/tests/
+            androidApp/build/reports/
+            androidApp/build/outputs/androidTest-results/
+          retention-days: 14
+
+  publish:
+    name: Signed bundle to Google Play
+    if: github.event_name == 'workflow_dispatch'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.track == 'production' && 'google-play-production' || 'google-play-test' }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check production intent
+        env:
+          TRACK: ${{ inputs.track }}
+          CONFIRM: ${{ inputs.confirm_production }}
+          REF: ${{ github.ref }}
+        run: |
+          if [[ "$TRACK" == production && ( "$REF" != refs/heads/main || "$CONFIRM" != true ) ]]; then
+            echo 'Production drafts require main and explicit confirmation.'
+            exit 1
+          fi
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Install compile SDK
+        run: sdkmanager 'platforms;android-37'
+      - name: Build configured release bundle
+        env:
+          AQUALOG_SUPABASE_URL: ${{ secrets.AQUALOG_SUPABASE_URL }}
+          AQUALOG_SUPABASE_ANON_KEY: ${{ secrets.AQUALOG_SUPABASE_ANON_KEY }}
+          AQUALOG_REVENUECAT_PUBLIC_API_KEY: ${{ secrets.AQUALOG_REVENUECAT_PUBLIC_API_KEY }}
+          AQUALOG_POSTHOG_API_KEY: ${{ secrets.AQUALOG_POSTHOG_API_KEY }}
+          AQUALOG_POSTHOG_HOST: ${{ secrets.AQUALOG_POSTHOG_HOST }}
+          AQUALOG_FIREBASE_APPLICATION_ID: ${{ secrets.AQUALOG_FIREBASE_APPLICATION_ID }}
+          AQUALOG_FIREBASE_API_KEY: ${{ secrets.AQUALOG_FIREBASE_API_KEY }}
+          AQUALOG_FIREBASE_PROJECT_ID: ${{ secrets.AQUALOG_FIREBASE_PROJECT_ID }}
+          AQUALOG_PRIVACY_URL: ${{ secrets.AQUALOG_PRIVACY_URL }}
+          AQUALOG_SUPPORT_URL: ${{ secrets.AQUALOG_SUPPORT_URL }}
+          AQUALOG_LOGSNAG_PROJECT: ${{ secrets.AQUALOG_LOGSNAG_PROJECT }}
+          AQUALOG_LOGSNAG_REVIEW_PUBLIC_TOKEN: ${{ secrets.AQUALOG_LOGSNAG_REVIEW_PUBLIC_TOKEN }}
+          AQUALOG_DISTRIBUTION_TRACK: ${{ inputs.track }}
+        run: |
+          for name in AQUALOG_SUPABASE_URL AQUALOG_SUPABASE_ANON_KEY AQUALOG_REVENUECAT_PUBLIC_API_KEY AQUALOG_PRIVACY_URL AQUALOG_SUPPORT_URL; do
+            if [[ -z "${!name}" ]]; then echo "Missing $name"; exit 1; fi
+          done
+          ./gradlew :androidApp:bundleRelease -PAQUALOG_VERSION_CODE="$GITHUB_RUN_NUMBER" -PAQUALOG_VERSION_NAME="0.1.$GITHUB_RUN_NUMBER" --console=plain
+      - name: Sign and verify bundle
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/aqualog-upload.jks"
+          jarsigner -keystore "$RUNNER_TEMP/aqualog-upload.jks" -storepass "$SIGNING_STORE_PASSWORD" -keypass "$SIGNING_KEY_PASSWORD" -signedjar "$RUNNER_TEMP/aqualog-signed.aab" androidApp/build/outputs/bundle/release/androidApp-release.aab "$SIGNING_KEY_ALIAS"
+          jarsigner -verify "$RUNNER_TEMP/aqualog-signed.aab"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: signed-app-bundle
+          path: ${{ runner.temp }}/aqualog-signed.aab
+      - name: Upload to selected track
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+          packageName: com.maximerollin.aqualog
+          releaseFiles: ${{ runner.temp }}/aqualog-signed.aab
+          tracks: ${{ inputs.track }}
+          status: ${{ inputs.track == 'production' && 'draft' || 'completed' }}
+      - name: Remove temporary signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/aqualog-upload.jks"

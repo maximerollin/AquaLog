@@ -23,7 +23,7 @@ function date(value: unknown): number {
 /** Interpret the authenticated RevenueCat API response, never data submitted by the Android client. */
 export function interpretRevenueCatCustomer(
   value: unknown,
-  sandbox: boolean,
+  allowSandbox: boolean,
   now = Date.now(),
 ): RevenueCatEntitlement {
   const response = object(value);
@@ -44,7 +44,7 @@ export function interpretRevenueCatCustomer(
   const productId = rawProductId.split(":")[0];
   if (productId === annualProProductId) {
     const subscription = object(object(subscriber.subscriptions)[rawProductId]);
-    if (subscription.store !== "play_store" || subscription.is_sandbox !== sandbox || subscription.refunded_at != null) return inactive;
+    if (subscription.store !== "play_store" || !(subscription.is_sandbox === false || (allowSandbox && subscription.is_sandbox === true)) || subscription.refunded_at != null) return inactive;
     const expiry = Math.max(date(entitlement.expires_date), date(entitlement.grace_period_expires_date) || 0);
     const subscriptionExpiry = Math.max(date(subscription.expires_date), date(subscription.grace_period_expires_date) || 0);
     const until = Math.min(expiry, subscriptionExpiry);
@@ -56,7 +56,7 @@ export function interpretRevenueCatCustomer(
     if (!Array.isArray(purchases)) return inactive;
     const owned = purchases.some((value) => {
       const purchase = object(value);
-      return purchase.store === "play_store" && purchase.is_sandbox === sandbox && purchase.refunded_at == null &&
+      return purchase.store === "play_store" && (purchase.is_sandbox === false || (allowSandbox && purchase.is_sandbox === true)) && purchase.refunded_at == null &&
         Number.isFinite(date(purchase.purchase_date)) && date(purchase.purchase_date) <= now;
     });
     if (owned) return { active: true, productId, validUntilEpochMillis: null, observedAtEpochMillis: observedAt };
@@ -100,6 +100,7 @@ export async function handleProRequest(request: Request, dependencies: ProEndpoi
 
 export type WebhookDependencies = {
   authorization: string;
+  notify?(event: Record<string, unknown>): Promise<void>;
   accountIds(appUserIds: string[]): Promise<string[]>;
   refresh(accountId: string): Promise<unknown>;
 };
@@ -117,6 +118,7 @@ export async function handleRevenueCatWebhook(request: Request, dependencies: We
       .filter((id): id is string => typeof id === "string" && /^[0-9a-f]{64}$/.test(id));
     const accounts = await dependencies.accountIds([...new Set(ids)]);
     for (const account of new Set(accounts)) await dependencies.refresh(account);
+    if (accounts.length && dependencies.notify) await dependencies.notify(event);
     return Response.json({ received: true });
   } catch (_error) {
     return Response.json({ error: "RevenueCat update incomplete; retry" }, { status: 503 });
