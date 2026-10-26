@@ -104,3 +104,7 @@ AQUALOG_DEV_SUPABASE_ANON_KEY=LOCAL_PUBLIC_ANON_KEY \
 ./gradlew :androidApp:connectedDebugAndroidTest \
   -Pandroid.testInstrumentationRunnerArguments.class=com.maximerollin.aqualog.SupabaseTwoDeviceSyncTest
 ```
+
+## RevenueCat
+
+Les nouveaux builds utilisent RevenueCat pour les achats Google Play et Supabase pour confirmer le Droit Pro. Voir [la configuration bêta, les secrets serveur et les validations réelles attendues](docs/revenuecat-setup.md). Aucun projet RevenueCat n’est supposé déjà créé.

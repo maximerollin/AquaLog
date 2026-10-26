@@ -53,6 +53,21 @@ class EnvironmentConfigurationTest(unittest.TestCase):
                 self.assertNotEqual(0, result.returncode)
                 self.assertIn(f"{field} must differ", result.stdout + result.stderr)
 
+    def test_revenuecat_secret_and_test_store_keys_are_rejected(self):
+        for key in ("sk_synthetic_secret", "test_synthetic_store"):
+            with self.subTest(key=key):
+                result = self.configure(AQUALOG_BETA_REVENUECAT_PUBLIC_API_KEY=key)
+                self.assertNotEqual(0, result.returncode)
+                self.assertIn("RevenueCat requires a public Google Play SDK key", result.stdout + result.stderr)
+
+    def test_revenuecat_projects_cannot_share_their_sdk_key(self):
+        result = self.configure(
+            AQUALOG_BETA_REVENUECAT_PUBLIC_API_KEY="goog_synthetic_shared",
+            AQUALOG_PROD_REVENUECAT_PUBLIC_API_KEY="goog_synthetic_shared",
+        )
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("REVENUECAT_PUBLIC_API_KEY must differ", result.stdout + result.stderr)
+
     def test_unconfigured_and_separate_local_profiles_build(self):
         result = self.configure()
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)

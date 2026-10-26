@@ -236,7 +236,7 @@
     <string name="remove_local_copy">Rimuovi la copia locale</string>
     <string name="delete_account">Elimina account</string>
     <string name="delete_account_confirmation_title">Eliminare definitivamente il tuo account?</string>
-    <string name="delete_account_confirmation_description">Esporta prima se hai bisogno di una copia. Ciò rimuove i file cloud configurati, i dati cloud Aquarium, l\'accesso all\'account e quindi i dati locali Aquarium. Se un passaggio fallisce, AquaLog mantiene uno stato recuperabile e consente di riprovare.</string>
+    <string name="delete_account_confirmation_description">Esporta i dati se desideri una copia. Questa azione elimina file cloud, dati cliente RevenueCat, dati degli Acquari nel cloud, account e infine dati locali. I passaggi non riusciti possono essere ripetuti. Eliminare l’account non annulla un abbonamento Google Play; gestiscilo in Google Play.</string>
     <string name="delete_account_confirm">Elimina account e dati</string>
     <string name="account_deletion_pending">Eliminazione dell\'account incompleta</string>
     <string name="account_deletion_pending_description">I dati locali rimangono disponibili per l\'esportazione. La sincronizzazione è sospesa quindi non può ricreare i dati cloud.</string>
@@ -246,7 +246,7 @@
     <string name="account_deleted_cleanup_description">L\'eliminazione del cloud viene confermata e i token dell\'account vengono cancellati. Completa la rimozione della copia locale prima di utilizzare nuovamente AquaLog.</string>
     <string name="finish_local_cleanup">Termina la pulizia locale</string>
     <string name="privacy_policy">Privacy</string>
-    <string name="privacy_policy_local">AquaLog memorizza i record dell\'acquario localmente e non include mai token di account o dati di fatturazione nelle esportazioni portatili. Le operazioni cloud sono disabilitate quando questa build non è configurata. Nessun URL di privacy ospitato è configurato per questa build.</string>
+    <string name="privacy_policy_local">AquaLog conserva i dati degli Acquari sul dispositivo. Se gli acquisti sono configurati, RevenueCat tratta le informazioni sugli acquisti e un identificativo opaco dell’account per gestire Pro. I dati degli Acquari non vengono inviati a RevenueCat. Le esportazioni escludono token dell’account e dati di fatturazione. La politica pubblicata è disponibile se configurata.</string>
     <string name="support">Supporto</string>
     <string name="support_unconfigured">Nessun canale di supporto ospitato è configurato per questa build. I dati dell\'Acquario locale e l\'esportazione portatile rimangono disponibili.</string>
     <string name="close">Chiudi</string>

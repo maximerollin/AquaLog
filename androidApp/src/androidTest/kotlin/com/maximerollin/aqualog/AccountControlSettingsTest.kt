@@ -57,6 +57,7 @@ class AccountControlSettingsTest {
             composeRule.waitUntil(5_000) {
                 composeRule.onAllNodesWithText("Local-only").fetchSemanticsNodes().isNotEmpty()
             }
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Local-only"))
             composeRule.onNodeWithText("Local-only").assertIsDisplayed()
         } finally {
             scenario.close()

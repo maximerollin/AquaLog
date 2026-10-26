@@ -2,6 +2,7 @@ export interface AccountDeletionAdmin {
   isCompleted(accountId: string, operationKey: string): Promise<boolean>;
   authUserExists(accountId: string): Promise<boolean>;
   deleteFiles(accountId: string): Promise<void>;
+  deleteBillingData(accountId: string): Promise<void>;
   deleteDatabaseData(accessToken: string, operationKey: string): Promise<void>;
   deleteAuthUser(accountId: string): Promise<void>;
 }
@@ -14,7 +15,7 @@ export interface AccountFileStorage {
 export type AccountDeletionOutcome =
   | { status: "completed"; accountId: string }
   | { status: "authentication_required" }
-  | { status: "retryable_failure"; step: "files" | "database" | "auth" };
+  | { status: "retryable_failure"; step: "files" | "billing" | "database" | "auth" };
 
 export async function deleteAccount(
   admin: AccountDeletionAdmin,
@@ -26,6 +27,7 @@ export async function deleteAccount(
   if (!operationKey.trim() || operationKey.length > 200) throw new TypeError("A valid deletion operation key is required");
   if (await admin.isCompleted(accountId, operationKey)) {
     try { await admin.deleteFiles(accountId); } catch { return { status: "retryable_failure", step: "files" }; }
+    try { await admin.deleteBillingData(accountId); } catch { return { status: "retryable_failure", step: "billing" }; }
     if (!await admin.authUserExists(accountId)) return { status: "completed", accountId };
     try {
       await admin.deleteAuthUser(accountId);
@@ -36,6 +38,7 @@ export async function deleteAccount(
   }
   if (liveAuthenticatedAccountId !== accountId) return { status: "authentication_required" };
   try { await admin.deleteFiles(accountId); } catch { return { status: "retryable_failure", step: "files" }; }
+  try { await admin.deleteBillingData(accountId); } catch { return { status: "retryable_failure", step: "billing" }; }
   try { await admin.deleteDatabaseData(accessToken, operationKey); } catch { return { status: "retryable_failure", step: "database" }; }
   try { await admin.deleteAuthUser(accountId); } catch { return { status: "retryable_failure", step: "auth" }; }
   return { status: "completed", accountId };

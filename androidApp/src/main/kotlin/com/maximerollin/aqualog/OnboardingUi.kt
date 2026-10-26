@@ -592,7 +592,7 @@ private fun AccountSettingsDialog(
         AccountSettingsDialog.DELETE -> AlertDialog(
             onDismissRequest = viewModel::dismissAccountSettingsDialog,
             title = { Text(stringResource(R.string.delete_account_confirmation_title)) },
-            text = { Text(stringResource(R.string.delete_account_confirmation_description)) },
+            text = { Text(stringResource(R.string.delete_account_confirmation_description), modifier = Modifier.verticalScroll(rememberScrollState())) },
             confirmButton = {
                 TextButton(onClick = viewModel::deleteAccount) { Text(stringResource(R.string.delete_account_confirm)) }
             },
@@ -631,7 +631,7 @@ private fun InformationDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(title)) },
-        text = { Text(stringResource(body)) },
+        text = { Text(stringResource(body), modifier = Modifier.verticalScroll(rememberScrollState())) },
         confirmButton = {
             if (configuredUrl.startsWith("https://")) {
                 TextButton(onClick = { onOpenExternalUrl(configuredUrl) }) { Text(stringResource(openLabel)) }

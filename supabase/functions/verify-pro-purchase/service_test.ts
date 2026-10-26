@@ -1,488 +1,129 @@
-import {
-  decryptPurchaseToken,
-  encryptPurchaseToken,
-  interpretSubscription,
-  interpretLifetimePurchase,
-  playAccountIdentifier,
-  ProPurchaseVerificationDependencies,
-  revalidateStoredSubscription,
-  StoredProPurchase,
-  verifyAndClaimSubscription,
-} from "./service.ts";
+import { handleProRequest, handleRevenueCatWebhook, interpretRevenueCatCustomer, revenueCatAppUserId } from "./service.ts";
 
-Deno.test("a purchased non-consumable lifetime product grants without expiry or trial", () => {
-  const verified = interpretLifetimePurchase(
-    {
-      purchaseState: 0,
-      acknowledgementState: 0,
-      productId: "aqualog_pro_lifetime",
-      orderId: "GPA.LIFETIME",
-      refundableQuantity: 1,
-      obfuscatedExternalAccountId: "bound-account",
-    },
-    "aqualog_pro_lifetime",
-  );
-  if (!verified.active || verified.validUntil !== null || verified.validUntilEpochMillis !== null) {
-    throw new Error("the lifetime purchase was not represented as non-expiring");
-  }
-  if (!verified.requiresAcknowledgement || verified.obfuscatedExternalAccountId !== "bound-account") {
-    throw new Error("lifetime ownership or acknowledgement was lost");
-  }
-});
-
-Deno.test("lifetime endpoint scope accepts an omitted product id and rejects a conflicting one", () => {
-  const purchase = {
-    purchaseState: 0,
-    acknowledgementState: 1,
-    refundableQuantity: 1,
-    obfuscatedExternalAccountId: "bound-account",
-  };
-  if (!interpretLifetimePurchase(purchase, "aqualog_pro_lifetime").active) {
-    throw new Error("the product-scoped endpoint required an optional response product id");
-  }
-  if (
-    interpretLifetimePurchase(
-      { ...purchase, productId: "another_product" },
-      "aqualog_pro_lifetime",
-    ).active
-  ) {
-    throw new Error("a conflicting response product id granted lifetime Pro");
-  }
-});
-
-Deno.test("lifetime purchase is account-bound claimed and acknowledged before activation", async () => {
-  const accountId = "10000000-0000-0000-0000-000000000051";
-  const identity = await playAccountIdentifier(accountId, "test-hmac-secret");
-  const calls: string[] = [];
-  const outcome = await verifyAndClaimSubscription(
-    accountId,
-    { productId: "aqualog_pro_lifetime", purchaseToken: "lifetime-token" },
-    {
-      hmacSecret: "test-hmac-secret",
-      loadGoogleSubscription: async () => ({
-        purchaseState: 0,
-        acknowledgementState: 0,
-        productId: "aqualog_pro_lifetime",
-        orderId: "GPA.LIFETIME",
-        refundableQuantity: 1,
-        obfuscatedExternalAccountId: identity,
-      }),
-      claimPurchase: async (claim) => {
-        if (claim.validUntil !== null) throw new Error("lifetime claim has an expiry");
-        calls.push("claim");
-      },
-      acknowledgePurchase: async () => {
-        calls.push("acknowledge");
-        return true;
-      },
-      activateEntitlement: async () => {
-        calls.push("activate");
-      },
-    },
-  );
-  if (outcome.kind !== "verified" || calls.join(",") !== "claim,acknowledge,activate") {
-    throw new Error("lifetime entitlement skipped secure claim ordering");
-  }
-});
-
-const activeSubscription = {
-  subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
-  acknowledgementState: "ACKNOWLEDGEMENT_STATE_PENDING",
-  latestOrderId: "GPA.1234-5678-9012-34567",
-  lineItems: [{
-    productId: "aqualog_pro_annual",
-    expiryTime: "2027-10-21T12:00:00Z",
-  }],
-};
-
-Deno.test("an active matching Play subscription can grant Pro", () => {
-  const verified = interpretSubscription(
-    activeSubscription,
-    "aqualog_pro_annual",
-  );
-  if (!verified.active || verified.validUntilEpochMillis !== 1824120000000) {
-    throw new Error(
-      "the verified entitlement did not preserve the Play expiry",
-    );
-  }
-  if (!verified.requiresAcknowledgement) {
-    throw new Error("pending acknowledgement was ignored");
-  }
-});
-
-Deno.test("pending and mismatched Play subscriptions cannot grant Pro", () => {
-  const pending = interpretSubscription(
-    { ...activeSubscription, subscriptionState: "SUBSCRIPTION_STATE_PENDING" },
-    "aqualog_pro_annual",
-  );
-  if (pending.active) throw new Error("a pending purchase granted Pro");
-
-  const mismatched = interpretSubscription(
-    activeSubscription,
-    "another-product",
-  );
-  if (mismatched.active) throw new Error("a different product granted Pro");
-});
-
-Deno.test("active grace and canceled states grant only while Google expiry is after server now", () => {
-  const now = Date.parse("2027-01-01T00:00:00Z");
-  const states = [
-    "SUBSCRIPTION_STATE_ACTIVE",
-    "SUBSCRIPTION_STATE_IN_GRACE_PERIOD",
-    "SUBSCRIPTION_STATE_CANCELED",
-  ];
-  for (const subscriptionState of states) {
-    const future = interpretSubscription(
-      {
-        ...activeSubscription,
-        subscriptionState,
-        lineItems: [{
-          productId: "aqualog_pro_annual",
-          expiryTime: "2027-01-01T00:00:00.001Z",
-        }],
-      },
-      "aqualog_pro_annual",
-      now,
-    );
-    const exactNow = interpretSubscription(
-      {
-        ...activeSubscription,
-        subscriptionState,
-        lineItems: [{
-          productId: "aqualog_pro_annual",
-          expiryTime: "2027-01-01T00:00:00Z",
-        }],
-      },
-      "aqualog_pro_annual",
-      now,
-    );
-    const past = interpretSubscription(
-      {
-        ...activeSubscription,
-        subscriptionState,
-        lineItems: [{
-          productId: "aqualog_pro_annual",
-          expiryTime: "2026-12-31T23:59:59.999Z",
-        }],
-      },
-      "aqualog_pro_annual",
-      now,
-    );
-    if (!future.active || exactNow.active || past.active) {
-      throw new Error(
-        `${subscriptionState} ignored the server expiry boundary`,
-      );
-    }
-  }
-});
-
-Deno.test("stolen and unbound purchases are rejected before claim or acknowledgement", async () => {
-  const ownerAccountId = "10000000-0000-0000-0000-000000000011";
-  const attackerAccountId = "10000000-0000-0000-0000-000000000012";
-  const ownerIdentity = await playAccountIdentifier(
-    ownerAccountId,
-    "test-hmac-secret",
-  );
-  const store = new FakePurchaseStore();
-  const google = new FakeGooglePlay({
-    stolen: subscriptionFor(ownerIdentity),
-    unbound: subscriptionFor(undefined),
-  });
-  const dependencies = dependenciesFor(store, google);
-
-  const stolen = await verifyAndClaimSubscription(
-    attackerAccountId,
-    { productId: "aqualog_pro_annual", purchaseToken: "stolen-token" },
-    dependencies,
-  );
-  const unbound = await verifyAndClaimSubscription(
-    ownerAccountId,
-    { productId: "aqualog_pro_annual", purchaseToken: "unbound-token" },
-    dependencies,
-  );
-
-  if (stolen.kind !== "rejected" || unbound.kind !== "rejected") {
-    throw new Error("an unbound or stolen purchase was accepted");
-  }
-  if (store.claims.size !== 0 || google.acknowledgementCount !== 0) {
-    throw new Error("a rejected purchase reached claim or acknowledgement");
-  }
-});
-
-Deno.test("pending purchases are rejected while verified replays keep one owner", async () => {
-  const accountId = "10000000-0000-0000-0000-000000000011";
-  const identity = await playAccountIdentifier(accountId, "test-hmac-secret");
-  const store = new FakePurchaseStore();
-  const google = new FakeGooglePlay({
-    pending: {
-      ...subscriptionFor(identity),
-      subscriptionState: "SUBSCRIPTION_STATE_PENDING",
-    },
-    replay: subscriptionFor(identity),
-  });
-  const dependencies = dependenciesFor(store, google);
-
-  const pending = await verifyAndClaimSubscription(
-    accountId,
-    { productId: "aqualog_pro_annual", purchaseToken: "pending-token" },
-    dependencies,
-  );
-  const first = await verifyAndClaimSubscription(
-    accountId,
-    { productId: "aqualog_pro_annual", purchaseToken: "replay-token" },
-    dependencies,
-  );
-  const replay = await verifyAndClaimSubscription(
-    accountId,
-    { productId: "aqualog_pro_annual", purchaseToken: "replay-token" },
-    dependencies,
-  );
-
-  if (
-    pending.kind !== "rejected" || first.kind !== "verified" ||
-    replay.kind !== "verified"
-  ) {
-    throw new Error("pending or replay behavior is incorrect");
-  }
-  if (
-    store.claims.size !== 1 || store.claims.get("replay-token") !== accountId
-  ) {
-    throw new Error("replay changed purchase ownership");
-  }
-});
-
-Deno.test("acknowledgement failure keeps the safe claim and grants only after retry", async () => {
-  const accountId = "10000000-0000-0000-0000-000000000011";
-  const identity = await playAccountIdentifier(accountId, "test-hmac-secret");
-  const store = new FakePurchaseStore();
-  const google = new FakeGooglePlay({ retry: subscriptionFor(identity) });
-  google.failNextAcknowledgement = true;
-  const dependencies = dependenciesFor(store, google);
-
-  const failed = await verifyAndClaimSubscription(
-    accountId,
-    { productId: "aqualog_pro_annual", purchaseToken: "retry-token" },
-    dependencies,
-  );
-  if (failed.kind !== "acknowledgement_failed") {
-    throw new Error("ack failure was hidden");
-  }
-  if (
-    store.claims.get("retry-token") !== accountId ||
-    store.entitlements.has(accountId)
-  ) {
-    throw new Error("ack failure lost ownership or granted Pro");
-  }
-
-  const retried = await verifyAndClaimSubscription(
-    accountId,
-    { productId: "aqualog_pro_annual", purchaseToken: "retry-token" },
-    dependencies,
-  );
-  if (retried.kind !== "verified" || !store.entitlements.has(accountId)) {
-    throw new Error("safe claimed purchase did not recover on retry");
-  }
-});
-
-Deno.test("stored purchase tokens are encrypted and recoverable only with the server secret", async () => {
-  const encrypted = await encryptPurchaseToken(
-    "purchase-token-secret",
-    "test-hmac-secret",
-  );
-  if (encrypted.includes("purchase-token-secret")) {
-    throw new Error("purchase token was stored in plaintext");
-  }
-  const decrypted = await decryptPurchaseToken(encrypted, "test-hmac-secret");
-  if (decrypted !== "purchase-token-secret") {
-    throw new Error("encrypted token could not be recovered");
-  }
-  let wrongSecretRejected = false;
-  try {
-    await decryptPurchaseToken(encrypted, "another-secret");
-  } catch {
-    wrongSecretRejected = true;
-  }
-  if (!wrongSecretRejected) {
-    throw new Error("another secret decrypted the purchase token");
-  }
-});
-
-Deno.test("server reload preserves canceled access until Google marks it expired", async () => {
-  const accountId = "10000000-0000-0000-0000-000000000011";
-  const identity = await playAccountIdentifier(accountId, "test-hmac-secret");
-  const updates: Array<{ active: boolean; validUntil: string | null }> = [];
-  const stored = await storedPurchase(accountId);
-
-  const outcome = await revalidateStoredSubscription(accountId, stored, {
-    hmacSecret: "test-hmac-secret",
-    loadGoogleSubscription: async () => ({
-      ...subscriptionFor(identity),
-      subscriptionState: "SUBSCRIPTION_STATE_CANCELED",
-    }),
-    acknowledgePurchase: async () => true,
-    updateEntitlement: async (update) => {
-      updates.push({ active: update.active, validUntil: update.validUntil });
-    },
-  });
-
-  if (
-    outcome.kind !== "verified" || updates.length !== 1 || !updates[0].active
-  ) {
-    throw new Error(
-      "a canceled but unexpired Play subscription lost access early",
-    );
-  }
-});
-
-Deno.test("expired revoked and refunded Play states atomically deactivate stored entitlements", async () => {
-  const accountId = "10000000-0000-0000-0000-000000000011";
-  const identity = await playAccountIdentifier(accountId, "test-hmac-secret");
-  const stored = await storedPurchase(accountId);
-  const inactiveStates = ["expired", "revoked", "refunded"];
-
-  for (const state of inactiveStates) {
-    const updates: boolean[] = [];
-    const outcome = await revalidateStoredSubscription(accountId, stored, {
-      hmacSecret: "test-hmac-secret",
-      loadGoogleSubscription: async () => ({
-        ...subscriptionFor(identity),
-        subscriptionState: "SUBSCRIPTION_STATE_EXPIRED",
-        canceledStateContext: state === "expired"
-          ? { userInitiatedCancellation: {} }
-          : { developerInitiatedCancellation: {} },
-      }),
-      acknowledgePurchase: async () => true,
-      updateEntitlement: async (update) => {
-        updates.push(update.active);
-      },
-    });
-    if (outcome.kind !== "rejected" || updates.length !== 1 || updates[0]) {
-      throw new Error(`${state} Play state did not deactivate the entitlement`);
-    }
-  }
-});
-
-Deno.test("Google errors fail closed without overwriting the last server record", async () => {
-  const accountId = "10000000-0000-0000-0000-000000000011";
-  let updateCount = 0;
-  let failed = false;
-  try {
-    await revalidateStoredSubscription(
-      accountId,
-      await storedPurchase(accountId),
-      {
-        hmacSecret: "test-hmac-secret",
-        loadGoogleSubscription: async () => {
-          throw new Error("Google unavailable");
-        },
-        acknowledgePurchase: async () => true,
-        updateEntitlement: async () => {
-          updateCount += 1;
-        },
-      },
-    );
-  } catch {
-    failed = true;
-  }
-  if (!failed || updateCount !== 0) {
-    throw new Error("a transient Google error mutated the stored entitlement");
-  }
-});
-
-Deno.test("server reload never grants a stored claim before acknowledgement succeeds", async () => {
-  const accountId = "10000000-0000-0000-0000-000000000011";
-  const identity = await playAccountIdentifier(accountId, "test-hmac-secret");
-  let updateCount = 0;
-  const outcome = await revalidateStoredSubscription(
-    accountId,
-    await storedPurchase(accountId),
-    {
-      hmacSecret: "test-hmac-secret",
-      loadGoogleSubscription: async () => subscriptionFor(identity),
-      acknowledgePurchase: async () => false,
-      updateEntitlement: async () => {
-        updateCount += 1;
-      },
-    },
-  );
-  if (outcome.kind !== "acknowledgement_failed" || updateCount !== 0) {
-    throw new Error("an unacknowledged stored claim granted Pro");
-  }
-});
-
-async function storedPurchase(accountId: string): Promise<StoredProPurchase> {
+const now = Date.parse("2026-10-26T12:00:00Z");
+const future = "2027-10-26T12:00:00Z";
+const past = "2025-10-26T12:00:00Z";
+function assert(value: unknown, message = "assertion failed"): void { if (!value) throw new Error(message); }
+function customer(product = "aqualog_pro_annual", expiry: string | null = future, sandbox = true) {
   return {
-    accountId,
-    productId: "aqualog_pro_annual",
-    purchaseTokenHash: "stored-token-hash",
-    purchaseTokenCiphertext: await encryptPurchaseToken(
-      "stored-purchase-token",
-      "test-hmac-secret",
-    ),
+    request_date_ms: now,
+    subscriber: {
+      entitlements: { aqualog_pro: { product_identifier: product, expires_date: expiry, grace_period_expires_date: null as string | null } },
+      subscriptions: { [product]: { store: "play_store", is_sandbox: sandbox, expires_date: expiry, refunded_at: null as string | null, grace_period_expires_date: null as string | null, unsubscribe_detected_at: null as string | null } },
+      non_subscriptions: { [product]: [{ store: "play_store", is_sandbox: sandbox, purchase_date: past, refunded_at: null as string | null }] },
+    },
   };
 }
 
-function subscriptionFor(obfuscatedExternalAccountId: string | undefined) {
-  return {
-    ...activeSubscription,
-    externalAccountIdentifiers: obfuscatedExternalAccountId === undefined
-      ? undefined
-      : { obfuscatedExternalAccountId },
+Deno.test("RevenueCat annual entitlement uses server expiry including cancelled-but-paid access", () => {
+  const value = customer();
+  value.subscriber.subscriptions.aqualog_pro_annual.unsubscribe_detected_at = past;
+  const result = interpretRevenueCatCustomer(value, true, now);
+  assert(result.active && result.validUntilEpochMillis === Date.parse(future));
+});
+Deno.test("expired, refunded, foreign-store and cross-environment purchases cannot grant Pro", () => {
+  const expired = customer("aqualog_pro_annual", past);
+  assert(!interpretRevenueCatCustomer(expired, true, now).active);
+  for (const kind of ["refund", "store", "environment"]) {
+    const value = customer();
+    const subscription = value.subscriber.subscriptions.aqualog_pro_annual;
+    if (kind === "refund") subscription.refunded_at = past;
+    if (kind === "store") subscription.store = "app_store";
+    if (kind === "environment") subscription.is_sandbox = false;
+    assert(!interpretRevenueCatCustomer(value, true, now).active, kind);
+  }
+});
+Deno.test("grace period extends access only as far as both authoritative records agree", () => {
+  const value = customer("aqualog_pro_annual", past);
+  value.subscriber.entitlements.aqualog_pro.grace_period_expires_date = future;
+  value.subscriber.subscriptions.aqualog_pro_annual.grace_period_expires_date = future;
+  assert(interpretRevenueCatCustomer(value, true, now).active);
+  value.subscriber.subscriptions.aqualog_pro_annual.grace_period_expires_date = null;
+  assert(!interpretRevenueCatCustomer(value, true, now).active);
+});
+Deno.test("base-plan identifiers normalize to the canonical product", () => {
+  const result = interpretRevenueCatCustomer(customer("aqualog_pro_annual:annual"), true, now);
+  assert(result.active && result.productId === "aqualog_pro_annual");
+});
+Deno.test("lifetime requires a real non-subscription purchase and null expiry", () => {
+  const value = customer("aqualog_pro_lifetime", null);
+  assert(interpretRevenueCatCustomer(value, true, now).active);
+  value.subscriber.non_subscriptions.aqualog_pro_lifetime = [];
+  assert(!interpretRevenueCatCustomer(value, true, now).active);
+  assert(!interpretRevenueCatCustomer(customer("aqualog_pro_lifetime", future), true, now).active);
+});
+Deno.test("refunded and wrong-environment lifetime purchases are inactive", () => {
+  const value = customer("aqualog_pro_lifetime", null);
+  value.subscriber.non_subscriptions.aqualog_pro_lifetime[0].refunded_at = past;
+  assert(!interpretRevenueCatCustomer(value, true, now).active);
+  assert(!interpretRevenueCatCustomer(customer("aqualog_pro_lifetime", null, false), true, now).active);
+});
+Deno.test("missing Pro entitlement revokes access; unknown products and annual null expiry do not grant", () => {
+  const value = customer();
+  delete (value.subscriber.entitlements as Record<string, unknown>).aqualog_pro;
+  assert(!interpretRevenueCatCustomer(value, true, now).active);
+  assert(!interpretRevenueCatCustomer(customer("other_product"), true, now).active);
+  assert(!interpretRevenueCatCustomer(customer("aqualog_pro_annual", null), true, now).active);
+});
+Deno.test("malformed RevenueCat snapshots fail instead of granting or erasing state", () => {
+  for (const value of [null, {}, { request_date_ms: now + 120_000 }, { ...customer(), subscriber: {} }]) {
+    let failed = false;
+    try { interpretRevenueCatCustomer(value, true, now); } catch { failed = true; }
+    assert(failed);
+  }
+});
+Deno.test("opaque customer IDs are stable, account scoped, and separated by environment secret", async () => {
+  const secret = "a".repeat(64);
+  const first = await revenueCatAppUserId("account-a", secret);
+  assert(/^[0-9a-f]{64}$/.test(first));
+  assert(first === await revenueCatAppUserId("account-a", secret));
+  assert(first !== await revenueCatAppUserId("account-b", secret));
+  assert(first !== await revenueCatAppUserId("account-a", "b".repeat(64)));
+});
+Deno.test("Pro HTTP boundary authenticates and never accepts claimed account IDs or receipt payloads", async () => {
+  const accounts: string[] = [];
+  const dependencies = {
+    authenticatedAccountId: () => Promise.resolve("account-a"),
+    identity: (id: string) => { accounts.push(id); return Promise.resolve("opaque"); },
+    refresh: (id: string) => { accounts.push(id); return Promise.resolve({ active: false }); },
   };
-}
-
-class FakeGooglePlay {
-  acknowledgementCount = 0;
-  failNextAcknowledgement = false;
-
-  constructor(private readonly subscriptions: Record<string, unknown>) {}
-
-  async subscription(purchaseToken: string): Promise<unknown> {
-    return this.subscriptions[purchaseToken.replace("-token", "")];
+  const request = (body: unknown) => new Request("https://edge.invalid", { method: "POST", body: JSON.stringify(body) });
+  assert((await handleProRequest(request({ action: "purchaseIdentity" }), dependencies)).status === 200);
+  assert((await handleProRequest(request({ action: "loadEntitlement" }), dependencies)).status === 200);
+  assert(accounts.join() === "account-a,account-a");
+  assert((await handleProRequest(request(null), dependencies)).status === 400);
+  for (const body of [{ action: "loadEntitlement", accountId: "account-b" }, { productId: "aqualog_pro_annual", purchaseToken: "fake" }]) {
+    assert((await handleProRequest(request(body), dependencies)).status === 400);
   }
-
-  async acknowledge(): Promise<boolean> {
-    this.acknowledgementCount += 1;
-    if (this.failNextAcknowledgement) {
-      this.failNextAcknowledgement = false;
-      return false;
-    }
-    return true;
-  }
-}
-
-class FakePurchaseStore {
-  readonly claims = new Map<string, string>();
-  readonly entitlements = new Set<string>();
-
-  async claim(accountId: string, purchaseToken: string): Promise<void> {
-    const owner = this.claims.get(purchaseToken);
-    if (owner !== undefined && owner !== accountId) {
-      throw new Error("purchase belongs to another account");
-    }
-    this.claims.set(purchaseToken, accountId);
-  }
-
-  async activate(accountId: string, purchaseToken: string): Promise<void> {
-    if (this.claims.get(purchaseToken) !== accountId) {
-      throw new Error("purchase is not claimed");
-    }
-    this.entitlements.add(accountId);
-  }
-}
-
-function dependenciesFor(
-  store: FakePurchaseStore,
-  google: FakeGooglePlay,
-): ProPurchaseVerificationDependencies {
-  return {
-    hmacSecret: "test-hmac-secret",
-    loadGoogleSubscription: (purchaseToken) =>
-      google.subscription(purchaseToken),
-    claimPurchase: ({ accountId, purchaseToken }) =>
-      store.claim(accountId, purchaseToken),
-    acknowledgePurchase: () => google.acknowledge(),
-    activateEntitlement: ({ accountId, purchaseToken }) =>
-      store.activate(accountId, purchaseToken),
+  assert((await handleProRequest(request({ action: "loadEntitlement" }), { ...dependencies, authenticatedAccountId: () => Promise.resolve(null) })).status === 401);
+});
+Deno.test("RevenueCat API failure is retryable and cannot be reported as verified", async () => {
+  const result = await handleProRequest(new Request("https://edge.invalid", { method: "POST", body: '{"action":"loadEntitlement"}' }), {
+    authenticatedAccountId: () => Promise.resolve("a"), identity: () => Promise.resolve("id"),
+    refresh: () => Promise.reject(new Error("upstream credentials must not leak")),
+  });
+  assert(result.status === 503 && !(await result.text()).includes("credentials"));
+});
+Deno.test("webhook authenticates, deduplicates accounts and re-reads state for every event", async () => {
+  const id = "a".repeat(64);
+  let reads = 0;
+  const dependencies = {
+    authorization: "Bearer webhook-secret",
+    accountIds: (ids: string[]) => { assert(ids.join() === id); return Promise.resolve(["account-a", "account-a"]); },
+    refresh: (_account: string) => { reads++; return Promise.resolve({ active: false }); },
   };
-}
+  const request = (authorization: string) => new Request("https://edge.invalid", {
+    method: "POST", headers: { authorization },
+    body: JSON.stringify({ event: { type: "RENEWAL", app_user_id: id, aliases: [id], expiration_at_ms: now + 99_999_999 } }),
+  });
+  assert((await handleRevenueCatWebhook(request("Bearer wrong"), dependencies)).status === 401 && reads === 0);
+  assert((await handleRevenueCatWebhook(request(dependencies.authorization), dependencies)).status === 200);
+  assert((await handleRevenueCatWebhook(request(dependencies.authorization), dependencies)).status === 200);
+  assert(reads === 2);
+});
+Deno.test("webhook retries on reconciliation failure and ignores deleted or unknown accounts", async () => {
+  const request = () => new Request("https://edge.invalid", { method: "POST", headers: { authorization: "secret" }, body: JSON.stringify({ event: { app_user_id: "a".repeat(64) } }) });
+  const dependencies = { authorization: "secret", accountIds: () => Promise.resolve(["a"]), refresh: () => Promise.reject(new Error("unavailable")) };
+  assert((await handleRevenueCatWebhook(request(), dependencies)).status === 503);
+  assert((await handleRevenueCatWebhook(request(), { ...dependencies, accountIds: () => Promise.resolve([]) })).status === 200);
+});

@@ -236,7 +236,7 @@
     <string name="remove_local_copy">Lokale Kopie entfernen</string>
     <string name="delete_account">Konto löschen</string>
     <string name="delete_account_confirmation_title">Ihr Konto dauerhaft löschen?</string>
-    <string name="delete_account_confirmation_description">Exportieren Sie zuerst, wenn Sie eine Kopie benötigen. Dadurch werden konfigurierte Cloud-Dateien, Cloud-Aquarium-Daten, Kontozugriff und dann lokale Aquarium-Daten entfernt. Wenn ein Schritt fehlschlägt, behält AquaLog den wiederherstellbaren Status bei und ermöglicht Ihnen einen erneuten Versuch.</string>
+    <string name="delete_account_confirmation_description">Exportieren Sie Ihre Daten, wenn Sie eine Kopie benötigen. Cloud-Dateien, RevenueCat-Kundendaten, Aquariendaten in der Cloud, das Konto und anschließend lokale Daten werden gelöscht. Fehlgeschlagene Schritte können wiederholt werden. Das Löschen des Kontos kündigt kein Google-Play-Abonnement; verwalten Sie es in Google Play.</string>
     <string name="delete_account_confirm">Konto und Daten löschen</string>
     <string name="account_deletion_pending">Kontolöschung unvollständig</string>
     <string name="account_deletion_pending_description">Lokale Daten bleiben für den Export verfügbar. Die Synchronisierung ist angehalten, sodass keine Cloud-Daten neu erstellt werden können.</string>
@@ -246,7 +246,7 @@
     <string name="account_deleted_cleanup_description">Das Löschen der Cloud wird bestätigt und die Konto-Tokens werden gelöscht. Entfernen Sie die lokale Kopie vollständig, bevor Sie AquaLog erneut verwenden.</string>
     <string name="finish_local_cleanup">Beenden Sie die lokale Bereinigung</string>
     <string name="privacy_policy">Privatsphäre</string>
-    <string name="privacy_policy_local">AquaLog speichert Aquarium-Datensätze lokal und bezieht niemals Konto-Tokens oder Rechnungsdaten in tragbare Exporte ein. Cloud-Vorgänge sind deaktiviert, wenn dieser Build nicht konfiguriert ist. Für diesen Build ist keine gehostete Datenschutz-URL konfiguriert.</string>
+    <string name="privacy_policy_local">AquaLog speichert Aquariendaten lokal. Wenn Käufe eingerichtet sind, verarbeitet RevenueCat Kaufinformationen und eine nicht direkt zuordenbare Kontokennung, um Pro zu verwalten. Aquariendaten werden nicht an RevenueCat gesendet. Exporte enthalten weder Kontotokens noch Abrechnungsdaten. Die veröffentlichte Datenschutzerklärung ist verfügbar, wenn sie eingerichtet wurde.</string>
     <string name="support">Unterstützung</string>
     <string name="support_unconfigured">Für diesen Build ist kein gehosteter Supportkanal konfiguriert. Ihre lokalen Aquarium-Daten und der tragbare Export bleiben weiterhin verfügbar.</string>
     <string name="close">Schließen</string>

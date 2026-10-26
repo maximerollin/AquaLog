@@ -30,9 +30,9 @@ class GooglePlayTestTransactionTest {
             as TestAquaLogApplication
         testApplication.resetRepository()
         val scenario = ActivityScenario.launch(MainActivity::class.java)
-        lateinit var gateway: GooglePlayBillingGateway
+        lateinit var gateway: RevenueCatBillingGateway
         scenario.onActivity { activity ->
-            gateway = GooglePlayBillingGateway(activity.applicationContext).also { it.attach(activity) }
+            gateway = RevenueCatBillingGateway(activity.applicationContext).also { it.attach(activity) }
         }
         val application = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
         val tokenStorage = AndroidSecureTokenStorage(application)
@@ -69,7 +69,7 @@ class GooglePlayTestTransactionTest {
         val result = coordinator.restorePurchase()
 
         assertTrue("Expected the configured annual product", offer.productId == "aqualog_pro_annual")
-        assertTrue("The real Play receipt must be verified by the server", result is ProPurchaseOutcome.Entitled)
+        assertTrue("The real RevenueCat entitlement must be verified by the server", result is ProPurchaseOutcome.Entitled)
         scenario.close()
     }
 }

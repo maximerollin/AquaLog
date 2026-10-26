@@ -10,7 +10,7 @@ fun configuredValue(name: String) = providers.gradleProperty(name)
 val externalFields = listOf(
     "SUPABASE_URL", "SUPABASE_ANON_KEY", "PRIVACY_URL", "SUPPORT_URL",
     "POSTHOG_API_KEY", "POSTHOG_HOST", "FIREBASE_APPLICATION_ID", "FIREBASE_API_KEY",
-    "FIREBASE_PROJECT_ID", "FEEDBACK_URL",
+    "FIREBASE_PROJECT_ID", "FEEDBACK_URL", "REVENUECAT_PUBLIC_API_KEY",
 )
 val environments = listOf("DEV", "BETA", "PROD")
 require(externalFields.none { configuredValue("AQUALOG_$it").isNotBlank() }) {
@@ -26,12 +26,18 @@ environments.forEach { environment ->
         require(configured == 0 || configured == fields.size) { "$environment $service configuration is incomplete" }
     }
 }
-listOf("SUPABASE_URL", "SUPABASE_ANON_KEY", "POSTHOG_API_KEY", "FIREBASE_APPLICATION_ID", "FIREBASE_PROJECT_ID")
+listOf("SUPABASE_URL", "SUPABASE_ANON_KEY", "POSTHOG_API_KEY", "FIREBASE_APPLICATION_ID", "FIREBASE_PROJECT_ID", "REVENUECAT_PUBLIC_API_KEY")
     .forEach { field ->
         val values = environments.map { configuredValue("AQUALOG_${it}_$field").trim().trimEnd('/') }
             .filter(String::isNotBlank)
         require(values.distinct().size == values.size) { "$field must differ between environments" }
     }
+environments.forEach { environment ->
+    val key = configuredValue("AQUALOG_${environment}_REVENUECAT_PUBLIC_API_KEY")
+    require(key.isBlank() || key.startsWith("goog_")) {
+        "$environment RevenueCat requires a public Google Play SDK key (goog_), never a secret or Test Store key"
+    }
+}
 fun String.asBuildConfigString(): String = "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {
@@ -112,7 +118,7 @@ dependencies {
     implementation(libs.androidx.fragment)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.google.play.billing)
+    implementation(libs.revenuecat.purchases)
     implementation(libs.google.play.review)
     implementation(libs.posthog.android)
     implementation(libs.firebase.crashlytics)

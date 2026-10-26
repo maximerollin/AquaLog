@@ -14,7 +14,7 @@ androidx-test-ext = "1.3.0"
 espresso = "3.7.0"
 testServices = "1.6.0"
 fragment = "1.8.9"
-billing = "9.1.0"
+revenuecat = "10.29.0"
 play-review = "2.0.2"
 posthog = "3.58.0"
 firebase-crashlytics = "20.1.1"
@@ -44,7 +44,7 @@ androidx-test-services = { module = "androidx.test.services:test-services", vers
 androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
-google-play-billing = { module = "com.android.billingclient:billing", version.ref = "billing" }
+revenuecat-purchases = { module = "com.revenuecat.purchases:purchases", version.ref = "revenuecat" }
 google-play-review = { module = "com.google.android.play:review", version.ref = "play-review" }
 posthog-android = { module = "com.posthog:posthog-android", version.ref = "posthog" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics", version.ref = "firebase-crashlytics" }

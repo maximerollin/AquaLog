@@ -118,10 +118,10 @@ open class AquaLogApplication : Application() {
         )
     }
 
-    private val googlePlayBillingGateway by lazy { GooglePlayBillingGateway(this) }
+    private val revenueCatBillingGateway by lazy { RevenueCatBillingGateway(this) }
     private val defaultProPurchaseCoordinator by lazy {
         ProPurchaseCoordinator(
-            billingGateway = googlePlayBillingGateway,
+            billingGateway = revenueCatBillingGateway,
             purchaseVerifier = SupabaseProPurchaseVerifier(
                 configuration = SupabaseConfiguration.fromBuildConfig(),
                 sessionProvider = accountSessionProvider,
@@ -130,7 +130,7 @@ open class AquaLogApplication : Application() {
     }
 
     open fun proPurchaseCoordinator(activity: Activity): ProPurchaseCoordinator {
-        googlePlayBillingGateway.attach(activity)
+        revenueCatBillingGateway.attach(activity)
         return defaultProPurchaseCoordinator
     }
 

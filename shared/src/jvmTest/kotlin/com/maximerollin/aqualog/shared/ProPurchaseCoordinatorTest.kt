@@ -4,6 +4,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 
@@ -180,12 +181,67 @@ class ProPurchaseCoordinatorTest {
         )
         assertEquals(LIFETIME_PRO_PRODUCT_ID, billing.lastLaunchedProductId)
     }
+    @Test
+    fun `RevenueCat callback grants only the entitlement re-read from the authenticated server`() = runTest {
+        val expected = ProEntitlement(ANNUAL_PRO_PRODUCT_ID, 1_900_000_000_000L)
+        val verifier = DeterministicPurchaseVerifier(
+            result = PurchaseVerificationResult.Rejected("client receipt must not be used"),
+            loadedEntitlement = PurchaseVerificationResult.Verified(expected),
+        )
+        val coordinator = ProPurchaseCoordinator(DeterministicBillingGateway(), verifier)
+        assertEquals(ProPurchaseOutcome.Entitled(expected), coordinator.resolve(PlayPurchaseUpdate.CustomerInfoUpdated))
+        assertEquals(null, verifier.lastPurchaseToken)
+        verifier.loadedEntitlement = PurchaseVerificationResult.Rejected("revoked")
+        assertIs<ProPurchaseOutcome.Failed>(coordinator.resolve(PlayPurchaseUpdate.CustomerInfoUpdated))
+        assertFalse(coordinator.hasProEntitlement)
+    }
+
+    @Test
+    fun `RevenueCat callback cannot grant when server verification is unavailable`() = runTest {
+        val verifier = DeterministicPurchaseVerifier(
+            result = PurchaseVerificationResult.Rejected("unused"),
+            loadedEntitlement = PurchaseVerificationResult.Failed("RevenueCat unavailable"),
+        )
+        val coordinator = ProPurchaseCoordinator(DeterministicBillingGateway(), verifier)
+        assertIs<ProPurchaseOutcome.Failed>(coordinator.resolve(PlayPurchaseUpdate.CustomerInfoUpdated))
+        assertFalse(coordinator.hasProEntitlement)
+    }
+
+    @Test
+    fun `restoration identifies the authenticated account before touching the store`() = runTest {
+        val billing = DeterministicBillingGateway(PlayPurchaseUpdate.CustomerInfoUpdated)
+        val authenticated = DeterministicPurchaseVerifier(
+            result = PurchaseVerificationResult.Rejected("unused"),
+            accountIdentity = PurchaseAccountIdentityResult.Available("account-a-opaque"),
+            loadedEntitlement = PurchaseVerificationResult.Verified(ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null)),
+        )
+        assertIs<ProPurchaseOutcome.Entitled>(ProPurchaseCoordinator(billing, authenticated).restorePurchase())
+        assertEquals("account-a-opaque", billing.lastRestoredAccountId)
+        val activeCoordinator = ProPurchaseCoordinator(billing, authenticated)
+        assertIs<ProPurchaseOutcome.Entitled>(activeCoordinator.restorePurchase())
+        authenticated.accountIdentity = PurchaseAccountIdentityResult.AuthenticationRequired
+        assertEquals(ProPurchaseOutcome.AuthenticationRequired, activeCoordinator.restorePurchase())
+        assertFalse(activeCoordinator.hasProEntitlement)
+        val unauthenticated = DeterministicPurchaseVerifier(
+            result = PurchaseVerificationResult.Rejected("unused"),
+            accountIdentity = PurchaseAccountIdentityResult.AuthenticationRequired,
+        )
+        billing.lastRestoredAccountId = null
+        assertEquals(ProPurchaseOutcome.AuthenticationRequired, ProPurchaseCoordinator(billing, unauthenticated).restorePurchase())
+        assertEquals(null, billing.lastRestoredAccountId)
+    }
+
 }
 
 private class DeterministicBillingGateway(
     private val restored: PlayPurchaseUpdate? = null,
 ) : ProBillingGateway {
     override val purchaseUpdates: Flow<PlayPurchaseUpdate> = emptyFlow()
+    var lastRestoredAccountId: String? = null
+    override suspend fun restorePurchases(accountIdentifier: String): PlayPurchaseUpdate? {
+        lastRestoredAccountId = accountIdentifier
+        return restored
+    }
     var launchCount = 0
     var lastAccountIdentifier: String? = null
     var lastLaunchedProductId: String? = null
@@ -225,7 +281,7 @@ private class DeterministicBillingGateway(
 
 private class DeterministicPurchaseVerifier(
     private val result: PurchaseVerificationResult,
-    private val accountIdentity: PurchaseAccountIdentityResult =
+    var accountIdentity: PurchaseAccountIdentityResult =
         PurchaseAccountIdentityResult.Available("default-test-account"),
     var loadedEntitlement: PurchaseVerificationResult = PurchaseVerificationResult.Rejected("not active"),
 ) : ProPurchaseVerifier {

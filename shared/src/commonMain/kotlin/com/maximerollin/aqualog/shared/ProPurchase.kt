@@ -23,6 +23,7 @@ sealed interface BillingLaunchResult {
 }
 
 sealed interface PlayPurchaseUpdate {
+    data object CustomerInfoUpdated : PlayPurchaseUpdate
     data object Pending : PlayPurchaseUpdate
     data object Cancelled : PlayPurchaseUpdate
     data class Failed(val reason: String) : PlayPurchaseUpdate
@@ -37,6 +38,8 @@ interface ProBillingGateway {
     suspend fun loadLifetimeOffer(): LifetimeProOffer
     suspend fun launchLifetimePurchase(obfuscatedAccountId: String): BillingLaunchResult
     suspend fun restoreLifetimePurchase(): PlayPurchaseUpdate?
+    suspend fun restorePurchases(accountIdentifier: String): PlayPurchaseUpdate? =
+        restoreLifetimePurchase() ?: restoreAnnualPurchase()
 }
 
 sealed interface PurchaseAccountIdentityResult {
@@ -119,13 +122,26 @@ class ProPurchaseCoordinator(
     }
 
     suspend fun restorePurchase(): ProPurchaseOutcome {
-        val restored = billingGateway.restoreLifetimePurchase()
-            ?: billingGateway.restoreAnnualPurchase()
-            ?: return ProPurchaseOutcome.Failed("No active Google Play purchase was found")
+        val identity = when (val result = purchaseVerifier.loadPurchaseAccountIdentity()) {
+            is PurchaseAccountIdentityResult.Available -> result.obfuscatedAccountId
+            PurchaseAccountIdentityResult.AuthenticationRequired -> {
+                entitlement = null
+                return ProPurchaseOutcome.AuthenticationRequired
+            }
+            is PurchaseAccountIdentityResult.Failed -> {
+                entitlement = null
+                return ProPurchaseOutcome.Failed(result.reason)
+            }
+        }
+        val restored = billingGateway.restorePurchases(identity)
+            ?: return ProPurchaseOutcome.Failed("No active store purchase was found")
         return resolve(restored)
     }
 
     suspend fun resolve(update: PlayPurchaseUpdate): ProPurchaseOutcome = when (update) {
+        PlayPurchaseUpdate.CustomerInfoUpdated -> applyVerification(
+            purchaseVerifier.loadEntitlement(), rejectionIsFailure = true,
+        )
         PlayPurchaseUpdate.Pending -> ProPurchaseOutcome.Pending
         PlayPurchaseUpdate.Cancelled -> ProPurchaseOutcome.Cancelled
         is PlayPurchaseUpdate.Failed -> ProPurchaseOutcome.Failed(update.reason)

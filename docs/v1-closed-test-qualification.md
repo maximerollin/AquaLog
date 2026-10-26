@@ -1,5 +1,8 @@
 # Qualification V1 pour le test fermé — issue #19
 
+> **Mise à jour du 26 octobre 2026 :** le propriétaire a choisi RevenueCat. Le circuit d’achat direct et les preuves historiques décrits ci-dessous sont remplacés, pour les nouveaux builds, par le SDK RevenueCat et la réconciliation Supabase. Voir [la configuration et les gates actualisées](revenuecat-setup.md). La qualification externe des achats reste à effectuer ; aucun ancien test Play local ne valide cette migration.
+
+
 ## Verdict
 
 **Non qualifiée pour une distribution Google Play.** Ce dossier prépare et vérifie

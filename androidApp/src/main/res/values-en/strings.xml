@@ -236,7 +236,7 @@
     <string name="remove_local_copy">Remove local copy</string>
     <string name="delete_account">Delete account</string>
     <string name="delete_account_confirmation_title">Permanently delete your account?</string>
-    <string name="delete_account_confirmation_description">Export first if you need a copy. This removes configured cloud files, cloud Aquarium data, account access, and then local Aquarium data. If a step fails, AquaLog keeps a recoverable status and lets you retry.</string>
+    <string name="delete_account_confirmation_description">Export first if you need a copy. This removes cloud files, RevenueCat customer data, cloud Aquarium data, account access, and then local Aquarium data. A failed step can be retried. Deleting your account does not cancel a Google Play subscription; manage it in Google Play.</string>
     <string name="delete_account_confirm">Delete account and data</string>
     <string name="account_deletion_pending">Account deletion incomplete</string>
     <string name="account_deletion_pending_description">Local data remains available for export. Synchronization is paused so it cannot recreate cloud data.</string>
@@ -246,7 +246,7 @@
     <string name="account_deleted_cleanup_description">Cloud deletion is confirmed and account tokens are cleared. Finish removing the local copy before using AquaLog again.</string>
     <string name="finish_local_cleanup">Finish local cleanup</string>
     <string name="privacy_policy">Privacy</string>
-    <string name="privacy_policy_local">AquaLog stores Aquarium records locally and never includes account tokens or billing data in portable exports. Cloud operations are disabled when this build is not configured. No hosted privacy URL is configured for this build.</string>
+    <string name="privacy_policy_local">AquaLog stores Aquarium records locally. When purchases are configured, RevenueCat processes purchase information and an opaque account identifier to manage Pro access. Aquarium records are not sent to RevenueCat. Portable exports exclude account tokens and billing data. The published policy is available when configured.</string>
     <string name="support">Support</string>
     <string name="support_unconfigured">No hosted support channel is configured for this build. Your local Aquarium data and portable export remain available.</string>
     <string name="close">Close</string>

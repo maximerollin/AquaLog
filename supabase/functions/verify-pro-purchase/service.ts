@@ -1,368 +1,124 @@
 export const annualProProductId = "aqualog_pro_annual";
 export const lifetimeProProductId = "aqualog_pro_lifetime";
+export const proEntitlementId = "aqualog_pro";
 
-type SubscriptionLineItem = {
-  productId?: string;
-  expiryTime?: string;
-};
-
-type SubscriptionPurchase = {
-  subscriptionState?: string;
-  acknowledgementState?: string;
-  latestOrderId?: string;
-  externalAccountIdentifiers?: {
-    obfuscatedExternalAccountId?: string;
-  };
-  lineItems?: SubscriptionLineItem[];
-};
-
-export type VerifiedSubscription = {
+export type RevenueCatEntitlement = {
   active: boolean;
-  productId: string;
+  productId: string | null;
   validUntilEpochMillis: number | null;
-  validUntil: string | null;
-  latestOrderId: string | null;
-  requiresAcknowledgement: boolean;
-  obfuscatedExternalAccountId: string | null;
+  observedAtEpochMillis: number;
 };
 
-export type ProPurchaseClaim = {
-  accountId: string;
-  productId: string;
-  purchaseToken: string;
-  purchaseTokenHash: string;
-  purchaseTokenCiphertext: string;
-  validUntil: string | null;
-  latestOrderId: string | null;
-};
-
-export type StoredProPurchase = {
-  accountId: string;
-  productId: string;
-  purchaseTokenHash: string;
-  purchaseTokenCiphertext: string;
-};
-
-export type ProEntitlementRevalidation = {
-  accountId: string;
-  productId: string;
-  purchaseTokenHash: string;
-  active: boolean;
-  validUntil: string | null;
-  latestOrderId: string | null;
-};
-
-export type ProEntitlementRevalidationDependencies = {
-  hmacSecret: string;
-  loadGoogleSubscription: (purchaseToken: string) => Promise<unknown>;
-  acknowledgePurchase: (purchaseToken: string) => Promise<boolean>;
-  updateEntitlement: (update: ProEntitlementRevalidation) => Promise<void>;
-};
-
-export type ProPurchaseVerificationDependencies = {
-  hmacSecret: string;
-  loadGoogleSubscription: (purchaseToken: string) => Promise<unknown>;
-  claimPurchase: (claim: ProPurchaseClaim) => Promise<void>;
-  acknowledgePurchase: (claim: ProPurchaseClaim) => Promise<boolean>;
-  activateEntitlement: (claim: ProPurchaseClaim) => Promise<void>;
-};
-
-export type ProPurchaseVerificationOutcome =
-  | { kind: "verified"; subscription: VerifiedSubscription }
-  | { kind: "rejected"; reason: string }
-  | { kind: "acknowledgement_failed" };
-
-export function validateVerificationRequest(value: unknown): {
-  productId: string;
-  purchaseToken: string;
-} {
+function object(value: unknown): Record<string, unknown> {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    throw new TypeError("Purchase verification requires a JSON object");
+    throw new TypeError("Invalid RevenueCat customer response");
   }
-  const candidate = value as Record<string, unknown>;
-  if (
-    typeof candidate.productId !== "string" ||
-    ![annualProProductId, lifetimeProProductId].includes(candidate.productId)
-  ) {
-    throw new TypeError("Unexpected Google Play product");
-  }
-  if (
-    typeof candidate.purchaseToken !== "string" ||
-    candidate.purchaseToken.length < 8
-  ) {
-    throw new TypeError("Purchase token is required");
-  }
-  return {
-    productId: candidate.productId,
-    purchaseToken: candidate.purchaseToken,
-  };
+  return value as Record<string, unknown>;
 }
 
-type LifetimePurchase = {
-  purchaseState?: number;
-  acknowledgementState?: number;
-  productId?: string;
-  orderId?: string;
-  refundableQuantity?: number;
-  obfuscatedExternalAccountId?: string;
+function date(value: unknown): number {
+  return typeof value === "string" ? Date.parse(value) : NaN;
+}
+
+/** Interpret the authenticated RevenueCat API response, never data submitted by the Android client. */
+export function interpretRevenueCatCustomer(
+  value: unknown,
+  sandbox: boolean,
+  now = Date.now(),
+): RevenueCatEntitlement {
+  const response = object(value);
+  const observedAt = response.request_date_ms;
+  if (typeof observedAt !== "number" || !Number.isFinite(observedAt) || observedAt <= 0 || observedAt > now + 60_000) {
+    throw new TypeError("RevenueCat response timestamp is invalid");
+  }
+  const subscriber = object(response.subscriber);
+  const entitlements = object(subscriber.entitlements);
+  const inactive: RevenueCatEntitlement = {
+    active: false, productId: null, validUntilEpochMillis: null, observedAtEpochMillis: observedAt,
+  };
+  if (!(proEntitlementId in entitlements)) return inactive;
+  const entitlement = object(entitlements[proEntitlementId]);
+  const rawProductId = entitlement.product_identifier;
+  if (typeof rawProductId !== "string") return inactive;
+  // Google subscription product identifiers may include their base plan after a colon.
+  const productId = rawProductId.split(":")[0];
+  if (productId === annualProProductId) {
+    const subscription = object(object(subscriber.subscriptions)[rawProductId]);
+    if (subscription.store !== "play_store" || subscription.is_sandbox !== sandbox || subscription.refunded_at != null) return inactive;
+    const expiry = Math.max(date(entitlement.expires_date), date(entitlement.grace_period_expires_date) || 0);
+    const subscriptionExpiry = Math.max(date(subscription.expires_date), date(subscription.grace_period_expires_date) || 0);
+    const until = Math.min(expiry, subscriptionExpiry);
+    if (!Number.isFinite(until) || until <= now) return inactive;
+    return { active: true, productId, validUntilEpochMillis: until, observedAtEpochMillis: observedAt };
+  }
+  if (productId === lifetimeProProductId && entitlement.expires_date === null) {
+    const purchases = object(subscriber.non_subscriptions)[rawProductId];
+    if (!Array.isArray(purchases)) return inactive;
+    const owned = purchases.some((value) => {
+      const purchase = object(value);
+      return purchase.store === "play_store" && purchase.is_sandbox === sandbox && purchase.refunded_at == null &&
+        Number.isFinite(date(purchase.purchase_date)) && date(purchase.purchase_date) <= now;
+    });
+    if (owned) return { active: true, productId, validUntilEpochMillis: null, observedAtEpochMillis: observedAt };
+  }
+  return inactive;
+}
+
+export async function revenueCatAppUserId(accountId: string, secret: string): Promise<string> {
+  if (!accountId || secret.length < 32) throw new TypeError("RevenueCat identity is not configured");
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`aqualog-revenuecat:v1:${accountId}`));
+  return [...new Uint8Array(signature)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export type ProEndpointDependencies = {
+  authenticatedAccountId(request: Request): Promise<string | null>;
+  identity(accountId: string): Promise<string>;
+  refresh(accountId: string): Promise<unknown>;
 };
 
-export function interpretLifetimePurchase(
-  value: unknown,
-  expectedProductId: string,
-): VerifiedSubscription {
-  const purchase = value as LifetimePurchase;
-  const active = expectedProductId === lifetimeProProductId &&
-    (purchase.productId === undefined || purchase.productId === expectedProductId) &&
-    purchase.purchaseState === 0 &&
-    (purchase.refundableQuantity ?? 1) > 0;
-  return {
-    active,
-    productId: expectedProductId,
-    validUntilEpochMillis: null,
-    validUntil: null,
-    latestOrderId: purchase.orderId ?? null,
-    requiresAcknowledgement: purchase.acknowledgementState === 0,
-    obfuscatedExternalAccountId: purchase.obfuscatedExternalAccountId ?? null,
-  };
-}
-
-export function interpretSubscription(
-  value: unknown,
-  expectedProductId: string,
-  serverNowEpochMillis: number = Date.now(),
-): VerifiedSubscription {
-  const purchase = value as SubscriptionPurchase;
-  const lineItem = purchase.lineItems?.find((item) =>
-    item.productId === expectedProductId
-  );
-  const expiry = lineItem?.expiryTime
-    ? Date.parse(lineItem.expiryTime)
-    : Number.NaN;
-  const stateCanGrant =
-    purchase.subscriptionState === "SUBSCRIPTION_STATE_ACTIVE" ||
-    purchase.subscriptionState === "SUBSCRIPTION_STATE_IN_GRACE_PERIOD" ||
-    purchase.subscriptionState === "SUBSCRIPTION_STATE_CANCELED";
-  const active = expectedProductId === annualProProductId && stateCanGrant &&
-    Number.isFinite(expiry) && expiry > serverNowEpochMillis;
-  return {
-    active,
-    productId: expectedProductId,
-    validUntilEpochMillis: Number.isFinite(expiry) ? expiry : 0,
-    validUntil: Number.isFinite(expiry)
-      ? new Date(expiry).toISOString()
-      : new Date(0).toISOString(),
-    latestOrderId: purchase.latestOrderId ?? null,
-    requiresAcknowledgement:
-      purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING",
-    obfuscatedExternalAccountId:
-      purchase.externalAccountIdentifiers?.obfuscatedExternalAccountId ?? null,
-  };
-}
-
-export async function playAccountIdentifier(
-  accountId: string,
-  hmacSecret: string,
-): Promise<string> {
-  if (!accountId || !hmacSecret) {
-    throw new TypeError("Purchase account identity is unavailable");
-  }
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(hmacSecret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(`aqualog-play-account:v1:${accountId}`),
-  );
-  return hex(new Uint8Array(signature));
-}
-
-export async function verifyAndClaimSubscription(
-  accountId: string,
-  request: { productId: string; purchaseToken: string },
-  dependencies: ProPurchaseVerificationDependencies,
-): Promise<ProPurchaseVerificationOutcome> {
-  const googlePurchase = await dependencies.loadGoogleSubscription(request.purchaseToken);
-  const verified = request.productId === lifetimeProProductId
-    ? interpretLifetimePurchase(googlePurchase, request.productId)
-    : interpretSubscription(googlePurchase, request.productId);
-  if (!verified.active) {
-    return { kind: "rejected", reason: "subscription is not active" };
-  }
-  const expectedIdentity = await playAccountIdentifier(
-    accountId,
-    dependencies.hmacSecret,
-  );
-  if (verified.obfuscatedExternalAccountId !== expectedIdentity) {
-    return {
-      kind: "rejected",
-      reason: "purchase is not bound to this account",
-    };
-  }
-  const claim: ProPurchaseClaim = {
-    accountId,
-    productId: request.productId,
-    purchaseToken: request.purchaseToken,
-    purchaseTokenHash: await sha256(request.purchaseToken),
-    purchaseTokenCiphertext: await encryptPurchaseToken(
-      request.purchaseToken,
-      dependencies.hmacSecret,
-    ),
-    validUntil: verified.validUntil,
-    latestOrderId: verified.latestOrderId,
-  };
-  await dependencies.claimPurchase(claim);
-  if (
-    verified.requiresAcknowledgement &&
-    !(await dependencies.acknowledgePurchase(claim))
-  ) {
-    return { kind: "acknowledgement_failed" };
-  }
-  await dependencies.activateEntitlement(claim);
-  return { kind: "verified", subscription: verified };
-}
-
-export async function revalidateStoredSubscription(
-  accountId: string,
-  stored: StoredProPurchase,
-  dependencies: ProEntitlementRevalidationDependencies,
-): Promise<ProPurchaseVerificationOutcome> {
-  if (
-    stored.accountId !== accountId ||
-    ![annualProProductId, lifetimeProProductId].includes(stored.productId)
-  ) {
-    return {
-      kind: "rejected",
-      reason: "stored purchase does not belong to this account",
-    };
-  }
-  const purchaseToken = await decryptPurchaseToken(
-    stored.purchaseTokenCiphertext,
-    dependencies.hmacSecret,
-  );
-  const googlePurchase = await dependencies.loadGoogleSubscription(purchaseToken);
-  const verified = stored.productId === lifetimeProProductId
-    ? interpretLifetimePurchase(googlePurchase, stored.productId)
-    : interpretSubscription(googlePurchase, stored.productId);
-  const expectedIdentity = await playAccountIdentifier(
-    accountId,
-    dependencies.hmacSecret,
-  );
-  const active = verified.active &&
-    verified.obfuscatedExternalAccountId === expectedIdentity;
-  if (active && verified.requiresAcknowledgement) {
-    if (!(await dependencies.acknowledgePurchase(purchaseToken))) {
-      return { kind: "acknowledgement_failed" };
+export async function handleProRequest(request: Request, dependencies: ProEndpointDependencies): Promise<Response> {
+  if (request.method !== "POST") return Response.json({ error: "method not allowed" }, { status: 405 });
+  try {
+    const accountId = await dependencies.authenticatedAccountId(request);
+    if (!accountId) return Response.json({ error: "authentication required" }, { status: 401 });
+    let body: Record<string, unknown>;
+    try { body = object(await request.json()); } catch {
+      return Response.json({ error: "invalid request" }, { status: 400 });
     }
+    // No client-provided token, account ID, expiry or CustomerInfo can grant Pro.
+    if (Object.keys(body).length !== 1) return Response.json({ error: "invalid request" }, { status: 400 });
+    if (body.action === "purchaseIdentity") {
+      return Response.json({ obfuscatedAccountId: await dependencies.identity(accountId) });
+    }
+    if (body.action === "loadEntitlement") return Response.json(await dependencies.refresh(accountId));
+    return Response.json({ error: "unsupported purchase request" }, { status: 400 });
+  } catch (_error) {
+    return Response.json({ error: "Pro verification unavailable; try again" }, { status: 503 });
   }
-  await dependencies.updateEntitlement({
-    accountId,
-    productId: stored.productId,
-    purchaseTokenHash: stored.purchaseTokenHash,
-    active,
-    validUntil: verified.validUntil,
-    latestOrderId: verified.latestOrderId,
-  });
-  return active
-    ? { kind: "verified", subscription: verified }
-    : { kind: "rejected", reason: "subscription is not active" };
 }
 
-export async function encryptPurchaseToken(
-  purchaseToken: string,
-  secret: string,
-): Promise<string> {
-  if (!purchaseToken || !secret) {
-    throw new TypeError("Purchase token encryption is unavailable");
+export type WebhookDependencies = {
+  authorization: string;
+  accountIds(appUserIds: string[]): Promise<string[]>;
+  refresh(accountId: string): Promise<unknown>;
+};
+
+/** Re-read authoritative state: duplicate and out-of-order events never apply event payload entitlements. */
+export async function handleRevenueCatWebhook(request: Request, dependencies: WebhookDependencies): Promise<Response> {
+  if (request.method !== "POST") return Response.json({ error: "method not allowed" }, { status: 405 });
+  if (!dependencies.authorization || request.headers.get("authorization") !== dependencies.authorization) {
+    return Response.json({ error: "unauthorized" }, { status: 401 });
   }
-  const key = await purchaseTokenEncryptionKey(secret, ["encrypt"]);
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ciphertext = new Uint8Array(
-    await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
-      key,
-      new TextEncoder().encode(purchaseToken),
-    ),
-  );
-  return base64UrlBytes(concat(iv, ciphertext));
-}
-
-export async function decryptPurchaseToken(
-  ciphertext: string,
-  secret: string,
-): Promise<string> {
-  if (!ciphertext || !secret) {
-    throw new TypeError("Stored purchase token is unavailable");
+  try {
+    const event = object(object(await request.json()).event);
+    if (event.type === "TEST") return Response.json({ received: true });
+    const ids = [event.app_user_id, ...[event.aliases, event.transferred_from, event.transferred_to].flatMap((value) => Array.isArray(value) ? value : [])]
+      .filter((id): id is string => typeof id === "string" && /^[0-9a-f]{64}$/.test(id));
+    const accounts = await dependencies.accountIds([...new Set(ids)]);
+    for (const account of new Set(accounts)) await dependencies.refresh(account);
+    return Response.json({ received: true });
+  } catch (_error) {
+    return Response.json({ error: "RevenueCat update incomplete; retry" }, { status: 503 });
   }
-  const bytes = base64UrlDecode(ciphertext);
-  if (bytes.length <= 12) {
-    throw new TypeError("Stored purchase token is invalid");
-  }
-  const key = await purchaseTokenEncryptionKey(secret, ["decrypt"]);
-  const plaintext = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: bytes.slice(0, 12) },
-    key,
-    bytes.slice(12),
-  );
-  return new TextDecoder().decode(plaintext);
-}
-
-export async function sha256(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(value),
-  );
-  return hex(new Uint8Array(digest));
-}
-
-function hex(bytes: Uint8Array): string {
-  return Array.from(bytes).map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-async function purchaseTokenEncryptionKey(
-  secret: string,
-  usages: KeyUsage[],
-): Promise<CryptoKey> {
-  const material = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(`aqualog-play-token-encryption:v1:${secret}`),
-  );
-  return crypto.subtle.importKey(
-    "raw",
-    material,
-    { name: "AES-GCM" },
-    false,
-    usages,
-  );
-}
-
-function concat(first: Uint8Array, second: Uint8Array): Uint8Array {
-  const result = new Uint8Array(first.length + second.length);
-  result.set(first);
-  result.set(second, first.length);
-  return result;
-}
-
-function base64UrlBytes(bytes: Uint8Array): string {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll(
-    "=",
-    "",
-  );
-}
-
-function base64UrlDecode(value: string): Uint8Array {
-  const padded = value.replaceAll("-", "+").replaceAll("_", "/").padEnd(
-    Math.ceil(value.length / 4) * 4,
-    "=",
-  );
-  const binary = atob(padded);
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }

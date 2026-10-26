@@ -17,6 +17,7 @@ class FakeAdmin implements AccountDeletionAdmin {
     return Promise.resolve(this.completed.has(`${accountId}:${operationKey}`));
   }
   authUserExists(accountId: string) { this.calls.push(`auth-exists:${accountId}`); return Promise.resolve(this.existingUsers.has(accountId)); }
+  deleteBillingData(accountId: string) { this.calls.push(`billing:${accountId}`); return this.result("billing"); }
   deleteFiles(accountId: string) { this.calls.push(`files:${accountId}`); return this.result("files"); }
   deleteDatabaseData(_token: string, operationKey: string) { this.calls.push(`database:${operationKey}`); return this.result("database"); }
   deleteAuthUser(accountId: string) { this.calls.push(`auth:${accountId}`); return this.result("auth"); }
@@ -59,7 +60,7 @@ Deno.test("deletion removes files and database before Auth", async () => {
   const admin = new FakeAdmin();
   const result = await deleteAccount(admin, "account-a", "account-a", "access", "operation-1");
   if (result.status !== "completed") throw new Error(`unexpected ${result.status}`);
-  const expected = "receipt:account-a:operation-1,files:account-a,database:operation-1,auth:account-a";
+  const expected = "receipt:account-a:operation-1,files:account-a,billing:account-a,database:operation-1,auth:account-a";
   if (admin.calls.join() !== expected) throw new Error(admin.calls.join());
 });
 
@@ -70,7 +71,7 @@ Deno.test("a completed database receipt redrains recreated files before retrying
   const result = await deleteAccount(admin, "account-a", null, "expired", "operation-1");
 
   if (result.status !== "completed") throw new Error(`unexpected ${result.status}`);
-  const expected = "receipt:account-a:operation-1,files:account-a,auth-exists:account-a,auth:account-a";
+  const expected = "receipt:account-a:operation-1,files:account-a,billing:account-a,auth-exists:account-a,auth:account-a";
   if (admin.calls.join() !== expected) throw new Error(admin.calls.join());
 });
 
@@ -110,4 +111,17 @@ Deno.test("partial storage failure is replay safe", async () => {
   try { await deleteAccountFiles(storage, ["exports"], "account-a"); } catch { /* expected */ }
   await deleteAccountFiles(storage, ["exports"], "account-a");
   if (storage.objects.size !== 0) throw new Error("replay left files behind");
+});
+
+Deno.test("RevenueCat deletion failure preserves account data and retries before Auth even after a receipt", async () => {
+  const admin = new FakeAdmin();
+  admin.failAt = "billing";
+  const result = await deleteAccount(admin, "account-a", "account-a", "token", "delete-rc");
+  if (result.status !== "retryable_failure" || result.step !== "billing") throw new Error("billing failure was hidden");
+  if (admin.calls.some((call) => call.startsWith("database:") || call.startsWith("auth:"))) throw new Error("deleted before billing cleanup");
+  admin.completed.add("account-a:delete-rc");
+  const replay = await deleteAccount(admin, "account-a", null, "expired", "delete-rc");
+  if (replay.status !== "retryable_failure" || replay.step !== "billing") throw new Error("receipt bypassed RevenueCat cleanup");
+  admin.failAt = null;
+  if ((await deleteAccount(admin, "account-a", null, "expired", "delete-rc")).status !== "completed") throw new Error("retry did not recover");
 });

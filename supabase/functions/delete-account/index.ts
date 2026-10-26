@@ -90,6 +90,21 @@ Deno.serve(async (request) => {
         },
       }, buckets, accountId);
     },
+    async deleteBillingData(accountId) {
+      const { data, error } = await adminClient.from("revenuecat_customers")
+        .select("app_user_id").eq("account_id", accountId).maybeSingle();
+      if (error) throw new Error("Billing data lookup failed");
+      if (!data) return;
+      const { error: freezeError } = await adminClient.from("revenuecat_customers")
+        .update({ deletion_requested: true }).eq("account_id", accountId);
+      if (freezeError) throw new Error("RevenueCat account cleanup could not be reserved");
+      const key = Deno.env.get("REVENUECAT_SECRET_API_KEY");
+      if (!key?.startsWith("sk_")) throw new Error("RevenueCat deletion is not configured");
+      const response = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(data.app_user_id)}`, {
+        method: "DELETE", headers: { authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(20_000),
+      });
+      if (!response.ok && response.status !== 404) throw new Error("RevenueCat deletion is incomplete");
+    },
     async deleteDatabaseData(_token, key) {
       const { error } = await userClient.rpc("delete_account_data", { p_operation_key: key });
       if (error) throw error;
@@ -115,7 +130,7 @@ Deno.serve(async (request) => {
     }
   } catch (error) {
     if (error instanceof TypeError) return json({ error: error.message }, 400);
-    console.error("Account deletion failed", error);
+    console.error("Account deletion failed");
     return json({ error: "Account deletion is incomplete" }, 503);
   }
 });
