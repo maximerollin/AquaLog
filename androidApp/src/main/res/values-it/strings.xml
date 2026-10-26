@@ -363,4 +363,7 @@
     <string name="battery_optimization_explanation">L\'ottimizzazione della batteria Android è attiva. Può ritardare i promemoria; Le attività e le relative date di scadenza rimangono archiviate localmente.</string>
     <string name="task_notification_channel">Promemoria attività</string>
     <string name="task_notification_text">Apri AquaLog per completare, posticipare o ignorare questo evento.</string>
+    <string name="timeline_filters">Filtri</string>
+    <string name="measurement_reading">%1$s · %2$s %3$s</string>
+    <string name="last_measurement_compact">Ultima: %1$s %2$s</string>
 </resources>

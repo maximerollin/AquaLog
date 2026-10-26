@@ -159,6 +159,7 @@ data class TimelineUiState(
     val parameterDefinitionId: String? = null,
     val maintenanceActionType: MaintenanceActionType? = null,
     val selectedSessionId: String? = null,
+    val filtersExpanded: Boolean = false,
     val hasRecoverableError: Boolean = false,
 )
 
@@ -1489,6 +1490,12 @@ class HomeViewModel(
     }
 
     fun closeTimelineSession() = closeSessionDetails()
+
+    fun toggleTimelineFilters() {
+        mutableUiState.update { state ->
+            state.copy(timeline = state.timeline.copy(filtersExpanded = !state.timeline.filtersExpanded))
+        }
+    }
 
     fun retryTimeline() = observeTimeline()
 

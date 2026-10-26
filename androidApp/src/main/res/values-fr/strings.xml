@@ -363,4 +363,7 @@
     <string name="battery_optimization_explanation">L\'optimisation de la batterie Android est active. Cela peut retarder les rappels ; Les tâches et leurs dates d\'échéance restent stockées localement.</string>
     <string name="task_notification_channel">Rappels de tâches</string>
     <string name="task_notification_text">Ouvrez AquaLog pour terminer, reporter ou ignorer cette occurrence.</string>
+    <string name="timeline_filters">Filtres</string>
+    <string name="measurement_reading">%1$s · %2$s %3$s</string>
+    <string name="last_measurement_compact">Dernière : %1$s %2$s</string>
 </resources>

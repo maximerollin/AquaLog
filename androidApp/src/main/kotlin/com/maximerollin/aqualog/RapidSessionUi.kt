@@ -1,25 +1,29 @@
 package com.maximerollin.aqualog
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -30,22 +34,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
-import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.evaluateMeasurement
 
 @Composable
@@ -59,16 +66,17 @@ fun RapidSessionScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
-            Surface(shadowElevation = 8.dp) {
+            Surface(color = MaterialTheme.colorScheme.background) {
                 Button(
                     onClick = viewModel::saveRapidSession,
+                    shape = MaterialTheme.shapes.medium,
                     enabled = state.canSave,
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
                         .imePadding()
-                        .padding(16.dp)
-                        .height(48.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .heightIn(min = 48.dp),
                 ) {
                     if (state.isSaving) {
                         CircularProgressIndicator()
@@ -109,11 +117,11 @@ fun RapidSessionScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize().testTag("rapid-session-list").padding(padding),
-            contentPadding = PaddingValues(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Column {
                         Text(
                             stringResource(
@@ -137,7 +145,7 @@ fun RapidSessionScreen(
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(stringResource(R.string.session_aquarium, aquarium.name))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextButton(onClick = { viewModel.shiftSessionTimeByMinutes(-15) }) {
                                 Text(stringResource(R.string.earlier_time))
                             }
@@ -167,51 +175,73 @@ fun RapidSessionScreen(
                 val input = state.measurementInputs[definition.id].orEmpty()
                 val feedback = evaluateMeasurement(input, definition)
                 val description = stringResource(R.string.measurement_for_parameter, definition.parameter.label())
-                OutlinedTextField(
-                    value = input,
-                    onValueChange = { viewModel.updateMeasurement(definition.id, it) },
-                    label = {
-                        Text(
-                            stringResource(
-                                R.string.parameter_with_unit,
-                                definition.parameter.label(),
-                                definition.unit,
-                            ),
-                        )
-                    },
-                    supportingText = {
-                        when {
-                            !feedback.isValid -> Text(stringResource(R.string.invalid_measurement))
-                            feedback.isOutsideIndicativeRange -> Text(stringResource(R.string.unusual_measurement))
-                            context.lastMeasurements[definition.id] != null -> Text(
-                                stringResource(
-                                    R.string.last_measurement,
-                                    formatter.number(
-                                        context.lastMeasurements.getValue(definition.id),
-                                        definition.precision,
-                                    ),
-                                    definition.unit,
-                                ),
-                            )
-                            else -> Text(stringResource(R.string.no_previous_measurement))
+                Card(
+                    Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                ) {
+                    BoxWithConstraints(Modifier.fillMaxWidth().padding(14.dp)) {
+                        val stacked = LocalDensity.current.fontScale >= 1.3f || maxWidth < 280.dp
+                        val contextLabel: @Composable () -> Unit = {
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                    stringResource(R.string.parameter_with_unit, definition.parameter.label(), definition.unit),
+                                    style = MaterialTheme.typography.titleSmall,
+                                )
+                                val hint = when {
+                                    !feedback.isValid -> stringResource(R.string.invalid_measurement)
+                                    feedback.isOutsideIndicativeRange -> stringResource(R.string.unusual_measurement)
+                                    context.lastMeasurements[definition.id] != null -> stringResource(
+                                        R.string.last_measurement_compact,
+                                        formatter.number(context.lastMeasurements.getValue(definition.id), definition.precision),
+                                        definition.unit,
+                                    )
+                                    else -> stringResource(R.string.no_previous_measurement)
+                                }
+                                Text(
+                                    hint,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (!feedback.isValid) MaterialTheme.colorScheme.error
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
-                    },
-                    isError = !feedback.isValid,
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = if (index == context.activeParameters.lastIndex) ImeAction.Done else ImeAction.Next,
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onNext = { focusManager.moveFocus(FocusDirection.Next) },
-                        onDone = { focusManager.clearFocus() },
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("rapid-measurement-${definition.parameter.storageValue}")
-                        .then(focusRequester?.let(Modifier::focusRequester) ?: Modifier)
-                        .semantics { contentDescription = description },
-                )
+                        val editor: @Composable () -> Unit = {
+                            OutlinedTextField(
+                                value = input,
+                                onValueChange = { viewModel.updateMeasurement(definition.id, it) },
+                                isError = !feedback.isValid,
+                                singleLine = true,
+                                textStyle = MaterialTheme.typography.titleLarge,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Decimal,
+                                    imeAction = if (index == context.activeParameters.lastIndex) ImeAction.Done else ImeAction.Next,
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onNext = { focusManager.moveFocus(FocusDirection.Next) },
+                                    onDone = { focusManager.clearFocus() },
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                                    .testTag("rapid-measurement-${definition.parameter.storageValue}")
+                                    .then(focusRequester?.let(Modifier::focusRequester) ?: Modifier)
+                                    .semantics {
+                                        contentDescription = description
+                                        stateDescription = definition.unit
+                                    },
+                            )
+                        }
+                        if (stacked) {
+                            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                contextLabel()
+                                editor()
+                            }
+                        } else {
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) { contextLabel() }
+                                Column(Modifier.width(112.dp)) { editor() }
+                            }
+                        }
+                    }
+                }
             }
             item { Text(stringResource(R.string.maintenance_heading), style = MaterialTheme.typography.titleLarge) }
             itemsIndexed(MaintenanceActionType.entries) { _, type ->
@@ -271,16 +301,24 @@ private fun MaintenanceActionEditor(
     val action = state.actions[type]
     val label = type.label()
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(
-                selected = action != null,
-                onClick = { viewModel.toggleMaintenanceAction(type) },
-                label = { Text(label) },
-                modifier = Modifier.weight(1f),
-            )
-            if (action != null) {
-                TextButton(onClick = { viewModel.editMaintenanceAction(type) }) {
-                    Text(stringResource(R.string.edit_action))
+        Surface(
+            color = if (action != null) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            Row(
+                Modifier.fillMaxWidth().toggleable(
+                    value = action != null,
+                    role = Role.Checkbox,
+                    onValueChange = { viewModel.toggleMaintenanceAction(type) },
+                ).padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = action != null, onCheckedChange = null)
+                Text(label, modifier = Modifier.weight(1f).padding(8.dp))
+                if (action != null) {
+                    TextButton(onClick = { viewModel.editMaintenanceAction(type) }) {
+                        Text(stringResource(R.string.edit_action))
+                    }
                 }
             }
         }

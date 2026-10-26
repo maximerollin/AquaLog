@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -10,32 +11,36 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -43,15 +48,15 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.maximerollin.aqualog.shared.AccountDeletionPhase
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
-import com.maximerollin.aqualog.shared.PortableImportProblem
-import com.maximerollin.aqualog.shared.VolumeUnit
-import com.maximerollin.aqualog.shared.SyncStatus
-import com.maximerollin.aqualog.shared.SyncFailureCategory
-import com.maximerollin.aqualog.shared.AccountDeletionPhase
 import com.maximerollin.aqualog.shared.LocalCopyDecision
+import com.maximerollin.aqualog.shared.PortableImportProblem
+import com.maximerollin.aqualog.shared.SyncFailureCategory
+import com.maximerollin.aqualog.shared.SyncStatus
+import com.maximerollin.aqualog.shared.VolumeUnit
 
 @Composable
 fun AquaLogContent(
@@ -260,14 +265,23 @@ private fun AquariumShell(
                     NavigationBarItem(
                         selected = state.destination == destination,
                         onClick = { viewModel.selectDestination(destination) },
-                        icon = { Text(label.take(1)) },
+                        icon = {
+                            Icon(
+                                painterResource(when (destination) {
+                                    MainDestination.HOME -> R.drawable.ic_home
+                                    MainDestination.HISTORY -> R.drawable.ic_history
+                                    MainDestination.SETTINGS -> R.drawable.ic_settings
+                                }),
+                                contentDescription = null,
+                            )
+                        },
                         label = { Text(label) },
                     )
                 }
             }
         },
     ) { innerPadding ->
-        val contentModifier = Modifier.padding(innerPadding)
+        val contentModifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding)
         when (state.destination) {
             MainDestination.HOME -> AquariumHome(state, viewModel, contentModifier)
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
@@ -1267,42 +1281,81 @@ private fun PlanCard(title: Int, description: Int) {
 private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
     val aquarium = requireNotNull(state.setup).aquarium
     Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.weight(1f).testTag("home-list"),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
-                    Text(
-                        stringResource(R.string.aquarium_ready),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        stringResource(
-                            when (state.syncState.status) {
-                                SyncStatus.SYNCED -> R.string.sync_status_synced
-                                SyncStatus.PENDING -> R.string.sync_status_pending
-                                SyncStatus.FAILED -> R.string.sync_status_failed
+                Card(
+                    Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                ) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(aquarium.name, style = MaterialTheme.typography.headlineSmall)
+                                Text(aquarium.formattedVolume(), color = MaterialTheme.colorScheme.onPrimaryContainer)
+                            }
+                            AquariumArtwork(Modifier.size(72.dp))
+                        }
+                        Text(
+                            stringResource(
+                                when (state.syncState.status) {
+                                    SyncStatus.SYNCED -> R.string.sync_status_synced
+                                    SyncStatus.PENDING -> R.string.sync_status_pending
+                                    SyncStatus.FAILED -> R.string.sync_status_failed
+                                },
+                            ),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (state.syncState.status == SyncStatus.SYNCED) {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.primary
                             },
-                        ),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (state.syncState.status == SyncStatus.SYNCED) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        },
-                    )
+                        )
+                    }
                 }
             }
+            item {
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            stringResource(
+                                if (state.latestSession == null) R.string.no_session_yet else R.string.session_saved,
+                            ),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(
+                            state.latestSession?.let { session ->
+                                sessionSavedDescription(
+                                    measurementCount = session.measurements.size,
+                                    actionCount = session.maintenanceActions.size,
+                                )
+                            } ?: stringResource(R.string.no_session_description),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (state.latestSession != null) {
+                            TextButton(onClick = viewModel::openSessionDetails) {
+                                Text(stringResource(R.string.view_session_details))
+                            }
+                        }
+                    }
+                }
+            }
+            if (state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION) {
+                item {
+                    PrimaryButton(R.string.continue_after_session, viewModel::continueAfterSessionConfirmation)
+                }
+            }
+            item { HomeMeasurements(state) }
             if (state.syncState.status == SyncStatus.FAILED) {
                 item {
                     Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 stringResource(
                                     when (state.syncState.failure?.category) {
@@ -1333,10 +1386,26 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                     }
                 }
             }
+            val pendingTasks = state.tasks.pendingOccurrences.filter { it.aquariumId == aquarium.id }.take(3)
+            if (pendingTasks.isNotEmpty()) {
+                item { Text(stringResource(R.string.tasks_title), style = MaterialTheme.typography.titleLarge) }
+                itemsIndexed(pendingTasks, key = { _, task -> task.id }) { _, task ->
+                    Card(onClick = viewModel::openTasks, modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(task.title, style = MaterialTheme.typography.titleMedium)
+                            val formatter = currentLocalizedFormatters()
+                            Text(stringResource(R.string.task_due_value,
+                                formatter.date(task.dueDate.year, task.dueDate.month, task.dueDate.day),
+                                task.minuteOfDay?.let(formatter::time) ?: stringResource(R.string.task_no_time)),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
             if (state.accountInvitationPrompt == AccountInvitationPrompt.REMINDER) {
                 item {
                     Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 stringResource(R.string.account_invitation_title),
                                 style = MaterialTheme.typography.titleMedium,
@@ -1348,7 +1417,7 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                             )
                             TextButton(
                                 onClick = viewModel::continueAfterSessionConfirmation,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                             ) {
                                 Text(stringResource(R.string.review_account_options))
                             }
@@ -1356,48 +1425,9 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                     }
                 }
             }
-            item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(aquarium.name, style = MaterialTheme.typography.titleLarge)
-                        Text(aquarium.formattedVolume(), style = MaterialTheme.typography.bodyLarge)
-                    }
-                }
-            }
-            item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            stringResource(
-                                if (state.latestSession == null) R.string.no_session_yet else R.string.session_saved,
-                            ),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        Text(
-                            state.latestSession?.let { session ->
-                                sessionSavedDescription(
-                                    measurementCount = session.measurements.size,
-                                    actionCount = session.maintenanceActions.size,
-                                )
-                            } ?: stringResource(R.string.no_session_description),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        if (state.latestSession != null) {
-                            TextButton(onClick = viewModel::openSessionDetails) {
-                                Text(stringResource(R.string.view_session_details))
-                            }
-                        }
-                    }
-                }
-            }
-            if (state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION) {
-                item {
-                    PrimaryButton(R.string.continue_after_session, viewModel::continueAfterSessionConfirmation)
-                }
-            }
+
         }
-        OutlinedButton(
+        TextButton(
             onClick = viewModel::openTasks,
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
         ) {
@@ -1440,7 +1470,11 @@ private fun ScreenHeading(title: Int, description: Int) {
 
 @Composable
 private fun PrimaryButton(label: Int, onClick: () -> Unit) {
-    Button(onClick = onClick, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+    Button(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+    ) {
         Text(stringResource(label))
     }
 }

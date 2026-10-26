@@ -363,4 +363,7 @@
     <string name="battery_optimization_explanation">Android battery optimization is active. It can delay reminders; Tasks and their due dates remain stored locally.</string>
     <string name="task_notification_channel">Task reminders</string>
     <string name="task_notification_text">Open AquaLog to complete, postpone or ignore this occurrence.</string>
+    <string name="timeline_filters">Filters</string>
+    <string name="measurement_reading">%1$s · %2$s %3$s</string>
+    <string name="last_measurement_compact">Last: %1$s %2$s</string>
 </resources>
