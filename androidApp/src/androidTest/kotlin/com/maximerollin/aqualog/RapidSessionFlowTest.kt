@@ -166,11 +166,8 @@ class RapidSessionFlowTest {
         firstScenario.close()
 
         val restartedScenario = ActivityScenario.launch(MainActivity::class.java)
-        composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodes(hasText("Secure your local Aquarium copy"))
-                .fetchSemanticsNodes()
-                .isNotEmpty()
-        }
+        waitForText("New Session")
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Secure your local Aquarium copy"))
         composeRule.onNodeWithText("Secure your local Aquarium copy").assertIsDisplayed()
         composeRule.onNodeWithText("New Session").assertIsDisplayed()
 
@@ -180,6 +177,7 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithText("Recent trends").assertIsDisplayed()
 
         composeRule.onNodeWithText("Home").performClick()
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Review account options"))
         composeRule.onNodeWithText("Review account options").performClick()
         composeRule.onNodeWithText("Create an account").assertIsDisplayed()
         composeRule.onNodeWithText("Not now").performClick()

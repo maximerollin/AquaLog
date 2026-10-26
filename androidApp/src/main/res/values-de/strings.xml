@@ -363,4 +363,7 @@
     <string name="battery_optimization_explanation">Die Android-Akkuoptimierung ist aktiv. Es kann Erinnerungen verzögern; Aufgaben und deren Fälligkeitstermine bleiben lokal gespeichert.</string>
     <string name="task_notification_channel">Aufgabenerinnerungen</string>
     <string name="task_notification_text">Öffnen Sie AquaLog, um dieses Ereignis abzuschließen, zu verschieben oder zu ignorieren.</string>
+    <string name="timeline_filters">Filter</string>
+    <string name="measurement_reading">%1$s · %2$s %3$s</string>
+    <string name="last_measurement_compact">Zuletzt: %1$s %2$s</string>
 </resources>

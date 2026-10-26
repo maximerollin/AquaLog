@@ -216,7 +216,7 @@ class LocalizedAccessibilityFlowTest {
                     localized.getString(R.string.navigation_history),
                     localized.getString(R.string.navigation_settings),
                 )
-                assertCriticalText(localized.getString(R.string.home_title))
+                assertCriticalText("Aqua 120")
                 captureAndInspect("home-$language-$mode.png")
 
                 compose.onNodeWithText(newSession).performClick()

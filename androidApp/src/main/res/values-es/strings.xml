@@ -363,4 +363,7 @@
     <string name="battery_optimization_explanation">La optimización de la batería de Android está activa. Puede retrasar los recordatorios; Las tareas y sus fechas de vencimiento permanecen almacenadas localmente.</string>
     <string name="task_notification_channel">Recordatorios de tareas</string>
     <string name="task_notification_text">Abra AquaLog para completar, posponer o ignorar este suceso.</string>
+    <string name="timeline_filters">Filtros</string>
+    <string name="measurement_reading">%1$s · %2$s %3$s</string>
+    <string name="last_measurement_compact">Última: %1$s %2$s</string>
 </resources>

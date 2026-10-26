@@ -60,6 +60,7 @@ class TimelineFlowTest {
         composeRule.onNodeWithText("Offline-ready · stored on this device").assertIsDisplayed()
         composeRule.onNodeWithText("1 Measurement · 1 maintenance action · 1 Event").assertIsDisplayed()
 
+        composeRule.onNodeWithText("Filters").performClick()
         composeRule.onNodeWithText("Temperature").performClick().assertIsSelected()
         composeRule.onNodeWithContentDescription("Open Session details").performClick()
         composeRule.onNodeWithText("Session details").assertIsDisplayed()
