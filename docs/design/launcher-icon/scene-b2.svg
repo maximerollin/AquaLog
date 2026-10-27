@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="512" height="512">
+  <!-- AquaLog launcher icon, direction B2 (approved mockup). 108x108 adaptive-icon grid. -->
+  <defs>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b8f80"/><stop offset=".55" stop-color="#14675e"/><stop offset="1" stop-color="#0d4741"/>
+    </linearGradient>
+    <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dcbb7c"/><stop offset="1" stop-color="#b48d4c"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffdf6"/><stop offset=".6" stop-color="#f6f4ec"/><stop offset="1" stop-color="#dcd6c3"/>
+    </linearGradient>
+    <linearGradient id="fin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e2c286"/><stop offset="1" stop-color="#c49a55"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bad8cb"/><stop offset="1" stop-color="#5fa08c"/>
+    </linearGradient>
+    <linearGradient id="ray" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="rock" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8aa59a"/><stop offset="1" stop-color="#3f5c55"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ef8a5c"/><stop offset="1" stop-color="#b9483a"/>
+    </linearGradient>
+
+    <!-- Fish centred on 0,0, head to the left, ~42 wide. -->
+    <g id="fish">
+      <path fill="url(#fin)" d="M10,0 L23,-10 Q19.5,0 23,10 Z"/>
+      <path fill="url(#fin)" d="M-7,-8.5 Q0,-16.5 9,-5.5 Z"/>
+      <path fill="url(#body)" d="M-19,0 C-15,-11 4,-13 13,-3 Q14,0 13,3 C4,13 -15,11 -19,0 Z"/>
+      <path fill="none" stroke="#cfc6ae" stroke-width="1" stroke-linecap="round" d="M-7,-6 Q-4.5,0 -7,6"/>
+      <path fill="url(#fin)" d="M-3,3 Q1,10.5 6,4.5 Z"/>
+      <circle cx="-12" cy="-1.8" r="2.5" fill="#122622"/>
+      <circle cx="-12.8" cy="-2.7" r=".8" fill="#ffffff"/>
+    </g>
+    <g id="bubbles">
+      <circle cx="0" cy="0" r="2.6" fill="#ffffff" fill-opacity=".12" stroke="#bad8cb" stroke-width=".9"/>
+      <circle cx="-.8" cy="-.8" r=".6" fill="#ffffff" fill-opacity=".7"/>
+      <circle cx="3" cy="-7" r="1.7" fill="#ffffff" fill-opacity=".12" stroke="#bad8cb" stroke-width=".8"/>
+      <circle cx="0" cy="-12.5" r="1.1" fill="#ffffff" fill-opacity=".12" stroke="#bad8cb" stroke-width=".7"/>
+    </g>
+  </defs>
+
+  <!-- Background layer: water and light rays. -->
+  <rect width="108" height="108" fill="url(#water)"/>
+  <path fill="url(#ray)" d="M18,0 H30 L46,70 H36 Z"/>
+  <path fill="url(#ray)" d="M48,0 H56 L66,64 H60 Z"/>
+  <path fill="url(#ray)" d="M74,0 H88 L94,72 H84 Z"/>
+
+  <!-- Far plants, dark silhouettes for depth. -->
+  <g fill="#0d4b44" opacity=".85">
+    <path d="M4,84 C0,66 6,48 12,34 C12,50 14,68 14,84 Z"/>
+    <path d="M12,84 C14,70 18,62 22,56 C22,66 20,76 18,84 Z"/>
+    <path d="M98,82 C96,64 100,50 106,40 C106,56 106,70 104,82 Z"/>
+  </g>
+
+  <!-- Light plants on the left. -->
+  <path fill="url(#leaf)" d="M22,86 C14,72 20,58 26,50 C24,62 26,74 27,85 Z"/>
+  <path fill="url(#leaf)" d="M27,85 C30,74 36,68 38,62 C38,72 34,80 31,86 Z"/>
+
+  <!-- Red stem plant on the right (Ludwigia-like). -->
+  <path fill="none" stroke="#a8452f" stroke-width="1.1" stroke-linecap="round" d="M90,80 Q88,68 91,54"/>
+  <g fill="url(#red)">
+    <ellipse cx="86.5" cy="74" rx="3.6" ry="1.5" transform="rotate(-25 86.5 74)"/>
+    <ellipse cx="93" cy="71" rx="3.6" ry="1.5" transform="rotate(25 93 71)"/>
+    <ellipse cx="86.8" cy="65" rx="3.3" ry="1.4" transform="rotate(-30 86.8 65)"/>
+    <ellipse cx="93.2" cy="62" rx="3.3" ry="1.4" transform="rotate(30 93.2 62)"/>
+    <ellipse cx="88.5" cy="57" rx="2.8" ry="1.2" transform="rotate(-35 88.5 57)"/>
+    <ellipse cx="93.5" cy="55" rx="2.6" ry="1.1" transform="rotate(35 93.5 55)"/>
+  </g>
+
+  <!-- Sand bed, rock and grass tufts. -->
+  <path fill="url(#sand)" d="M0,84 Q28,77 54,82 T108,79 V108 H0 Z"/>
+  <ellipse cx="40" cy="93" rx="2.6" ry="1.4" fill="#a07c40" opacity=".5"/>
+  <ellipse cx="58" cy="97" rx="3.4" ry="1.6" fill="#a07c40" opacity=".4"/>
+  <path fill="url(#rock)" d="M64,88 C63,82 68,78 74,79 C80,80 82,84 81,89 Z"/>
+  <g fill="none" stroke="#8cc7a8" stroke-width="1.3" stroke-linecap="round">
+    <path d="M38,88 q-1,-5 -3.5,-8 M40,88 q0,-6 .5,-9.5 M42,88 q1,-5 3.5,-7.5"/>
+    <path d="M60,86 q-1,-4 -3,-6.5 M62,86 q0,-5 .5,-8 M64,86 q1,-4 3,-6"/>
+    <path d="M8,94 q-1,-4 -3,-6 M10,94 q0,-5 .5,-7.5 M12,94 q1,-4 3,-5.5"/>
+  </g>
+
+  <!-- Distant school, main fish and bubbles. -->
+  <g opacity=".55">
+    <use href="#fish" transform="translate(74 34) scale(.42)"/>
+    <use href="#fish" transform="translate(84 44) scale(.32)"/>
+  </g>
+  <use href="#fish" transform="translate(52 58) scale(.95)"/>
+  <use href="#bubbles" transform="translate(29 50) scale(.9)"/>
+</svg>
