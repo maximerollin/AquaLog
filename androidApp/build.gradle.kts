@@ -71,6 +71,20 @@ android {
                 buildConfigField("String", field, configuredValue("AQUALOG_$field").asBuildConfigString())
             }
         }
+        release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            // Firebase is initialised manually from BuildConfig, so there is no
+            // google-services.json for the Crashlytics plugin to upload against.
+            // R8 still emits mapping.txt; the release workflow ships it to Play.
+            configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
+                mappingFileUploadEnabled = false
+            }
+        }
     }
 
     compileOptions {
