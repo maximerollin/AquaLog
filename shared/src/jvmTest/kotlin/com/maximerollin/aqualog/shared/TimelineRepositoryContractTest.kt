@@ -1,9 +1,9 @@
 package com.maximerollin.aqualog.shared
 
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import java.nio.file.Files
 import kotlin.test.Test
@@ -106,10 +106,12 @@ class TimelineRepositoryContractTest {
         timelineFixture().use { fixture ->
             val setup = fixture.createConfiguredAquarium()
             val temperature = setup.parameters.first { it.parameter == BuiltInParameter.TEMPERATURE }
-            assertEquals(emptyList(), fixture.repository.observeTimeline(TimelineFilter()).first())
-            val nextEmission = async(start = CoroutineStart.UNDISPATCHED) {
-                fixture.repository.observeTimeline(TimelineFilter()).drop(1).first()
+            val emissions = Channel<List<TimelineSession>>(Channel.UNLIMITED)
+            val observer = launch {
+                fixture.repository.observeTimeline(TimelineFilter()).collect { emissions.send(it) }
             }
+            // Write only after the observer delivered its initial state; Room queries on its own threads.
+            assertEquals(emptyList(), emissions.receive())
 
             fixture.record(
                 setup,
@@ -118,7 +120,8 @@ class TimelineRepositoryContractTest {
                 measurements = mapOf(temperature.id to "24.5"),
             )
 
-            val emitted = nextEmission.await()
+            val emitted = emissions.receiveAsFlow().first { it.isNotEmpty() }
+            observer.cancel()
             assertEquals(1, emitted.size)
             assertEquals(1_700_000_100_000L, emitted.single().session.occurredAtEpochMillis)
         }
