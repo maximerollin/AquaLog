@@ -119,7 +119,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         } else {
             @Suppress("DEPRECATION")
             android.app.Notification.Builder(context)
-        }.setSmallIcon(R.drawable.ic_launcher)
+        }.setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(context.getString(R.string.task_notification_text))
             .setContentIntent(openApp)
