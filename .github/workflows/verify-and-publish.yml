@@ -26,7 +26,7 @@ concurrency:
 jobs:
   verify:
     name: JVM, Android, backend and configuration checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -42,7 +42,7 @@ jobs:
         with:
           version: 2.108.0
       - name: Install compile SDK
-        run: sdkmanager 'platforms;android-37'
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager 'platforms;android-37'
       - name: Bound Gradle memory
         run: |
           mkdir -p ~/.gradle
@@ -92,7 +92,7 @@ jobs:
     name: Signed bundle to Google Play
     if: github.event_name == 'workflow_dispatch'
     needs: verify
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: ${{ inputs.track == 'production' && 'google-play-production' || 'google-play-test' }}
     steps:
@@ -113,7 +113,7 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
       - name: Install compile SDK
-        run: sdkmanager 'platforms;android-37'
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager 'platforms;android-37'
       - name: Build configured release bundle
         env:
           AQUALOG_SUPABASE_URL: ${{ secrets.AQUALOG_SUPABASE_URL }}
