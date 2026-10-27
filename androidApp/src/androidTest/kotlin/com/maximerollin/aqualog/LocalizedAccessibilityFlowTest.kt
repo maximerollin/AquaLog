@@ -5,6 +5,8 @@ import android.app.UiModeManager
 import android.content.Context
 import android.content.res.Configuration
 import android.os.LocaleList
+import android.os.ParcelFileDescriptor
+import android.os.SystemClock
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Rect
@@ -90,7 +92,7 @@ class LocalizedAccessibilityFlowTest {
     fun restoreDeviceConfiguration() {
         localeManager.applicationLocales = LocaleList.getEmptyLocaleList()
         uiModeManager.setApplicationNightMode(UiModeManager.MODE_NIGHT_AUTO)
-        instrumentation.uiAutomation.executeShellCommand("settings put system font_scale 1.0").close()
+        setFontScale(1f)
     }
 
     @Test
@@ -146,9 +148,7 @@ class LocalizedAccessibilityFlowTest {
             modes.forEach { (mode, nightMode) ->
                 localeManager.applicationLocales = LocaleList.forLanguageTags(language)
                 uiModeManager.setApplicationNightMode(nightMode)
-                instrumentation.uiAutomation.executeShellCommand(
-                    "settings put system font_scale ${if (mode == "dark-large") "1.5" else "1.0"}",
-                ).close()
+                setFontScale(if (mode == "dark-large") 1.5f else 1f)
                 (context.applicationContext as TestAquaLogApplication).resetRepository()
                 ActivityScenario.launch(MainActivity::class.java).use {
                     val localized = context.createConfigurationContext(Configuration(context.resources.configuration).apply {
@@ -335,9 +335,19 @@ class LocalizedAccessibilityFlowTest {
         uiModeManager.setApplicationNightMode(
             if (darkLarge) UiModeManager.MODE_NIGHT_YES else UiModeManager.MODE_NIGHT_NO,
         )
-        instrumentation.uiAutomation.executeShellCommand(
-            "settings put system font_scale ${if (darkLarge) "1.5" else "1.0"}",
-        ).close()
+        setFontScale(if (darkLarge) 1.5f else 1f)
+    }
+
+    // Wait for the command and the resulting configuration, so a stale scale never lands mid-test.
+    private fun setFontScale(scale: Float) {
+        ParcelFileDescriptor.AutoCloseInputStream(
+            instrumentation.uiAutomation.executeShellCommand("settings put system font_scale $scale"),
+        ).use { it.readBytes() }
+        val deadline = SystemClock.uptimeMillis() + 5_000
+        while (context.applicationContext.resources.configuration.fontScale != scale) {
+            check(SystemClock.uptimeMillis() < deadline) { "Font scale $scale was not applied" }
+            SystemClock.sleep(50)
+        }
     }
 
     private fun localizedContext(language: String): Context = context.createConfigurationContext(
