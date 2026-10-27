@@ -49,6 +49,12 @@ android {
 
     }
 
+    testOptions {
+        // Each instrumented test runs in its own process, so no activity or window survives into the next one.
+        // Package data is kept: the opt-in Play transaction test reuses the purchase made on this installation.
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -114,6 +120,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.services.storage)
     androidTestUtil(libs.androidx.test.services)
+    androidTestUtil(libs.androidx.test.orchestrator)
 }
 
 val collectLocalizedAccessibilityReports by tasks.registering(Copy::class) {

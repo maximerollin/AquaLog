@@ -13,6 +13,7 @@ work = "2.11.0"
 androidx-test-ext = "1.3.0"
 espresso = "3.7.0"
 testServices = "1.6.0"
+testOrchestrator = "1.6.1"
 fragment = "1.8.9"
 revenuecat = "10.29.0"
 play-review = "2.0.2"
@@ -41,6 +42,7 @@ androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core",
 androidx-test-espresso-intents = { module = "androidx.test.espresso:espresso-intents", version.ref = "espresso" }
 androidx-test-services-storage = { module = "androidx.test.services:storage", version.ref = "testServices" }
 androidx-test-services = { module = "androidx.test.services:test-services", version.ref = "testServices" }
+androidx-test-orchestrator = { module = "androidx.test:orchestrator", version.ref = "testOrchestrator" }
 androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "fragment" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
