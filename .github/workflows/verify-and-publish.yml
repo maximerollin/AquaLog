@@ -42,7 +42,7 @@ jobs:
         with:
           version: 2.108.0
       - name: Install compile SDK
-        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager 'platforms;android-37'
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager 'platforms;android-37.0'
       - name: Bound Gradle memory
         run: |
           mkdir -p ~/.gradle
@@ -113,7 +113,7 @@ jobs:
           java-version: '17'
       - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
       - name: Install compile SDK
-        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager 'platforms;android-37'
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager 'platforms;android-37.0'
       - name: Build configured release bundle
         env:
           AQUALOG_SUPABASE_URL: ${{ secrets.AQUALOG_SUPABASE_URL }}
