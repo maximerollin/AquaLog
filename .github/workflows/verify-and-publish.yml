@@ -48,7 +48,7 @@ jobs:
           mkdir -p ~/.gradle
           printf 'org.gradle.jvmargs=-Xmx4096M -Dfile.encoding=UTF-8\nkotlin.daemon.jvmargs=-Xmx2048M\norg.gradle.workers.max=2\norg.gradle.parallel=false\n' >> ~/.gradle/gradle.properties
       - name: Unit tests, lint and release assembly
-        run: ./gradlew :shared:jvmTest :androidApp:testDebugUnitTest :androidApp:testReleaseUnitTest :androidApp:lintDebug :androidApp:lintRelease :androidApp:assembleRelease --console=plain
+        run: ./gradlew :shared:jvmTest :ui:jvmTest :androidApp:testDebugUnitTest :androidApp:testReleaseUnitTest :androidApp:lintDebug :androidApp:lintRelease :androidApp:assembleRelease --console=plain
       - name: Build configuration guards
         run: python3 tools/qualification/test_environment_configuration.py
       - name: Edge unit tests and types

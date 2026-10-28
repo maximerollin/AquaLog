@@ -10,6 +10,21 @@ declared in `:shared` (`AuthGateway`, `AquariumRepository`, `ProBillingGateway`)
 are wired to **fakes**, so there is no need to port Supabase, RevenueCat,
 WorkManager or secure storage to the JVM.
 
+## Status (2026-10-28)
+
+Stages 0–5 are done on `feat/cmp-desktop-spike`. Deviations from the plan below:
+
+- `:ui` only targets JVM and Android, so `commonMain` can keep `java.time`,
+  `UUID` and `java.text`: no rewrite to kotlinx-datetime was needed.
+- CMP keeps the `androidx.compose.*` packages, so Stage 4 changed no Compose imports.
+- Compose Resources only format positional placeholders and do not unescape
+  `\'`: plurals use `%1$d` and apostrophes are written plainly.
+- Desktop uses the real Room repository on `~/.aqualog-desktop/aqualog.db`
+  instead of a fake. Account, billing, sync and telemetry stay disabled, because
+  `HomeViewModel` already defaults them.
+- Toolchain: Compose MP 1.12.2, Hot Reload 1.2.0 (needs JetBrains Runtime 25,
+  provisioned through the foojay resolver), Kotlin 2.4.20, Room3 3.0.3 on JVM.
+
 ## Why this is a migration, not a config tweak
 
 Yams was Compose Multiplatform from the start (shared UI in `feature/*` and

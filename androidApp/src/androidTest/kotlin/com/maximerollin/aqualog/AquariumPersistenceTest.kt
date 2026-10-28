@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.resources.*
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasScrollAction
@@ -67,7 +68,7 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithText("€34.99 once. Lifetime access, with no trial.").assertIsDisplayed()
         val billingDate = LocalizedFormatters(java.util.Locale.getDefault(java.util.Locale.Category.FORMAT))
             .date(1_792_528_000_000L)
-        composeRule.onNodeWithText(context.getString(R.string.pro_offer_summary, "€14.99", 14, billingDate))
+        composeRule.onNodeWithText(LocalizedStrings().getString(Res.string.pro_offer_summary, "€14.99", 14, billingDate))
             .assertIsDisplayed()
         composeRule.onNodeWithText("Continue for free").performClick()
 
