@@ -12,8 +12,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class LocalizationContractTest {
-    private val res = File("../ui/src/commonMain/composeResources")
-    private val androidRes = File("src/main/res")
+    private val res = File("src/commonMain/composeResources")
+    private val androidRes = File("../androidApp/src/main/res")
     private val catalogs = listOf("values", "values-en", "values-fr", "values-de", "values-it", "values-es")
 
     @Test
@@ -188,8 +188,8 @@ class LocalizationContractTest {
 
     @Test
     fun `visible compose literals are resource backed`() {
-        val productionFiles = File("src/main/kotlin/com/maximerollin/aqualog")
-            .walkTopDown().filter { it.isFile && it.extension == "kt" }
+        val productionFiles = listOf(File("src"), File("../androidApp/src/main/kotlin"))
+            .flatMap { root -> root.walkTopDown().filter { it.isFile && it.extension == "kt" && "Test" !in it.path } }
         val forbidden = listOf(
             Regex("Text\\s*\\(\\s*\\\"", setOf(RegexOption.MULTILINE)),
             Regex("contentDescription\\s*=\\s*\\\"", setOf(RegexOption.MULTILINE)),

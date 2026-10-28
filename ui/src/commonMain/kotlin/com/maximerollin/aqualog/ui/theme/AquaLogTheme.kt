@@ -56,5 +56,5 @@ fun AquaLogTheme(
 }
 
 // Keep the same palette on every Android version, independently of wallpaper.
-internal fun aquaLogColorScheme(darkTheme: Boolean): ColorScheme =
+fun aquaLogColorScheme(darkTheme: Boolean): ColorScheme =
     if (darkTheme) DarkColors else LightColors

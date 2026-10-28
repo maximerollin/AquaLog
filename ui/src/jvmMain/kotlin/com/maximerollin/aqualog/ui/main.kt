@@ -12,6 +12,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.maximerollin.aqualog.ui.theme.AquaLogTheme
+import com.maximerollin.aqualog.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 fun main() = application {
     Window(
@@ -22,7 +25,7 @@ fun main() = application {
         AquaLogTheme {
             Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text("AquaLog desktop", color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(Res.string.app_name), color = MaterialTheme.colorScheme.primary)
                 }
             }
         }

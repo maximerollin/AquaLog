@@ -22,16 +22,6 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 
-interface TaskReminderScheduler {
-    fun schedule(occurrence: TaskOccurrence)
-
-    fun cancel(occurrenceId: String)
-
-    fun reconcile(occurrences: List<TaskOccurrence>)
-
-    fun isBatteryOptimizationActive(): Boolean
-}
-
 class AndroidTaskReminderScheduler(
     private val context: Context,
     private val nowMillis: () -> Long = System::currentTimeMillis,

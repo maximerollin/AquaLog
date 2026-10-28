@@ -1,6 +1,5 @@
 package com.maximerollin.aqualog
 
-import com.maximerollin.aqualog.resources.*
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
@@ -10,27 +9,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.painterResource
-import org.jetbrains.compose.resources.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.maximerollin.aqualog.ui.theme.AquaLogTheme
 import java.io.ByteArrayOutputStream
@@ -87,6 +69,7 @@ class MainActivity : ComponentActivity() {
         proPurchaseCoordinator
         setContent {
             AquaLogTheme {
+                LightSystemBarsInLightTheme()
                 AquaLogApp(
                     viewModel = homeViewModel,
                     onExportData = {
@@ -97,7 +80,7 @@ class MainActivity : ComponentActivity() {
                         homeViewModel.startPortableDataOperation()
                         openImportDocument.launch(arrayOf("application/json"))
                     },
-                    onOpenExternalUrl = { url ->
+                    externalLinks = ExternalLinks(BuildConfig.PRIVACY_URL, BuildConfig.SUPPORT_URL) { url ->
                         if (url.startsWith("https://")) startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                     },
                 )
@@ -175,14 +158,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
-private fun AquaLogApp(
-    viewModel: HomeViewModel,
-    onExportData: () -> Unit,
-    onImportData: () -> Unit,
-    onOpenExternalUrl: (String) -> Unit,
-) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+private fun LightSystemBarsInLightTheme() {
     val dark = isSystemInDarkTheme()
     val view = LocalView.current
     SideEffect {
@@ -193,32 +169,5 @@ private fun AquaLogApp(
                 isAppearanceLightNavigationBars = !dark
             }
         }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(title = {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_water),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Text(stringResource(Res.string.app_name))
-                }
-            })
-        },
-    ) { contentPadding ->
-        AquaLogContent(
-            state = uiState,
-            viewModel = viewModel,
-            onExportData = onExportData,
-            onImportData = onImportData,
-            onOpenExternalUrl = onOpenExternalUrl,
-            modifier = Modifier.padding(contentPadding).consumeWindowInsets(contentPadding),
-        )
     }
 }

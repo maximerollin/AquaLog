@@ -41,7 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -66,7 +66,7 @@ fun AquaLogContent(
     viewModel: HomeViewModel,
     onExportData: () -> Unit = {},
     onImportData: () -> Unit = {},
-    onOpenExternalUrl: (String) -> Unit = {},
+    externalLinks: ExternalLinks = ExternalLinks(),
     modifier: Modifier = Modifier,
 ) {
     when {
@@ -109,7 +109,7 @@ fun AquaLogContent(
             onContinue = viewModel::closeProPaywall,
             modifier = modifier,
         )
-        state.setup != null -> AquariumShell(state, viewModel, onExportData, onOpenExternalUrl, modifier)
+        state.setup != null -> AquariumShell(state, viewModel, onExportData, externalLinks, modifier)
         state.step == OnboardingStep.WELCOME -> WelcomeScreen(
             state = state.portableData,
             onContinue = viewModel::startOnboarding,
@@ -251,7 +251,7 @@ private fun AquariumShell(
     state: HomeUiState,
     viewModel: HomeViewModel,
     onExportData: () -> Unit,
-    onOpenExternalUrl: (String) -> Unit,
+    externalLinks: ExternalLinks,
     modifier: Modifier,
 ) {
     Scaffold(
@@ -270,9 +270,9 @@ private fun AquariumShell(
                         icon = {
                             Icon(
                                 painterResource(when (destination) {
-                                    MainDestination.HOME -> R.drawable.ic_home
-                                    MainDestination.HISTORY -> R.drawable.ic_history
-                                    MainDestination.SETTINGS -> R.drawable.ic_settings
+                                    MainDestination.HOME -> Res.drawable.ic_home
+                                    MainDestination.HISTORY -> Res.drawable.ic_history
+                                    MainDestination.SETTINGS -> Res.drawable.ic_settings
                                 }),
                                 contentDescription = null,
                             )
@@ -296,7 +296,7 @@ private fun AquariumShell(
                 onExportData = onExportData,
                 onRequestImport = viewModel::requestPortableImport,
                 viewModel = viewModel,
-                onOpenExternalUrl = onOpenExternalUrl,
+                externalLinks = externalLinks,
                 modifier = contentModifier,
             )
         }
@@ -350,7 +350,7 @@ private fun PortableDataSettings(
     onExportData: () -> Unit,
     onRequestImport: () -> Unit,
     viewModel: HomeViewModel,
-    onOpenExternalUrl: (String) -> Unit,
+    externalLinks: ExternalLinks,
     modifier: Modifier,
 ) {
     LazyColumn(
@@ -561,7 +561,7 @@ private fun PortableDataSettings(
             Spacer(Modifier.height(16.dp))
         }
     }
-    AccountSettingsDialog(accountState.dialog, viewModel, onOpenExternalUrl)
+    AccountSettingsDialog(accountState.dialog, viewModel, externalLinks)
     homeState.aquariumEditor?.let { editor -> AquariumEditorDialog(editor, viewModel) }
 }
 
@@ -569,7 +569,7 @@ private fun PortableDataSettings(
 private fun AccountSettingsDialog(
     dialog: AccountSettingsDialog,
     viewModel: HomeViewModel,
-    onOpenExternalUrl: (String) -> Unit,
+    externalLinks: ExternalLinks,
 ) {
     when (dialog) {
         AccountSettingsDialog.NONE -> Unit
@@ -605,17 +605,17 @@ private fun AccountSettingsDialog(
         AccountSettingsDialog.PRIVACY -> InformationDialog(
             Res.string.privacy_policy,
             Res.string.privacy_policy_local,
-            BuildConfig.PRIVACY_URL,
+            externalLinks.privacyUrl,
             Res.string.open_privacy_policy,
-            onOpenExternalUrl,
+            externalLinks.open,
             viewModel::dismissAccountSettingsDialog,
         )
         AccountSettingsDialog.SUPPORT -> InformationDialog(
             Res.string.support,
             Res.string.support_unconfigured,
-            BuildConfig.SUPPORT_URL,
+            externalLinks.supportUrl,
             Res.string.open_support,
-            onOpenExternalUrl,
+            externalLinks.open,
             viewModel::dismissAccountSettingsDialog,
         )
     }
