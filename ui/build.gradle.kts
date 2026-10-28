@@ -25,6 +25,9 @@ kotlin {
             implementation(libs.jetbrains.compose.material3)
             implementation(libs.jetbrains.compose.ui)
             api(libs.jetbrains.compose.components.resources)
+            implementation(libs.jetbrains.lifecycle.runtime.compose)
+            implementation(libs.jetbrains.lifecycle.viewmodel.compose)
+            implementation(libs.jetbrains.lifecycle.viewmodel.savedstate)
         }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)

@@ -5,7 +5,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumCreationAccess
@@ -2109,9 +2110,8 @@ class HomeViewModel(
             reviewCoordinator: ReviewCoordinator? = null,
             onSyncRetryRequested: () -> Unit = {},
         ): ViewModelProvider.Factory =
-            object : ViewModelProvider.Factory {
-                @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T =
+            viewModelFactory {
+                initializer {
                     HomeViewModel(
                         aquariumRepository = repository,
                         taskReminderScheduler = taskReminderScheduler,
@@ -2123,8 +2123,9 @@ class HomeViewModel(
                         feedbackGateway = feedbackGateway,
                         reviewCoordinator = reviewCoordinator,
                         onSyncRetryRequested = onSyncRetryRequested,
-                        savedStateHandle = extras.createSavedStateHandle(),
-                    ) as T
+                        savedStateHandle = createSavedStateHandle(),
+                    )
+                }
             }
     }
 }
