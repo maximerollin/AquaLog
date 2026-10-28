@@ -1,6 +1,5 @@
 package com.maximerollin.aqualog.ui.theme
 
-import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
@@ -10,7 +9,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 private val LightColors = lightColorScheme(
@@ -48,7 +46,7 @@ fun AquaLogTheme(
     content: @Composable () -> Unit,
 ) {
     MaterialTheme(
-        colorScheme = aquaLogColorScheme(LocalContext.current, darkTheme),
+        colorScheme = aquaLogColorScheme(darkTheme),
         shapes = Shapes(
             small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(18.dp),
             large = RoundedCornerShape(22.dp),
@@ -58,6 +56,5 @@ fun AquaLogTheme(
 }
 
 // Keep the same palette on every Android version, independently of wallpaper.
-@Suppress("UNUSED_PARAMETER")
-internal fun aquaLogColorScheme(context: Context, darkTheme: Boolean): ColorScheme =
+internal fun aquaLogColorScheme(darkTheme: Boolean): ColorScheme =
     if (darkTheme) DarkColors else LightColors

@@ -1,13 +1,6 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
-import android.Manifest
-import android.app.DatePickerDialog
-import android.app.TimePickerDialog
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,7 +14,14 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -30,8 +30,11 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -39,17 +42,16 @@ import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.TaskRecurrence
 import com.maximerollin.aqualog.shared.TaskResolution
 import java.time.LocalDate
+import java.time.Instant
 import java.time.LocalTime
+import java.time.ZoneOffset
 
 @Composable
 fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
     val formatter = currentLocalizedFormatters()
-    val requestNotifications = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { }
-    val notificationPermissionMissing = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+    val requestNotifications = rememberNotificationPermissionRequest()
+    var pickingDate by rememberSaveable { mutableStateOf(false) }
+    var pickingTime by rememberSaveable { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("task-list"),
@@ -67,11 +69,11 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
                 }
             }
         }
-        if (notificationPermissionMissing) {
+        if (requestNotifications != null) {
             item {
                 ReminderInformationCard(stringResource(Res.string.notification_permission_explanation)) {
                     Button(
-                        onClick = { requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS) },
+                        onClick = requestNotifications,
                         modifier = Modifier.heightIn(min = 48.dp),
                     ) { Text(stringResource(Res.string.allow_notifications)) }
                 }
@@ -97,19 +99,7 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
                     val selectedDate = runCatching { LocalDate.parse(state.dueDate) }
                         .getOrElse { LocalDate.now() }
                     OutlinedButton(
-                        onClick = {
-                            DatePickerDialog(
-                                context,
-                                { _, year, month, day ->
-                                    viewModel.updateTaskDueDate(
-                                        "%04d-%02d-%02d".format(year, month + 1, day),
-                                    )
-                                },
-                                selectedDate.year,
-                                selectedDate.monthValue - 1,
-                                selectedDate.dayOfMonth,
-                            ).show()
-                        },
+                        onClick = { pickingDate = true },
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                     ) {
                         Column {
@@ -123,17 +113,7 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
                     val selectedTime = runCatching { LocalTime.parse(state.time) }
                         .getOrElse { LocalTime.of(9, 0) }
                     OutlinedButton(
-                        onClick = {
-                            TimePickerDialog(
-                                context,
-                                { _, hour, minute ->
-                                    viewModel.updateTaskTime("%02d:%02d".format(hour, minute))
-                                },
-                                selectedTime.hour,
-                                selectedTime.minute,
-                                true,
-                            ).show()
-                        },
+                        onClick = { pickingTime = true },
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                     ) {
                         Column {
@@ -144,6 +124,20 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         }
+                    }
+                    if (pickingDate) {
+                        TaskDatePickerDialog(
+                            selectedDate = selectedDate,
+                            onDateSelected = { viewModel.updateTaskDueDate(it.toString()) },
+                            onDismiss = { pickingDate = false },
+                        )
+                    }
+                    if (pickingTime) {
+                        TaskTimePickerDialog(
+                            selectedTime = selectedTime,
+                            onTimeSelected = { viewModel.updateTaskTime("%02d:%02d".format(it.hour, it.minute)) },
+                            onDismiss = { pickingTime = false },
+                        )
                     }
                     if (state.time.isNotBlank()) {
                         TextButton(
@@ -186,6 +180,44 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
             }
         }
     }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun TaskDatePickerDialog(selectedDate: LocalDate, onDateSelected: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+    // Material3 date pickers work in UTC midnight milliseconds.
+    val state = rememberDatePickerState(
+        initialSelectedDateMillis = selectedDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+    )
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                state.selectedDateMillis?.let { onDateSelected(Instant.ofEpochMilli(it).atOffset(ZoneOffset.UTC).toLocalDate()) }
+                onDismiss()
+            }) { Text(stringResource(Res.string.picker_confirm)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) } },
+    ) {
+        DatePicker(state, Modifier.testTag("task-date-picker"))
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun TaskTimePickerDialog(selectedTime: LocalTime, onTimeSelected: (LocalTime) -> Unit, onDismiss: () -> Unit) {
+    val state = rememberTimePickerState(selectedTime.hour, selectedTime.minute, is24Hour = true)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = {
+                onTimeSelected(LocalTime.of(state.hour, state.minute))
+                onDismiss()
+            }) { Text(stringResource(Res.string.picker_confirm)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.cancel)) } },
+        text = { TimePicker(state, Modifier.testTag("task-time-picker")) },
+    )
 }
 
 @Composable

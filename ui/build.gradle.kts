@@ -26,6 +26,9 @@ kotlin {
             implementation(libs.jetbrains.compose.ui)
             api(libs.jetbrains.compose.components.resources)
         }
+        androidMain.dependencies {
+            implementation(libs.androidx.activity.compose)
+        }
         jvmTest.dependencies {
             implementation(kotlin("test"))
         }

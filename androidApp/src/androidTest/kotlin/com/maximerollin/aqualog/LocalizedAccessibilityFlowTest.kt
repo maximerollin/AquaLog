@@ -116,7 +116,7 @@ class LocalizedAccessibilityFlowTest {
     @Test
     fun activeMaterialColorRoles_meetWcagContrastInLightAndDarkThemes() {
         listOf(false, true).forEach { dark ->
-            val scheme = aquaLogColorScheme(context, dark)
+            val scheme = aquaLogColorScheme(dark)
             val mode = if (dark) "dark" else "light"
             listOf(
                 "onPrimary/primary" to (scheme.onPrimary to scheme.primary),

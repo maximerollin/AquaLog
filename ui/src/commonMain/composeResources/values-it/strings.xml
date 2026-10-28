@@ -99,6 +99,7 @@
 
     <string name="rapid_session_title">Nuova sessione</string>
     <string name="cancel">Cancellare</string>
+    <string name="picker_confirm">OK</string>
     <string name="session_aquarium">Acquario: %1$s</string>
     <string name="earlier_time">-15 minuti</string>
     <string name="later_time">+15 minuti</string>
