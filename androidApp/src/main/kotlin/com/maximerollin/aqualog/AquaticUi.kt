@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,7 +17,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
 
 /** Decorative identity only: the drawing never depends on Aquarium measurements. */
@@ -54,7 +55,7 @@ internal fun HomeMeasurements(state: HomeUiState) {
     val definitions = state.setup?.parameters.orEmpty().associateBy { it.id }
     val columns = if (LocalDensity.current.fontScale >= 1.3f) 1 else 2
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(stringResource(R.string.measurements_heading), style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(Res.string.measurements_heading), style = MaterialTheme.typography.titleLarge)
         Text(formatter.dateTime(recorded.session.occurredAtEpochMillis),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         recorded.measurements.filter { it.parameterDefinitionId in definitions }.chunked(columns).forEach { row ->

@@ -12,7 +12,8 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class LocalizationContractTest {
-    private val res = File("src/main/res")
+    private val res = File("../ui/src/commonMain/composeResources")
+    private val androidRes = File("src/main/res")
     private val catalogs = listOf("values", "values-en", "values-fr", "values-de", "values-it", "values-es")
 
     @Test
@@ -23,6 +24,12 @@ class LocalizationContractTest {
             assertEquals(reference, actual, "$catalog must not miss or add translation keys")
         }
         assertTrue(reference.size >= 300, "the contract must cover the complete product catalog")
+    }
+
+    @Test
+    fun `android only catalogs expose the same strings`() {
+        val keys = catalogs.associateWith { resourceKeys(it, androidRes) }
+        keys.forEach { (catalog, actual) -> assertEquals(keys.getValue("values"), actual, "android $catalog") }
     }
 
     @Test
@@ -219,8 +226,8 @@ class LocalizationContractTest {
         }
     }
 
-    private fun resourceKeys(folder: String): Set<String> {
-        val root = document(folder)
+    private fun resourceKeys(folder: String, base: File = res): Set<String> {
+        val root = document(folder, base)
         return buildSet {
             listOf("string", "plurals").forEach { tag ->
                 val nodes = root.getElementsByTagName(tag)
@@ -260,6 +267,6 @@ class LocalizationContractTest {
         error("Missing $folder/$name")
     }
 
-    private fun document(folder: String) = DocumentBuilderFactory.newInstance()
-        .newDocumentBuilder().parse(File(res, "$folder/strings.xml"))
+    private fun document(folder: String, base: File = res) = DocumentBuilderFactory.newInstance()
+        .newDocumentBuilder().parse(File(base, "$folder/strings.xml"))
 }

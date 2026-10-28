@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.resources.*
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
@@ -137,9 +138,9 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithText("Secure your local Aquarium copy").assertIsDisplayed()
         composeRule.onNodeWithText("Not now").performClick()
         composeRule.onNodeWithText("Session saved").assertIsDisplayed()
-        val measurements = context.resources.getQuantityString(R.plurals.session_measurement_count, 3, 3)
-        val maintenance = context.resources.getQuantityString(R.plurals.session_maintenance_count, 1, 1)
-        composeRule.onNodeWithText(context.getString(R.string.session_saved_description, measurements, maintenance))
+        val measurements = LocalizedStrings().getQuantityString(Res.plurals.session_measurement_count, 3, 3)
+        val maintenance = LocalizedStrings().getQuantityString(Res.plurals.session_maintenance_count, 1, 1)
+        composeRule.onNodeWithText(LocalizedStrings().getString(Res.string.session_saved_description, measurements, maintenance))
             .assertIsDisplayed()
         scenario.close()
     }

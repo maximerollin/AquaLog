@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -42,7 +43,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -83,7 +84,7 @@ fun RapidSessionScreen(
                     } else {
                         Text(
                             stringResource(
-                                if (state.editingSessionId == null) R.string.save_session else R.string.save_changes,
+                                if (state.editingSessionId == null) Res.string.save_session else Res.string.save_changes,
                             ),
                         )
                     }
@@ -99,7 +100,7 @@ fun RapidSessionScreen(
             ) {
                 Text(
                     stringResource(
-                        if (state.editingSessionId == null) R.string.rapid_session_title else R.string.edit_session,
+                        if (state.editingSessionId == null) Res.string.rapid_session_title else Res.string.edit_session,
                     ),
                     style = MaterialTheme.typography.headlineMedium,
                 )
@@ -126,9 +127,9 @@ fun RapidSessionScreen(
                         Text(
                             stringResource(
                                 if (state.editingSessionId == null) {
-                                    R.string.rapid_session_title
+                                    Res.string.rapid_session_title
                                 } else {
-                                    R.string.edit_session
+                                    Res.string.edit_session
                                 },
                             ),
                             style = MaterialTheme.typography.headlineMedium,
@@ -138,29 +139,29 @@ fun RapidSessionScreen(
                     TextButton(
                         onClick = viewModel::closeRapidSession,
                         modifier = Modifier.heightIn(min = 48.dp),
-                    ) { Text(stringResource(R.string.cancel)) }
+                    ) { Text(stringResource(Res.string.cancel)) }
                 }
             }
             item {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.session_aquarium, aquarium.name))
+                        Text(stringResource(Res.string.session_aquarium, aquarium.name))
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextButton(onClick = { viewModel.shiftSessionTimeByMinutes(-15) }) {
-                                Text(stringResource(R.string.earlier_time))
+                                Text(stringResource(Res.string.earlier_time))
                             }
                             Text(
                                 formatter.shortDateTime(state.occurredAtEpochMillis),
                                 modifier = Modifier.padding(top = 12.dp),
                             )
                             TextButton(onClick = { viewModel.shiftSessionTimeByMinutes(15) }) {
-                                Text(stringResource(R.string.later_time))
+                                Text(stringResource(Res.string.later_time))
                             }
                         }
                     }
                 }
             }
-            item { Text(stringResource(R.string.measurements_heading), style = MaterialTheme.typography.titleLarge) }
+            item { Text(stringResource(Res.string.measurements_heading), style = MaterialTheme.typography.titleLarge) }
             itemsIndexed(
                 context.activeParameters,
                 key = { _, definition -> definition.id },
@@ -174,7 +175,7 @@ fun RapidSessionScreen(
                 }
                 val input = state.measurementInputs[definition.id].orEmpty()
                 val feedback = evaluateMeasurement(input, definition)
-                val description = stringResource(R.string.measurement_for_parameter, definition.parameter.label())
+                val description = stringResource(Res.string.measurement_for_parameter, definition.parameter.label())
                 Card(
                     Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -184,18 +185,18 @@ fun RapidSessionScreen(
                         val contextLabel: @Composable () -> Unit = {
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text(
-                                    stringResource(R.string.parameter_with_unit, definition.parameter.label(), definition.unit),
+                                    stringResource(Res.string.parameter_with_unit, definition.parameter.label(), definition.unit),
                                     style = MaterialTheme.typography.titleSmall,
                                 )
                                 val hint = when {
-                                    !feedback.isValid -> stringResource(R.string.invalid_measurement)
-                                    feedback.isOutsideIndicativeRange -> stringResource(R.string.unusual_measurement)
+                                    !feedback.isValid -> stringResource(Res.string.invalid_measurement)
+                                    feedback.isOutsideIndicativeRange -> stringResource(Res.string.unusual_measurement)
                                     context.lastMeasurements[definition.id] != null -> stringResource(
-                                        R.string.last_measurement_compact,
+                                        Res.string.last_measurement_compact,
                                         formatter.number(context.lastMeasurements.getValue(definition.id), definition.precision),
                                         definition.unit,
                                     )
-                                    else -> stringResource(R.string.no_previous_measurement)
+                                    else -> stringResource(Res.string.no_previous_measurement)
                                 }
                                 Text(
                                     hint,
@@ -243,7 +244,7 @@ fun RapidSessionScreen(
                     }
                 }
             }
-            item { Text(stringResource(R.string.maintenance_heading), style = MaterialTheme.typography.titleLarge) }
+            item { Text(stringResource(Res.string.maintenance_heading), style = MaterialTheme.typography.titleLarge) }
             itemsIndexed(MaintenanceActionType.entries) { _, type ->
                 MaintenanceActionEditor(type, state, viewModel)
             }
@@ -252,7 +253,7 @@ fun RapidSessionScreen(
                     TextButton(onClick = viewModel::toggleObservation) {
                         Text(
                             stringResource(
-                                if (state.showObservation) R.string.hide_observation else R.string.add_observation,
+                                if (state.showObservation) Res.string.hide_observation else Res.string.add_observation,
                             ),
                         )
                     }
@@ -260,7 +261,7 @@ fun RapidSessionScreen(
                         OutlinedTextField(
                             value = state.observation,
                             onValueChange = viewModel::updateObservation,
-                            label = { Text(stringResource(R.string.observation)) },
+                            label = { Text(stringResource(Res.string.observation)) },
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -271,7 +272,7 @@ fun RapidSessionScreen(
                     TextButton(onClick = viewModel::toggleIncident) {
                         Text(
                             stringResource(
-                                if (state.showIncident) R.string.hide_incident else R.string.add_incident,
+                                if (state.showIncident) Res.string.hide_incident else Res.string.add_incident,
                             ),
                         )
                     }
@@ -279,14 +280,14 @@ fun RapidSessionScreen(
                         OutlinedTextField(
                             value = state.incident,
                             onValueChange = viewModel::updateIncident,
-                            label = { Text(stringResource(R.string.incident)) },
+                            label = { Text(stringResource(Res.string.incident)) },
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
             }
             if (state.saveError) {
-                item { Text(stringResource(R.string.session_save_error), color = MaterialTheme.colorScheme.error) }
+                item { Text(stringResource(Res.string.session_save_error), color = MaterialTheme.colorScheme.error) }
             }
         }
     }
@@ -317,7 +318,7 @@ private fun MaintenanceActionEditor(
                 Text(label, modifier = Modifier.weight(1f).padding(8.dp))
                 if (action != null) {
                     TextButton(onClick = { viewModel.editMaintenanceAction(type) }) {
-                        Text(stringResource(R.string.edit_action))
+                        Text(stringResource(Res.string.edit_action))
                     }
                 }
             }
@@ -338,7 +339,7 @@ private fun ActionDetails(action: MaintenanceActionInput, viewModel: HomeViewMod
         OutlinedTextField(
             value = action.quantity,
             onValueChange = { viewModel.updateMaintenanceQuantity(action.type, it) },
-            label = { Text(stringResource(R.string.action_quantity)) },
+            label = { Text(stringResource(Res.string.action_quantity)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
             modifier = Modifier.weight(1f),
@@ -346,7 +347,7 @@ private fun ActionDetails(action: MaintenanceActionInput, viewModel: HomeViewMod
         OutlinedTextField(
             value = action.unit,
             onValueChange = { viewModel.updateMaintenanceUnit(action.type, it) },
-            label = { Text(stringResource(R.string.parameter_unit)) },
+            label = { Text(stringResource(Res.string.parameter_unit)) },
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
@@ -355,7 +356,7 @@ private fun ActionDetails(action: MaintenanceActionInput, viewModel: HomeViewMod
         OutlinedTextField(
             value = action.product,
             onValueChange = { viewModel.updateMaintenanceProduct(action.type, it) },
-            label = { Text(stringResource(R.string.action_product)) },
+            label = { Text(stringResource(Res.string.action_product)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -365,11 +366,11 @@ private fun ActionDetails(action: MaintenanceActionInput, viewModel: HomeViewMod
 @Composable
 internal fun MaintenanceActionType.label(): String = stringResource(
     when (this) {
-        MaintenanceActionType.WATER_CHANGE -> R.string.action_water_change
-        MaintenanceActionType.FERTILIZATION -> R.string.action_fertilization
-        MaintenanceActionType.FILTER_MAINTENANCE -> R.string.action_filter
-        MaintenanceActionType.VACUUM -> R.string.action_vacuum
-        MaintenanceActionType.GLASS_CLEANING -> R.string.action_glass
-        MaintenanceActionType.PRUNING -> R.string.action_pruning
+        MaintenanceActionType.WATER_CHANGE -> Res.string.action_water_change
+        MaintenanceActionType.FERTILIZATION -> Res.string.action_fertilization
+        MaintenanceActionType.FILTER_MAINTENANCE -> Res.string.action_filter
+        MaintenanceActionType.VACUUM -> Res.string.action_vacuum
+        MaintenanceActionType.GLASS_CLEANING -> Res.string.action_glass
+        MaintenanceActionType.PRUNING -> Res.string.action_pruning
     },
 )

@@ -1,9 +1,8 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.resources.*
 import android.app.LocaleManager
 import android.app.UiModeManager
-import android.content.Context
-import android.content.res.Configuration
 import android.os.LocaleList
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
@@ -73,10 +72,10 @@ class LocalizedAccessibilityFlowTest {
         }
         ActivityScenario.launch(MainActivity::class.java).use {
             val localized = localizedContext("de")
-            val settings = localized.getString(R.string.navigation_settings)
+            val settings = localized.getString(Res.string.navigation_settings)
             awaitText(settings)
             compose.onNodeWithText(settings).performClick()
-            val restore = localized.getString(R.string.restore_from_export)
+            val restore = localized.getString(Res.string.restore_from_export)
             scrollSettingsTo(restore)
             compose.onNode(hasText(restore) and hasClickAction()).performScrollTo()
             val layouts = mutableListOf<TextLayoutResult>()
@@ -98,16 +97,16 @@ class LocalizedAccessibilityFlowTest {
     @Test
     fun savedSessionPlurals_coverZeroOneAndManyInEveryLanguage() {
         listOf("en", "fr", "de", "it", "es").forEach { language ->
-            val resources = localizedContext(language).resources
-            val singularMeasurements = resources.getQuantityString(R.plurals.session_measurement_count, 1, 1)
-            val pluralMeasurements = resources.getQuantityString(R.plurals.session_measurement_count, 2, 2)
-            val singularActions = resources.getQuantityString(R.plurals.session_maintenance_count, 1, 1)
-            val pluralActions = resources.getQuantityString(R.plurals.session_maintenance_count, 2, 2)
+            val resources = localizedContext(language)
+            val singularMeasurements = resources.getQuantityString(Res.plurals.session_measurement_count, 1, 1)
+            val pluralMeasurements = resources.getQuantityString(Res.plurals.session_measurement_count, 2, 2)
+            val singularActions = resources.getQuantityString(Res.plurals.session_maintenance_count, 1, 1)
+            val pluralActions = resources.getQuantityString(Res.plurals.session_maintenance_count, 2, 2)
             assertFalse("$language measurement forms", singularMeasurements.removePrefix("1 ") == pluralMeasurements.removePrefix("2 "))
             assertFalse("$language maintenance forms", singularActions.removePrefix("1 ") == pluralActions.removePrefix("2 "))
             listOf(0, 1, 2).forEach { count ->
-                val measurements = resources.getQuantityString(R.plurals.session_measurement_count, count, count)
-                val actions = resources.getQuantityString(R.plurals.session_maintenance_count, count, count)
+                val measurements = resources.getQuantityString(Res.plurals.session_measurement_count, count, count)
+                val actions = resources.getQuantityString(Res.plurals.session_maintenance_count, count, count)
                 assertTrue("$language measurements $count", measurements.startsWith(count.toString()))
                 assertTrue("$language actions $count", actions.startsWith(count.toString()))
             }
@@ -151,19 +150,17 @@ class LocalizedAccessibilityFlowTest {
                 setFontScale(if (mode == "dark-large") 1.5f else 1f)
                 (context.applicationContext as TestAquaLogApplication).resetRepository()
                 ActivityScenario.launch(MainActivity::class.java).use {
-                    val localized = context.createConfigurationContext(Configuration(context.resources.configuration).apply {
-                        setLocale(LocaleList.forLanguageTags(language)[0])
-                    })
-                    val welcome = localized.getString(R.string.welcome_title)
-                    val start = localized.getString(R.string.get_started)
+                    val localized = localizedContext(language)
+                    val welcome = localized.getString(Res.string.welcome_title)
+                    val start = localized.getString(Res.string.get_started)
                     awaitText(start)
                     assertCriticalText(welcome)
                     assertEssentialActions(start)
                     captureAndInspect("welcome-$language-$mode.png")
 
                     compose.onNodeWithText(start).performClick()
-                    val profile = localized.getString(R.string.profile_title)
-                    val continueLabel = localized.getString(R.string.continue_to_aquarium)
+                    val profile = localized.getString(Res.string.profile_title)
+                    val continueLabel = localized.getString(Res.string.continue_to_aquarium)
                     awaitText(continueLabel)
                     assertCriticalText(profile)
                     val continueAction = compose.onNode(hasText(continueLabel) and hasClickAction())
@@ -208,22 +205,22 @@ class LocalizedAccessibilityFlowTest {
             }
             ActivityScenario.launch(MainActivity::class.java).use {
                 val localized = localizedContext(language)
-                val newSession = localized.getString(R.string.new_session)
+                val newSession = localized.getString(Res.string.new_session)
                 awaitText(newSession)
                 assertEssentialActions(
                     newSession,
-                    localized.getString(R.string.open_tasks),
-                    localized.getString(R.string.navigation_history),
-                    localized.getString(R.string.navigation_settings),
+                    localized.getString(Res.string.open_tasks),
+                    localized.getString(Res.string.navigation_history),
+                    localized.getString(Res.string.navigation_settings),
                 )
                 assertCriticalText("Aqua 120")
                 captureAndInspect("home-$language-$mode.png")
 
                 compose.onNodeWithText(newSession).performClick()
-                val saveSession = localized.getString(R.string.save_session)
+                val saveSession = localized.getString(Res.string.save_session)
                 awaitText(saveSession)
                 assertAction(saveSession)
-                assertCriticalText(localized.getString(R.string.measurements_heading))
+                assertCriticalText(localized.getString(Res.string.measurements_heading))
                 assertRapidSessionFocusOrder(
                     "temperature",
                     "ph",
@@ -234,76 +231,76 @@ class LocalizedAccessibilityFlowTest {
                 )
                 captureAndInspect("rapid-session-$language-$mode.png")
                 compose.onNodeWithTag("rapid-session-list").performScrollToIndex(0)
-                val cancel = localized.getString(R.string.cancel)
+                val cancel = localized.getString(Res.string.cancel)
                 awaitText(cancel)
                 compose.onNodeWithText(cancel).performClick()
 
-                val tasks = localized.getString(R.string.open_tasks)
+                val tasks = localized.getString(Res.string.open_tasks)
                 compose.onNodeWithText(tasks).performClick()
-                awaitText(localized.getString(R.string.tasks_title))
-                assertCriticalText(localized.getString(R.string.tasks_title))
+                awaitText(localized.getString(Res.string.tasks_title))
+                assertCriticalText(localized.getString(Res.string.tasks_title))
                 compose.onNodeWithTag("task-list").performScrollToNode(
-                    hasText(localized.getString(R.string.save_task)),
+                    hasText(localized.getString(Res.string.save_task)),
                 )
                 compose.onNode(
-                    hasText(localized.getString(R.string.save_task)) and hasClickAction(),
+                    hasText(localized.getString(Res.string.save_task)) and hasClickAction(),
                 ).performScrollTo()
-                assertAction(localized.getString(R.string.save_task))
+                assertAction(localized.getString(Res.string.save_task))
                 captureAndInspect("tasks-$language-$mode.png")
-                compose.onNodeWithTag("task-list").performScrollToNode(hasText(localized.getString(R.string.back)))
+                compose.onNodeWithTag("task-list").performScrollToNode(hasText(localized.getString(Res.string.back)))
                 assertEssentialActionByTag("tasks-back")
-                compose.onNodeWithText(localized.getString(R.string.back)).performClick()
+                compose.onNodeWithText(localized.getString(Res.string.back)).performClick()
 
-                compose.onNodeWithText(localized.getString(R.string.navigation_history)).performClick()
-                awaitText(localized.getString(R.string.timeline_title))
-                assertCriticalText(localized.getString(R.string.timeline_title))
+                compose.onNodeWithText(localized.getString(Res.string.navigation_history)).performClick()
+                awaitText(localized.getString(Res.string.timeline_title))
+                assertCriticalText(localized.getString(Res.string.timeline_title))
                 captureAndInspect("timeline-$language-$mode.png")
-                assertEssentialActions(localized.getString(R.string.trends_title))
-                compose.onNodeWithText(localized.getString(R.string.trends_title)).performClick()
+                assertEssentialActions(localized.getString(Res.string.trends_title))
+                compose.onNodeWithText(localized.getString(Res.string.trends_title)).performClick()
                 compose.onNodeWithTag("trend-list").performScrollToNode(
-                    hasText(localized.getString(R.string.trends_exact_values)),
+                    hasText(localized.getString(Res.string.trends_exact_values)),
                 )
-                compose.onNodeWithText(localized.getString(R.string.trends_exact_values)).performScrollTo().assertIsDisplayed()
-                assertCriticalText(localized.getString(R.string.trends_exact_values))
+                compose.onNodeWithText(localized.getString(Res.string.trends_exact_values)).performScrollTo().assertIsDisplayed()
+                assertCriticalText(localized.getString(Res.string.trends_exact_values))
                 captureAndInspect("trends-$language-$mode.png")
 
-                compose.onNodeWithText(localized.getString(R.string.navigation_settings)).performClick()
-                awaitText(localized.getString(R.string.aquariums_title))
-                assertAction(localized.getString(R.string.add_aquarium))
-                scrollAndAssertEssentialAction(localized.getString(R.string.edit_aquarium))
+                compose.onNodeWithText(localized.getString(Res.string.navigation_settings)).performClick()
+                awaitText(localized.getString(Res.string.aquariums_title))
+                assertAction(localized.getString(Res.string.add_aquarium))
+                scrollAndAssertEssentialAction(localized.getString(Res.string.edit_aquarium))
                 captureAndInspect("settings-aquariums-$language-$mode.png")
-                scrollSettingsTo(localized.getString(R.string.portable_data_title))
-                scrollAndAssertEssentialAction(localized.getString(R.string.export_data))
-                scrollAndAssertEssentialAction(localized.getString(R.string.restore_from_export))
+                scrollSettingsTo(localized.getString(Res.string.portable_data_title))
+                scrollAndAssertEssentialAction(localized.getString(Res.string.export_data))
+                scrollAndAssertEssentialAction(localized.getString(Res.string.restore_from_export))
                 captureAndInspect("settings-export-$language-$mode.png")
-                scrollSettingsTo(localized.getString(R.string.account_actions))
+                scrollSettingsTo(localized.getString(Res.string.account_actions))
                 captureAndInspect("settings-account-$language-$mode.png")
-                scrollSettingsTo(localized.getString(R.string.feedback_title))
-                val sendFeedback = localized.getString(R.string.send_feedback)
+                scrollSettingsTo(localized.getString(Res.string.feedback_title))
+                val sendFeedback = localized.getString(Res.string.send_feedback)
                 compose.onNode(hasText(sendFeedback) and hasClickAction()).performScrollTo()
                 assertAction(sendFeedback)
                 captureAndInspect("settings-feedback-$language-$mode.png")
                 compose.onNode(hasText(sendFeedback) and hasClickAction()).performClick()
-                awaitText(localized.getString(R.string.feedback_privacy_explanation))
+                awaitText(localized.getString(Res.string.feedback_privacy_explanation))
                 assertEssentialActionByTag("submit-feedback")
-                assertEssentialActions(localized.getString(R.string.cancel))
+                assertEssentialActions(localized.getString(Res.string.cancel))
                 captureAndInspect("feedback-dialog-$language-$mode.png")
-                compose.onNodeWithText(localized.getString(R.string.cancel)).performClick()
+                compose.onNodeWithText(localized.getString(Res.string.cancel)).performClick()
 
                 compose.onNodeWithTag("settings-list").performScrollToNode(
-                    hasText(localized.getString(R.string.view_free_and_pro)),
+                    hasText(localized.getString(Res.string.view_free_and_pro)),
                 )
-                val viewPro = localized.getString(R.string.view_free_and_pro)
+                val viewPro = localized.getString(Res.string.view_free_and_pro)
                 assertAction(viewPro)
                 compose.onNodeWithText(viewPro).performClick()
-                awaitText(localized.getString(R.string.paywall_title))
-                scrollAndAssertEssentialAction(localized.getString(R.string.buy_lifetime_in_google_play))
-                scrollAndAssertEssentialAction(localized.getString(R.string.start_trial_in_google_play))
-                scrollAndAssertEssentialAction(localized.getString(R.string.restore_purchase))
+                awaitText(localized.getString(Res.string.paywall_title))
+                scrollAndAssertEssentialAction(localized.getString(Res.string.buy_lifetime_in_google_play))
+                scrollAndAssertEssentialAction(localized.getString(Res.string.start_trial_in_google_play))
+                scrollAndAssertEssentialAction(localized.getString(Res.string.restore_purchase))
                 compose.onNode(
-                    hasText(localized.getString(R.string.back_to_settings)) and hasClickAction(),
+                    hasText(localized.getString(Res.string.back_to_settings)) and hasClickAction(),
                 ).performScrollTo()
-                assertAction(localized.getString(R.string.back_to_settings))
+                assertAction(localized.getString(Res.string.back_to_settings))
                 captureAndInspect("pro-$language-$mode.png")
             }
         }
@@ -350,9 +347,7 @@ class LocalizedAccessibilityFlowTest {
         }
     }
 
-    private fun localizedContext(language: String): Context = context.createConfigurationContext(
-        Configuration(context.resources.configuration).apply { setLocale(LocaleList.forLanguageTags(language)[0]) },
-    )
+    private fun localizedContext(language: String) = LocalizedStrings(language)
 
     private fun assertAction(label: String) {
         val action = compose.onNode(hasText(label) and hasClickAction())

@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.resources.*
 import android.Manifest
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
@@ -31,7 +32,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.TaskOccurrence
@@ -57,27 +58,27 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
     ) {
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(stringResource(R.string.tasks_title), style = MaterialTheme.typography.headlineMedium)
+                Text(stringResource(Res.string.tasks_title), style = MaterialTheme.typography.headlineMedium)
                 TextButton(
                     onClick = viewModel::closeTasks,
                     modifier = Modifier.testTag("tasks-back").requiredSizeIn(minWidth = 48.dp, minHeight = 48.dp),
                 ) {
-                    Text(stringResource(R.string.back))
+                    Text(stringResource(Res.string.back))
                 }
             }
         }
         if (notificationPermissionMissing) {
             item {
-                ReminderInformationCard(stringResource(R.string.notification_permission_explanation)) {
+                ReminderInformationCard(stringResource(Res.string.notification_permission_explanation)) {
                     Button(
                         onClick = { requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS) },
                         modifier = Modifier.heightIn(min = 48.dp),
-                    ) { Text(stringResource(R.string.allow_notifications)) }
+                    ) { Text(stringResource(Res.string.allow_notifications)) }
                 }
             }
         }
         if (state.batteryOptimizationActive) {
-            item { ReminderInformationCard(stringResource(R.string.battery_optimization_explanation)) }
+            item { ReminderInformationCard(stringResource(Res.string.battery_optimization_explanation)) }
         }
         item {
             Card(Modifier.fillMaxWidth()) {
@@ -85,11 +86,11 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
                     Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(stringResource(R.string.new_task), style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(Res.string.new_task), style = MaterialTheme.typography.titleLarge)
                     OutlinedTextField(
                         value = state.title,
                         onValueChange = viewModel::updateTaskTitle,
-                        label = { Text(stringResource(R.string.task_title_label)) },
+                        label = { Text(stringResource(Res.string.task_title_label)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                     )
@@ -112,7 +113,7 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                     ) {
                         Column {
-                            Text(stringResource(R.string.task_due_date_label))
+                            Text(stringResource(Res.string.task_due_date_label))
                             Text(
                                 formatter.date(selectedDate.year, selectedDate.monthValue, selectedDate.dayOfMonth),
                                 style = MaterialTheme.typography.bodySmall,
@@ -136,10 +137,10 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
                         modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                     ) {
                         Column {
-                            Text(stringResource(R.string.task_time_label))
+                            Text(stringResource(Res.string.task_time_label))
                             Text(
                                 state.time.toMinuteOfDayOrNull()?.let(formatter::time)
-                                    ?: stringResource(R.string.task_no_time),
+                                    ?: stringResource(Res.string.task_no_time),
                                 style = MaterialTheme.typography.bodySmall,
                             )
                         }
@@ -149,7 +150,7 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
                             onClick = { viewModel.updateTaskTime("") },
                             modifier = Modifier.heightIn(min = 48.dp),
                         ) {
-                            Text(stringResource(R.string.clear_task_time))
+                            Text(stringResource(Res.string.clear_task_time))
                         }
                     }
                     Row(
@@ -166,19 +167,19 @@ fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier 
                         }
                     }
                     if (state.showValidationError) {
-                        Text(stringResource(R.string.task_validation_error), color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(Res.string.task_validation_error), color = MaterialTheme.colorScheme.error)
                     }
                     Button(
                         onClick = viewModel::createTask,
                         enabled = !state.isSaving,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(stringResource(R.string.save_task)) }
+                    ) { Text(stringResource(Res.string.save_task)) }
                 }
             }
         }
-        item { Text(stringResource(R.string.pending_tasks), style = MaterialTheme.typography.titleLarge) }
+        item { Text(stringResource(Res.string.pending_tasks), style = MaterialTheme.typography.titleLarge) }
         if (state.pendingOccurrences.isEmpty()) {
-            item { Text(stringResource(R.string.no_pending_tasks)) }
+            item { Text(stringResource(Res.string.no_pending_tasks)) }
         } else {
             items(state.pendingOccurrences, key = TaskOccurrence::id) { occurrence ->
                 TaskOccurrenceCard(occurrence, viewModel)
@@ -205,24 +206,24 @@ private fun TaskOccurrenceCard(occurrence: TaskOccurrence, viewModel: HomeViewMo
             Text(occurrence.title, style = MaterialTheme.typography.titleMedium)
             Text(
                 stringResource(
-                    R.string.task_due_value,
+                    Res.string.task_due_value,
                     formatter.date(occurrence.dueDate.year, occurrence.dueDate.month, occurrence.dueDate.day),
-                    occurrence.minuteOfDay?.let(formatter::time) ?: stringResource(R.string.task_no_time),
+                    occurrence.minuteOfDay?.let(formatter::time) ?: stringResource(Res.string.task_no_time),
                 ),
             )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = { viewModel.resolveTask(occurrence, TaskResolution.COMPLETED) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) { Text(stringResource(R.string.task_complete)) }
+                ) { Text(stringResource(Res.string.task_complete)) }
                 OutlinedButton(
                     onClick = { viewModel.resolveTask(occurrence, TaskResolution.POSTPONED) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) { Text(stringResource(R.string.task_postpone)) }
+                ) { Text(stringResource(Res.string.task_postpone)) }
                 TextButton(
                     onClick = { viewModel.resolveTask(occurrence, TaskResolution.IGNORED) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) { Text(stringResource(R.string.task_ignore)) }
+                ) { Text(stringResource(Res.string.task_ignore)) }
             }
         }
     }
@@ -231,10 +232,10 @@ private fun TaskOccurrenceCard(occurrence: TaskOccurrence, viewModel: HomeViewMo
 @Composable
 private fun TaskRecurrence.label(): String = stringResource(
     when (this) {
-        TaskRecurrence.ONCE -> R.string.task_once
-        TaskRecurrence.DAILY -> R.string.task_daily
-        TaskRecurrence.WEEKLY -> R.string.task_weekly
-        TaskRecurrence.MONTHLY -> R.string.task_monthly
+        TaskRecurrence.ONCE -> Res.string.task_once
+        TaskRecurrence.DAILY -> Res.string.task_daily
+        TaskRecurrence.WEEKLY -> Res.string.task_weekly
+        TaskRecurrence.MONTHLY -> Res.string.task_monthly
     },
 )
 

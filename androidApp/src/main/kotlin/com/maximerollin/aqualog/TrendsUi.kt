@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -33,7 +34,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
@@ -76,11 +77,11 @@ private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier:
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.trends_heading), style = MaterialTheme.typography.headlineMedium)
+                Text(stringResource(Res.string.trends_heading), style = MaterialTheme.typography.headlineMedium)
                 Text(
                     stringResource(
-                        if (state.trends.advancedAnalysis == null) R.string.trends_free_limit
-                        else R.string.trends_pro_complete_history,
+                        if (state.trends.advancedAnalysis == null) Res.string.trends_free_limit
+                        else Res.string.trends_pro_complete_history,
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -89,28 +90,28 @@ private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier:
                         onClick = viewModel::openProPaywall,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                     ) {
-                        Text(stringResource(R.string.unlock_history_beyond_90_days))
+                        Text(stringResource(Res.string.unlock_history_beyond_90_days))
                     }
                 }
                 if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
                     Button(
                         onClick = viewModel::showCompleteProHistory,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(stringResource(R.string.trends_complete_history)) }
+                    ) { Text(stringResource(Res.string.trends_complete_history)) }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
                             value = state.trends.customStartDate,
                             onValueChange = viewModel::updateTrendCustomStart,
-                            label = { Text(stringResource(R.string.trends_start_date)) },
-                            supportingText = { Text(stringResource(R.string.date_format_hint)) },
+                            label = { Text(stringResource(Res.string.trends_start_date)) },
+                            supportingText = { Text(stringResource(Res.string.date_format_hint)) },
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                         )
                         OutlinedTextField(
                             value = state.trends.customEndDate,
                             onValueChange = viewModel::updateTrendCustomEnd,
-                            label = { Text(stringResource(R.string.trends_end_date)) },
-                            supportingText = { Text(stringResource(R.string.date_format_hint)) },
+                            label = { Text(stringResource(Res.string.trends_end_date)) },
+                            supportingText = { Text(stringResource(Res.string.date_format_hint)) },
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                         )
@@ -118,9 +119,9 @@ private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier:
                     Button(
                         onClick = viewModel::applyTrendCustomPeriod,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(stringResource(R.string.trends_apply_custom_period)) }
+                    ) { Text(stringResource(Res.string.trends_apply_custom_period)) }
                     if (state.trends.customDateError) {
-                        Text(stringResource(R.string.trends_invalid_custom_period), color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(Res.string.trends_invalid_custom_period), color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -140,19 +141,19 @@ private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier:
             item { TrendChart(selected, snapshot) }
             item {
                 Text(
-                    stringResource(R.string.trends_legend),
+                    stringResource(Res.string.trends_legend),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            item { Text(stringResource(R.string.trends_exact_values), style = MaterialTheme.typography.titleLarge) }
+            item { Text(stringResource(Res.string.trends_exact_values), style = MaterialTheme.typography.titleLarge) }
             if (selected.points.isEmpty()) {
                 item { EmptyTrendCard() }
             } else {
                 items(selected.points, key = { "trend-point-${it.sessionId}" }) { point ->
                     val value = point.value.displayTrendValue(selected.definition.precision)
                     val exactValueDescription = stringResource(
-                        R.string.trends_exact_value_description,
+                        Res.string.trends_exact_value_description,
                         value,
                         selected.definition.unit,
                     )
@@ -165,24 +166,24 @@ private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier:
                     ) {
                         Text(
                             stringResource(
-                                R.string.timeline_marker_line,
+                                Res.string.timeline_marker_line,
                                 point.occurredAtEpochMillis.displayTrendDate(),
-                                stringResource(R.string.value_with_unit, value, selected.definition.unit),
+                                stringResource(Res.string.value_with_unit, value, selected.definition.unit),
                             ),
                             modifier = Modifier.padding(16.dp),
                         )
                     }
                 }
             }
-            item { Text(stringResource(R.string.trends_events), style = MaterialTheme.typography.titleLarge) }
+            item { Text(stringResource(Res.string.trends_events), style = MaterialTheme.typography.titleLarge) }
             if (snapshot.events.isEmpty()) {
-                item { Text(stringResource(R.string.trends_no_events)) }
+                item { Text(stringResource(Res.string.trends_no_events)) }
             } else {
                 items(snapshot.events, key = { "trend-event-${it.sessionId}" }) { marker ->
                     Card(Modifier.fillMaxWidth()) {
                         Text(
                             stringResource(
-                                R.string.timeline_marker_line,
+                                Res.string.timeline_marker_line,
                                 marker.occurredAtEpochMillis.displayTrendDate(),
                                 marker.displayText(),
                             ),
@@ -204,9 +205,9 @@ private fun AdvancedAnalysis(
     onSelectIntervention: (String) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.trends_advanced_analysis), style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(Res.string.trends_advanced_analysis), style = MaterialTheme.typography.headlineSmall)
         Text(
-            stringResource(R.string.trends_descriptive_disclaimer),
+            stringResource(Res.string.trends_descriptive_disclaimer),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         analysis.comparisonGroups.forEach { group ->
@@ -218,7 +219,7 @@ private fun AdvancedAnalysis(
             )
         }
         if (analysis.snapshot.events.isNotEmpty()) {
-            Text(stringResource(R.string.trends_choose_intervention), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(Res.string.trends_choose_intervention), style = MaterialTheme.typography.titleMedium)
             analysis.snapshot.events.forEach { marker ->
                 TextButton(
                     onClick = { onSelectIntervention(marker.sessionId) },
@@ -229,7 +230,7 @@ private fun AdvancedAnalysis(
                 ) {
                     Text(
                         stringResource(
-                            R.string.timeline_marker_line,
+                            Res.string.timeline_marker_line,
                             marker.occurredAtEpochMillis.displayTrendDate(),
                             marker.displayText(),
                         ),
@@ -238,7 +239,7 @@ private fun AdvancedAnalysis(
             }
         }
         analysis.interventionComparison?.let { comparison ->
-            Text(stringResource(R.string.trends_before_after), style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(Res.string.trends_before_after), style = MaterialTheme.typography.titleLarge)
             comparison.series.forEach { result ->
                 Card(Modifier.fillMaxWidth()) {
                     val parameterName = analysis.snapshot.series.first {
@@ -246,14 +247,14 @@ private fun AdvancedAnalysis(
                     }.definition.parameter.label()
                     val text = when (result) {
                         is InterventionSeriesComparison.Available -> stringResource(
-                            R.string.trends_before_after_values,
+                            Res.string.trends_before_after_values,
                             parameterName,
                             result.beforeAverage.displayTrendValue(2),
                             result.afterAverage.displayTrendValue(2),
                             result.unit,
                         )
                         is InterventionSeriesComparison.InsufficientData -> stringResource(
-                            R.string.trends_before_after_insufficient,
+                            Res.string.trends_before_after_insufficient,
                             parameterName,
                         )
                     }
@@ -266,10 +267,10 @@ private fun AdvancedAnalysis(
                 }
             }
         }
-        Text(stringResource(R.string.trends_text_alternative), style = MaterialTheme.typography.titleLarge)
+        Text(stringResource(Res.string.trends_text_alternative), style = MaterialTheme.typography.titleLarge)
         Text(
             stringResource(
-                R.string.trends_period_description,
+                Res.string.trends_period_description,
                 analysis.snapshot.windowStartEpochMillis.displayTrendDate(),
                 analysis.snapshot.windowEndEpochMillis.displayTrendDate(),
             ),
@@ -279,10 +280,10 @@ private fun AdvancedAnalysis(
                 it.definition.id == alternative.definitionId
             }.definition.parameter.label()
             val values = if (alternative.pointCount == 0) {
-                stringResource(R.string.trends_text_series_no_data, parameterName, alternative.unit)
+                stringResource(Res.string.trends_text_series_no_data, parameterName, alternative.unit)
             } else {
                 stringResource(
-                    R.string.trends_text_series_values,
+                    Res.string.trends_text_series_values,
                     parameterName,
                     alternative.pointCount,
                     alternative.unit,
@@ -304,7 +305,7 @@ private fun AdvancedAnalysis(
             )
             Text(
                 stringResource(
-                    R.string.trends_text_annotation,
+                    Res.string.trends_text_annotation,
                     annotation.occurredAtEpochMillis.displayTrendDate(),
                     marker.displayText(),
                 ),
@@ -317,14 +318,14 @@ private fun AdvancedAnalysis(
             Text(
                 when (comparison) {
                     is InterventionSeriesComparison.Available -> stringResource(
-                        R.string.trends_before_after_values,
+                        Res.string.trends_before_after_values,
                         parameterName,
                         comparison.beforeAverage.displayTrendValue(2),
                         comparison.afterAverage.displayTrendValue(2),
                         comparison.unit,
                     )
                     is InterventionSeriesComparison.InsufficientData -> stringResource(
-                        R.string.trends_before_after_insufficient,
+                        Res.string.trends_before_after_insufficient,
                         parameterName,
                     )
                 },
@@ -350,14 +351,14 @@ private fun ComparisonChart(
     val seriesLabels = mutableListOf<String>()
     for (series in group.series) seriesLabels += series.definition.parameter.label()
     val description = stringResource(
-        R.string.trends_comparison_chart_description,
+        Res.string.trends_comparison_chart_description,
         seriesLabels.joinToString(),
         group.canonicalUnit,
         annotations.size,
     )
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.trends_compatible_comparison, group.canonicalUnit))
+            Text(stringResource(Res.string.trends_compatible_comparison, group.canonicalUnit))
             Canvas(
                 Modifier.fillMaxWidth().height(180.dp).semantics { contentDescription = description },
             ) {
@@ -391,7 +392,7 @@ private fun ComparisonChart(
             }
             group.series.forEachIndexed { index, series ->
                 Text(
-                    stringResource(R.string.trends_series_label, series.definition.parameter.label()),
+                    stringResource(Res.string.trends_series_label, series.definition.parameter.label()),
                     color = colors[index % colors.size],
                 )
             }
@@ -408,7 +409,7 @@ private fun BeforeAfterChart(
     val afterColor = MaterialTheme.colorScheme.tertiaryContainer
     val lineColor = MaterialTheme.colorScheme.primary
     val description = stringResource(
-        R.string.trends_before_after_chart_description,
+        Res.string.trends_before_after_chart_description,
         parameterName,
         comparison.beforeAverage.displayTrendValue(2),
         comparison.afterAverage.displayTrendValue(2),
@@ -430,20 +431,20 @@ private fun BeforeAfterChart(
         drawCircle(lineColor, 6.dp.toPx(), after)
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(stringResource(R.string.trends_before_label))
-        Text(stringResource(R.string.trends_intervention_marker))
-        Text(stringResource(R.string.trends_after_label))
+        Text(stringResource(Res.string.trends_before_label))
+        Text(stringResource(Res.string.trends_intervention_marker))
+        Text(stringResource(Res.string.trends_after_label))
     }
 }
 
 @Composable
 private fun DescriptiveTrendDirection.label(): String = stringResource(
     when (this) {
-        DescriptiveTrendDirection.RISING -> R.string.trends_direction_rising
-        DescriptiveTrendDirection.FALLING -> R.string.trends_direction_falling
-        DescriptiveTrendDirection.UNCHANGED -> R.string.trends_direction_unchanged
-        DescriptiveTrendDirection.SINGLE_VALUE -> R.string.trends_direction_single
-        DescriptiveTrendDirection.NO_DATA -> R.string.trends_direction_no_data
+        DescriptiveTrendDirection.RISING -> Res.string.trends_direction_rising
+        DescriptiveTrendDirection.FALLING -> Res.string.trends_direction_falling
+        DescriptiveTrendDirection.UNCHANGED -> Res.string.trends_direction_unchanged
+        DescriptiveTrendDirection.SINGLE_VALUE -> Res.string.trends_direction_single
+        DescriptiveTrendDirection.NO_DATA -> Res.string.trends_direction_no_data
     },
 )
 
@@ -461,9 +462,9 @@ private fun TrendPeriods(selected: TrendPeriod, onSelect: (TrendPeriod) -> Unit)
                     Text(
                         stringResource(
                             when (period) {
-                                TrendPeriod.SEVEN_DAYS -> R.string.timeline_period_7
-                                TrendPeriod.THIRTY_DAYS -> R.string.timeline_period_30
-                                TrendPeriod.NINETY_DAYS -> R.string.timeline_period_90
+                                TrendPeriod.SEVEN_DAYS -> Res.string.timeline_period_7
+                                TrendPeriod.THIRTY_DAYS -> Res.string.timeline_period_30
+                                TrendPeriod.NINETY_DAYS -> Res.string.timeline_period_90
                             },
                         ),
                     )
@@ -499,7 +500,7 @@ private fun TrendParameters(
 private fun TrendSeriesHeading(series: ParameterTrendSeries) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
-            stringResource(R.string.trends_parameter_heading, series.definition.parameter.label()),
+            stringResource(Res.string.trends_parameter_heading, series.definition.parameter.label()),
             style = MaterialTheme.typography.titleLarge,
         )
         val minimum = series.definition.indicativeMinimum
@@ -507,7 +508,7 @@ private fun TrendSeriesHeading(series: ParameterTrendSeries) {
         if (minimum != null && maximum != null) {
             Text(
                 stringResource(
-                    R.string.trends_indicative_target,
+                    Res.string.trends_indicative_target,
                     minimum.displayTrendValue(series.definition.precision),
                     maximum.displayTrendValue(series.definition.precision),
                     series.definition.unit,
@@ -525,7 +526,7 @@ private fun TrendChart(series: ParameterTrendSeries, snapshot: TrendSnapshot) {
     val eventColor = MaterialTheme.colorScheme.tertiary
     val axisColor = MaterialTheme.colorScheme.outline
     val description = stringResource(
-        R.string.trends_chart_description,
+        Res.string.trends_chart_description,
         series.definition.parameter.label(),
     )
     Card(Modifier.fillMaxWidth()) {
@@ -633,7 +634,7 @@ private fun TrendChart(series: ParameterTrendSeries, snapshot: TrendSnapshot) {
 @Composable
 private fun EmptyTrendCard() {
     Card(Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.trends_no_measurements), modifier = Modifier.padding(20.dp))
+        Text(stringResource(Res.string.trends_no_measurements), modifier = Modifier.padding(20.dp))
     }
 }
 
@@ -645,7 +646,7 @@ private fun TrendLoading(modifier: Modifier) {
         verticalArrangement = Arrangement.Center,
     ) {
         CircularProgressIndicator()
-        Text(stringResource(R.string.trends_loading), modifier = Modifier.padding(top = 12.dp))
+        Text(stringResource(Res.string.trends_loading), modifier = Modifier.padding(top = 12.dp))
     }
 }
 
@@ -656,9 +657,9 @@ private fun TrendError(onRetry: () -> Unit, modifier: Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(stringResource(R.string.trends_error), color = MaterialTheme.colorScheme.error)
+        Text(stringResource(Res.string.trends_error), color = MaterialTheme.colorScheme.error)
         Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp).heightIn(min = 48.dp)) {
-            Text(stringResource(R.string.retry))
+            Text(stringResource(Res.string.retry))
         }
     }
 }
@@ -668,8 +669,8 @@ private fun TrendEventMarker.displayText(): String {
     val actions = maintenanceActionTypes.map { it.trendLabel() }
     val eventLabels = events.map { event ->
         val type = when (event.type) {
-            EventType.OBSERVATION -> stringResource(R.string.observation)
-            EventType.INCIDENT -> stringResource(R.string.incident)
+            EventType.OBSERVATION -> stringResource(Res.string.observation)
+            EventType.INCIDENT -> stringResource(Res.string.incident)
         }
         "$type: ${event.note}"
     }
@@ -679,12 +680,12 @@ private fun TrendEventMarker.displayText(): String {
 @Composable
 private fun MaintenanceActionType.trendLabel(): String = stringResource(
     when (this) {
-        MaintenanceActionType.WATER_CHANGE -> R.string.action_water_change
-        MaintenanceActionType.FERTILIZATION -> R.string.action_fertilization
-        MaintenanceActionType.FILTER_MAINTENANCE -> R.string.action_filter
-        MaintenanceActionType.VACUUM -> R.string.action_vacuum
-        MaintenanceActionType.GLASS_CLEANING -> R.string.action_glass
-        MaintenanceActionType.PRUNING -> R.string.action_pruning
+        MaintenanceActionType.WATER_CHANGE -> Res.string.action_water_change
+        MaintenanceActionType.FERTILIZATION -> Res.string.action_fertilization
+        MaintenanceActionType.FILTER_MAINTENANCE -> Res.string.action_filter
+        MaintenanceActionType.VACUUM -> Res.string.action_vacuum
+        MaintenanceActionType.GLASS_CLEANING -> Res.string.action_glass
+        MaintenanceActionType.PRUNING -> Res.string.action_pruning
     },
 )
 

@@ -11,6 +11,8 @@ kotlin {
         namespace = "com.maximerollin.aqualog.ui"
         compileSdk = 37
         minSdk = 23
+        // Packages the Compose resources (strings) into the Android assets.
+        androidResources.enable = true
     }
 
     jvm()
@@ -22,6 +24,10 @@ kotlin {
             implementation(libs.jetbrains.compose.foundation)
             implementation(libs.jetbrains.compose.material3)
             implementation(libs.jetbrains.compose.ui)
+            api(libs.jetbrains.compose.components.resources)
+        }
+        jvmTest.dependencies {
+            implementation(kotlin("test"))
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
@@ -33,4 +39,9 @@ compose.desktop {
     application {
         mainClass = "com.maximerollin.aqualog.ui.MainKt"
     }
+}
+
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "com.maximerollin.aqualog.resources"
 }

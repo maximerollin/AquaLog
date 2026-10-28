@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,8 +25,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -74,13 +76,13 @@ fun TimelineScreen(
             FilterChip(
                 selected = state.historySection == HistorySection.CHRONOLOGY,
                 onClick = { viewModel.selectHistorySection(HistorySection.CHRONOLOGY) },
-                label = { Text(stringResource(R.string.timeline_title)) },
+                label = { Text(stringResource(Res.string.timeline_title)) },
                 modifier = Modifier.heightIn(min = 48.dp),
             )
             FilterChip(
                 selected = state.historySection == HistorySection.TRENDS,
                 onClick = { viewModel.selectHistorySection(HistorySection.TRENDS) },
-                label = { Text(stringResource(R.string.trends_title)) },
+                label = { Text(stringResource(Res.string.trends_title)) },
                 modifier = Modifier.heightIn(min = 48.dp),
             )
         }
@@ -107,7 +109,7 @@ private fun TimelineContent(
         ) {
             if (state.timeline.isOffline) {
                 Text(
-                    stringResource(R.string.timeline_offline_status),
+                    stringResource(Res.string.timeline_offline_status),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -147,9 +149,9 @@ private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel, filtersEx
             item {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.timeline_empty_title), style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(Res.string.timeline_empty_title), style = MaterialTheme.typography.titleMedium)
                         Text(
-                            stringResource(R.string.timeline_empty_description),
+                            stringResource(Res.string.timeline_empty_description),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -179,18 +181,18 @@ private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel, filtersEx
 private fun TimelineTaskCard(occurrence: TaskOccurrence) {
     val formatter = currentLocalizedFormatters()
     val resolutionLabel = when (occurrence.resolution) {
-        TaskResolution.COMPLETED -> stringResource(R.string.task_completed)
-        TaskResolution.POSTPONED -> stringResource(R.string.task_postponed)
-        TaskResolution.IGNORED -> stringResource(R.string.task_ignored)
+        TaskResolution.COMPLETED -> stringResource(Res.string.task_completed)
+        TaskResolution.POSTPONED -> stringResource(Res.string.task_postponed)
+        TaskResolution.IGNORED -> stringResource(Res.string.task_ignored)
         null -> return
     }
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(stringResource(R.string.timeline_task), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(Res.string.timeline_task), style = MaterialTheme.typography.titleMedium)
             Text(occurrence.title)
             Text(
                 stringResource(
-                    R.string.task_resolved_value,
+                    Res.string.task_resolved_value,
                     resolutionLabel,
                     formatter.dateTime(requireNotNull(occurrence.resolvedAtEpochMillis)),
                 ),
@@ -204,20 +206,20 @@ private fun TimelineTaskCard(occurrence: TaskOccurrence) {
 private fun TimelineFilters(state: HomeUiState, viewModel: HomeViewModel, expanded: Boolean, onToggle: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         TextButton(onClick = onToggle, modifier = Modifier.heightIn(min = 48.dp)) {
-            Text(stringResource(R.string.timeline_filters))
+            Text(stringResource(Res.string.timeline_filters))
         }
         // The active selections stay visible when the choices are collapsed.
         if (!expanded) {
             val periodLabel = when (state.timeline.period) {
-                TimelinePeriod.ALL -> R.string.timeline_period_all
-                TimelinePeriod.SEVEN_DAYS -> R.string.timeline_period_7
-                TimelinePeriod.THIRTY_DAYS -> R.string.timeline_period_30
-                TimelinePeriod.NINETY_DAYS -> R.string.timeline_period_90
+                TimelinePeriod.ALL -> Res.string.timeline_period_all
+                TimelinePeriod.SEVEN_DAYS -> Res.string.timeline_period_7
+                TimelinePeriod.THIRTY_DAYS -> Res.string.timeline_period_30
+                TimelinePeriod.NINETY_DAYS -> Res.string.timeline_period_90
             }
             Text(listOfNotNull(
                 stringResource(periodLabel),
                 state.aquariums.firstOrNull { it.id == state.timeline.aquariumId }?.name
-                    ?: stringResource(R.string.timeline_all_aquariums),
+                    ?: stringResource(Res.string.timeline_all_aquariums),
                 state.setup?.parameters?.firstOrNull { it.id == state.timeline.parameterDefinitionId }?.parameter?.label(),
                 state.timeline.maintenanceActionType?.timelineLabel(),
             ).joinToString(" · "), style = MaterialTheme.typography.bodyMedium,
@@ -227,10 +229,10 @@ private fun TimelineFilters(state: HomeUiState, viewModel: HomeViewModel, expand
             FilterRow {
                 TimelinePeriod.entries.forEach { period ->
                     val label = when (period) {
-                        TimelinePeriod.ALL -> stringResource(R.string.timeline_period_all)
-                        TimelinePeriod.SEVEN_DAYS -> stringResource(R.string.timeline_period_7)
-                        TimelinePeriod.THIRTY_DAYS -> stringResource(R.string.timeline_period_30)
-                        TimelinePeriod.NINETY_DAYS -> stringResource(R.string.timeline_period_90)
+                        TimelinePeriod.ALL -> stringResource(Res.string.timeline_period_all)
+                        TimelinePeriod.SEVEN_DAYS -> stringResource(Res.string.timeline_period_7)
+                        TimelinePeriod.THIRTY_DAYS -> stringResource(Res.string.timeline_period_30)
+                        TimelinePeriod.NINETY_DAYS -> stringResource(Res.string.timeline_period_90)
                     }
                     FilterChip(
                         selected = state.timeline.period == period,
@@ -244,7 +246,7 @@ private fun TimelineFilters(state: HomeUiState, viewModel: HomeViewModel, expand
                 FilterChip(
                     selected = state.timeline.aquariumId == null,
                     onClick = { viewModel.selectTimelineAquarium(null) },
-                    label = { Text(stringResource(R.string.timeline_all_aquariums)) },
+                    label = { Text(stringResource(Res.string.timeline_all_aquariums)) },
                     modifier = Modifier.heightIn(min = 48.dp),
                 )
                 state.aquariums.forEach { aquarium ->
@@ -260,7 +262,7 @@ private fun TimelineFilters(state: HomeUiState, viewModel: HomeViewModel, expand
                 FilterChip(
                     selected = state.timeline.parameterDefinitionId == null,
                     onClick = { viewModel.selectTimelineParameter(null) },
-                    label = { Text(stringResource(R.string.timeline_all_parameters)) },
+                    label = { Text(stringResource(Res.string.timeline_all_parameters)) },
                     modifier = Modifier.heightIn(min = 48.dp),
                 )
                 state.setup?.parameters?.filter { it.isActive }?.forEach { definition ->
@@ -276,7 +278,7 @@ private fun TimelineFilters(state: HomeUiState, viewModel: HomeViewModel, expand
                 FilterChip(
                     selected = state.timeline.maintenanceActionType == null,
                     onClick = { viewModel.selectTimelineAction(null) },
-                    label = { Text(stringResource(R.string.timeline_all_actions)) },
+                    label = { Text(stringResource(Res.string.timeline_all_actions)) },
                     modifier = Modifier.heightIn(min = 48.dp),
                 )
                 MaintenanceActionType.entries.forEach { type ->
@@ -304,19 +306,19 @@ private fun FilterRow(content: @Composable RowScope.() -> Unit) {
 @Composable
 private fun TimelineSessionCard(entry: TimelineSession, onClick: () -> Unit) {
     val formatter = currentLocalizedFormatters()
-    val description = stringResource(R.string.open_session_details)
+    val description = stringResource(Res.string.open_session_details)
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().semantics { contentDescription = description },
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(stringResource(R.string.timeline_session), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(Res.string.timeline_session), style = MaterialTheme.typography.titleMedium)
             Text(formatter.dateTime(entry.session.occurredAtEpochMillis), style = MaterialTheme.typography.bodyMedium)
             Text(entry.aquarium.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
             entry.measurements.forEach { item ->
                 Text(
                     stringResource(
-                        R.string.measurement_reading,
+                        Res.string.measurement_reading,
                         item.definition.parameter.label(),
                         formatter.number(item.measurement.value, item.definition.precision),
                         item.definition.unit,
@@ -348,16 +350,16 @@ private fun TimelineDetail(entry: TimelineSession, viewModel: HomeViewModel, mod
     ) {
         item {
             TextButton(onClick = viewModel::closeTimelineSession, modifier = Modifier.heightIn(min = 48.dp)) {
-                Text(stringResource(R.string.back_to_timeline))
+                Text(stringResource(Res.string.back_to_timeline))
             }
         }
         item {
-            Text(stringResource(R.string.session_details), style = MaterialTheme.typography.headlineMedium)
+            Text(stringResource(Res.string.session_details), style = MaterialTheme.typography.headlineMedium)
             Text(formatter.dateTime(entry.session.occurredAtEpochMillis), color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(entry.aquarium.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (entry.measurements.isNotEmpty()) {
-            item { Text(stringResource(R.string.measurements_heading), style = MaterialTheme.typography.titleLarge) }
+            item { Text(stringResource(Res.string.measurements_heading), style = MaterialTheme.typography.titleLarge) }
             items(entry.measurements, key = { it.measurement.id }) { item ->
                 DetailCard(
                     "${item.definition.parameter.label()} · " +
@@ -366,7 +368,7 @@ private fun TimelineDetail(entry: TimelineSession, viewModel: HomeViewModel, mod
             }
         }
         if (entry.maintenanceActions.isNotEmpty()) {
-            item { Text(stringResource(R.string.maintenance_heading), style = MaterialTheme.typography.titleLarge) }
+            item { Text(stringResource(Res.string.maintenance_heading), style = MaterialTheme.typography.titleLarge) }
             items(entry.maintenanceActions, key = MaintenanceAction::id) { action ->
                 val details = listOfNotNull(
                     action.quantity?.let { formatter.number(it, 2) },
@@ -377,11 +379,11 @@ private fun TimelineDetail(entry: TimelineSession, viewModel: HomeViewModel, mod
             }
         }
         if (entry.events.isNotEmpty()) {
-            item { Text(stringResource(R.string.timeline_events), style = MaterialTheme.typography.titleLarge) }
+            item { Text(stringResource(Res.string.timeline_events), style = MaterialTheme.typography.titleLarge) }
             items(entry.events, key = SessionEvent::id) { event ->
                 val type = when (event.type) {
-                    EventType.OBSERVATION -> stringResource(R.string.observation)
-                    EventType.INCIDENT -> stringResource(R.string.incident)
+                    EventType.OBSERVATION -> stringResource(Res.string.observation)
+                    EventType.INCIDENT -> stringResource(Res.string.incident)
                 }
                 DetailCard("$type · ${event.note}")
             }
@@ -404,7 +406,7 @@ private fun TimelineLoading() {
         verticalArrangement = Arrangement.Center,
     ) {
         CircularProgressIndicator()
-        Text(stringResource(R.string.timeline_loading), modifier = Modifier.padding(top = 12.dp))
+        Text(stringResource(Res.string.timeline_loading), modifier = Modifier.padding(top = 12.dp))
     }
 }
 
@@ -415,32 +417,32 @@ private fun TimelineError(onRetry: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(stringResource(R.string.timeline_error), color = MaterialTheme.colorScheme.error)
+        Text(stringResource(Res.string.timeline_error), color = MaterialTheme.colorScheme.error)
         Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp).heightIn(min = 48.dp)) {
-            Text(stringResource(R.string.retry))
+            Text(stringResource(Res.string.retry))
         }
     }
 }
 
 @Composable
 private fun sessionSummary(entry: TimelineSession): String = listOf(
-    pluralStringResource(R.plurals.timeline_measurement_count, entry.measurements.size, entry.measurements.size),
+    pluralStringResource(Res.plurals.timeline_measurement_count, entry.measurements.size, entry.measurements.size),
     pluralStringResource(
-        R.plurals.timeline_action_count,
+        Res.plurals.timeline_action_count,
         entry.maintenanceActions.size,
         entry.maintenanceActions.size,
     ),
-    pluralStringResource(R.plurals.timeline_event_count, entry.events.size, entry.events.size),
+    pluralStringResource(Res.plurals.timeline_event_count, entry.events.size, entry.events.size),
 ).joinToString(" · ")
 
 @Composable
 private fun MaintenanceActionType.timelineLabel(): String = stringResource(
     when (this) {
-        MaintenanceActionType.WATER_CHANGE -> R.string.action_water_change
-        MaintenanceActionType.FERTILIZATION -> R.string.action_fertilization
-        MaintenanceActionType.FILTER_MAINTENANCE -> R.string.action_filter
-        MaintenanceActionType.VACUUM -> R.string.action_vacuum
-        MaintenanceActionType.GLASS_CLEANING -> R.string.action_glass
-        MaintenanceActionType.PRUNING -> R.string.action_pruning
+        MaintenanceActionType.WATER_CHANGE -> Res.string.action_water_change
+        MaintenanceActionType.FERTILIZATION -> Res.string.action_fertilization
+        MaintenanceActionType.FILTER_MAINTENANCE -> Res.string.action_filter
+        MaintenanceActionType.VACUUM -> Res.string.action_vacuum
+        MaintenanceActionType.GLASS_CLEANING -> Res.string.action_glass
+        MaintenanceActionType.PRUNING -> Res.string.action_pruning
     },
 )

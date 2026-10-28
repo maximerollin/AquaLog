@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -17,7 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.EventType
@@ -41,11 +42,11 @@ fun SessionDetailsScreen(
     ) {
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(stringResource(R.string.session_details), style = MaterialTheme.typography.headlineMedium)
+                Text(stringResource(Res.string.session_details), style = MaterialTheme.typography.headlineMedium)
                 TextButton(onClick = viewModel::closeSessionDetails) {
                     Text(
                         stringResource(
-                            if (returnToTimeline) R.string.back_to_timeline else R.string.back,
+                            if (returnToTimeline) Res.string.back_to_timeline else Res.string.back,
                         ),
                     )
                 }
@@ -54,7 +55,7 @@ fun SessionDetailsScreen(
         item {
             Text(
                 stringResource(
-                    R.string.session_date,
+                    Res.string.session_date,
                     formatter.shortDateTime(recorded.session.occurredAtEpochMillis),
                 ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -66,7 +67,7 @@ fun SessionDetailsScreen(
                 item(measurement.id) {
                     Text(
                         stringResource(
-                            R.string.session_measurement_detail,
+                            Res.string.session_measurement_detail,
                             definition.parameter.label(),
                             formatter.number(measurement.value),
                             definition.unit,
@@ -82,16 +83,16 @@ fun SessionDetailsScreen(
                     action.unit.orEmpty(),
                     action.product.orEmpty(),
                 ).filter(String::isNotBlank).joinToString(" ")
-                Text(stringResource(R.string.session_action_detail, action.type.label(), detail))
+                Text(stringResource(Res.string.session_action_detail, action.type.label(), detail))
             }
         }
         recorded.events.forEach { event ->
             item(event.id) {
                 Text(
                     stringResource(
-                        R.string.session_event_detail,
+                        Res.string.session_event_detail,
                         stringResource(
-                            if (event.type == EventType.OBSERVATION) R.string.observation else R.string.incident,
+                            if (event.type == EventType.OBSERVATION) Res.string.observation else Res.string.incident,
                         ),
                         event.note,
                     ),
@@ -104,13 +105,13 @@ fun SessionDetailsScreen(
                     onClick = viewModel::editSession,
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                 ) {
-                    Text(stringResource(R.string.edit_session))
+                    Text(stringResource(Res.string.edit_session))
                 }
                 OutlinedButton(
                     onClick = viewModel::requestSessionDeletion,
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                 ) {
-                    Text(stringResource(R.string.delete_session))
+                    Text(stringResource(Res.string.delete_session))
                 }
             }
         }
@@ -119,16 +120,16 @@ fun SessionDetailsScreen(
     if (showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = viewModel::cancelSessionDeletion,
-            title = { Text(stringResource(R.string.delete_session_title)) },
-            text = { Text(stringResource(R.string.delete_session_description)) },
+            title = { Text(stringResource(Res.string.delete_session_title)) },
+            text = { Text(stringResource(Res.string.delete_session_description)) },
             confirmButton = {
                 TextButton(onClick = viewModel::confirmSessionDeletion) {
-                    Text(stringResource(R.string.delete))
+                    Text(stringResource(Res.string.delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = viewModel::cancelSessionDeletion) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             },
         )

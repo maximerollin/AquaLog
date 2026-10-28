@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -41,8 +42,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -172,62 +174,62 @@ private fun AccountScreen(state: AccountUiState, viewModel: HomeViewModel, modif
     StandardScreen(modifier) {
         when (state.step) {
             AccountStep.INVITATION -> {
-                ScreenHeading(R.string.account_invitation_title, R.string.account_invitation_description)
+                ScreenHeading(Res.string.account_invitation_title, Res.string.account_invitation_description)
                 Spacer(Modifier.weight(1f))
-                PrimaryButton(R.string.create_account, viewModel::openAccountMethods)
+                PrimaryButton(Res.string.create_account, viewModel::openAccountMethods)
                 TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(R.string.not_now))
+                    Text(stringResource(Res.string.not_now))
                 }
             }
             AccountStep.METHODS -> {
-                ScreenHeading(R.string.account_methods_title, R.string.account_methods_description)
-                PrimaryButton(R.string.continue_with_google, viewModel::signInWithGoogle)
-                PrimaryButton(R.string.continue_with_email, viewModel::openMagicEmail)
+                ScreenHeading(Res.string.account_methods_title, Res.string.account_methods_description)
+                PrimaryButton(Res.string.continue_with_google, viewModel::signInWithGoogle)
+                PrimaryButton(Res.string.continue_with_email, viewModel::openMagicEmail)
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(R.string.cancel))
+                    Text(stringResource(Res.string.cancel))
                 }
             }
             AccountStep.MAGIC_EMAIL -> {
-                ScreenHeading(R.string.magic_link_title, R.string.magic_link_description)
+                ScreenHeading(Res.string.magic_link_title, Res.string.magic_link_description)
                 OutlinedTextField(
                     value = state.email,
                     onValueChange = viewModel::updateAccountEmail,
-                    label = { Text(stringResource(R.string.email_address)) },
+                    label = { Text(stringResource(Res.string.email_address)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                PrimaryButton(R.string.send_magic_link, viewModel::requestMagicLink)
+                PrimaryButton(Res.string.send_magic_link, viewModel::requestMagicLink)
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = viewModel::openAccountMethods, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(R.string.back))
+                    Text(stringResource(Res.string.back))
                 }
             }
             AccountStep.MAGIC_SENT -> {
-                ScreenHeading(R.string.magic_link_sent_title, R.string.magic_link_sent_description)
+                ScreenHeading(Res.string.magic_link_sent_title, Res.string.magic_link_sent_description)
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(R.string.back_to_aquarium))
+                    Text(stringResource(Res.string.back_to_aquarium))
                 }
             }
             AccountStep.WAITING_BROWSER -> {
-                ScreenHeading(R.string.authentication_waiting_title, R.string.authentication_waiting_description)
+                ScreenHeading(Res.string.authentication_waiting_title, Res.string.authentication_waiting_description)
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(R.string.back_to_aquarium))
+                    Text(stringResource(Res.string.back_to_aquarium))
                 }
             }
             AccountStep.WORKING -> LoadingContent(Modifier.fillMaxSize())
             AccountStep.ERROR -> {
                 val message = when (state.error) {
-                    AccountError.EXPIRED_LINK -> R.string.magic_link_expired
-                    AccountError.AUTHENTICATION -> R.string.authentication_failed
-                    AccountError.MIGRATION, null -> R.string.account_migration_failed
+                    AccountError.EXPIRED_LINK -> Res.string.magic_link_expired
+                    AccountError.AUTHENTICATION -> Res.string.authentication_failed
+                    AccountError.MIGRATION, null -> Res.string.account_migration_failed
                 }
-                ScreenHeading(R.string.account_error_title, message)
+                ScreenHeading(Res.string.account_error_title, message)
                 PrimaryButton(
-                    R.string.try_again,
+                    Res.string.try_again,
                     if (state.error == AccountError.MIGRATION) {
                         viewModel::retryAccountMigration
                     } else {
@@ -236,7 +238,7 @@ private fun AccountScreen(state: AccountUiState, viewModel: HomeViewModel, modif
                 )
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(R.string.back_to_aquarium))
+                    Text(stringResource(Res.string.back_to_aquarium))
                 }
             }
             AccountStep.HIDDEN -> Unit
@@ -258,9 +260,9 @@ private fun AquariumShell(
             NavigationBar {
                 MainDestination.entries.forEach { destination ->
                     val label = when (destination) {
-                        MainDestination.HOME -> stringResource(R.string.navigation_home)
-                        MainDestination.HISTORY -> stringResource(R.string.navigation_history)
-                        MainDestination.SETTINGS -> stringResource(R.string.navigation_settings)
+                        MainDestination.HOME -> stringResource(Res.string.navigation_home)
+                        MainDestination.HISTORY -> stringResource(Res.string.navigation_history)
+                        MainDestination.SETTINGS -> stringResource(Res.string.navigation_settings)
                     }
                     NavigationBarItem(
                         selected = state.destination == destination,
@@ -324,16 +326,16 @@ private fun WelcomeScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Spacer(Modifier.weight(1f))
-        ScreenHeading(R.string.welcome_title, R.string.welcome_description)
+        ScreenHeading(Res.string.welcome_title, Res.string.welcome_description)
         PortableDataMessage(state)
         Spacer(Modifier.weight(1f))
-        PrimaryButton(R.string.get_started, onContinue)
+        PrimaryButton(Res.string.get_started, onContinue)
         OutlinedButton(
             onClick = onRequestImport,
             enabled = !state.isWorking,
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
         ) {
-            Text(stringResource(R.string.restore_from_export))
+            Text(stringResource(Res.string.restore_from_export))
         }
     }
 }
@@ -356,11 +358,11 @@ private fun PortableDataSettings(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item { Spacer(Modifier.height(8.dp)) }
-        item { ScreenHeading(R.string.settings_title, R.string.portable_data_description) }
+        item { ScreenHeading(Res.string.settings_title, Res.string.portable_data_description) }
         item {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.aquariums_title), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(Res.string.aquariums_title), style = MaterialTheme.typography.titleMedium)
                     homeState.aquariums.forEach { aquarium ->
                         if (homeState.setup?.aquarium?.id == aquarium.id) {
                             Button(
@@ -377,7 +379,7 @@ private fun PortableDataSettings(
                     Button(
                         onClick = viewModel::openCreateAquarium,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(stringResource(R.string.add_aquarium)) }
+                    ) { Text(stringResource(Res.string.add_aquarium)) }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -385,17 +387,17 @@ private fun PortableDataSettings(
                         OutlinedButton(
                             onClick = viewModel::openEditAquarium,
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        ) { Text(stringResource(R.string.edit_aquarium)) }
+                        ) { Text(stringResource(Res.string.edit_aquarium)) }
                         OutlinedButton(
                             onClick = viewModel::archiveCurrentAquarium,
                             enabled = proState.purchaseStatus == ProPurchaseStatus.ACTIVE &&
                                 homeState.aquariums.size > 1,
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        ) { Text(stringResource(R.string.archive_aquarium)) }
+                        ) { Text(stringResource(Res.string.archive_aquarium)) }
                     }
                     if (proState.purchaseStatus != ProPurchaseStatus.ACTIVE) {
                         Text(
-                            stringResource(R.string.free_one_aquarium_limit),
+                            stringResource(Res.string.free_one_aquarium_limit),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium,
                         )
@@ -409,22 +411,22 @@ private fun PortableDataSettings(
                     Text(
                         stringResource(
                             if (proState.purchaseStatus == ProPurchaseStatus.ACTIVE) {
-                                R.string.pro_active
+                                Res.string.pro_active
                             } else {
-                                R.string.free_plan
+                                Res.string.free_plan
                             },
                         ),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        stringResource(R.string.subscription_settings_description),
+                        stringResource(Res.string.subscription_settings_description),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Button(
                         onClick = viewModel::openProPaywall,
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                     ) {
-                        Text(stringResource(R.string.view_free_and_pro))
+                        Text(stringResource(Res.string.view_free_and_pro))
                     }
                 }
             }
@@ -435,16 +437,16 @@ private fun PortableDataSettings(
         item {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.account_title), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(Res.string.account_title), style = MaterialTheme.typography.titleMedium)
                     Text(
-                        accountState.identity?.email ?: stringResource(R.string.account_local_only),
+                        accountState.identity?.email ?: stringResource(Res.string.account_local_only),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Text(
                         when (syncState.status) {
-                            SyncStatus.SYNCED -> stringResource(R.string.sync_status_synced)
-                            SyncStatus.PENDING -> stringResource(R.string.sync_status_pending)
-                            SyncStatus.FAILED -> stringResource(R.string.sync_status_failed)
+                            SyncStatus.SYNCED -> stringResource(Res.string.sync_status_synced)
+                            SyncStatus.PENDING -> stringResource(Res.string.sync_status_pending)
+                            SyncStatus.FAILED -> stringResource(Res.string.sync_status_failed)
                         },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -455,25 +457,25 @@ private fun PortableDataSettings(
             item {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.account_deletion_pending), style = MaterialTheme.typography.titleMedium)
-                        Text(accountState.localizedSafeDetail() ?: stringResource(R.string.account_deletion_pending_description))
+                        Text(stringResource(Res.string.account_deletion_pending), style = MaterialTheme.typography.titleMedium)
+                        Text(accountState.localizedSafeDetail() ?: stringResource(Res.string.account_deletion_pending_description))
                         if (accountState.showDeletionReauthenticationAction) {
                             Button(
                                 onClick = viewModel::reauthenticateAccountDeletionWithGoogle,
                                 enabled = !accountState.isWorking,
                                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                            ) { Text(stringResource(R.string.continue_with_google)) }
+                            ) { Text(stringResource(Res.string.continue_with_google)) }
                             OutlinedButton(
                                 onClick = viewModel::requestDeletionMagicLink,
                                 enabled = !accountState.isWorking,
                                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                            ) { Text(stringResource(R.string.send_deletion_magic_link)) }
+                            ) { Text(stringResource(Res.string.send_deletion_magic_link)) }
                         } else {
                             Button(
                                 onClick = viewModel::retryAccountDeletion,
                                 enabled = !accountState.isWorking,
                                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                            ) { Text(stringResource(R.string.retry_account_deletion)) }
+                            ) { Text(stringResource(Res.string.retry_account_deletion)) }
                         }
                     }
                 }
@@ -482,9 +484,9 @@ private fun PortableDataSettings(
         item {
             Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.portable_data_title), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(Res.string.portable_data_title), style = MaterialTheme.typography.titleMedium)
                 Text(
-                    stringResource(R.string.portable_data_replace_explanation),
+                    stringResource(Res.string.portable_data_replace_explanation),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -493,14 +495,14 @@ private fun PortableDataSettings(
                     enabled = !state.isWorking,
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                 ) {
-                    Text(stringResource(R.string.export_data))
+                    Text(stringResource(Res.string.export_data))
                 }
                 OutlinedButton(
                     onClick = onRequestImport,
                     enabled = !state.isWorking,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                 ) {
-                    Text(stringResource(R.string.restore_from_export))
+                    Text(stringResource(Res.string.restore_from_export))
                 }
             }
         }
@@ -508,20 +510,20 @@ private fun PortableDataSettings(
         item {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(stringResource(R.string.account_actions), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(Res.string.account_actions), style = MaterialTheme.typography.titleMedium)
                     if (accountState.identity != null && accountState.pendingDeletion == null) {
                         OutlinedButton(
                             onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.LOGOUT) },
                             enabled = !accountState.isWorking,
                             modifier = Modifier.fillMaxWidth().height(48.dp),
-                        ) { Text(stringResource(R.string.sign_out)) }
+                        ) { Text(stringResource(Res.string.sign_out)) }
                         OutlinedButton(
                             onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.DELETE) },
                             enabled = !accountState.isWorking,
                             modifier = Modifier.fillMaxWidth().height(48.dp),
-                        ) { Text(stringResource(R.string.delete_account)) }
+                        ) { Text(stringResource(Res.string.delete_account)) }
                     } else {
-                        Text(stringResource(R.string.account_local_only_description))
+                        Text(stringResource(Res.string.account_local_only_description))
                     }
                 }
             }
@@ -529,16 +531,16 @@ private fun PortableDataSettings(
         item {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.feedback_title), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(Res.string.feedback_title), style = MaterialTheme.typography.titleMedium)
                     Text(
-                        stringResource(R.string.feedback_settings_description),
+                        stringResource(Res.string.feedback_settings_description),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     OutlinedButton(
                         onClick = viewModel::openFeedback,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                     ) {
-                        Text(stringResource(R.string.send_feedback))
+                        Text(stringResource(Res.string.send_feedback))
                     }
                 }
             }
@@ -546,10 +548,10 @@ private fun PortableDataSettings(
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                 TextButton(onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.PRIVACY) }) {
-                    Text(stringResource(R.string.privacy_policy))
+                    Text(stringResource(Res.string.privacy_policy))
                 }
                 TextButton(onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.SUPPORT) }) {
-                    Text(stringResource(R.string.support))
+                    Text(stringResource(Res.string.support))
                 }
             }
         }
@@ -573,46 +575,46 @@ private fun AccountSettingsDialog(
         AccountSettingsDialog.NONE -> Unit
         AccountSettingsDialog.LOGOUT -> AlertDialog(
             onDismissRequest = viewModel::dismissAccountSettingsDialog,
-            title = { Text(stringResource(R.string.sign_out)) },
-            text = { Text(stringResource(R.string.sign_out_copy_choice)) },
+            title = { Text(stringResource(Res.string.sign_out)) },
+            text = { Text(stringResource(Res.string.sign_out_copy_choice)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.logout(LocalCopyDecision.KEEP) }) {
-                    Text(stringResource(R.string.keep_local_copy))
+                    Text(stringResource(Res.string.keep_local_copy))
                 }
             },
             dismissButton = {
                 Row {
                     TextButton(onClick = { viewModel.logout(LocalCopyDecision.REMOVE) }) {
-                        Text(stringResource(R.string.remove_local_copy))
+                        Text(stringResource(Res.string.remove_local_copy))
                     }
-                    TextButton(onClick = viewModel::dismissAccountSettingsDialog) { Text(stringResource(R.string.cancel)) }
+                    TextButton(onClick = viewModel::dismissAccountSettingsDialog) { Text(stringResource(Res.string.cancel)) }
                 }
             },
         )
         AccountSettingsDialog.DELETE -> AlertDialog(
             onDismissRequest = viewModel::dismissAccountSettingsDialog,
-            title = { Text(stringResource(R.string.delete_account_confirmation_title)) },
-            text = { Text(stringResource(R.string.delete_account_confirmation_description), modifier = Modifier.verticalScroll(rememberScrollState())) },
+            title = { Text(stringResource(Res.string.delete_account_confirmation_title)) },
+            text = { Text(stringResource(Res.string.delete_account_confirmation_description), modifier = Modifier.verticalScroll(rememberScrollState())) },
             confirmButton = {
-                TextButton(onClick = viewModel::deleteAccount) { Text(stringResource(R.string.delete_account_confirm)) }
+                TextButton(onClick = viewModel::deleteAccount) { Text(stringResource(Res.string.delete_account_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = viewModel::dismissAccountSettingsDialog) { Text(stringResource(R.string.cancel)) }
+                TextButton(onClick = viewModel::dismissAccountSettingsDialog) { Text(stringResource(Res.string.cancel)) }
             },
         )
         AccountSettingsDialog.PRIVACY -> InformationDialog(
-            R.string.privacy_policy,
-            R.string.privacy_policy_local,
+            Res.string.privacy_policy,
+            Res.string.privacy_policy_local,
             BuildConfig.PRIVACY_URL,
-            R.string.open_privacy_policy,
+            Res.string.open_privacy_policy,
             onOpenExternalUrl,
             viewModel::dismissAccountSettingsDialog,
         )
         AccountSettingsDialog.SUPPORT -> InformationDialog(
-            R.string.support,
-            R.string.support_unconfigured,
+            Res.string.support,
+            Res.string.support_unconfigured,
             BuildConfig.SUPPORT_URL,
-            R.string.open_support,
+            Res.string.open_support,
             onOpenExternalUrl,
             viewModel::dismissAccountSettingsDialog,
         )
@@ -621,10 +623,10 @@ private fun AccountSettingsDialog(
 
 @Composable
 private fun InformationDialog(
-    title: Int,
-    body: Int,
+    title: StringResource,
+    body: StringResource,
     configuredUrl: String,
-    openLabel: Int,
+    openLabel: StringResource,
     onOpenExternalUrl: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -636,11 +638,11 @@ private fun InformationDialog(
             if (configuredUrl.startsWith("https://")) {
                 TextButton(onClick = { onOpenExternalUrl(configuredUrl) }) { Text(stringResource(openLabel)) }
             } else {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+                TextButton(onClick = onDismiss) { Text(stringResource(Res.string.close)) }
             }
         },
         dismissButton = if (configuredUrl.startsWith("https://")) {
-            { TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) } }
+            { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.close)) } }
         } else null,
     )
 }
@@ -652,14 +654,14 @@ private fun AccountDeletionCleanupScreen(
     modifier: Modifier,
 ) {
     StandardScreen(modifier) {
-        ScreenHeading(R.string.account_deleted_cleanup_title, R.string.account_deleted_cleanup_description)
+        ScreenHeading(Res.string.account_deleted_cleanup_title, Res.string.account_deleted_cleanup_description)
         state.localizedSafeDetail()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Spacer(Modifier.weight(1f))
         Button(
             onClick = viewModel::retryAccountDeletion,
             enabled = !state.isWorking,
             modifier = Modifier.fillMaxWidth().height(48.dp),
-        ) { Text(stringResource(R.string.finish_local_cleanup)) }
+        ) { Text(stringResource(Res.string.finish_local_cleanup)) }
     }
 }
 
@@ -670,16 +672,16 @@ private fun PortableImportConfirmation(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.portable_import_confirmation_title)) },
-        text = { Text(stringResource(R.string.portable_import_confirmation_description)) },
+        title = { Text(stringResource(Res.string.portable_import_confirmation_title)) },
+        text = { Text(stringResource(Res.string.portable_import_confirmation_description)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text(stringResource(R.string.choose_export_file))
+                Text(stringResource(Res.string.choose_export_file))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
+                Text(stringResource(Res.string.cancel))
             }
         },
     )
@@ -688,28 +690,28 @@ private fun PortableImportConfirmation(
 @Composable
 private fun PortableDataMessage(state: PortableDataUiState) {
     val string = when (state.importProblem) {
-        PortableImportProblem.INVALID_DOCUMENT -> R.string.portable_problem_invalid_document
-        PortableImportProblem.MISSING_VERSION -> R.string.portable_problem_missing_version
-        PortableImportProblem.UNSUPPORTED_VERSION -> R.string.portable_problem_unsupported_version
-        PortableImportProblem.SCHEMA_MISMATCH -> R.string.portable_problem_schema_mismatch
+        PortableImportProblem.INVALID_DOCUMENT -> Res.string.portable_problem_invalid_document
+        PortableImportProblem.MISSING_VERSION -> Res.string.portable_problem_missing_version
+        PortableImportProblem.UNSUPPORTED_VERSION -> Res.string.portable_problem_unsupported_version
+        PortableImportProblem.SCHEMA_MISMATCH -> Res.string.portable_problem_schema_mismatch
         PortableImportProblem.UNSUPPORTED_DUPLICATE_STRATEGY -> {
-            R.string.portable_problem_duplicate_strategy
+            Res.string.portable_problem_duplicate_strategy
         }
-        PortableImportProblem.DUPLICATE_IDENTIFIERS -> R.string.portable_problem_duplicate_ids
-        PortableImportProblem.INVALID_AQUARIUMS -> R.string.portable_problem_aquariums
-        PortableImportProblem.INVALID_PARAMETERS -> R.string.portable_problem_parameters
-        PortableImportProblem.INVALID_SESSIONS -> R.string.portable_problem_sessions
-        PortableImportProblem.INVALID_MEASUREMENTS -> R.string.portable_problem_measurements
-        PortableImportProblem.INVALID_ACTIONS -> R.string.portable_problem_actions
-        PortableImportProblem.INVALID_EVENTS -> R.string.portable_problem_events
-        PortableImportProblem.INVALID_TASKS -> R.string.portable_problem_tasks
-        PortableImportProblem.INVALID_OCCURRENCES -> R.string.portable_problem_occurrences
-        PortableImportProblem.ACCOUNT_LINKED -> R.string.portable_problem_account_linked
-        PortableImportProblem.DATABASE_WRITE_FAILED -> R.string.portable_problem_database
+        PortableImportProblem.DUPLICATE_IDENTIFIERS -> Res.string.portable_problem_duplicate_ids
+        PortableImportProblem.INVALID_AQUARIUMS -> Res.string.portable_problem_aquariums
+        PortableImportProblem.INVALID_PARAMETERS -> Res.string.portable_problem_parameters
+        PortableImportProblem.INVALID_SESSIONS -> Res.string.portable_problem_sessions
+        PortableImportProblem.INVALID_MEASUREMENTS -> Res.string.portable_problem_measurements
+        PortableImportProblem.INVALID_ACTIONS -> Res.string.portable_problem_actions
+        PortableImportProblem.INVALID_EVENTS -> Res.string.portable_problem_events
+        PortableImportProblem.INVALID_TASKS -> Res.string.portable_problem_tasks
+        PortableImportProblem.INVALID_OCCURRENCES -> Res.string.portable_problem_occurrences
+        PortableImportProblem.ACCOUNT_LINKED -> Res.string.portable_problem_account_linked
+        PortableImportProblem.DATABASE_WRITE_FAILED -> Res.string.portable_problem_database
         null -> when (state.message) {
-            PortableDataMessage.EXPORT_READY -> R.string.portable_export_ready
-            PortableDataMessage.IMPORT_COMPLETE -> R.string.portable_import_complete
-            PortableDataMessage.STORAGE_ERROR -> R.string.portable_storage_error
+            PortableDataMessage.EXPORT_READY -> Res.string.portable_export_ready
+            PortableDataMessage.IMPORT_COMPLETE -> Res.string.portable_import_complete
+            PortableDataMessage.STORAGE_ERROR -> Res.string.portable_storage_error
             null -> return
         }
     }
@@ -738,32 +740,32 @@ private fun ProfileScreen(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        ScreenHeading(R.string.profile_title, R.string.profile_description)
+        ScreenHeading(Res.string.profile_title, Res.string.profile_description)
         Column(
             modifier = Modifier.selectableGroup(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ProfileOption(
-                title = stringResource(R.string.profile_established),
-                description = stringResource(R.string.profile_established_description),
+                title = stringResource(Res.string.profile_established),
+                description = stringResource(Res.string.profile_established_description),
                 selected = selected == AquariumProfile.ESTABLISHED,
                 onClick = { onSelected(AquariumProfile.ESTABLISHED) },
             )
             ProfileOption(
-                title = stringResource(R.string.profile_cycling),
-                description = stringResource(R.string.profile_cycling_description),
+                title = stringResource(Res.string.profile_cycling),
+                description = stringResource(Res.string.profile_cycling_description),
                 selected = selected == AquariumProfile.CYCLING,
                 onClick = { onSelected(AquariumProfile.CYCLING) },
             )
             ProfileOption(
-                title = stringResource(R.string.profile_planted_shrimp),
-                description = stringResource(R.string.profile_planted_shrimp_description),
+                title = stringResource(Res.string.profile_planted_shrimp),
+                description = stringResource(Res.string.profile_planted_shrimp_description),
                 selected = selected == AquariumProfile.PLANTED_SHRIMP,
                 onClick = { onSelected(AquariumProfile.PLANTED_SHRIMP) },
             )
         }
         Spacer(Modifier.height(8.dp))
-        PrimaryButton(R.string.continue_to_aquarium, onContinue)
+        PrimaryButton(Res.string.continue_to_aquarium, onContinue)
     }
 }
 
@@ -804,40 +806,40 @@ private fun AquariumDetailsScreen(
     modifier: Modifier,
 ) {
     StandardScreen(modifier) {
-        ScreenHeading(R.string.aquarium_details_title, R.string.aquarium_details_description)
+        ScreenHeading(Res.string.aquarium_details_title, Res.string.aquarium_details_description)
         OutlinedTextField(
             value = state.aquariumName,
             onValueChange = viewModel::updateAquariumName,
-            label = { Text(stringResource(R.string.aquarium_name_label)) },
+            label = { Text(stringResource(Res.string.aquarium_name_label)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
         OutlinedTextField(
             value = state.volumeInput,
             onValueChange = viewModel::updateVolume,
-            label = { Text(stringResource(R.string.aquarium_volume_label)) },
+            label = { Text(stringResource(Res.string.aquarium_volume_label)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(stringResource(R.string.volume_unit_label), style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(Res.string.volume_unit_label), style = MaterialTheme.typography.titleMedium)
         Column(Modifier.selectableGroup()) {
             VolumeUnitOption(
-                text = stringResource(R.string.unit_liters),
+                text = stringResource(Res.string.unit_liters),
                 selected = state.volumeUnit == VolumeUnit.LITERS,
                 onClick = { viewModel.selectVolumeUnit(VolumeUnit.LITERS) },
             )
             VolumeUnitOption(
-                text = stringResource(R.string.unit_us_gallons),
+                text = stringResource(Res.string.unit_us_gallons),
                 selected = state.volumeUnit == VolumeUnit.US_GALLONS,
                 onClick = { viewModel.selectVolumeUnit(VolumeUnit.US_GALLONS) },
             )
         }
         if (state.showAquariumValidationError) {
-            ErrorText(R.string.invalid_aquarium)
+            ErrorText(Res.string.invalid_aquarium)
         }
         Spacer(Modifier.weight(1f))
-        PrimaryButton(R.string.continue_to_parameters, viewModel::continueToParameters)
+        PrimaryButton(Res.string.continue_to_parameters, viewModel::continueToParameters)
     }
 }
 
@@ -867,7 +869,7 @@ private fun ParametersScreen(
         contentPadding = androidx.compose.foundation.layout.PaddingValues(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item { ScreenHeading(R.string.parameters_title, R.string.parameters_description) }
+        item { ScreenHeading(Res.string.parameters_title, Res.string.parameters_description) }
         itemsIndexed(state.parameters, key = { _, item -> item.parameter.storageValue }) { index, item ->
             ParameterEditor(
                 state = item,
@@ -877,9 +879,9 @@ private fun ParametersScreen(
             )
         }
         if (state.showParameterValidationError) {
-            item { ErrorText(R.string.invalid_parameters) }
+            item { ErrorText(Res.string.invalid_parameters) }
         }
-        item { PrimaryButton(R.string.try_mini_session, viewModel::continueToPractice) }
+        item { PrimaryButton(Res.string.try_mini_session, viewModel::continueToPractice) }
     }
 }
 
@@ -891,9 +893,9 @@ private fun ParameterEditor(
     viewModel: HomeViewModel,
 ) {
     val label = state.parameter.label()
-    val moveUpDescription = stringResource(R.string.move_parameter_up, label)
-    val moveDownDescription = stringResource(R.string.move_parameter_down, label)
-    val enabledDescription = stringResource(R.string.enabled_for_parameter, label)
+    val moveUpDescription = stringResource(Res.string.move_parameter_up, label)
+    val moveDownDescription = stringResource(Res.string.move_parameter_down, label)
+    val enabledDescription = stringResource(Res.string.enabled_for_parameter, label)
     Card(Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -905,12 +907,12 @@ private fun ParameterEditor(
                     onClick = { viewModel.moveParameter(state.parameter, -1) },
                     enabled = canMoveUp,
                     modifier = Modifier.semantics { contentDescription = moveUpDescription },
-                ) { Text(stringResource(R.string.move_up_symbol)) }
+                ) { Text(stringResource(Res.string.move_up_symbol)) }
                 TextButton(
                     onClick = { viewModel.moveParameter(state.parameter, 1) },
                     enabled = canMoveDown,
                     modifier = Modifier.semantics { contentDescription = moveDownDescription },
-                ) { Text(stringResource(R.string.move_down_symbol)) }
+                ) { Text(stringResource(Res.string.move_down_symbol)) }
                 Switch(
                     checked = state.isActive,
                     onCheckedChange = { viewModel.setParameterActive(state.parameter, it) },
@@ -921,15 +923,15 @@ private fun ParameterEditor(
                 ParameterTextField(
                     value = state.unit,
                     onValueChange = { viewModel.updateParameterUnit(state.parameter, it) },
-                    label = stringResource(R.string.parameter_unit),
-                    description = stringResource(R.string.unit_for_parameter, label),
+                    label = stringResource(Res.string.parameter_unit),
+                    description = stringResource(Res.string.unit_for_parameter, label),
                     modifier = Modifier.weight(1f),
                 )
                 ParameterTextField(
                     value = state.precision,
                     onValueChange = { viewModel.updateParameterPrecision(state.parameter, it) },
-                    label = stringResource(R.string.parameter_precision),
-                    description = stringResource(R.string.precision_for_parameter, label),
+                    label = stringResource(Res.string.parameter_precision),
+                    description = stringResource(Res.string.precision_for_parameter, label),
                     keyboardType = KeyboardType.Number,
                     modifier = Modifier.weight(1f),
                 )
@@ -938,16 +940,16 @@ private fun ParameterEditor(
                 ParameterTextField(
                     value = state.indicativeMinimum,
                     onValueChange = { viewModel.updateParameterMinimum(state.parameter, it) },
-                    label = stringResource(R.string.parameter_minimum),
-                    description = stringResource(R.string.minimum_for_parameter, label),
+                    label = stringResource(Res.string.parameter_minimum),
+                    description = stringResource(Res.string.minimum_for_parameter, label),
                     keyboardType = KeyboardType.Decimal,
                     modifier = Modifier.weight(1f),
                 )
                 ParameterTextField(
                     value = state.indicativeMaximum,
                     onValueChange = { viewModel.updateParameterMaximum(state.parameter, it) },
-                    label = stringResource(R.string.parameter_maximum),
-                    description = stringResource(R.string.maximum_for_parameter, label),
+                    label = stringResource(Res.string.parameter_maximum),
+                    description = stringResource(Res.string.maximum_for_parameter, label),
                     keyboardType = KeyboardType.Decimal,
                     modifier = Modifier.weight(1f),
                 )
@@ -984,14 +986,14 @@ private fun PracticeScreen(
 ) {
     val activeParameters = state.parameters.filter(ParameterEditorState::isActive).take(3)
     StandardScreen(modifier) {
-        ScreenHeading(R.string.practice_title, R.string.practice_description)
+        ScreenHeading(Res.string.practice_title, Res.string.practice_description)
         activeParameters.forEach { parameter ->
             val label = parameter.parameter.label()
-            val practiceDescription = stringResource(R.string.practice_value_for_parameter, label)
+            val practiceDescription = stringResource(Res.string.practice_value_for_parameter, label)
             OutlinedTextField(
                 value = state.practiceValues[parameter.parameter].orEmpty(),
                 onValueChange = { onValueChanged(parameter.parameter, it) },
-                label = { Text(stringResource(R.string.parameter_with_unit, label, parameter.unit)) },
+                label = { Text(stringResource(Res.string.parameter_with_unit, label, parameter.unit)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
                 modifier = Modifier
@@ -1000,12 +1002,12 @@ private fun PracticeScreen(
             )
         }
         Text(
-            stringResource(R.string.practice_not_saved),
+            stringResource(Res.string.practice_not_saved),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.primary,
         )
         Spacer(Modifier.weight(1f))
-        PrimaryButton(R.string.see_free_and_pro, onContinue)
+        PrimaryButton(Res.string.see_free_and_pro, onContinue)
     }
 }
 
@@ -1026,17 +1028,17 @@ private fun PaywallScreen(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        ScreenHeading(R.string.paywall_title, R.string.paywall_description)
-        PlanCard(R.string.free_plan, R.string.free_plan_description)
-        PlanCard(R.string.pro_plan, R.string.pro_plan_description)
+        ScreenHeading(Res.string.paywall_title, Res.string.paywall_description)
+        PlanCard(Res.string.free_plan, Res.string.free_plan_description)
+        PlanCard(Res.string.pro_plan, Res.string.pro_plan_description)
         when {
             pro.isLoadingOffer -> {
                 CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
-                Text(stringResource(R.string.loading_google_play_offer))
+                Text(stringResource(Res.string.loading_google_play_offer))
             }
             pro.lifetimeOffer != null -> {
                 Text(
-                    stringResource(R.string.pro_lifetime_offer_summary, pro.lifetimeOffer.formattedPrice),
+                    stringResource(Res.string.pro_lifetime_offer_summary, pro.lifetimeOffer.formattedPrice),
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Button(
@@ -1049,12 +1051,12 @@ private fun PaywallScreen(
                     ),
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                 ) {
-                    Text(stringResource(R.string.buy_lifetime_in_google_play))
+                    Text(stringResource(Res.string.buy_lifetime_in_google_play))
                 }
                 pro.offer?.let { annualOffer ->
                     Text(
                         stringResource(
-                            R.string.pro_offer_summary,
+                            Res.string.pro_offer_summary,
                             annualOffer.formattedPrice,
                             annualOffer.trialDays,
                             annualOffer.localizedBillingDate(formatter),
@@ -1071,14 +1073,14 @@ private fun PaywallScreen(
                         ),
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                     ) {
-                        Text(stringResource(R.string.start_trial_in_google_play))
+                        Text(stringResource(Res.string.start_trial_in_google_play))
                     }
                 }
             }
             pro.offer != null -> {
                 Text(
                     stringResource(
-                        R.string.pro_offer_summary,
+                        Res.string.pro_offer_summary,
                         pro.offer.formattedPrice,
                         pro.offer.trialDays,
                         pro.offer.localizedBillingDate(formatter),
@@ -1095,13 +1097,13 @@ private fun PaywallScreen(
                     ),
                     modifier = Modifier.fillMaxWidth().height(48.dp),
                 ) {
-                    Text(stringResource(R.string.start_trial_in_google_play))
+                    Text(stringResource(Res.string.start_trial_in_google_play))
                 }
             }
             else -> {
-                Text(stringResource(R.string.google_play_offer_unavailable), color = MaterialTheme.colorScheme.error)
+                Text(stringResource(Res.string.google_play_offer_unavailable), color = MaterialTheme.colorScheme.error)
                 TextButton(onClick = onRetryOffer, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(R.string.try_again))
+                    Text(stringResource(Res.string.try_again))
                 }
             }
         }
@@ -1120,7 +1122,7 @@ private fun PaywallScreen(
             enabled = pro.purchaseStatus != ProPurchaseStatus.VERIFYING,
             modifier = Modifier.fillMaxWidth().height(48.dp),
         ) {
-            Text(stringResource(R.string.restore_purchase))
+            Text(stringResource(Res.string.restore_purchase))
         }
         Spacer(Modifier.height(8.dp))
         Button(
@@ -1134,9 +1136,9 @@ private fun PaywallScreen(
                 Text(
                     stringResource(
                         when {
-                            !onboarding -> R.string.back_to_settings
-                            pro.purchaseStatus == ProPurchaseStatus.ACTIVE -> R.string.continue_with_pro
-                            else -> R.string.continue_for_free
+                            !onboarding -> Res.string.back_to_settings
+                            pro.purchaseStatus == ProPurchaseStatus.ACTIVE -> Res.string.continue_with_pro
+                            else -> Res.string.continue_for_free
                         },
                     ),
                 )
@@ -1145,23 +1147,23 @@ private fun PaywallScreen(
     }
 }
 
-private fun ProMessage.resourceId(): Int = when (this) {
-    ProMessage.PLAY_UNAVAILABLE -> R.string.pro_message_play_unavailable
-    ProMessage.PURCHASE_PENDING -> R.string.pro_message_purchase_pending
-    ProMessage.PURCHASE_CANCELLED -> R.string.pro_message_purchase_cancelled
-    ProMessage.AUTHENTICATION_REQUIRED -> R.string.pro_message_authentication_required
-    ProMessage.ACTIVE -> R.string.pro_message_active
-    ProMessage.VERIFICATION_FAILED -> R.string.pro_message_verification_failed
-    ProMessage.SAVE_FAILED -> R.string.pro_message_save_failed
+private fun ProMessage.resourceId(): StringResource = when (this) {
+    ProMessage.PLAY_UNAVAILABLE -> Res.string.pro_message_play_unavailable
+    ProMessage.PURCHASE_PENDING -> Res.string.pro_message_purchase_pending
+    ProMessage.PURCHASE_CANCELLED -> Res.string.pro_message_purchase_cancelled
+    ProMessage.AUTHENTICATION_REQUIRED -> Res.string.pro_message_authentication_required
+    ProMessage.ACTIVE -> Res.string.pro_message_active
+    ProMessage.VERIFICATION_FAILED -> Res.string.pro_message_verification_failed
+    ProMessage.SAVE_FAILED -> Res.string.pro_message_save_failed
 }
 
 @Composable
 private fun AccountSettingsUiState.localizedSafeDetail(): String? = safeMessage?.let {
     stringResource(
         when (it) {
-            AccountSafeMessage.SIGN_OUT_FAILED -> R.string.account_sign_out_failed
-            AccountSafeMessage.DELETION_RESUME_FAILED -> R.string.account_deletion_resume_failed
-            AccountSafeMessage.AUTHENTICATION_LINK_FAILED -> R.string.authentication_link_processing_failed
+            AccountSafeMessage.SIGN_OUT_FAILED -> Res.string.account_sign_out_failed
+            AccountSafeMessage.DELETION_RESUME_FAILED -> Res.string.account_deletion_resume_failed
+            AccountSafeMessage.AUTHENTICATION_LINK_FAILED -> Res.string.authentication_link_processing_failed
         },
     )
 } ?: safeDetail
@@ -1175,28 +1177,28 @@ private fun FeedbackDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.feedback_title)) },
+        title = { Text(stringResource(Res.string.feedback_title)) },
         text = {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    stringResource(R.string.feedback_privacy_explanation),
+                    stringResource(Res.string.feedback_privacy_explanation),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 OutlinedTextField(
                     value = state.message,
                     onValueChange = onMessageChanged,
-                    label = { Text(stringResource(R.string.feedback_message_label)) },
+                    label = { Text(stringResource(Res.string.feedback_message_label)) },
                     supportingText = {
-                        Text(stringResource(R.string.feedback_character_count, state.message.length))
+                        Text(stringResource(Res.string.feedback_character_count, state.message.length))
                     },
                     minLines = 4,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (state.wasSubmitted) {
-                    Text(stringResource(R.string.feedback_sent), color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(Res.string.feedback_sent), color = MaterialTheme.colorScheme.primary)
                 }
                 if (state.isUnavailable) {
-                    Text(stringResource(R.string.feedback_unavailable), color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(Res.string.feedback_unavailable), color = MaterialTheme.colorScheme.error)
                 }
             }
         },
@@ -1206,12 +1208,12 @@ private fun FeedbackDialog(
                 enabled = state.message.isNotBlank(),
                 modifier = Modifier.testTag("submit-feedback").heightIn(min = 48.dp),
             ) {
-                Text(stringResource(R.string.send_feedback))
+                Text(stringResource(Res.string.send_feedback))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) {
-                Text(stringResource(R.string.cancel))
+                Text(stringResource(Res.string.cancel))
             }
         },
     )
@@ -1222,21 +1224,21 @@ private fun AquariumEditorDialog(editor: AquariumEditorUiState, viewModel: HomeV
     AlertDialog(
         onDismissRequest = viewModel::dismissAquariumEditor,
         title = {
-            Text(stringResource(if (editor.aquariumId == null) R.string.add_aquarium else R.string.edit_aquarium))
+            Text(stringResource(if (editor.aquariumId == null) Res.string.add_aquarium else Res.string.edit_aquarium))
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = editor.name,
                     onValueChange = viewModel::updateAquariumEditorName,
-                    label = { Text(stringResource(R.string.aquarium_name_label)) },
+                    label = { Text(stringResource(Res.string.aquarium_name_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = editor.volume,
                     onValueChange = viewModel::updateAquariumEditorVolume,
-                    label = { Text(stringResource(R.string.aquarium_volume_label)) },
+                    label = { Text(stringResource(Res.string.aquarium_volume_label)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -1247,24 +1249,24 @@ private fun AquariumEditorDialog(editor: AquariumEditorUiState, viewModel: HomeV
                             onClick = { viewModel.updateAquariumEditorUnit(unit) },
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                         ) {
-                            Text(stringResource(if (unit == VolumeUnit.LITERS) R.string.unit_liters else R.string.unit_us_gallons))
+                            Text(stringResource(if (unit == VolumeUnit.LITERS) Res.string.unit_liters else Res.string.unit_us_gallons))
                         }
                     }
                 }
-                if (editor.showValidationError) Text(stringResource(R.string.invalid_aquarium), color = MaterialTheme.colorScheme.error)
+                if (editor.showValidationError) Text(stringResource(Res.string.invalid_aquarium), color = MaterialTheme.colorScheme.error)
             }
         },
         confirmButton = {
             TextButton(onClick = viewModel::saveAquariumEditor, enabled = !editor.isSaving) {
-                Text(stringResource(R.string.save_aquarium))
+                Text(stringResource(Res.string.save_aquarium))
             }
         },
-        dismissButton = { TextButton(onClick = viewModel::dismissAquariumEditor) { Text(stringResource(R.string.cancel)) } },
+        dismissButton = { TextButton(onClick = viewModel::dismissAquariumEditor) { Text(stringResource(Res.string.cancel)) } },
     )
 }
 
 @Composable
-private fun PlanCard(title: Int, description: Int) {
+private fun PlanCard(title: StringResource, description: StringResource) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
@@ -1304,9 +1306,9 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                         Text(
                             stringResource(
                                 when (state.syncState.status) {
-                                    SyncStatus.SYNCED -> R.string.sync_status_synced
-                                    SyncStatus.PENDING -> R.string.sync_status_pending
-                                    SyncStatus.FAILED -> R.string.sync_status_failed
+                                    SyncStatus.SYNCED -> Res.string.sync_status_synced
+                                    SyncStatus.PENDING -> Res.string.sync_status_pending
+                                    SyncStatus.FAILED -> Res.string.sync_status_failed
                                 },
                             ),
                             style = MaterialTheme.typography.labelMedium,
@@ -1324,7 +1326,7 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             stringResource(
-                                if (state.latestSession == null) R.string.no_session_yet else R.string.session_saved,
+                                if (state.latestSession == null) Res.string.no_session_yet else Res.string.session_saved,
                             ),
                             style = MaterialTheme.typography.titleMedium,
                         )
@@ -1334,13 +1336,13 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                                     measurementCount = session.measurements.size,
                                     actionCount = session.maintenanceActions.size,
                                 )
-                            } ?: stringResource(R.string.no_session_description),
+                            } ?: stringResource(Res.string.no_session_description),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         if (state.latestSession != null) {
                             TextButton(onClick = viewModel::openSessionDetails) {
-                                Text(stringResource(R.string.view_session_details))
+                                Text(stringResource(Res.string.view_session_details))
                             }
                         }
                     }
@@ -1348,7 +1350,7 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
             }
             if (state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION) {
                 item {
-                    PrimaryButton(R.string.continue_after_session, viewModel::continueAfterSessionConfirmation)
+                    PrimaryButton(Res.string.continue_after_session, viewModel::continueAfterSessionConfirmation)
                 }
             }
             item { HomeMeasurements(state) }
@@ -1359,10 +1361,10 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                             Text(
                                 stringResource(
                                     when (state.syncState.failure?.category) {
-                                        SyncFailureCategory.NETWORK -> R.string.sync_failure_network
-                                        SyncFailureCategory.CONFLICT -> R.string.sync_failure_conflict
-                                        SyncFailureCategory.SERVER -> R.string.sync_failure_server
-                                        SyncFailureCategory.UNKNOWN, null -> R.string.sync_failure_unknown
+                                        SyncFailureCategory.NETWORK -> Res.string.sync_failure_network
+                                        SyncFailureCategory.CONFLICT -> Res.string.sync_failure_conflict
+                                        SyncFailureCategory.SERVER -> Res.string.sync_failure_server
+                                        SyncFailureCategory.UNKNOWN, null -> Res.string.sync_failure_unknown
                                     },
                                 ),
                                 style = MaterialTheme.typography.bodyMedium,
@@ -1380,7 +1382,7 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                                 onClick = viewModel::retrySynchronization,
                                 modifier = Modifier.fillMaxWidth().height(48.dp),
                             ) {
-                                Text(stringResource(R.string.sync_retry))
+                                Text(stringResource(Res.string.sync_retry))
                             }
                         }
                     }
@@ -1388,15 +1390,15 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
             }
             val pendingTasks = state.tasks.pendingOccurrences.filter { it.aquariumId == aquarium.id }.take(3)
             if (pendingTasks.isNotEmpty()) {
-                item { Text(stringResource(R.string.tasks_title), style = MaterialTheme.typography.titleLarge) }
+                item { Text(stringResource(Res.string.tasks_title), style = MaterialTheme.typography.titleLarge) }
                 itemsIndexed(pendingTasks, key = { _, task -> task.id }) { _, task ->
                     Card(onClick = viewModel::openTasks, modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(task.title, style = MaterialTheme.typography.titleMedium)
                             val formatter = currentLocalizedFormatters()
-                            Text(stringResource(R.string.task_due_value,
+                            Text(stringResource(Res.string.task_due_value,
                                 formatter.date(task.dueDate.year, task.dueDate.month, task.dueDate.day),
-                                task.minuteOfDay?.let(formatter::time) ?: stringResource(R.string.task_no_time)),
+                                task.minuteOfDay?.let(formatter::time) ?: stringResource(Res.string.task_no_time)),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -1407,11 +1409,11 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                     Card(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
-                                stringResource(R.string.account_invitation_title),
+                                stringResource(Res.string.account_invitation_title),
                                 style = MaterialTheme.typography.titleMedium,
                             )
                             Text(
-                                stringResource(R.string.account_invitation_description),
+                                stringResource(Res.string.account_invitation_description),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -1419,7 +1421,7 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                                 onClick = viewModel::continueAfterSessionConfirmation,
                                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                             ) {
-                                Text(stringResource(R.string.review_account_options))
+                                Text(stringResource(Res.string.review_account_options))
                             }
                         }
                     }
@@ -1431,17 +1433,17 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
             onClick = viewModel::openTasks,
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
         ) {
-            Text(stringResource(R.string.open_tasks))
+            Text(stringResource(Res.string.open_tasks))
         }
-        PrimaryButton(R.string.new_session, viewModel::openRapidSession)
+        PrimaryButton(Res.string.new_session, viewModel::openRapidSession)
     }
 }
 
 @Composable
 private fun sessionSavedDescription(measurementCount: Int, actionCount: Int): String = stringResource(
-    R.string.session_saved_description,
-    pluralStringResource(R.plurals.session_measurement_count, measurementCount, measurementCount),
-    pluralStringResource(R.plurals.session_maintenance_count, actionCount, actionCount),
+    Res.string.session_saved_description,
+    pluralStringResource(Res.plurals.session_measurement_count, measurementCount, measurementCount),
+    pluralStringResource(Res.plurals.session_maintenance_count, actionCount, actionCount),
 )
 
 @Composable
@@ -1457,7 +1459,7 @@ private fun StandardScreen(
 }
 
 @Composable
-private fun ScreenHeading(title: Int, description: Int) {
+private fun ScreenHeading(title: StringResource, description: StringResource) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(title), style = MaterialTheme.typography.headlineMedium)
         Text(
@@ -1469,7 +1471,7 @@ private fun ScreenHeading(title: Int, description: Int) {
 }
 
 @Composable
-private fun PrimaryButton(label: Int, onClick: () -> Unit) {
+private fun PrimaryButton(label: StringResource, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
@@ -1480,7 +1482,7 @@ private fun PrimaryButton(label: Int, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ErrorText(message: Int) {
+private fun ErrorText(message: StringResource) {
     Text(
         stringResource(message),
         color = MaterialTheme.colorScheme.error,
@@ -1491,16 +1493,16 @@ private fun ErrorText(message: Int) {
 @Composable
 internal fun BuiltInParameter.label(): String = stringResource(
     when (this) {
-        BuiltInParameter.TEMPERATURE -> R.string.parameter_temperature
-        BuiltInParameter.PH -> R.string.parameter_ph
-        BuiltInParameter.AMMONIA -> R.string.parameter_ammonia
-        BuiltInParameter.NITRITE -> R.string.parameter_nitrite
-        BuiltInParameter.NITRATE -> R.string.parameter_nitrate
-        BuiltInParameter.GH -> R.string.parameter_gh
-        BuiltInParameter.KH -> R.string.parameter_kh
-        BuiltInParameter.TDS -> R.string.parameter_tds
-        BuiltInParameter.PHOSPHATE -> R.string.parameter_phosphate
-        BuiltInParameter.SALINITY -> R.string.parameter_salinity
+        BuiltInParameter.TEMPERATURE -> Res.string.parameter_temperature
+        BuiltInParameter.PH -> Res.string.parameter_ph
+        BuiltInParameter.AMMONIA -> Res.string.parameter_ammonia
+        BuiltInParameter.NITRITE -> Res.string.parameter_nitrite
+        BuiltInParameter.NITRATE -> Res.string.parameter_nitrate
+        BuiltInParameter.GH -> Res.string.parameter_gh
+        BuiltInParameter.KH -> Res.string.parameter_kh
+        BuiltInParameter.TDS -> Res.string.parameter_tds
+        BuiltInParameter.PHOSPHATE -> Res.string.parameter_phosphate
+        BuiltInParameter.SALINITY -> Res.string.parameter_salinity
     },
 )
 
@@ -1508,7 +1510,7 @@ internal fun BuiltInParameter.label(): String = stringResource(
 private fun Aquarium.formattedVolume(): String {
     val formatted = currentLocalizedFormatters().number(volume)
     return when (volumeUnit) {
-        VolumeUnit.LITERS -> stringResource(R.string.volume_liters_format, formatted)
-        VolumeUnit.US_GALLONS -> stringResource(R.string.volume_us_gallons_format, formatted)
+        VolumeUnit.LITERS -> stringResource(Res.string.volume_liters_format, formatted)
+        VolumeUnit.US_GALLONS -> stringResource(Res.string.volume_us_gallons_format, formatted)
     }
 }
