@@ -16,9 +16,17 @@ import com.maximerollin.aqualog.ui.theme.AquaLogTheme
 import java.io.File
 import java.util.UUID
 
+// Desktop dev harness: the real UI on a local database; account, billing, sync and telemetry stay disabled.
 fun main() = application {
     val viewModel = remember {
-        desktopViewModel(File(System.getProperty("user.home"), ".aqualog-desktop/aqualog.db").apply { parentFile.mkdirs() })
+        val databaseFile = File(System.getProperty("user.home"), ".aqualog-desktop/aqualog.db").apply { parentFile.mkdirs() }
+        HomeViewModel(
+            RoomAquariumRepository(
+                database = createAquaLogDatabase(createJvmDatabaseBuilder(databaseFile.absolutePath)),
+                generateId = { UUID.randomUUID().toString() },
+                currentTimeMillis = System::currentTimeMillis,
+            ),
+        )
     }
     Window(
         title = "AquaLog",
@@ -30,12 +38,3 @@ fun main() = application {
         }
     }
 }
-
-// Desktop dev harness: the real UI on a local database; account, billing, sync and telemetry stay disabled.
-internal fun desktopViewModel(databaseFile: File) = HomeViewModel(
-    RoomAquariumRepository(
-        database = createAquaLogDatabase(createJvmDatabaseBuilder(databaseFile.absolutePath)),
-        generateId = { UUID.randomUUID().toString() },
-        currentTimeMillis = System::currentTimeMillis,
-    ),
-)
