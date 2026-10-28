@@ -37,6 +37,19 @@ seam:
 
 The debug APK is generated under `androidApp/build/outputs/apk/debug/`.
 
+## Desktop UI iteration
+
+The UI lives in the multiplatform `:ui` module, so it also runs in a phone-sized
+desktop window with Compose Hot Reload (the `🔥Desktop Hot Reload` run
+configuration does the same):
+
+```shell
+./gradlew :ui:hotRunJvm --mainClass=com.maximerollin.aqualog.ui.MainKt --auto
+```
+
+It is a development harness: the real screens on a local database in
+`~/.aqualog-desktop/`, with account, billing, sync and telemetry disabled.
+
 ## Local Task reminders
 
 Task occurrences and their resolution history are stored in the local Room

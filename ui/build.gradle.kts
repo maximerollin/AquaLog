@@ -35,9 +35,12 @@ kotlin {
         jvmTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.jetbrains.compose.ui.test)
         }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
+            // Provides Dispatchers.Main, which viewModelScope needs on desktop.
+            implementation(libs.kotlinx.coroutines.swing)
         }
     }
 }
