@@ -45,11 +45,14 @@
   </defs>
 
   <!-- Background layer: water and light rays. -->
+  <g id="background">
   <rect width="108" height="108" fill="url(#water)"/>
   <path fill="url(#ray)" d="M18,0 H30 L46,70 H36 Z"/>
   <path fill="url(#ray)" d="M48,0 H56 L66,64 H60 Z"/>
   <path fill="url(#ray)" d="M74,0 H88 L94,72 H84 Z"/>
 
+  </g>
+  <g id="foreground">
   <!-- Far plants, dark silhouettes for depth. -->
   <g fill="#0d4b44" opacity=".85">
     <path d="M4,84 C0,66 6,48 12,34 C12,50 14,68 14,84 Z"/>
@@ -90,4 +93,5 @@
   </g>
   <use href="#fish" transform="translate(52 58) scale(.95)"/>
   <use href="#bubbles" transform="translate(29 50) scale(.9)"/>
+  </g>
 </svg>
