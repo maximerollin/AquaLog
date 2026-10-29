@@ -27,10 +27,10 @@ enum class PortableImportRejection {
 }
 
 enum class PortableImportProblem(val safeExplanation: String) {
-    INVALID_DOCUMENT("The selected file is not a complete AquaLog JSON export."),
+    INVALID_DOCUMENT("The selected file is not a complete Aquagenda JSON export."),
     MISSING_VERSION("The selected file has no numeric format version."),
-    UNSUPPORTED_VERSION("This AquaLog export version is not supported."),
-    SCHEMA_MISMATCH("The selected file does not match its AquaLog format version."),
+    UNSUPPORTED_VERSION("This Aquagenda export version is not supported."),
+    SCHEMA_MISMATCH("The selected file does not match its Aquagenda format version."),
     UNSUPPORTED_DUPLICATE_STRATEGY("The export uses an unsupported duplicate strategy."),
     DUPLICATE_IDENTIFIERS("Stable identifiers must be non-empty and unique."),
     INVALID_AQUARIUMS("An Aquarium record is invalid."),

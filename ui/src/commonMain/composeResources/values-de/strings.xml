@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AquaLog</string>
+    <string name="app_name">Aquagenda</string>
 
     <string name="welcome_title">Eine Sitzung. Deine ganze Routine.</string>
     <string name="welcome_description">Erfassen Sie mehrere Wassermessungen, Wartungsaktionen und eine Beobachtung gemeinsam – ohne ein Konto anzulegen.</string>
     <string name="get_started">Fangen Sie an</string>
 
     <string name="profile_title">Was verfolgen Sie?</string>
-    <string name="profile_description">AquaLog schlägt einen anpassbaren Parametersatz vor. Nichts ist festgelegt.</string>
+    <string name="profile_description">Aquagenda schlägt einen anpassbaren Parametersatz vor. Nichts ist festgelegt.</string>
     <string name="profile_established">Gegründet</string>
     <string name="profile_established_description">Eine ausgewogene Routine für ein etabliertes Süßwasseraquarium.</string>
     <string name="profile_cycling">Einlaufphase</string>
@@ -143,14 +143,14 @@
     <string name="continue_with_google">Weiter mit Google</string>
     <string name="continue_with_email">Weiter mit E-Mail</string>
     <string name="magic_link_title">Zauber-Link per E-Mail senden</string>
-    <string name="magic_link_description">Wir senden Ihnen einen einmaligen Anmeldelink. Wenn Sie es öffnen, kehren Sie zu AquaLog zurück.</string>
+    <string name="magic_link_description">Wir senden Ihnen einen einmaligen Anmeldelink. Wenn Sie es öffnen, kehren Sie zu Aquagenda zurück.</string>
     <string name="email_address">E-Mail-Adresse</string>
     <string name="send_magic_link">Senden Sie einen magischen Link</string>
     <string name="back">Zurück</string>
     <string name="magic_link_sent_title">Überprüfen Sie Ihre E-Mails</string>
-    <string name="magic_link_sent_description">Öffnen Sie den AquaLog-Anmeldelink auf diesem Gerät, um das Anhängen Ihrer lokalen Kopie abzuschließen.</string>
+    <string name="magic_link_sent_description">Öffnen Sie den Aquagenda-Anmeldelink auf diesem Gerät, um das Anhängen Ihrer lokalen Kopie abzuschließen.</string>
     <string name="authentication_waiting_title">Beenden Sie den Vorgang in Ihrem Browser</string>
-    <string name="authentication_waiting_description">Kehren Sie zu AquaLog zurück, nachdem Google die Authentifizierung abgeschlossen hat.</string>
+    <string name="authentication_waiting_description">Kehren Sie zu Aquagenda zurück, nachdem Google die Authentifizierung abgeschlossen hat.</string>
     <string name="account_error_title">Ihre lokalen Daten sind sicher</string>
     <string name="magic_link_expired">Dieser Link ist abgelaufen. Fordern Sie einen neuen Magic-Link an und versuchen Sie es erneut.</string>
     <string name="authentication_failed">Die Authentifizierung wurde nicht abgeschlossen. Sie können es erneut versuchen, ohne lokale Daten zu verlieren.</string>
@@ -184,7 +184,7 @@
     <string name="feedback_title">Feedback senden</string>
     <string name="feedback_settings_description">Teilen Sie eine freiwillige Nachricht über den speziellen Feedback-Kanal. Es wird niemals in Produktanalysen oder Absturzberichte kopiert.</string>
     <string name="send_feedback">Feedback senden</string>
-    <string name="feedback_privacy_explanation">Nur die Nachricht, die Sie unten eingeben, wird übermittelt. AquaLog fügt keine Wasserwerte, gespeicherten Notizen oder Beobachtungen, Aquariennamen, E-Mail-Adressen, Fotos oder Analysekennungen hinzu. Vermeiden Sie es, persönliche Daten hinzuzufügen, die Sie nicht weitergeben möchten.</string>
+    <string name="feedback_privacy_explanation">Nur die Nachricht, die Sie unten eingeben, wird übermittelt. Aquagenda fügt keine Wasserwerte, gespeicherten Notizen oder Beobachtungen, Aquariennamen, E-Mail-Adressen, Fotos oder Analysekennungen hinzu. Vermeiden Sie es, persönliche Daten hinzuzufügen, die Sie nicht weitergeben möchten.</string>
     <string name="feedback_message_label">Feedback-Nachricht</string>
     <string name="feedback_character_count">%1$d/2000</string>
     <string name="feedback_sent">Feedback gesendet. Danke schön.</string>
@@ -198,19 +198,19 @@
     <string name="sync_failure_unknown">Die Synchronisierung wurde nicht abgeschlossen. Ihre lokalen Daten bleiben verfügbar.</string>
     <string name="sync_retry">Versuchen Sie die Synchronisierung erneut</string>
     <string name="portable_data_title">Tragbare lokale Daten</string>
-    <string name="portable_data_description">Speichern oder wiederherstellen Sie Ihre lokale AquaLog-Kopie mit der Android-Dokumentenspeicherung.</string>
+    <string name="portable_data_description">Speichern oder wiederherstellen Sie Ihre lokale Aquagenda-Kopie mit der Android-Dokumentenspeicherung.</string>
     <string name="portable_data_replace_explanation">Die Wiederherstellung validiert zunächst die gesamte Datei und ersetzt dann atomar die Aquarium-Daten auf diesem Gerät. Stabile IDs verhindern Duplikate. Kontoanmeldeinformationen und Rechnungsdaten sind niemals enthalten.</string>
     <string name="export_data">Daten exportieren</string>
     <string name="restore_from_export">Aus dem Export wiederherstellen</string>
     <string name="portable_import_confirmation_title">Lokale Aquariumdaten ersetzen?</string>
-    <string name="portable_import_confirmation_description">AquaLog validiert zunächst den gesamten Export. Wenn es gültig ist, werden Aquarien, Parameter, Sitzungen, Messungen, Wartungsaktionen, Ereignisse, Aufgaben und Vorkommnisse gemeinsam ersetzt. Ihre Kontoanmeldung und Ihre sicheren Token bleiben auf diesem Gerät.</string>
+    <string name="portable_import_confirmation_description">Aquagenda validiert zunächst den gesamten Export. Wenn es gültig ist, werden Aquarien, Parameter, Sitzungen, Messungen, Wartungsaktionen, Ereignisse, Aufgaben und Vorkommnisse gemeinsam ersetzt. Ihre Kontoanmeldung und Ihre sicheren Token bleiben auf diesem Gerät.</string>
     <string name="choose_export_file">Wählen Sie Exportdatei</string>
     <string name="portable_export_ready">Exportbereit</string>
     <string name="portable_import_complete">Wiederherstellung abgeschlossen</string>
-    <string name="portable_problem_invalid_document">Diese Datei ist unvollständig oder kein AquaLog JSON-Export. Ihre lokalen Daten wurden nicht geändert.</string>
+    <string name="portable_problem_invalid_document">Diese Datei ist unvollständig oder kein Aquagenda JSON-Export. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_missing_version">Dieser Export hat keine gültige Formatversion. Ihre lokalen Daten wurden nicht geändert.</string>
-    <string name="portable_problem_unsupported_version">Diese AquaLog-Exportversion wird nicht unterstützt. Ihre lokalen Daten wurden nicht geändert.</string>
-    <string name="portable_problem_schema_mismatch">Diese Datei stimmt nicht mit der deklarierten AquaLog-Formatversion überein. Ihre lokalen Daten wurden nicht geändert.</string>
+    <string name="portable_problem_unsupported_version">Diese Aquagenda-Exportversion wird nicht unterstützt. Ihre lokalen Daten wurden nicht geändert.</string>
+    <string name="portable_problem_schema_mismatch">Diese Datei stimmt nicht mit der deklarierten Aquagenda-Formatversion überein. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_duplicate_strategy">Dieser Export verwendet eine nicht unterstützte Duplikatstrategie. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_duplicate_ids">Dieser Export enthält leere oder doppelte stabile IDs. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_aquariums">Dieser Export enthält ein ungültiges Aquarium. Ihre lokalen Daten wurden nicht geändert.</string>
@@ -226,7 +226,7 @@
     <string name="portable_storage_error">Android konnte dieses Dokument nicht lesen oder schreiben. Versuchen Sie es an einem anderen Ort.</string>
     <string name="account_title">Konto</string>
     <string name="account_local_only">Nur lokal</string>
-    <string name="account_local_only_description">Es ist kein Cloud-Konto verknüpft. AquaLog bleibt mit den auf diesem Gerät gespeicherten Daten uneingeschränkt nutzbar.</string>
+    <string name="account_local_only_description">Es ist kein Cloud-Konto verknüpft. Aquagenda bleibt mit den auf diesem Gerät gespeicherten Daten uneingeschränkt nutzbar.</string>
     <string name="account_actions">Kontoaktionen</string>
     <string name="account_sign_out_failed">Die Abmeldung konnte nicht abgeschlossen werden. Deine lokalen Daten wurden nicht geändert.</string>
     <string name="account_deletion_resume_failed">Die Kontolöschung konnte nicht fortgesetzt werden. Deine lokalen Daten wurden nicht geändert.</string>
@@ -244,10 +244,10 @@
     <string name="retry_account_deletion">Versuchen Sie, das Konto erneut zu löschen</string>
     <string name="send_deletion_magic_link">Link an die E-Mail-Adresse des Kontos senden</string>
     <string name="account_deleted_cleanup_title">Kontozugriff gelöscht</string>
-    <string name="account_deleted_cleanup_description">Das Löschen der Cloud wird bestätigt und die Konto-Tokens werden gelöscht. Entfernen Sie die lokale Kopie vollständig, bevor Sie AquaLog erneut verwenden.</string>
+    <string name="account_deleted_cleanup_description">Das Löschen der Cloud wird bestätigt und die Konto-Tokens werden gelöscht. Entfernen Sie die lokale Kopie vollständig, bevor Sie Aquagenda erneut verwenden.</string>
     <string name="finish_local_cleanup">Beenden Sie die lokale Bereinigung</string>
     <string name="privacy_policy">Privatsphäre</string>
-    <string name="privacy_policy_local">AquaLog speichert Aquariendaten lokal. Wenn Käufe eingerichtet sind, verarbeitet RevenueCat Kaufinformationen und eine nicht direkt zuordenbare Kontokennung, um Pro zu verwalten. Aquariendaten werden nicht an RevenueCat gesendet. Exporte enthalten weder Kontotokens noch Abrechnungsdaten. Die veröffentlichte Datenschutzerklärung ist verfügbar, wenn sie eingerichtet wurde. LogSnag erhält Zahlungsstatus und Anfragen zum Bewertungsdialog ohne Kontokennung oder Aquarieninhalte.</string>
+    <string name="privacy_policy_local">Aquagenda speichert Aquariendaten lokal. Wenn Käufe eingerichtet sind, verarbeitet RevenueCat Kaufinformationen und eine nicht direkt zuordenbare Kontokennung, um Pro zu verwalten. Aquariendaten werden nicht an RevenueCat gesendet. Exporte enthalten weder Kontotokens noch Abrechnungsdaten. Die veröffentlichte Datenschutzerklärung ist verfügbar, wenn sie eingerichtet wurde. LogSnag erhält Zahlungsstatus und Anfragen zum Bewertungsdialog ohne Kontokennung oder Aquarieninhalte.</string>
     <string name="support">Unterstützung</string>
     <string name="support_unconfigured">Für diesen Build ist kein gehosteter Supportkanal konfiguriert. Ihre lokalen Aquarium-Daten und der tragbare Export bleiben weiterhin verfügbar.</string>
     <string name="close">Schließen</string>
@@ -312,7 +312,7 @@
     <string name="trends_apply_custom_period">Benutzerdefinierten Zeitraum anwenden</string>
     <string name="trends_invalid_custom_period">Geben Sie ein geordnetes Start- und Enddatum im Format JJJJ-MM-TT ein.</string>
     <string name="trends_advanced_analysis">Erweiterte Pro-Analyse</string>
-    <string name="trends_descriptive_disclaimer">Nur beschreibender Kontext. AquaLog diagnostiziert keine Wasserbedingungen und empfiehlt keine Behandlung.</string>
+    <string name="trends_descriptive_disclaimer">Nur beschreibender Kontext. Aquagenda diagnostiziert keine Wasserbedingungen und empfiehlt keine Behandlung.</string>
     <string name="trends_choose_intervention">Wählen Sie eine Intervention aus, um sie vorher und nachher zu vergleichen</string>
     <string name="trends_before_after">Vor und nach dem Eingriff</string>
     <string name="trends_before_after_values">%1$s · Vor dem Durchschnitt %2$s · Nach dem Durchschnitt %3$s%4$s</string>
@@ -360,7 +360,7 @@
     <string name="task_ignored">Ignoriert</string>
     <string name="task_resolved_value">%1$s · gelöst auf %2$s</string>
     <string name="allow_notifications">Benachrichtigungen zulassen</string>
-    <string name="notification_permission_explanation">Zum Anzeigen von Aufgabenerinnerungen ist eine Android-Benachrichtigungsberechtigung erforderlich. Aufgaben bleiben in AquaLog verfügbar, wenn Sie ablehnen.</string>
+    <string name="notification_permission_explanation">Zum Anzeigen von Aufgabenerinnerungen ist eine Android-Benachrichtigungsberechtigung erforderlich. Aufgaben bleiben in Aquagenda verfügbar, wenn Sie ablehnen.</string>
     <string name="battery_optimization_explanation">Die Android-Akkuoptimierung ist aktiv. Es kann Erinnerungen verzögern; Aufgaben und deren Fälligkeitstermine bleiben lokal gespeichert.</string>
     <string name="timeline_filters">Filter</string>
     <string name="measurement_reading">%1$s · %2$s %3$s</string>

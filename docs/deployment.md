@@ -1,4 +1,4 @@
-# Déploiement AquaLog
+# Déploiement Aquagenda
 
 Une application Play `com.maximerollin.aqualog`, un projet RevenueCat, un Supabase, un PostHog et un LogSnag. Ajouter un projet Firebase/Crashlytics si les rapports techniques doivent être activés. Les pistes internal, alpha et production partagent ces ressources ; `release_channel` permet de filtrer les analyses. Debug et Firebase Test Lab désactivent PostHog et Crashlytics. Debug désactive aussi les notifications d’avis LogSnag.
 

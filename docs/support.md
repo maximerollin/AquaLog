@@ -1,4 +1,4 @@
-# AquaLog support
+# Aquagenda support
 
 No hosted support service or public support URL is configured in this repository. The app states
 that explicitly instead of opening an invented destination. A distributor must configure and

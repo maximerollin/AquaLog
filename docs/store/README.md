@@ -1,4 +1,4 @@
-# Icônes AquaLog — exports PNG
+# Icônes Aquagenda — exports PNG
 
 Ces fichiers rasterisent fidèlement la scène B2 approuvée dans
 [`scene-b2.svg`](../design/launcher-icon/scene-b2.svg), sans redessiner ni recadrer

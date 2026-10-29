@@ -1,8 +1,8 @@
-# Privacy in AquaLog
+# Privacy in Aquagenda
 
-AquaLog works with a local-only database by default. Portable exports contain Aquarium records,
+Aquagenda works with a local-only database by default. Portable exports contain Aquarium records,
 not authentication tokens, billing information, or app secrets. When an account-enabled build is
-configured, AquaLog sends account-owned Aquarium records to that configured backend and keeps
+configured, Aquagenda sends account-owned Aquarium records to that configured backend and keeps
 secure authentication tokens in Android's encrypted keystore-backed storage.
 
 The app's Privacy action always presents this local summary. A hosted privacy URL is intentionally
@@ -12,7 +12,7 @@ not assumed by the repository and must be supplied explicitly through `AQUALOG_P
 ## Purchase processing with RevenueCat
 
 When purchases are configured, RevenueCat processes store transaction information and an opaque
-account identifier to manage Pro access. AquaLog does not set a customer email,
+account identifier to manage Pro access. Aquagenda does not set a customer email,
 Aquarium name, water values, notes or advertising identifier in RevenueCat; automatic device identifier
 collection and SDK diagnostics are disabled. Purchase data and SDK technical data remain a separate
 processing purpose from the allowlisted product analytics channel. The hosted privacy policy must

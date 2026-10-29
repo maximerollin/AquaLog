@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AquaLog</string>
+    <string name="app_name">Aquagenda</string>
     <string name="task_notification_channel">Aufgabenerinnerungen</string>
-    <string name="task_notification_text">Öffnen Sie AquaLog, um dieses Ereignis abzuschließen, zu verschieben oder zu ignorieren.</string>
+    <string name="task_notification_text">Öffnen Sie Aquagenda, um dieses Ereignis abzuschließen, zu verschieben oder zu ignorieren.</string>
 </resources>

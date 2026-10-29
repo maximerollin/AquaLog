@@ -1,4 +1,4 @@
-# RevenueCat : configuration AquaLog
+# RevenueCat : configuration Aquagenda
 
 Configuration actuelle : **une app Play `com.maximerollin.aqualog`, un projet RevenueCat AquaLog et un projet Supabase**. Les pistes Play internal, alpha (test fermé) et production utilisent la même clé publique Google Play `goog_…`. Aucun projet « Beta » n’est nécessaire.
 
@@ -13,7 +13,7 @@ Ne pas créer de package Monthly. Rattacher les deux produits au même entitleme
 
 1. Ajouter l’application **Google Play** dans RevenueCat, avec `com.maximerollin.aqualog`.
 2. Relier Google Play avec le compte de service et les autorisations demandées par RevenueCat ; activer les notifications serveur Play selon son assistant.
-3. Régler la restauration sur **Keep with original App User ID** pour éviter de transférer un achat vers un autre compte AquaLog. Créer/activer les produits dans Play, puis les importer dans RevenueCat. Pour l’annuel, activer le base plan annuel et son offre d’essai de 14 jours. Pour le lifetime, conserver un achat non consommable.
+3. Régler la restauration sur **Keep with original App User ID** pour éviter de transférer un achat vers un autre compte Aquagenda. Créer/activer les produits dans Play, puis les importer dans RevenueCat. Pour l’annuel, activer le base plan annuel et son offre d’essai de 14 jours. Pour le lifetime, conserver un achat non consommable.
 4. Donner à l’app la clé publique SDK via `AQUALOG_REVENUECAT_PUBLIC_API_KEY`. Ni clé `sk_…`, ni clé Test Store `test_…` dans le build.
 
 ## Supabase : secrets serveur
@@ -33,7 +33,7 @@ Créer le webhook RevenueCat vers `https://<project>.supabase.co/functions/v1/re
 
 ## Tests et production dans le même projet
 
-Utiliser des comptes AquaLog de qualification distincts des comptes réels. Après leur connexion, relever leur identifiant opaque dans `revenuecat_customers` avec un accès administrateur. Ajouter les mêmes IDs :
+Utiliser des comptes Aquagenda de qualification distincts des comptes réels. Après leur connexion, relever leur identifiant opaque dans `revenuecat_customers` avec un accès administrateur. Ajouter les mêmes IDs :
 
 - dans RevenueCat → Project settings → General → Sandbox Testing Access → **Allowed App User IDs only** ;
 - dans le secret Supabase `REVENUECAT_SANDBOX_APP_USER_IDS`.

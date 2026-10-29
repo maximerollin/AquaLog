@@ -1,6 +1,6 @@
 # Privacy-safe product observability
 
-AquaLog treats product telemetry, technical failure reporting, and voluntary
+Aquagenda treats product telemetry, technical failure reporting, and voluntary
 feedback as three separate channels.
 
 ## Product telemetry
@@ -42,7 +42,7 @@ exist, the dedicated `submit-feedback` function accepts only the voluntary messa
 the database RPC enforces authentication and three submissions per account/hour.
 
 Review eligibility is stored locally. After three successful Sessions and at
-least seven days since the first one, AquaLog calls Google Play In-App Review
+least seven days since the first one, Aquagenda calls Google Play In-App Review
 directly. There is no satisfaction pre-question. The local flag is persisted
 before the native request so recreation or retries cannot prompt repeatedly.
 

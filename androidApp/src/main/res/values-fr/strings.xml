@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AquaLog</string>
+    <string name="app_name">Aquagenda</string>
     <string name="task_notification_channel">Rappels de tâches</string>
-    <string name="task_notification_text">Ouvrez AquaLog pour terminer, reporter ou ignorer cette occurrence.</string>
+    <string name="task_notification_text">Ouvrez Aquagenda pour terminer, reporter ou ignorer cette occurrence.</string>
 </resources>
