@@ -142,7 +142,7 @@ supabase stop --workdir build/qualification-19/backend
 ## Scénario commun du test fermé
 
 Préconditions externes : candidat signé et installé depuis la piste fermée du
-package bêta, deux comptes AquaLog bêta, compte Play license tester, catalogue
+package bêta, deux comptes Aquagenda bêta, compte Play license tester, catalogue
 annuel (14,99 €, essai 14 jours) et achat à vie (34,99 €) tant qu’il est conservé,
 backend et observabilité bêta distincts, politique et support publiés. Ne jamais
 remplacer ces préconditions par des reçus fabriqués ou des événements de démonstration.

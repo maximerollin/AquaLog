@@ -50,7 +50,7 @@ class PrivacyFlowTest {
                 .performScrollTo()
                 .performClick()
             composeRule.onNodeWithText(
-                "Only the message you type below is submitted. AquaLog does not attach water values",
+                "Only the message you type below is submitted. Aquagenda does not attach water values",
                 substring = true,
             )
             val privateMessage = "My pH note for Private Aquarium is 7.2"

@@ -103,7 +103,7 @@ class RevenueCatBillingGateway(
 
     private suspend fun launch(accountId: String, annual: Boolean): BillingLaunchResult = identityMutex.withLock {
         try {
-            val currentActivity = activity.get() ?: return@withLock BillingLaunchResult.Failed("Return to AquaLog to purchase")
+            val currentActivity = activity.get() ?: return@withLock BillingLaunchResult.Failed("Return to Aquagenda to purchase")
             identify(accountId)
             // Recheck the offer after identification; never silently replace a promised trial with a paid base plan.
             val params = if (annual) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AquaLog</string>
+    <string name="app_name">Aquagenda</string>
     <string name="task_notification_channel">Promemoria attività</string>
-    <string name="task_notification_text">Apri AquaLog per completare, posticipare o ignorare questo evento.</string>
+    <string name="task_notification_text">Apri Aquagenda per completare, posticipare o ignorare questo evento.</string>
 </resources>

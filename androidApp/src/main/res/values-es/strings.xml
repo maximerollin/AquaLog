@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AquaLog</string>
+    <string name="app_name">Aquagenda</string>
     <string name="task_notification_channel">Recordatorios de tareas</string>
-    <string name="task_notification_text">Abra AquaLog para completar, posponer o ignorar este suceso.</string>
+    <string name="task_notification_text">Abra Aquagenda para completar, posponer o ignorar este suceso.</string>
 </resources>

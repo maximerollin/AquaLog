@@ -29,7 +29,7 @@ fun main() = application {
         )
     }
     Window(
-        title = "AquaLog",
+        title = "Aquagenda",
         state = rememberWindowState(size = DpSize(width = 412.dp, height = 915.dp)),
         onCloseRequest = ::exitApplication,
     ) {
