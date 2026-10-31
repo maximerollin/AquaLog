@@ -1,0 +1,188 @@
+<style>
+  .ph{width:300px;margin:0 auto;background:#F6F4EC;border-radius:28px;border:8px solid #1E3733;overflow:hidden;font-family:-apple-system,Roboto,sans-serif;color:#1E3733;font-size:12px;line-height:1.3;text-align:left}
+  .ph .bar{height:18px;display:flex;justify-content:space-between;padding:2px 14px;font-size:10px;color:#546A64}
+  .ph .scroll{height:520px;overflow:hidden;position:relative}
+  .ph .nav{display:flex;justify-content:space-around;border-top:1px solid #CCD7CF;background:#FFFEF9;padding:6px 0 8px;font-size:9.5px;color:#546A64}
+  .ph .nav b{color:#14675E}
+  .ph .nav span{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .ph .nav i{font-style:normal;font-size:14px}
+  .pad{padding:8px 12px}
+  .card{background:#FFFEF9;border-radius:14px;padding:9px 10px;margin:0 12px 8px;border:1px solid #E4EBE5}
+  .h{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#546A64;margin:0 0 6px;display:flex;justify-content:space-between}
+  .h a{color:#14675E;text-transform:none;letter-spacing:0;font-weight:600}
+  .photo{height:130px;background:linear-gradient(160deg,#2f7d6f 0%,#14675E 45%,#0e3f3a 100%);position:relative;color:#fff}
+  .photo .weeds{position:absolute;bottom:0;left:0;right:0;height:60px;background:radial-gradient(ellipse 30px 50px at 20% 100%,#3f9a5c 60%,transparent 61%),radial-gradient(ellipse 22px 40px at 32% 100%,#5fb36f 60%,transparent 61%),radial-gradient(ellipse 26px 55px at 78% 100%,#3f9a5c 60%,transparent 61%),radial-gradient(ellipse 18px 30px at 88% 100%,#7cc37f 60%,transparent 61%),linear-gradient(transparent 70%,#c9b58a 70%)}
+  .photo .t{position:absolute;left:12px;bottom:10px;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .photo .t b{font-size:16px;display:block}
+  .photo .cam{position:absolute;right:10px;top:10px;background:rgba(255,255,255,.25);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .st{display:flex;gap:8px;align-items:center}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .ok{background:#2E8B57}.warn{background:#C98A1B}.bad{background:#B3412E}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+  .v{background:#F6F4EC;border-radius:9px;padding:5px 6px}
+  .v .n{font-size:9.5px;color:#546A64;display:flex;justify-content:space-between}
+  .v .x{font-size:15px;font-weight:650}
+  .v .x small{font-size:9px;font-weight:400;color:#546A64}
+  .v.w{background:#FBF0D9}.v.b{background:#F7E1DB}
+  .task{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid #EEF2EE}
+  .task:first-of-type{border-top:none}
+  .box{width:15px;height:15px;border:1.6px solid #7C9189;border-radius:4px;flex:none}
+  .task .m{flex:1}
+  .task .m small{display:block;color:#546A64;font-size:9.5px}
+  .tag{font-size:9px;padding:1px 6px;border-radius:8px;background:#DEEBE3;color:#1E3733}
+  .tag.late{background:#F7E1DB;color:#8a2f20}
+  .fab{position:absolute;right:12px;bottom:10px;background:#14675E;color:#fff;border-radius:16px;padding:9px 13px;font-weight:600;font-size:12px;box-shadow:0 3px 8px rgba(20,103,94,.35)}
+  .row{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid #EEF2EE}
+  .row:first-of-type{border-top:none}
+  .row .n{width:58px;color:#546A64}
+  .row .x{width:52px;font-weight:650;text-align:right}
+  .rng{flex:1;height:6px;border-radius:3px;background:#E4EBE5;position:relative}
+  .rng i{position:absolute;top:0;bottom:0;background:#BFDCCF;border-radius:3px}
+  .rng u{position:absolute;top:-3px;width:3px;height:12px;border-radius:2px;background:#14675E}
+  .rng u.w{background:#C98A1B}
+  .verdict{background:#DEEBE3;border-radius:14px;margin:8px 12px;padding:10px}
+  .verdict b{font-size:14px}
+  .thumb{width:44px;height:44px;border-radius:12px;background:linear-gradient(160deg,#2f7d6f,#0e3f3a);flex:none}
+  .glass{position:absolute;background:rgba(255,254,249,.88);color:#1E3733;border-radius:10px;padding:3px 7px;font-size:10px}
+  .glass b{font-size:12.5px}
+  .hero{height:230px}
+  .chips{display:flex;gap:6px;overflow:hidden;padding:0 12px 8px}
+  .chip{background:#FFFEF9;border:1px solid #E4EBE5;border-radius:16px;padding:4px 9px;white-space:nowrap;font-size:10.5px}
+  .tank{height:150px;position:relative;overflow:hidden;background:linear-gradient(180deg,#3d9184 0%,#1f7468 40%,#14675E 70%,#0f4a43 100%);color:#fff}
+  .tank .sand{position:absolute;left:0;right:0;bottom:0;height:16px;background:linear-gradient(#d6c497,#c3ae7e);border-top-left-radius:50% 6px;border-top-right-radius:50% 6px}
+  .tank .ray{position:absolute;top:-20px;width:30px;height:150px;background:linear-gradient(rgba(255,255,255,.14),transparent);transform:skewX(-18deg)}
+  .tank .t{position:absolute;left:12px;top:9px;text-shadow:0 1px 3px rgba(0,0,0,.45);z-index:5}
+  .tank .t b{font-size:15px;display:block}
+  .tank .cam{position:absolute;right:10px;top:9px;width:30px;height:30px;border-radius:9px;border:2px solid rgba(255,255,255,.8);background:linear-gradient(160deg,#5c8f6a,#2b4f45);display:flex;align-items:center;justify-content:center;font-size:12px;z-index:5}
+  .stem{position:absolute;bottom:10px;transform-origin:bottom center;animation:sway 5s ease-in-out infinite}
+  @keyframes sway{50%{transform:rotate(4deg)}}
+  .f{position:absolute;left:4px;animation:swim linear infinite}
+  .f>div{animation:bob 3s ease-in-out infinite}
+  @keyframes swim{0%{transform:translateX(0) scaleX(1)}48%{transform:translateX(var(--d)) scaleX(1)}50%{transform:translateX(var(--d)) scaleX(-1)}98%{transform:translateX(0) scaleX(-1)}100%{transform:translateX(0) scaleX(1)}}
+  @keyframes bob{50%{transform:translateY(4px)}}
+  .bub{position:absolute;bottom:14px;width:4px;height:4px;border-radius:50%;border:1px solid rgba(255,255,255,.7);animation:rise 4s linear infinite}
+  @keyframes rise{to{transform:translateY(-140px);opacity:0}}
+  .kit{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:6px 0 2px}
+  .kit div{background:#14675E;border-radius:10px;padding:8px 10px;color:#fff;font-size:11px;text-align:center;min-width:70px}
+  @media (prefers-reduced-motion:reduce){.f,.f>div,.stem,.bub{animation:none}}
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="neon" viewBox="0 0 40 16"><path d="M9 8 L1 3 L3 8 L1 13 Z" fill="#e4ecee" opacity=".75"/><ellipse cx="22" cy="8" rx="14" ry="5" fill="#e3eaec"/><path d="M14 9.5 Q24 13 35 9 L33 11.5 Q24 14 15 11.8 Z" fill="#e0453a"/><path d="M11 6.6 Q24 4.6 35.5 7.2 L35.5 8.6 Q24 6.8 11 8.4 Z" fill="#2fb2ff"/><circle cx="31.5" cy="7" r="1.3" fill="#1E3733"/></symbol>
+    <symbol id="cory" viewBox="0 0 40 22"><path d="M6 13 L0 7 L1 13 L0 19 Z" fill="#a8977a"/><path d="M5 13 Q9 4 22 4.5 Q33 5 38.5 13.5 Q31 17.5 5 15.5 Z" fill="#cdbf9f"/><path d="M17 5 L20 0 L24 5 Z" fill="#a8977a"/><circle cx="14" cy="10" r="1.2" fill="#6d5f49"/><circle cx="19" cy="8" r="1.2" fill="#6d5f49"/><circle cx="23" cy="11" r="1.2" fill="#6d5f49"/><circle cx="11" cy="13" r="1" fill="#6d5f49"/><circle cx="33" cy="10" r="1.6" fill="#1E3733"/><path d="M37 14.5 L40 17 M36 15 L38 18.5" stroke="#8d7c60" stroke-width=".8"/></symbol>
+    <symbol id="shrimp" viewBox="0 0 30 16"><path d="M3 9 L0 6 L0 12 Z" fill="#c62d24"/><path d="M3 9 Q6 3 15 3.5 Q24 4 26 9 Q20 12 8 11.5 Z" fill="#e0453a"/><path d="M8 5 L8 11 M12 4 L12 11.5 M16 4 L16 11.5" stroke="#b5271f" stroke-width=".7"/><circle cx="23" cy="7" r="1" fill="#1E3733"/><path d="M26 7 Q30 2 30 0 M25 7 Q29 4 29.5 1" stroke="#e0453a" stroke-width=".6" fill="none"/><path d="M10 11.5 L9 15 M14 11.5 L13.5 15 M18 11 L18 14.5" stroke="#e0453a" stroke-width=".7"/></symbol>
+    <symbol id="betta" viewBox="0 0 48 34"><path d="M20 17 Q4 0 0 6 Q6 17 0 28 Q4 34 20 17 Z" fill="#3c4fc4" opacity=".9"/><path d="M22 12 Q28 0 36 9 Z" fill="#5165db" opacity=".85"/><path d="M22 22 Q28 34 34 24 Z" fill="#5165db" opacity=".85"/><ellipse cx="32" cy="17" rx="13" ry="6.5" fill="#c73b4a"/><path d="M24 15 Q32 11 42 15" stroke="#e0606c" stroke-width="1.2" fill="none"/><circle cx="40" cy="15.5" r="1.6" fill="#1E3733"/></symbol>
+    <symbol id="snail" viewBox="0 0 24 16"><path d="M2 15 Q10 13 22 14.5 L21 16 L2 16 Z" fill="#d9c7a4"/><circle cx="11" cy="8" r="7" fill="#7a4d2b"/><path d="M11 8 m-4 0 a4 4 0 1 1 4 4 a2.4 2.4 0 1 1 -1.4-2.6" stroke="#b07a48" stroke-width="1.2" fill="none"/><path d="M19 13 L22 9 M20 13.5 L24 11" stroke="#d9c7a4" stroke-width="1"/></symbol>
+    <symbol id="anubias" viewBox="0 0 60 40"><ellipse cx="30" cy="36" rx="22" ry="7" fill="#7c8a80"/><path d="M28 32 Q14 26 10 12 Q24 14 28 32Z" fill="#2f6b3f"/><path d="M30 31 Q30 14 40 4 Q46 20 30 31Z" fill="#3a7d4b"/><path d="M33 33 Q46 30 54 18 Q40 18 33 33Z" fill="#2f6b3f"/></symbol>
+  </defs>
+</svg>
+
+<h2>Accueil v2 : ton bac, vivant</h2>
+<p class="subtitle">Option A, avec en tête une scène animée qui reprend les habitants saisis dans le bac. Deux bacs différents pour voir que la scène change avec ce qu'on y met. Les tuiles et les tâches ne bougent pas.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="salon" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="ph">
+        <div class="bar"><span>9:41</span><span>▮▮ ◔</span></div>
+        <div class="scroll">
+          <div class="tank">
+            <div class="ray" style="left:40px"></div><div class="ray" style="left:150px;opacity:.6"></div>
+            <div class="stem" style="left:18px"><svg width="14" height="70"><path d="M7 70 Q2 40 8 0" stroke="#4f9d5d" stroke-width="3" fill="none"/><ellipse cx="5" cy="20" rx="5" ry="2" fill="#5fb36f"/><ellipse cx="10" cy="34" rx="5" ry="2" fill="#5fb36f"/><ellipse cx="4" cy="48" rx="5" ry="2" fill="#5fb36f"/></svg></div>
+            <div class="stem" style="left:250px;animation-delay:-2s"><svg width="14" height="84"><path d="M7 84 Q12 50 6 0" stroke="#3f8d4f" stroke-width="3" fill="none"/><ellipse cx="10" cy="18" rx="5" ry="2" fill="#5fb36f"/><ellipse cx="4" cy="34" rx="5" ry="2" fill="#5fb36f"/><ellipse cx="10" cy="52" rx="5" ry="2" fill="#5fb36f"/></svg></div>
+            <svg width="60" height="40" style="position:absolute;left:170px;bottom:6px"><use href="#anubias"/></svg>
+            <div class="sand"></div>
+            <div class="bub" style="left:30px"></div><div class="bub" style="left:34px;animation-delay:-1.5s"></div><div class="bub" style="left:28px;animation-delay:-2.8s"></div>
+            <div class="f" style="top:52px;--d:190px;animation-duration:16s"><div>
+              <svg width="90" height="44" viewBox="0 0 90 44">
+                <use href="#neon" x="0" y="2" width="22" height="9"/><use href="#neon" x="24" y="0" width="22" height="9"/><use href="#neon" x="50" y="6" width="22" height="9"/>
+                <use href="#neon" x="10" y="16" width="22" height="9"/><use href="#neon" x="36" y="14" width="22" height="9"/><use href="#neon" x="62" y="20" width="22" height="9"/>
+                <use href="#neon" x="2" y="30" width="22" height="9"/><use href="#neon" x="28" y="28" width="22" height="9"/><use href="#neon" x="54" y="33" width="22" height="9"/><use href="#neon" x="18" y="40" width="22" height="9"/>
+              </svg></div></div>
+            <div class="f" style="top:118px;--d:120px;animation-duration:26s;animation-delay:-8s"><div style="animation-duration:6s"><svg width="30" height="16"><use href="#cory"/></svg></div></div>
+            <div class="f" style="top:122px;left:60px;--d:150px;animation-duration:31s;animation-delay:-20s"><div style="animation-duration:5s"><svg width="28" height="15"><use href="#cory"/></svg></div></div>
+            <div class="t"><b>Bac du salon</b>120 L · planté · 8 mois</div>
+            <div class="cam">📷</div>
+          </div>
+          <div class="pad st"><span class="dot warn"></span><span><b>1 valeur à surveiller</b> · mesuré il y a 2 j</span></div>
+          <div class="card">
+            <div class="h"><span>Dernières valeurs</span><a>Tendances ›</a></div>
+            <div class="grid">
+              <div class="v"><div class="n"><span>pH</span><span>→</span></div><div class="x">7,2</div></div>
+              <div class="v"><div class="n"><span>Temp.</span><span>→</span></div><div class="x">25<small> °C</small></div></div>
+              <div class="v w"><div class="n"><span>NO₂</span><span>↑</span></div><div class="x">0,25<small> mg/L</small></div></div>
+              <div class="v"><div class="n"><span>NO₃</span><span>↗</span></div><div class="x">20<small> mg/L</small></div></div>
+              <div class="v"><div class="n"><span>GH</span><span>→</span></div><div class="x">8<small> °d</small></div></div>
+              <div class="v"><div class="n"><span>KH</span><span>→</span></div><div class="x">5<small> °d</small></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="h"><span>Aujourd'hui</span><a>Tout voir ›</a></div>
+            <div class="task"><span class="box"></span><span class="m">Changement d'eau<small>30 L · chaque semaine</small></span><span class="tag late">en retard</span></div>
+            <div class="task"><span class="box"></span><span class="m">Engrais liquide<small>5 mL</small></span><span class="tag">aujourd'hui</span></div>
+          </div>
+          <div class="fab">＋ Mesurer</div>
+        </div>
+        <div class="nav"><span><i>🐟</i><b>Bac</b></span><span><i>🕘</i>Historique</span><span><i>📈</i>Tendances</span><span><i>☰</i>Plus</span></div>
+      </div>
+    </div>
+    <div class="card-body"><h3>Bac du salon · 10 néons, 2 corydoras, anubias</h3><p>Les néons nagent en banc au milieu, les corydoras fouillent le sable, les plantes ondulent. Ta vraie photo reste dans la vignette 📷 en haut à droite.</p></div>
+  </div>
+
+  <div class="card" data-choice="nano" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="ph">
+        <div class="bar"><span>9:41</span><span>▮▮ ◔</span></div>
+        <div class="scroll">
+          <div class="tank" style="background:linear-gradient(180deg,#4a9a7e 0%,#2a7a62 45%,#1b5e4c 100%)">
+            <div class="ray" style="left:90px"></div>
+            <div class="stem" style="left:30px"><svg width="40" height="60"><path d="M20 60 Q8 30 4 6 M20 60 Q22 30 20 2 M20 60 Q30 34 36 10" stroke="#5fb36f" stroke-width="2.5" fill="none"/></svg></div>
+            <div class="stem" style="left:200px;animation-delay:-3s"><svg width="40" height="74"><path d="M20 74 Q10 40 6 6 M20 74 Q24 36 22 0 M20 74 Q32 40 36 12" stroke="#4f9d5d" stroke-width="2.5" fill="none"/></svg></div>
+            <div class="sand"></div>
+            <div class="f" style="top:44px;--d:190px;animation-duration:22s"><div style="animation-duration:4s"><svg width="48" height="34"><use href="#betta"/></svg></div></div>
+            <div class="f" style="top:128px;--d:90px;animation-duration:40s"><div style="animation:none"><svg width="22" height="12"><use href="#shrimp"/></svg></div></div>
+            <div class="f" style="top:126px;left:90px;--d:120px;animation-duration:34s;animation-delay:-12s"><div style="animation:none"><svg width="20" height="11"><use href="#shrimp"/></svg></div></div>
+            <div class="f" style="top:129px;left:150px;--d:80px;animation-duration:28s;animation-delay:-5s"><div style="animation:none"><svg width="18" height="10"><use href="#shrimp"/></svg></div></div>
+            <div class="f" style="top:124px;left:200px;--d:40px;animation-duration:60s"><div style="animation:none"><svg width="18" height="12"><use href="#snail"/></svg></div></div>
+            <div class="t"><b>Nano crevettes</b>30 L · planté · 3 mois</div>
+            <div class="cam">📷</div>
+          </div>
+          <div class="pad st"><span class="dot ok"></span><span><b>Tout est dans la plage</b> · mesuré hier</span></div>
+          <div class="card">
+            <div class="h"><span>Dernières valeurs</span><a>Tendances ›</a></div>
+            <div class="grid">
+              <div class="v"><div class="n"><span>pH</span><span>→</span></div><div class="x">7,0</div></div>
+              <div class="v"><div class="n"><span>Temp.</span><span>→</span></div><div class="x">24<small> °C</small></div></div>
+              <div class="v"><div class="n"><span>NO₂</span><span>→</span></div><div class="x">0<small> mg/L</small></div></div>
+              <div class="v"><div class="n"><span>NO₃</span><span>↘</span></div><div class="x">10<small> mg/L</small></div></div>
+              <div class="v"><div class="n"><span>GH</span><span>→</span></div><div class="x">7<small> °d</small></div></div>
+              <div class="v"><div class="n"><span>TDS</span><span>→</span></div><div class="x">210<small> ppm</small></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="h"><span>Aujourd'hui</span><a>Tout voir ›</a></div>
+            <div class="task"><span class="box"></span><span class="m">Nourrir les crevettes<small>chaque jour</small></span><span class="tag">aujourd'hui</span></div>
+          </div>
+          <div class="fab">＋ Mesurer</div>
+        </div>
+        <div class="nav"><span><i>🐟</i><b>Bac</b></span><span><i>🕘</i>Historique</span><span><i>📈</i>Tendances</span><span><i>☰</i>Plus</span></div>
+      </div>
+    </div>
+    <div class="card-body"><h3>Nano crevettes · 1 betta, 15 red cherry, 1 escargot</h3><p>Même écran, autre bac : le betta glisse au milieu, les crevettes avancent lentement sur le fond, l'escargot à peine. La scène suit la liste des habitants.</p></div>
+  </div>
+
+</div>
+
+<div class="section">
+  <h3>Comment on dessine 150 espèces</h3>
+  <p class="subtitle">Pas un dessin par espèce : une dizaine de silhouettes par famille, recolorées selon l'espèce (néon, cardinalis et rasbora partagent la forme « petit characin »), chacune avec sa façon de bouger (banc, fond, glisse, rampe).</p>
+  <div class="kit">
+    <div><svg width="44" height="18"><use href="#neon"/></svg><br>characin · banc</div>
+    <div><svg width="40" height="22"><use href="#cory"/></svg><br>corydoras · fond</div>
+    <div><svg width="48" height="34"><use href="#betta"/></svg><br>betta · glisse</div>
+    <div><svg width="30" height="16"><use href="#shrimp"/></svg><br>crevette · rampe</div>
+    <div><svg width="24" height="16"><use href="#snail"/></svg><br>escargot · très lent</div>
+  </div>
+</div>

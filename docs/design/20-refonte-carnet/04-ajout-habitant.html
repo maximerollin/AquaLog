@@ -1,0 +1,177 @@
+<style>
+  .ph{width:300px;margin:0 auto;background:#F6F4EC;border-radius:28px;border:8px solid #1E3733;overflow:hidden;font-family:-apple-system,Roboto,sans-serif;color:#1E3733;font-size:12px;line-height:1.3;text-align:left}
+  .ph .bar{height:18px;display:flex;justify-content:space-between;padding:2px 14px;font-size:10px;color:#546A64}
+  .ph .scroll{height:520px;overflow:hidden;position:relative}
+  .ph .nav{display:flex;justify-content:space-around;border-top:1px solid #CCD7CF;background:#FFFEF9;padding:6px 0 8px;font-size:9.5px;color:#546A64}
+  .ph .nav b{color:#14675E}
+  .ph .nav span{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .ph .nav i{font-style:normal;font-size:14px}
+  .pad{padding:8px 12px}
+  .card{background:#FFFEF9;border-radius:14px;padding:9px 10px;margin:0 12px 8px;border:1px solid #E4EBE5}
+  .h{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#546A64;margin:0 0 6px;display:flex;justify-content:space-between}
+  .h a{color:#14675E;text-transform:none;letter-spacing:0;font-weight:600}
+  .photo{height:130px;background:linear-gradient(160deg,#2f7d6f 0%,#14675E 45%,#0e3f3a 100%);position:relative;color:#fff}
+  .photo .weeds{position:absolute;bottom:0;left:0;right:0;height:60px;background:radial-gradient(ellipse 30px 50px at 20% 100%,#3f9a5c 60%,transparent 61%),radial-gradient(ellipse 22px 40px at 32% 100%,#5fb36f 60%,transparent 61%),radial-gradient(ellipse 26px 55px at 78% 100%,#3f9a5c 60%,transparent 61%),radial-gradient(ellipse 18px 30px at 88% 100%,#7cc37f 60%,transparent 61%),linear-gradient(transparent 70%,#c9b58a 70%)}
+  .photo .t{position:absolute;left:12px;bottom:10px;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .photo .t b{font-size:16px;display:block}
+  .photo .cam{position:absolute;right:10px;top:10px;background:rgba(255,255,255,.25);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .st{display:flex;gap:8px;align-items:center}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .ok{background:#2E8B57}.warn{background:#C98A1B}.bad{background:#B3412E}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+  .v{background:#F6F4EC;border-radius:9px;padding:5px 6px}
+  .v .n{font-size:9.5px;color:#546A64;display:flex;justify-content:space-between}
+  .v .x{font-size:15px;font-weight:650}
+  .v .x small{font-size:9px;font-weight:400;color:#546A64}
+  .v.w{background:#FBF0D9}.v.b{background:#F7E1DB}
+  .task{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid #EEF2EE}
+  .task:first-of-type{border-top:none}
+  .box{width:15px;height:15px;border:1.6px solid #7C9189;border-radius:4px;flex:none}
+  .task .m{flex:1}
+  .task .m small{display:block;color:#546A64;font-size:9.5px}
+  .tag{font-size:9px;padding:1px 6px;border-radius:8px;background:#DEEBE3;color:#1E3733}
+  .tag.late{background:#F7E1DB;color:#8a2f20}
+  .fab{position:absolute;right:12px;bottom:10px;background:#14675E;color:#fff;border-radius:16px;padding:9px 13px;font-weight:600;font-size:12px;box-shadow:0 3px 8px rgba(20,103,94,.35)}
+  .row{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid #EEF2EE}
+  .row:first-of-type{border-top:none}
+  .row .n{width:58px;color:#546A64}
+  .row .x{width:52px;font-weight:650;text-align:right}
+  .rng{flex:1;height:6px;border-radius:3px;background:#E4EBE5;position:relative}
+  .rng i{position:absolute;top:0;bottom:0;background:#BFDCCF;border-radius:3px}
+  .rng u{position:absolute;top:-3px;width:3px;height:12px;border-radius:2px;background:#14675E}
+  .rng u.w{background:#C98A1B}
+  .verdict{background:#DEEBE3;border-radius:14px;margin:8px 12px;padding:10px}
+  .verdict b{font-size:14px}
+  .thumb{width:44px;height:44px;border-radius:12px;background:linear-gradient(160deg,#2f7d6f,#0e3f3a);flex:none}
+  .glass{position:absolute;background:rgba(255,254,249,.88);color:#1E3733;border-radius:10px;padding:3px 7px;font-size:10px}
+  .glass b{font-size:12.5px}
+  .hero{height:230px}
+  .chips{display:flex;gap:6px;overflow:hidden;padding:0 12px 8px}
+  .chip{background:#FFFEF9;border:1px solid #E4EBE5;border-radius:16px;padding:4px 9px;white-space:nowrap;font-size:10.5px}
+  .top{display:flex;align-items:center;gap:8px;padding:6px 12px 8px;font-weight:600;font-size:14px}
+  .top span{color:#546A64;font-weight:400}
+  .search{margin:0 12px 6px;background:#FFFEF9;border:1px solid #CCD7CF;border-radius:12px;padding:7px 10px;color:#7C9189}
+  .chips{display:flex;gap:5px;padding:0 12px 6px}
+  .chip{background:#FFFEF9;border:1px solid #E4EBE5;border-radius:14px;padding:3px 9px;font-size:10.5px}
+  .chip.on{background:#14675E;color:#fff;border-color:#14675E}
+  .sp{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid #EEF2EE}
+  .sp:first-of-type{border-top:none}
+  .sp .pic{width:46px;height:26px;background:#DEEBE3;border-radius:7px;display:flex;align-items:center;justify-content:center;flex:none}
+  .sp .m{flex:1}.sp .m small{display:block;color:#546A64;font-style:italic;font-size:9.5px}
+  .bd{font-size:9.5px;padding:2px 7px;border-radius:8px;white-space:nowrap}
+  .bd.ok{background:#DCEFE2;color:#1f6b40}.bd.w{background:#FBF0D9;color:#7a5410}.bd.b{background:#F7E1DB;color:#8a2f20}
+  .hero2{height:96px;background:linear-gradient(180deg,#3d9184,#14675E);display:flex;align-items:center;justify-content:center;position:relative}
+  .hero2 .back{position:absolute;left:10px;top:8px;color:#fff;font-size:15px}
+  .nm{padding:8px 12px 2px}.nm b{font-size:16px}.nm small{display:block;color:#546A64;font-style:italic}
+  .vd{border-radius:12px;margin:6px 12px 8px;padding:8px 10px}
+  .vd.ok{background:#DCEFE2}.vd.b{background:#F7E1DB}
+  .vd b{font-size:13px}
+  .ck{display:flex;align-items:center;gap:7px;padding:4px 0;border-top:1px solid #EEF2EE}
+  .ck:first-of-type{border-top:none}
+  .ck .i{width:14px;text-align:center;font-weight:700}
+  .ck .i.y{color:#2E8B57}.ck .i.n{color:#B3412E}
+  .ck .n{flex:1}.ck .n small{display:block;color:#546A64;font-size:9.5px}
+  .ck .x{color:#546A64;font-size:10.5px;text-align:right}
+  .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+  .facts div{background:#F6F4EC;border-radius:8px;padding:4px 6px;font-size:9.5px;color:#546A64}
+  .facts b{display:block;color:#1E3733;font-size:12px}
+  .btn{margin:6px 12px;border-radius:14px;padding:9px;text-align:center;font-weight:600}
+  .btn.p{background:#14675E;color:#fff}.btn.s{border:1px solid #CCD7CF;color:#546A64}
+  .step{display:flex;align-items:center;justify-content:space-between;margin:0 12px 4px}
+  .step .q{display:flex;align-items:center;gap:10px;font-weight:650;font-size:15px}
+  .step .q i{font-style:normal;width:26px;height:26px;border-radius:50%;background:#DEEBE3;display:flex;align-items:center;justify-content:center;color:#14675E}
+  .card-body h3{color:#1E3733}
+</style>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="neon" viewBox="0 0 40 16"><path d="M9 8 L1 3 L3 8 L1 13 Z" fill="#e4ecee" opacity=".75"/><ellipse cx="22" cy="8" rx="14" ry="5" fill="#e3eaec"/><path d="M14 9.5 Q24 13 35 9 L33 11.5 Q24 14 15 11.8 Z" fill="#e0453a"/><path d="M11 6.6 Q24 4.6 35.5 7.2 L35.5 8.6 Q24 6.8 11 8.4 Z" fill="#2fb2ff"/><circle cx="31.5" cy="7" r="1.3" fill="#1E3733"/></symbol>
+  <symbol id="cardinal" viewBox="0 0 40 16"><path d="M9 8 L1 3 L3 8 L1 13 Z" fill="#e4ecee" opacity=".75"/><ellipse cx="22" cy="8" rx="14" ry="5" fill="#e3eaec"/><path d="M9 9.4 Q24 14 35 9 L33 12 Q22 14.5 10 11.8 Z" fill="#e0453a"/><path d="M11 6.6 Q24 4.6 35.5 7.2 L35.5 8.6 Q24 6.8 11 8.4 Z" fill="#2fb2ff"/><circle cx="31.5" cy="7" r="1.3" fill="#1E3733"/></symbol>
+  <symbol id="cory" viewBox="0 0 40 22"><path d="M6 13 L0 7 L1 13 L0 19 Z" fill="#a8977a"/><path d="M5 13 Q9 4 22 4.5 Q33 5 38.5 13.5 Q31 17.5 5 15.5 Z" fill="#cdbf9f"/><path d="M17 5 L20 0 L24 5 Z" fill="#a8977a"/><circle cx="14" cy="10" r="1.2" fill="#6d5f49"/><circle cx="19" cy="8" r="1.2" fill="#6d5f49"/><circle cx="23" cy="11" r="1.2" fill="#6d5f49"/><circle cx="33" cy="10" r="1.6" fill="#1E3733"/></symbol>
+  <symbol id="oto" viewBox="0 0 40 14"><path d="M6 7 L0 3 L1 7 L0 11 Z" fill="#9c8f6e"/><path d="M5 7 Q12 2 28 3 Q37 4 39 8 Q34 11 5 9.5 Z" fill="#c9bd96"/><path d="M6 7.4 Q20 6 38 7.6" stroke="#4d4433" stroke-width="1.4" fill="none"/><circle cx="34" cy="6" r="1.2" fill="#1E3733"/></symbol>
+  <symbol id="guppy" viewBox="0 0 40 20"><path d="M16 10 Q4 0 0 4 Q2 10 0 16 Q4 20 16 10 Z" fill="#f08a3c" opacity=".9"/><path d="M4 6 Q8 9 4 14" stroke="#3c4fc4" stroke-width="2" fill="none"/><ellipse cx="26" cy="10" rx="11" ry="4.5" fill="#d9dfe0"/><circle cx="33" cy="9" r="1.3" fill="#1E3733"/></symbol>
+  <symbol id="scalaire" viewBox="0 0 40 44"><path d="M12 22 L2 14 L4 22 L2 30 Z" fill="#cfd6d6"/><path d="M14 22 Q22 -4 28 2 L32 14 Q40 22 32 30 L28 42 Q22 48 14 22 Z" fill="#e6ebea"/><path d="M20 6 L20 38 M27 4 L27 40" stroke="#3a3f3f" stroke-width="2.2"/><circle cx="33" cy="20" r="1.5" fill="#1E3733"/></symbol>
+</defs></svg>
+
+<h2>Ajouter un habitant : est-ce qu'il va bien dans ce bac ?</h2>
+<p class="subtitle">Le parcours en trois écrans. Le bac est connu (volume, dernières mesures, habitants déjà là), donc chaque espèce est jugée contre lui. Valeurs et fiches d'exemple, à vérifier.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="liste" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="ph">
+      <div class="bar"><span>9:41</span><span>▮▮ ◔</span></div>
+      <div class="scroll">
+        <div class="top">‹ Ajouter <span>· Bac du salon</span></div>
+        <div class="search">🔍 Rechercher une espèce…</div>
+        <div class="chips"><span class="chip on">Poissons</span><span class="chip">Crevettes</span><span class="chip">Escargots</span><span class="chip">Plantes</span></div>
+        <div class="card">
+          <div class="h"><span>Vont bien dans ce bac</span></div>
+          <div class="sp"><span class="pic"><svg width="38" height="15"><use href="#cardinal"/></svg></span><span class="m">Cardinalis<small>Paracheirodon axelrodi</small></span><span class="bd ok">✓ Compatible</span></div>
+          <div class="sp"><span class="pic"><svg width="38" height="14"><use href="#oto"/></svg></span><span class="m">Otocinclus<small>Otocinclus vittatus</small></span><span class="bd ok">✓ Compatible</span></div>
+          <div class="sp"><span class="pic"><svg width="34" height="19"><use href="#cory"/></svg></span><span class="m">Corydoras panda<small>Corydoras panda</small></span><span class="bd ok">✓ Compatible</span></div>
+        </div>
+        <div class="card">
+          <div class="h"><span>Avec précautions</span></div>
+          <div class="sp"><span class="pic"><svg width="36" height="18"><use href="#guppy"/></svg></span><span class="m">Guppy<small>Poecilia reticulata</small></span><span class="bd w">⚠ Eau douce</span></div>
+        </div>
+        <div class="card">
+          <div class="h"><span>Déconseillés</span></div>
+          <div class="sp"><span class="pic"><svg width="22" height="24"><use href="#scalaire"/></svg></span><span class="m">Scalaire<small>Pterophyllum scalare</small></span><span class="bd b">✗ 2 problèmes</span></div>
+        </div>
+      </div>
+      <div class="nav"><span><i>🐟</i><b>Bac</b></span><span><i>🕘</i>Historique</span><span><i>📈</i>Tendances</span><span><i>☰</i>Plus</span></div>
+    </div></div>
+    <div class="card-body"><h3>1 · Choisir</h3><p>La recherche trie les espèces selon ce bac : compatibles d'abord, puis avec précautions, puis déconseillées. Chaque ligne dit déjà pourquoi en deux mots.</p></div>
+  </div>
+
+  <div class="card" data-choice="refus" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="ph">
+      <div class="bar"><span>9:41</span><span>▮▮ ◔</span></div>
+      <div class="scroll">
+        <div class="hero2"><span class="back">‹</span><svg width="70" height="77"><use href="#scalaire"/></svg></div>
+        <div class="nm"><b>Scalaire</b><small>Pterophyllum scalare</small></div>
+        <div class="vd b"><b>✗ Déconseillé pour Bac du salon</b><div style="margin-top:2px">Bac trop petit, et il mange les néons une fois adulte.</div></div>
+        <div class="card">
+          <div class="h"><span>Comparé à ton bac</span></div>
+          <div class="ck"><span class="i n">✗</span><span class="n">Volume<small>minimum 200 L, bac haut</small></span><span class="x">120 L</span></div>
+          <div class="ck"><span class="i n">✗</span><span class="n">Cohabitation<small>chasse les petits poissons</small></span><span class="x">Néon × 10</span></div>
+          <div class="ck"><span class="i y">✓</span><span class="n">pH<small>6,0 – 7,5</small></span><span class="x">7,2</span></div>
+          <div class="ck"><span class="i y">✓</span><span class="n">Température<small>24 – 30 °C</small></span><span class="x">25 °C</span></div>
+          <div class="ck"><span class="i y">✓</span><span class="n">GH<small>3 – 12 °d</small></span><span class="x">8 °d</span></div>
+        </div>
+        <div class="card">
+          <div class="facts"><div><b>15 cm</b>adulte</div><div><b>10 ans</b>durée de vie</div><div><b>Couple</b>ou groupe de 5+</div></div>
+        </div>
+        <div class="btn s">Ajouter quand même</div>
+      </div>
+      <div class="nav"><span><i>🐟</i><b>Bac</b></span><span><i>🕘</i>Historique</span><span><i>📈</i>Tendances</span><span><i>☰</i>Plus</span></div>
+    </div></div>
+    <div class="card-body"><h3>2 · Fiche, cas « non »</h3><p>Verdict en une phrase, puis chaque critère de l'espèce face à la valeur réelle du bac (volume, dernières mesures, habitants). On peut passer outre, ce n'est pas bloquant.</p></div>
+  </div>
+
+  <div class="card" data-choice="ajout" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="ph">
+      <div class="bar"><span>9:41</span><span>▮▮ ◔</span></div>
+      <div class="scroll">
+        <div class="hero2"><span class="back">‹</span><svg width="110" height="38"><use href="#oto"/></svg></div>
+        <div class="nm"><b>Otocinclus</b><small>Otocinclus vittatus</small></div>
+        <div class="vd ok"><b>✓ Va bien dans Bac du salon</b><div style="margin-top:2px">Paisible, mange les algues brunes sur les vitres.</div></div>
+        <div class="card">
+          <div class="h"><span>Comparé à ton bac</span><a>Détail ›</a></div>
+          <div class="ck"><span class="i y">✓</span><span class="n">Volume · min 60 L</span><span class="x">120 L</span></div>
+          <div class="ck"><span class="i y">✓</span><span class="n">pH · 6,0 – 7,5</span><span class="x">7,2</span></div>
+          <div class="ck"><span class="i y">✓</span><span class="n">Temp. · 21 – 26 °C</span><span class="x">25 °C</span></div>
+          <div class="ck"><span class="i y">✓</span><span class="n">Cohabitation</span><span class="x">Néons, corydoras</span></div>
+        </div>
+        <div class="card">
+          <div class="h"><span>Combien ?</span><span style="text-transform:none;letter-spacing:0">en groupe de 6 minimum</span></div>
+          <div class="step"><span class="q"><i>−</i>6<i>＋</i></span><span style="color:#546A64;font-size:10.5px">4 cm adulte</span></div>
+        </div>
+        <div class="btn p">Ajouter 6 otocinclus</div>
+      </div>
+      <div class="nav"><span><i>🐟</i><b>Bac</b></span><span><i>🕘</i>Historique</span><span><i>📈</i>Tendances</span><span><i>☰</i>Plus</span></div>
+    </div></div>
+    <div class="card-body"><h3>3 · Fiche, cas « oui »</h3><p>Même fiche, en vert, critères repliés. Le nombre démarre au minimum de groupe de l'espèce. Après l'ajout, les 6 otocinclus apparaissent dans la scène animée de l'accueil.</p></div>
+  </div>
+
+</div>

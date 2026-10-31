@@ -1,0 +1,145 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  .ph{width:250px;margin:0 auto;background:#F6F4EC;border-radius:22px;border:6px solid #1E3733;overflow:hidden;font-family:-apple-system,Roboto,sans-serif;color:#1E3733;font-size:11.5px;line-height:1.3;text-align:left;height:500px;display:flex;flex-direction:column}
+  .bar{height:16px;display:flex;justify-content:space-between;padding:2px 12px;font-size:9px;color:#546A64}
+  .body{flex:1;overflow:hidden}
+  .nav{display:flex;justify-content:space-around;border-top:1px solid #E4EBE5;background:#FFFEF9;padding:6px 0 8px;font-size:9px;color:#7C9189}
+  .nav b{color:#14675E}
+  .ic{width:13px;height:13px;vertical-align:-2px;stroke:#14675E;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+  /* A : actuel dense */
+  .a .tb{padding:4px 12px 6px;font-weight:650;font-size:13px}
+  .a .seg{display:flex;margin:0 10px 4px;background:#E9EEE9;border-radius:9px;padding:2px}.a .seg span{flex:1;text-align:center;padding:4px;border-radius:7px;font-size:10.5px;color:#546A64}.a .seg .on{background:#FFFEF9;color:#1E3733;font-weight:600}
+  .a .day{font-size:9.5px;font-weight:600;color:#546A64;padding:5px 12px 2px}
+  .a .ses{background:#FFFEF9;border:1px solid #E4EBE5;border-radius:11px;margin:0 10px 5px;padding:6px 8px}
+  .a .hd{display:flex;justify-content:space-between;font-size:10px;color:#546A64;margin-bottom:4px}.a .hd b{color:#1E3733}
+  .a .vc{display:inline-block;background:#F0F4F0;border-radius:6px;padding:1px 5px;margin:0 2px 2px 0;font-size:10px}.a .vc.w{background:#FBF0D9;color:#7a5410}
+  .a .act{font-size:10px;color:#14675E;margin-top:2px}
+  .a .line{margin:0 12px 5px;font-size:10.5px;color:#546A64}
+  /* B : sans cadres */
+  .b .tb{padding:6px 14px 2px;font-weight:700;font-size:17px}
+  .b .tabs{display:flex;gap:14px;padding:2px 14px 6px;font-size:11px;color:#7C9189}.b .tabs .on{color:#14675E;font-weight:600;border-bottom:2px solid #14675E;padding-bottom:2px}
+  .b .day{font-size:10px;font-weight:600;color:#7C9189;padding:10px 14px 4px}
+  .b .it{display:flex;gap:9px;padding:5px 14px}
+  .b .it .t{width:30px;color:#7C9189;font-size:10px;padding-top:1px}
+  .b .it .m{flex:1}
+  .b .it .m b{font-weight:600}
+  .b .vals{color:#546A64;margin-top:2px}.b .vals em{font-style:normal;color:#B06F0A;font-weight:600}
+  /* C : hiérarchie */
+  .c .tb{padding:6px 14px 2px;font-weight:700;font-size:17px}
+  .c .tabs{display:flex;gap:14px;padding:2px 14px 6px;font-size:11px;color:#7C9189}.c .tabs .on{color:#14675E;font-weight:600;border-bottom:2px solid #14675E;padding-bottom:2px}
+  .c .day{font-size:10px;font-weight:600;color:#7C9189;padding:8px 14px 4px;text-transform:uppercase;letter-spacing:.05em}
+  .c .ses{background:#FFFEF9;border-radius:14px;margin:0 10px 6px;padding:8px 10px;box-shadow:0 1px 2px rgba(30,55,51,.06)}
+  .c .hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}.c .hd b{font-size:12px}.c .hd span{color:#7C9189;font-size:10px}
+  .c .vg{display:flex;gap:12px}
+  .c .vg div{font-size:9px;color:#7C9189}.c .vg b{display:block;font-size:15px;color:#1E3733;font-weight:650;letter-spacing:-.01em}
+  .c .vg .w b{color:#B06F0A}
+  .c .act{font-size:10px;color:#546A64;margin-top:6px;padding-top:5px;border-top:1px solid #F0F2EE}
+  .c .line{display:flex;gap:7px;align-items:center;margin:2px 16px 6px;font-size:10.5px;color:#546A64}
+  /* D : carnet */
+  .d{font-family:'DM Sans',sans-serif;background:#F3EFE3}
+  .d .tb{padding:6px 14px 0;font-family:'Fraunces',serif;font-weight:600;font-size:21px;letter-spacing:-.01em}
+  .d .sub{padding:0 14px 6px;color:#7C9189;font-size:10.5px}
+  .d .day{font-family:'Fraunces',serif;font-size:13px;font-weight:500;padding:9px 14px 4px;color:#14675E}
+  .d .it{display:flex;gap:10px;padding:4px 14px 6px;position:relative}
+  .d .rail{width:9px;display:flex;flex-direction:column;align-items:center}
+  .d .rail i{width:9px;height:9px;border-radius:50%;background:#14675E;margin-top:3px}
+  .d .rail u{flex:1;width:1.5px;background:#CCD7CF;margin-top:3px}
+  .d .m{flex:1}.d .m b{font-weight:600}.d .m .t{color:#7C9189;font-size:10px;float:right}
+  .d .vals{display:flex;gap:10px;margin-top:3px}
+  .d .vals div{font-size:9px;color:#7C9189}.d .vals b{display:block;font-size:14px;color:#1E3733}
+  .d .vals .w b{color:#B06F0A}
+  .d .note{color:#546A64;margin-top:3px;font-size:10.5px}
+</style>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="drop" viewBox="0 0 16 16"><path d="M8 2 C5 6 4 8 4 10 a4 4 0 0 0 8 0 C12 8 11 6 8 2Z"/></symbol>
+  <symbol id="leaf" viewBox="0 0 16 16"><path d="M3 13 C3 6 7 3 13 3 C13 9 10 13 3 13Z M3 13 L9 7"/></symbol>
+  <symbol id="note" viewBox="0 0 16 16"><path d="M4 2h8v12H4z M6 6h4 M6 9h4"/></symbol>
+  <symbol id="fish" viewBox="0 0 16 16"><path d="M2 8 C5 4 10 4 13 8 C10 12 5 12 2 8Z M13 8 L15 6 M13 8 L15 10"/></symbol>
+  <symbol id="check" viewBox="0 0 16 16"><path d="M3 8 L7 12 L13 4"/></symbol>
+</defs></svg>
+
+<h2>Même écran, quatre traitements</h2>
+<p class="subtitle">L'historique, à densité égale. Seul le style change : cadres, hiérarchie, typographie. Dis-moi dans laquelle le malaise disparaît, ou ce que tu reconnais.</p>
+
+<div class="cards">
+
+<div class="card" data-choice="a-actuel" onclick="toggleSelect(this)"><div class="card-image"><div class="ph a">
+  <div class="bar"><span>9:41</span><span>▮▮ ◔</span></div>
+  <div class="body">
+    <div class="tb">Historique</div>
+    <div class="seg"><span class="on">Chronologie</span><span>Tendances</span></div>
+    <div class="day">AUJOURD'HUI</div>
+    <div class="ses"><div class="hd"><b>Session</b><span>16:05</span></div><span class="vc">25 °C</span><span class="vc">pH 7,2</span><span class="vc w">NO₂ 0,25</span><span class="vc">NO₃ 20</span><div class="act">💧 Changement d'eau 30 L</div></div>
+    <div class="line">✓ Engrais liquide 5 mL</div>
+    <div class="day">MARDI 27 OCT.</div>
+    <div class="ses"><div class="hd"><b>Session</b><span>18:40</span></div><span class="vc">25 °C</span><span class="vc">pH 7,1</span><span class="vc">NO₂ 0</span><span class="vc">NO₃ 15</span><span class="vc">GH 8</span><span class="vc">KH 5</span></div>
+    <div class="line">📝 Algues brunes sur la vitre avant</div>
+    <div class="day">JEUDI 22 OCT.</div>
+    <div class="ses"><div class="hd"><b>Session</b><span>19:02</span></div><span class="vc">24,5 °C</span><span class="vc">pH 7,2</span><span class="vc">NO₃ 30</span><div class="act">💧 Changement d'eau 30 L</div></div>
+  </div>
+  <div class="nav"><span>Bac</span><b>Historique</b><span>Tendances</span><span>Plus</span></div>
+</div></div><div class="card-body"><h3>A · La maquette d'avant</h3><p>Cadre autour de chaque session, étiquette autour de chaque valeur, emojis. Tout a le même poids.</p></div></div>
+
+<div class="card" data-choice="b-sans-cadres" onclick="toggleSelect(this)"><div class="card-image"><div class="ph b">
+  <div class="bar"><span>9:41</span><span>▮▮ ◔</span></div>
+  <div class="body">
+    <div class="tb">Historique</div>
+    <div class="tabs"><span class="on">Chronologie</span><span>Tendances</span></div>
+    <div class="day">Aujourd'hui</div>
+    <div class="it"><span class="t">16:05</span><span class="m"><b>Session</b> · changement d'eau 30 L<div class="vals">25 °C · pH 7,2 · <em>NO₂ 0,25</em> · NO₃ 20</div></span></div>
+    <div class="it"><span class="t">09:12</span><span class="m"><svg class="ic"><use href="#check"/></svg> Engrais liquide 5 mL</span></div>
+    <div class="day">Mardi 27 octobre</div>
+    <div class="it"><span class="t">18:40</span><span class="m"><b>Session</b><div class="vals">25 °C · pH 7,1 · NO₂ 0 · NO₃ 15 · GH 8 · KH 5</div></span></div>
+    <div class="it"><span class="t">18:41</span><span class="m"><svg class="ic"><use href="#note"/></svg> Algues brunes sur la vitre avant</span></div>
+    <div class="day">Jeudi 22 octobre</div>
+    <div class="it"><span class="t">19:02</span><span class="m"><b>Session</b> · changement d'eau 30 L<div class="vals">24,5 °C · pH 7,2 · NO₃ 30</div></span></div>
+    <div class="it"><span class="t">19:05</span><span class="m"><svg class="ic"><use href="#fish"/></svg> Ajout : Otocinclus × 6</span></div>
+  </div>
+  <div class="nav"><span>Bac</span><b>Historique</b><span>Tendances</span><span>Plus</span></div>
+</div></div><div class="card-body"><h3>B · Sans cadres</h3><p>Plus aucune boîte : l'espace et les dates séparent. Seule la valeur hors plage est colorée. Icônes au trait au lieu des emojis.</p></div></div>
+
+<div class="card" data-choice="c-hierarchie" onclick="toggleSelect(this)"><div class="card-image"><div class="ph c">
+  <div class="bar"><span>9:41</span><span>▮▮ ◔</span></div>
+  <div class="body">
+    <div class="tb">Historique</div>
+    <div class="tabs"><span class="on">Chronologie</span><span>Tendances</span></div>
+    <div class="day">Aujourd'hui</div>
+    <div class="ses"><div class="hd"><b>Session</b><span>16:05</span></div>
+      <div class="vg"><div><b>25°</b>Temp.</div><div><b>7,2</b>pH</div><div class="w"><b>0,25</b>NO₂</div><div><b>20</b>NO₃</div></div>
+      <div class="act"><svg class="ic"><use href="#drop"/></svg> Changement d'eau 30 L</div></div>
+    <div class="line"><svg class="ic"><use href="#check"/></svg> Engrais liquide 5 mL</div>
+    <div class="day">Mardi 27 oct.</div>
+    <div class="ses"><div class="hd"><b>Session</b><span>18:40</span></div>
+      <div class="vg"><div><b>25°</b>Temp.</div><div><b>7,1</b>pH</div><div><b>0</b>NO₂</div><div><b>15</b>NO₃</div><div><b>8</b>GH</div></div></div>
+    <div class="line"><svg class="ic"><use href="#note"/></svg> Algues brunes sur la vitre avant</div>
+    <div class="day">Jeudi 22 oct.</div>
+    <div class="ses"><div class="hd"><b>Session</b><span>19:02</span></div>
+      <div class="vg"><div><b>24,5°</b>Temp.</div><div><b>7,2</b>pH</div><div><b>30</b>NO₃</div></div></div>
+  </div>
+  <div class="nav"><span>Bac</span><b>Historique</b><span>Tendances</span><span>Plus</span></div>
+</div></div><div class="card-body"><h3>C · Hiérarchie</h3><p>Les chiffres en grand, les libellés en petit dessous. Cartes sans bordure, juste une ombre douce. L'œil va d'abord aux valeurs.</p></div></div>
+
+<div class="card" data-choice="d-carnet" onclick="toggleSelect(this)"><div class="card-image"><div class="ph d">
+  <div class="bar"><span>9:41</span><span>▮▮ ◔</span></div>
+  <div class="body">
+    <div class="tb">Historique</div>
+    <div class="sub">Bac du salon · 38 entrées</div>
+    <div class="day">Aujourd'hui</div>
+    <div class="it"><span class="rail"><i></i><u></u></span><span class="m"><b>Session</b><span class="t">16:05</span>
+      <div class="vals"><div><b>25°</b>Temp.</div><div><b>7,2</b>pH</div><div class="w"><b>0,25</b>NO₂</div><div><b>20</b>NO₃</div></div>
+      <div class="note"><svg class="ic"><use href="#drop"/></svg> Changement d'eau 30 L</div></span></div>
+    <div class="it"><span class="rail"><i style="background:#CCD7CF"></i><u></u></span><span class="m"><svg class="ic"><use href="#check"/></svg> Engrais liquide 5 mL<span class="t">09:12</span></span></div>
+    <div class="day">Mardi 27 octobre</div>
+    <div class="it"><span class="rail"><i></i><u></u></span><span class="m"><b>Session</b><span class="t">18:40</span>
+      <div class="vals"><div><b>25°</b>Temp.</div><div><b>7,1</b>pH</div><div><b>0</b>NO₂</div><div><b>15</b>NO₃</div><div><b>8</b>GH</div></div>
+      <div class="note"><svg class="ic"><use href="#note"/></svg> Algues brunes sur la vitre avant</div></span></div>
+    <div class="day">Jeudi 22 octobre</div>
+    <div class="it"><span class="rail"><i></i><u></u></span><span class="m"><b>Session</b><span class="t">19:02</span>
+      <div class="vals"><div><b>24,5°</b>Temp.</div><div><b>7,2</b>pH</div><div><b>30</b>NO₃</div></div></span></div>
+  </div>
+  <div class="nav"><span>Bac</span><b>Historique</b><span>Tendances</span><span>Plus</span></div>
+</div></div><div class="card-body"><h3>D · Carnet</h3><p>Titres en serif douce (Fraunces), texte en DM Sans, fil chronologique à gauche, papier un peu plus chaud. Plus « agenda », plus de caractère.</p></div></div>
+
+</div>
