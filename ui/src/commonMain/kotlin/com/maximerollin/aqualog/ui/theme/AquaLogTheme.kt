@@ -9,6 +9,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 
 private val LightColors = lightColorScheme(
@@ -17,7 +18,7 @@ private val LightColors = lightColorScheme(
     secondary = Color(0xFF546A64), onSecondary = Color.White,
     secondaryContainer = Color(0xFFDEEBE3), onSecondaryContainer = Color(0xFF1E3733),
     tertiary = Color(0xFF66532E), onTertiary = Color.White,
-    background = Color(0xFFF6F4EC), onBackground = Color(0xFF1E3733),
+    background = Color(0xFFF3EFE3), onBackground = Color(0xFF1E3733),
     surface = Color(0xFFFFFEF9), onSurface = Color(0xFF1E3733),
     surfaceVariant = Color(0xFFDEEBE3), onSurfaceVariant = Color(0xFF546A64),
     surfaceContainerLowest = Color(0xFFFFFEF9), surfaceContainerLow = Color(0xFFFFFEF9),
@@ -40,6 +41,22 @@ private val DarkColors = darkColorScheme(
     outline = Color(0xFF91AFA2), outlineVariant = Color(0xFF426056),
 )
 
+// Attention = value outside its indicative range. Text is amber-brown (>= 4.5:1 on paper), the mark is the brighter dot/line.
+val AttentionText = Color(0xFF8A5A00)
+val AttentionMark = Color(0xFFC98A1B)
+val AttentionTextDark = Color(0xFFE4B65A)
+val AttentionMarkDark = Color(0xFFE0A93B)
+
+@Composable
+fun attentionTextColor(): Color = if (isDarkSurface()) AttentionTextDark else AttentionText
+
+@Composable
+fun attentionMarkColor(): Color = if (isDarkSurface()) AttentionMarkDark else AttentionMark
+
+// Follows the theme actually applied, not the system setting, so an explicit darkTheme argument is honoured.
+@Composable
+private fun isDarkSurface(): Boolean = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
 @Composable
 fun AquaLogTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -47,6 +64,7 @@ fun AquaLogTheme(
 ) {
     MaterialTheme(
         colorScheme = aquaLogColorScheme(darkTheme),
+        typography = carnetTypography(),
         shapes = Shapes(
             small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(18.dp),
             large = RoundedCornerShape(22.dp),
