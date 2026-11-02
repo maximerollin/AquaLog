@@ -367,6 +367,8 @@
     <string name="home_today">Oggi</string>
     <string name="home_see_all">Vedi tutto</string>
     <string name="home_task_overdue">in ritardo</string>
+    <string name="home_change_aquarium">Cambia Acquario</string>
+    <string name="home_alert_due_today">oggi</string>
     <string name="home_nothing_due">Niente in scadenza · prossima: %1$s il %2$s</string>
     <string name="home_no_measurement_yet">Nessuna misurazione</string>
     <string name="home_status_all_in_range">Tutto nell’intervallo indicativo</string>

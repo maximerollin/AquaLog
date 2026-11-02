@@ -1934,6 +1934,9 @@ class HomeViewModel(
                 trends = state.trends.copy(selectedParameterDefinitionId = null),
             )
         }
+        // A timeline observer left on the previous Aquarium (we may be on TANK or MORE) must not survive the switch.
+        timelineJob?.cancel()
+        timelineJob = null
         when (mutableUiState.value.destination) {
             MainDestination.HISTORY -> observeTimeline()
             MainDestination.TRENDS -> observeTrends(aquariumId)

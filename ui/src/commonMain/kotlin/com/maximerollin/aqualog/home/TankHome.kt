@@ -13,7 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
@@ -23,6 +26,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,7 +55,9 @@ import com.maximerollin.aqualog.HomeViewModel
 import com.maximerollin.aqualog.MainDestination
 import com.maximerollin.aqualog.currentLocalizedFormatters
 import com.maximerollin.aqualog.formattedVolume
+import com.maximerollin.aqualog.AquariumAlert
 import com.maximerollin.aqualog.homeOverview
+import com.maximerollin.aqualog.otherAquariumAlerts
 import com.maximerollin.aqualog.label
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.shared.Aquarium
@@ -81,6 +89,8 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     val columns = if (LocalDensity.current.fontScale >= 1.3f) 2 else 3
     val formatter = currentLocalizedFormatters()
     val gutter = Modifier.padding(horizontal = 16.dp)
+    val alerts = otherAquariumAlerts(state.aquariums, aquarium.id, state.tasks.pendingOccurrences, today)
+    var showPicker by remember { mutableStateOf(false) }
 
     Box(modifier.fillMaxSize()) {
         // The only scrollable on the home: tests rely on a single node with a scroll action.
@@ -88,7 +98,9 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             Modifier.fillMaxSize().testTag("home-list"),
             contentPadding = PaddingValues(bottom = 88.dp),
         ) {
-            item { SceneHeader(aquarium, todayDate) }
+            item {
+                AquariumScene(state.aquariums, aquarium, todayDate, viewModel::selectAquarium) { showPicker = true }
+            }
             item {
                 StatusLine(
                     overview = overview,
@@ -97,6 +109,9 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                     onOpenSession = viewModel::openSessionDetails,
                     modifier = gutter,
                 )
+            }
+            items(alerts, key = { "alert-${it.aquarium.id}" }) { alert ->
+                AlertRow(alert, onClick = { viewModel.selectAquarium(alert.aquarium.id) }, modifier = gutter)
             }
             if (state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION) {
                 item {
@@ -125,10 +140,9 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                             modifier = Modifier.weight(1f),
                             unit = value.definition.unit.takeIf { it.isNotBlank() && it != label }, // pH's unit is pH
                             attention = value.isOutsideRange,
-                            age = value.occurredAtEpochMillis?.takeIf { value.isOlderThanLatestSession }?.let {
-                                val days = daysSince(it, todayDate)
-                                pluralStringResource(Res.plurals.reading_age_days, days, days)
-                            },
+                            age = value.occurredAtEpochMillis?.takeIf { value.isOlderThanLatestSession }
+                                ?.let { daysSince(it, todayDate) }?.takeIf { it > 0 }
+                                ?.let { days -> pluralStringResource(Res.plurals.reading_age_days, days, days) },
                         )
                     }
                     repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
@@ -189,10 +203,82 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             contentColor = MaterialTheme.colorScheme.onPrimary,
         ) { Text(stringResource(Res.string.measure_action), fontWeight = FontWeight.SemiBold) }
     }
+    if (showPicker) {
+        AquariumPickerSheet(
+            aquariums = state.aquariums,
+            currentId = aquarium.id,
+            onSelect = { id ->
+                showPicker = false
+                if (id != aquarium.id) viewModel.selectAquarium(id)
+            },
+            onAdd = {
+                showPicker = false
+                viewModel.openCreateAquarium()
+            },
+            onDismiss = { showPicker = false },
+        )
+    }
+}
+
+/** One scene, or a pager of scenes with dots when there are several Aquariums; settling on a page selects it. */
+@Composable
+private fun AquariumScene(
+    aquariums: List<Aquarium>,
+    current: Aquarium,
+    today: LocalDate,
+    onSelect: (String) -> Unit,
+    onChangeAquarium: () -> Unit,
+) {
+    if (aquariums.size < 2) {
+        SceneHeader(current, today, onChangeAquarium)
+        return
+    }
+    val currentIndex = aquariums.indexOfFirst { it.id == current.id }.coerceAtLeast(0)
+    val pager = rememberPagerState(initialPage = currentIndex) { aquariums.size }
+    val currentId by rememberUpdatedState(current.id)
+    val shown by rememberUpdatedState(aquariums)
+    // The Aquarium changed elsewhere (picker, band, Settings): follow it.
+    LaunchedEffect(currentIndex, aquariums.size) {
+        if (pager.currentPage != currentIndex) pager.animateScrollToPage(currentIndex)
+    }
+    LaunchedEffect(pager) {
+        snapshotFlow { pager.settledPage }.collect { page ->
+            shown.getOrNull(page)?.takeIf { it.id != currentId }?.let { onSelect(it.id) }
+        }
+    }
+    Column {
+        HorizontalPager(pager, Modifier.testTag("home-pager")) { page ->
+            SceneHeader(aquariums[page], today, onChangeAquarium)
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center) {
+            repeat(aquariums.size) { index ->
+                val color = if (index == pager.currentPage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                Box(Modifier.padding(horizontal = 4.dp).size(8.dp).background(color, CircleShape))
+            }
+        }
+    }
+}
+
+/** « {Aquarium} · {Task} · {overdue|today} › », one row per other Aquarium with something due. */
+@Composable
+private fun AlertRow(alert: AquariumAlert, onClick: () -> Unit, modifier: Modifier) {
+    val due = stringResource(if (alert.isOverdue) Res.string.home_task_overdue else Res.string.home_alert_due_today)
+    Text(
+        buildAnnotatedString {
+            append("${alert.aquarium.name} · ${alert.occurrence.title} · ")
+            withStyle(SpanStyle(color = if (alert.isOverdue) attentionTextColor() else MaterialTheme.colorScheme.onSurfaceVariant)) {
+                append(due)
+            }
+            append(" ›")
+        },
+        modifier = Modifier.clickable(onClick = onClick).then(modifier).fillMaxWidth().heightIn(min = 48.dp).wrapContentHeight(Alignment.CenterVertically),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onBackground,
+    )
 }
 
 @Composable
-private fun SceneHeader(aquarium: Aquarium, today: LocalDate) {
+private fun SceneHeader(aquarium: Aquarium, today: LocalDate, onChangeAquarium: () -> Unit) {
     val created = localDate(aquarium.createdAtEpochMillis)
     val months = ChronoUnit.MONTHS.between(created, today).toInt()
     val days = ChronoUnit.DAYS.between(created, today).toInt()
@@ -204,7 +290,10 @@ private fun SceneHeader(aquarium: Aquarium, today: LocalDate) {
     val shadow = Shadow(Color.Black.copy(alpha = .45f), Offset(0f, 1f), blurRadius = 3f)
     Box(Modifier.fillMaxWidth()) {
         TankScene(aquarium, Modifier.fillMaxWidth())
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Column(
+            Modifier.clickable(onClickLabel = stringResource(Res.string.home_change_aquarium), onClick = onChangeAquarium)
+                .padding(horizontal = 16.dp, vertical = 12.dp).heightIn(min = 48.dp),
+        ) {
             Text(
                 aquarium.name,
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold, shadow = shadow),

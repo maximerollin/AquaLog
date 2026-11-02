@@ -367,6 +367,8 @@
     <string name="home_today">Aujourd’hui</string>
     <string name="home_see_all">Tout voir</string>
     <string name="home_task_overdue">en retard</string>
+    <string name="home_change_aquarium">Changer d’aquarium</string>
+    <string name="home_alert_due_today">aujourd’hui</string>
     <string name="home_nothing_due">Rien à faire · prochaine : %1$s le %2$s</string>
     <string name="home_no_measurement_yet">Pas encore de mesure</string>
     <string name="home_status_all_in_range">Tout est dans la plage</string>
@@ -375,7 +377,7 @@
     <string name="home_measured_yesterday">mesuré hier</string>
     <plurals name="home_measured_days_ago"><item quantity="one">mesuré il y a %1$d j</item><item quantity="other">mesuré il y a %1$d j</item></plurals>
     <plurals name="reading_age_days"><item quantity="one">il y a %1$d j</item><item quantity="other">il y a %1$d j</item></plurals>
-    <string name="reading_attention_description">hors de ta plage</string>
+    <string name="reading_attention_description">hors de votre plage indicative</string>
     <plurals name="aquarium_age_months"><item quantity="one">%1$d mois</item><item quantity="other">%1$d mois</item></plurals>
     <plurals name="aquarium_age_days"><item quantity="one">%1$d jour</item><item quantity="other">%1$d jours</item></plurals>
 </resources>

@@ -367,6 +367,8 @@
     <string name="home_today">Today</string>
     <string name="home_see_all">See all</string>
     <string name="home_task_overdue">overdue</string>
+    <string name="home_change_aquarium">Change Aquarium</string>
+    <string name="home_alert_due_today">today</string>
     <string name="home_nothing_due">Nothing due · next: %1$s on %2$s</string>
     <string name="home_no_measurement_yet">No measurement yet</string>
     <string name="home_status_all_in_range">All in range</string>
@@ -375,7 +377,7 @@
     <string name="home_measured_yesterday">measured yesterday</string>
     <plurals name="home_measured_days_ago"><item quantity="one">measured %1$d day ago</item><item quantity="other">measured %1$d days ago</item></plurals>
     <plurals name="reading_age_days"><item quantity="one">%1$d d ago</item><item quantity="other">%1$d d ago</item></plurals>
-    <string name="reading_attention_description">outside your range</string>
+    <string name="reading_attention_description">outside your indicative range</string>
     <plurals name="aquarium_age_months"><item quantity="one">%1$d month</item><item quantity="other">%1$d months</item></plurals>
     <plurals name="aquarium_age_days"><item quantity="one">%1$d day</item><item quantity="other">%1$d days</item></plurals>
 </resources>
