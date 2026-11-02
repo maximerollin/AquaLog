@@ -45,6 +45,16 @@ fun SessionDetailsScreen(
         contentPadding = PaddingValues(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        // Own line: a long back label beside the title squeezes it into broken words at large font scales.
+        item {
+            TextButton(onClick = viewModel::closeSessionDetails, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(
+                    stringResource(
+                        if (returnToTimeline) Res.string.back_to_timeline else Res.string.back,
+                    ),
+                )
+            }
+        }
         item {
             CarnetScreenTitle(
                 title = stringResource(Res.string.session_details),
@@ -52,15 +62,6 @@ fun SessionDetailsScreen(
                     Res.string.session_date,
                     formatter.shortDateTime(recorded.session.occurredAtEpochMillis),
                 ),
-                action = {
-                    TextButton(onClick = viewModel::closeSessionDetails, modifier = Modifier.heightIn(min = 48.dp)) {
-                        Text(
-                            stringResource(
-                                if (returnToTimeline) Res.string.back_to_timeline else Res.string.back,
-                            ),
-                        )
-                    }
-                },
             )
         }
         val readings = recorded.measurements.mapNotNull { measurement ->
