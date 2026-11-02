@@ -72,7 +72,7 @@ class LocalizedAccessibilityFlowTest {
         }
         ActivityScenario.launch(MainActivity::class.java).use {
             val localized = localizedContext("de")
-            val settings = localized.getString(Res.string.navigation_settings)
+            val settings = localized.getString(Res.string.navigation_more)
             awaitText(settings)
             compose.onNodeWithText(settings).performClick()
             val restore = localized.getString(Res.string.restore_from_export)
@@ -211,7 +211,8 @@ class LocalizedAccessibilityFlowTest {
                     newSession,
                     localized.getString(Res.string.open_tasks),
                     localized.getString(Res.string.navigation_history),
-                    localized.getString(Res.string.navigation_settings),
+                    localized.getString(Res.string.navigation_trends),
+                    localized.getString(Res.string.navigation_more),
                 )
                 assertCriticalText("Aqua 120")
                 captureAndInspect("home-$language-$mode.png")
@@ -255,8 +256,7 @@ class LocalizedAccessibilityFlowTest {
                 awaitText(localized.getString(Res.string.timeline_title))
                 assertCriticalText(localized.getString(Res.string.timeline_title))
                 captureAndInspect("timeline-$language-$mode.png")
-                assertEssentialActions(localized.getString(Res.string.trends_title))
-                compose.onNodeWithText(localized.getString(Res.string.trends_title)).performClick()
+                compose.onNodeWithText(localized.getString(Res.string.navigation_trends)).performClick()
                 compose.onNodeWithTag("trend-list").performScrollToNode(
                     hasText(localized.getString(Res.string.trends_exact_values)),
                 )
@@ -264,7 +264,7 @@ class LocalizedAccessibilityFlowTest {
                 assertCriticalText(localized.getString(Res.string.trends_exact_values))
                 captureAndInspect("trends-$language-$mode.png")
 
-                compose.onNodeWithText(localized.getString(Res.string.navigation_settings)).performClick()
+                compose.onNodeWithText(localized.getString(Res.string.navigation_more)).performClick()
                 awaitText(localized.getString(Res.string.aquariums_title))
                 assertAction(localized.getString(Res.string.add_aquarium))
                 scrollAndAssertEssentialAction(localized.getString(Res.string.edit_aquarium))

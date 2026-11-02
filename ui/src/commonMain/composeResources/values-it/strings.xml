@@ -170,9 +170,10 @@
     <string name="delete_session_description">Anche le relative misurazioni, azioni di manutenzione ed eventi verranno rimossi da questo dispositivo.</string>
     <string name="delete">Elimina</string>
 
-    <string name="navigation_home">Home</string>
+    <string name="navigation_tank">Vasca</string>
     <string name="navigation_history">Cronologia</string>
-    <string name="navigation_settings">Impostazioni</string>
+    <string name="navigation_trends">Tendenze</string>
+    <string name="navigation_more">Altro</string>
     <string name="settings_title">Impostazioni</string>
     <string name="aquariums_title">Acquari</string>
     <string name="add_aquarium">Aggiungi Acquario</string>

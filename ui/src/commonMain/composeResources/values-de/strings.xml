@@ -170,9 +170,10 @@
     <string name="delete_session_description">Seine Messungen, Wartungsaktionen und Ereignisse werden ebenfalls von diesem Gerät entfernt.</string>
     <string name="delete">Löschen</string>
 
-    <string name="navigation_home">Start</string>
+    <string name="navigation_tank">Becken</string>
     <string name="navigation_history">Verlauf</string>
-    <string name="navigation_settings">Einstellungen</string>
+    <string name="navigation_trends">Trends</string>
+    <string name="navigation_more">Mehr</string>
     <string name="settings_title">Einstellungen</string>
     <string name="aquariums_title">Aquarien</string>
     <string name="add_aquarium">Aquarium hinzufügen</string>

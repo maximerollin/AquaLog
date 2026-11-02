@@ -46,7 +46,7 @@ class MultiAquariumFlowTest {
 
         try {
             waitForText("Salon")
-            composeRule.onNodeWithText("Settings").performClick()
+            composeRule.onNodeWithText("More").performClick()
             waitForText("Pro active")
             composeRule.onNodeWithText("Add Aquarium").performScrollTo().performClick()
             waitForText("Aquarium name")

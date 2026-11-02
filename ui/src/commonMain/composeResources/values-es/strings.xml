@@ -170,9 +170,10 @@
     <string name="delete_session_description">También se eliminarán de este dispositivo sus Mediciones, acciones de mantenimiento y Eventos.</string>
     <string name="delete">Borrar</string>
 
-    <string name="navigation_home">Inicio</string>
+    <string name="navigation_tank">Acuario</string>
     <string name="navigation_history">Historial</string>
-    <string name="navigation_settings">Ajustes</string>
+    <string name="navigation_trends">Tendencias</string>
+    <string name="navigation_more">Más</string>
     <string name="settings_title">Ajustes</string>
     <string name="aquariums_title">Acuarios</string>
     <string name="add_aquarium">Agregar acuario</string>

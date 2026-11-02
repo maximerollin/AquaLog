@@ -170,9 +170,10 @@
     <string name="delete_session_description">Ses Mesures, Actions d’entretien et Événements seront également supprimés de cet appareil.</string>
     <string name="delete">Supprimer</string>
 
-    <string name="navigation_home">Accueil</string>
+    <string name="navigation_tank">Bac</string>
     <string name="navigation_history">Historique</string>
-    <string name="navigation_settings">Paramètres</string>
+    <string name="navigation_trends">Tendances</string>
+    <string name="navigation_more">Plus</string>
     <string name="settings_title">Paramètres</string>
     <string name="aquariums_title">Aquariums</string>
     <string name="add_aquarium">Ajouter un aquarium</string>

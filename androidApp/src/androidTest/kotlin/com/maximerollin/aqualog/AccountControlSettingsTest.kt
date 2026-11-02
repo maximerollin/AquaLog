@@ -44,7 +44,7 @@ class AccountControlSettingsTest {
         prepare()
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
-            composeRule.onNodeWithText("Settings").performClick()
+            composeRule.onNodeWithText("More").performClick()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("owner@example.com"))
             composeRule.onNodeWithText("owner@example.com").assertIsDisplayed()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Export data"))
@@ -70,7 +70,7 @@ class AccountControlSettingsTest {
         application.deletionResult = CloudAccountDeletionResult.RetryableFailure("Service temporarily unavailable")
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
-            composeRule.onNodeWithText("Settings").performClick()
+            composeRule.onNodeWithText("More").performClick()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Delete account"))
             composeRule.onNodeWithText("Delete account").performScrollTo().performClick()
             composeRule.onNodeWithText("Delete account and data").performClick()

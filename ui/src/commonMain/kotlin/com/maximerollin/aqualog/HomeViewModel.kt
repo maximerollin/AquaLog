@@ -133,9 +133,10 @@ data class AccountUiState(
 )
 
 enum class MainDestination {
-    HOME,
+    TANK,
     HISTORY,
-    SETTINGS,
+    TRENDS,
+    MORE,
 }
 
 enum class TimelinePeriod(val days: Int?) {
@@ -143,11 +144,6 @@ enum class TimelinePeriod(val days: Int?) {
     SEVEN_DAYS(7),
     THIRTY_DAYS(30),
     NINETY_DAYS(90),
-}
-
-enum class HistorySection {
-    CHRONOLOGY,
-    TRENDS,
 }
 
 data class TimelineUiState(
@@ -346,8 +342,7 @@ data class HomeUiState(
     val sessionDetail: RecordedSession? = null,
     val sessionDetailReturnsToTimeline: Boolean = false,
     val showDeleteConfirmation: Boolean = false,
-    val destination: MainDestination = MainDestination.HOME,
-    val historySection: HistorySection = HistorySection.CHRONOLOGY,
+    val destination: MainDestination = MainDestination.TANK,
     val timeline: TimelineUiState = TimelineUiState(),
     val trends: TrendsUiState = TrendsUiState(),
     val pro: ProUiState = ProUiState(),
@@ -1371,9 +1366,13 @@ class HomeViewModel(
 
     fun selectDestination(destination: MainDestination) {
         mutableUiState.update { it.copy(destination = destination) }
-        if (destination == MainDestination.HISTORY) {
-            if (timelineJob == null) observeTimeline()
-            if (mutableUiState.value.historySection == HistorySection.TRENDS) observeTrends()
+        when (destination) {
+            MainDestination.HISTORY -> if (timelineJob == null) observeTimeline()
+            MainDestination.TRENDS -> {
+                recordProductEvent(ProductEvent.GraphViewed(mutableUiState.value.trends.period.toGraphPeriod()))
+                observeTrends()
+            }
+            else -> Unit
         }
     }
 
@@ -1391,14 +1390,6 @@ class HomeViewModel(
 
     fun selectTimelineAction(type: MaintenanceActionType?) = updateTimelineFilter {
         it.copy(maintenanceActionType = type)
-    }
-
-    fun selectHistorySection(section: HistorySection) {
-        mutableUiState.update { it.copy(historySection = section) }
-        if (section == HistorySection.TRENDS) {
-            recordProductEvent(ProductEvent.GraphViewed(mutableUiState.value.trends.period.toGraphPeriod()))
-            observeTrends()
-        }
     }
 
     fun selectTrendPeriod(period: TrendPeriod) {
@@ -1804,7 +1795,7 @@ class HomeViewModel(
                 ),
             )
         }
-        if (mutableUiState.value.historySection == HistorySection.TRENDS) observeTrends()
+        if (mutableUiState.value.destination == MainDestination.TRENDS) observeTrends()
     }
 
     private suspend fun persistOnboardingAquarium(keepPaywallOpen: Boolean): Boolean {
@@ -1927,11 +1918,10 @@ class HomeViewModel(
                 trends = state.trends.copy(selectedParameterDefinitionId = null),
             )
         }
-        if (mutableUiState.value.destination == MainDestination.HISTORY) {
-            observeTimeline()
-            if (mutableUiState.value.historySection == HistorySection.TRENDS) {
-                observeTrends(aquariumId)
-            }
+        when (mutableUiState.value.destination) {
+            MainDestination.HISTORY -> observeTimeline()
+            MainDestination.TRENDS -> observeTrends(aquariumId)
+            else -> Unit
         }
     }
 

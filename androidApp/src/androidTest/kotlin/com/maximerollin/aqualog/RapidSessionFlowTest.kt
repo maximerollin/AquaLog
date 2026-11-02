@@ -87,7 +87,7 @@ class RapidSessionFlowTest {
             composeRule.onNodeWithContentDescription("Open Session details").performClick()
             composeRule.onNodeWithText("Temperature · 24.5 °C").assertIsDisplayed()
             composeRule.onNodeWithText("Back to Chronology").performClick()
-            composeRule.onNodeWithText("Settings").performClick()
+            composeRule.onNodeWithText("More").performClick()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("qualification@example.com"))
             composeRule.onNodeWithText("qualification@example.com").assertIsDisplayed()
         } finally {
@@ -177,7 +177,7 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithText("Trends").performClick()
         composeRule.onNodeWithText("Recent trends").assertIsDisplayed()
 
-        composeRule.onNodeWithText("Home").performClick()
+        composeRule.onNodeWithText("Tank").performClick()
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Review account options"))
         composeRule.onNodeWithText("Review account options").performClick()
         composeRule.onNodeWithText("Create an account").assertIsDisplayed()

@@ -61,7 +61,7 @@ class PortableDataFlowTest {
         )
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
-            composeRule.onNodeWithText("Settings").performClick()
+            composeRule.onNodeWithText("More").performClick()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Export data"))
             composeRule.onNodeWithText("Export data").performClick()
 

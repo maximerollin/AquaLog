@@ -84,7 +84,7 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithText("Amazonien").assertIsDisplayed()
         composeRule.onNodeWithText("120.5 US gal").assertIsDisplayed()
         composeRule.onNodeWithText("No Session yet").assertIsDisplayed()
-        composeRule.onNodeWithText("Settings").performClick()
+        composeRule.onNodeWithText("More").performClick()
         composeRule.onNodeWithText("View Free and Pro").performClick()
         composeRule.onNodeWithText("Choose Free or Pro").assertIsDisplayed()
         composeRule.onNodeWithText("Back to Settings").performClick()

@@ -19,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -69,28 +70,12 @@ fun TimelineScreen(
     }
 
     Column(modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            FilterChip(
-                selected = state.historySection == HistorySection.CHRONOLOGY,
-                onClick = { viewModel.selectHistorySection(HistorySection.CHRONOLOGY) },
-                label = { Text(stringResource(Res.string.timeline_title)) },
-                modifier = Modifier.heightIn(min = 48.dp),
-            )
-            FilterChip(
-                selected = state.historySection == HistorySection.TRENDS,
-                onClick = { viewModel.selectHistorySection(HistorySection.TRENDS) },
-                label = { Text(stringResource(Res.string.trends_title)) },
-                modifier = Modifier.heightIn(min = 48.dp),
-            )
-        }
-        if (state.historySection == HistorySection.TRENDS) {
-            TrendsScreen(state, viewModel, Modifier.weight(1f))
-        } else {
-            TimelineContent(state, viewModel, Modifier.weight(1f), state.timeline.filtersExpanded, viewModel::toggleTimelineFilters)
-        }
+        CarnetScreenTitle(
+            stringResource(Res.string.timeline_title),
+            null,
+            Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+        )
+        TimelineContent(state, viewModel, Modifier.weight(1f), state.timeline.filtersExpanded, viewModel::toggleTimelineFilters)
     }
 }
 

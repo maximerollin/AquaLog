@@ -71,8 +71,7 @@ class TrendsFlowTest {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.onNodeWithText("History").performClick()
-        composeRule.onNodeWithText("Trends").performClick().assertIsSelected()
+        composeRule.onNodeWithText("Trends").performClick()
         composeRule.onNodeWithText("30 days").assertIsSelected()
         composeRule.onNodeWithText("7 days").assertIsDisplayed()
         composeRule.onNodeWithText("90 days").assertIsDisplayed()
@@ -99,7 +98,7 @@ class TrendsFlowTest {
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription("Exact value 7.2 pH"))
         composeRule.onNodeWithContentDescription("Exact value 7.2 pH").assertIsDisplayed()
 
-        composeRule.onNodeWithText("Home").performClick()
+        composeRule.onNodeWithText("Tank").performClick()
         SystemClock.sleep(10)
         runBlocking {
             application.aquariumRepository.saveRapidSession(
@@ -111,7 +110,7 @@ class TrendsFlowTest {
                 ),
             )
         }
-        composeRule.onNodeWithText("History").performClick()
+        composeRule.onNodeWithText("Trends").performClick()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("TDS"))
         composeRule.onNodeWithText("TDS").performClick().assertIsSelected()
         composeRule.onNodeWithTag("trend-list")
@@ -177,7 +176,6 @@ class TrendsFlowTest {
         application.grantPro(ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null))
         var scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.onNodeWithText("History").performClick()
         composeRule.onNodeWithText("Trends").performClick()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("Show complete history"))
         composeRule.onNodeWithText("Show complete history").performClick()
@@ -210,7 +208,6 @@ class TrendsFlowTest {
         application.revokePro()
         scenario.close()
         scenario = ActivityScenario.launch(MainActivity::class.java)
-        composeRule.onNodeWithText("History").performClick()
         composeRule.onNodeWithText("Trends").performClick()
         composeRule.onNodeWithText("Free trends show up to 90 days. Older data stays saved.").assertIsDisplayed()
         assertTrue(

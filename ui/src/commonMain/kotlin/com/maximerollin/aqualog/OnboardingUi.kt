@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
+import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -260,9 +261,10 @@ private fun AquariumShell(
             NavigationBar {
                 MainDestination.entries.forEach { destination ->
                     val label = when (destination) {
-                        MainDestination.HOME -> stringResource(Res.string.navigation_home)
+                        MainDestination.TANK -> stringResource(Res.string.navigation_tank)
                         MainDestination.HISTORY -> stringResource(Res.string.navigation_history)
-                        MainDestination.SETTINGS -> stringResource(Res.string.navigation_settings)
+                        MainDestination.TRENDS -> stringResource(Res.string.navigation_trends)
+                        MainDestination.MORE -> stringResource(Res.string.navigation_more)
                     }
                     NavigationBarItem(
                         selected = state.destination == destination,
@@ -270,9 +272,10 @@ private fun AquariumShell(
                         icon = {
                             Icon(
                                 painterResource(when (destination) {
-                                    MainDestination.HOME -> Res.drawable.ic_home
+                                    MainDestination.TANK -> Res.drawable.ic_tank
                                     MainDestination.HISTORY -> Res.drawable.ic_history
-                                    MainDestination.SETTINGS -> Res.drawable.ic_settings
+                                    MainDestination.TRENDS -> Res.drawable.ic_trends
+                                    MainDestination.MORE -> Res.drawable.ic_more
                                 }),
                                 contentDescription = null,
                             )
@@ -285,9 +288,10 @@ private fun AquariumShell(
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding)
         when (state.destination) {
-            MainDestination.HOME -> AquariumHome(state, viewModel, contentModifier)
+            MainDestination.TANK -> AquariumHome(state, viewModel, contentModifier)
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
-            MainDestination.SETTINGS -> PortableDataSettings(
+            MainDestination.TRENDS -> TrendsScreen(state, viewModel, contentModifier)
+            MainDestination.MORE -> PortableDataSettings(
                 homeState = state,
                 state = state.portableData,
                 accountState = state.accountSettings,
@@ -1460,14 +1464,7 @@ private fun StandardScreen(
 
 @Composable
 private fun ScreenHeading(title: StringResource, description: StringResource) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(title), style = MaterialTheme.typography.headlineMedium)
-        Text(
-            stringResource(description),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+    CarnetScreenTitle(stringResource(title), stringResource(description))
 }
 
 @Composable
