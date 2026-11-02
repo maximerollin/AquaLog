@@ -2,6 +2,7 @@ package com.maximerollin.aqualog
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
@@ -30,7 +31,7 @@ class SessionReliabilityFlowTest {
     @Test
     fun draft_survivesBackgroundingAndConfigurationChange() {
         val scenario = launchConfiguredAquarium()
-        composeRule.onNodeWithText("New Session").performClick()
+        composeRule.onNodeWithText("Measure").performClick()
         waitForText("Measurements")
 
         val temperature = composeRule.onNodeWithContentDescription("Measurement for Temperature")
@@ -52,7 +53,7 @@ class SessionReliabilityFlowTest {
     @Test
     fun recordedSession_canBeReopenedCorrectedAfterRestartAndDeletedWithConfirmation() {
         var scenario = launchConfiguredAquarium()
-        composeRule.onNodeWithText("New Session").performClick()
+        composeRule.onNodeWithText("Measure").performClick()
         waitForText("Measurements")
         composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Water change"))
@@ -62,10 +63,10 @@ class SessionReliabilityFlowTest {
         composeRule.onNodeWithText("Observation").performTextInput("Eau claire")
         composeRule.onNodeWithText("Save Session").performClick()
 
-        waitForText("Session saved")
-        composeRule.onNodeWithText("View Session details").performClick()
+        waitForText("measured today", substring = true)
+        composeRule.onNode(hasText("measured today", substring = true) and hasClickAction()).performClick()
         composeRule.onNodeWithText("Session details").assertIsDisplayed()
-        composeRule.onNodeWithText("Temperature · 24.5 °C").assertIsDisplayed()
+        composeRule.onNode(hasText("Temperature") and hasText("24.5") and hasText("°C")).assertIsDisplayed()
         composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
         composeRule.onNodeWithText("Observation · Eau claire").assertIsDisplayed()
 
@@ -92,23 +93,22 @@ class SessionReliabilityFlowTest {
         composeRule.onNodeWithText("Save changes").performClick()
 
         waitForText("Session details")
-        waitForText("Temperature · 25.1 °C")
-        composeRule.onNodeWithText("Temperature · 25.1 °C").assertIsDisplayed()
+        waitForText("25.1")
+        composeRule.onNode(hasText("Temperature") and hasText("25.1") and hasText("°C")).assertIsDisplayed()
         composeRule.onNodeWithText("Fertilization · 1 mL").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Incident · Filtre corrigé").assertIsDisplayed()
         scenario.close()
 
         scenario = ActivityScenario.launch(MainActivity::class.java)
-        waitForText("Session saved")
-        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("View Session details"))
-        composeRule.onNodeWithText("View Session details").performClick()
-        waitForText("Temperature · 25.1 °C")
-        composeRule.onNodeWithText("Temperature · 25.1 °C").assertIsDisplayed()
+        waitForText("measured today", substring = true)
+        composeRule.onNode(hasText("measured today", substring = true) and hasClickAction()).performClick()
+        waitForText("25.1")
+        composeRule.onNode(hasText("Temperature") and hasText("25.1") and hasText("°C")).assertIsDisplayed()
         composeRule.onNodeWithText("Delete Session").performClick()
         composeRule.onNodeWithText("Delete this Session?").assertIsDisplayed()
         composeRule.onNodeWithText("Delete", useUnmergedTree = true).performClick()
 
-        waitForText("No Session yet")
+        waitForText("No measurement yet", substring = true)
         scenario.close()
     }
 
@@ -126,13 +126,13 @@ class SessionReliabilityFlowTest {
         composeRule.onNodeWithText("Try a mini Session").performClick()
         composeRule.onNodeWithText("See Free and Pro").performClick()
         composeRule.onNodeWithText("Continue for free").performClick()
-        waitForText("New Session")
+        waitForText("Measure")
         return scenario
     }
 
-    private fun waitForText(text: String) {
+    private fun waitForText(text: String, substring: Boolean = false) {
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodes(hasText(text, substring = substring)).fetchSemanticsNodes().isNotEmpty()
         }
     }
 

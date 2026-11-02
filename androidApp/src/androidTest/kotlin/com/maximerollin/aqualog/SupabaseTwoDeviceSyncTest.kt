@@ -1,6 +1,9 @@
 package com.maximerollin.aqualog
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -81,7 +84,11 @@ class SupabaseTwoDeviceSyncTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         composeRule.onNodeWithText("History").performClick()
         composeRule.onNodeWithText("Chronology").assertIsDisplayed()
-        composeRule.onNodeWithText("1 Measurement · 1 maintenance action · 1 Event").assertIsDisplayed()
+        composeRule.onNode(
+            hasContentDescription("Open Session details") and hasText("24.5", substring = true) and hasClickAction(),
+        ).assertIsDisplayed()
+        composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
+        composeRule.onNodeWithText("Downloaded from first installation").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Open Session details").performClick()
         composeRule.onNodeWithText("Observation · Downloaded from first installation").assertIsDisplayed()
         scenario.close()

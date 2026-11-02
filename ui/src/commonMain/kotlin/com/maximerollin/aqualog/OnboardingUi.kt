@@ -1,6 +1,10 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
+import com.maximerollin.aqualog.home.TankHome
+import com.maximerollin.aqualog.ui.theme.CarnetDivider
+import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
+import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,7 +18,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -23,8 +30,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,7 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.resources.pluralStringResource
+import androidx.compose.ui.graphics.Color
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -56,7 +62,6 @@ import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.LocalCopyDecision
 import com.maximerollin.aqualog.shared.PortableImportProblem
-import com.maximerollin.aqualog.shared.SyncFailureCategory
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.VolumeUnit
 
@@ -83,6 +88,7 @@ fun AquaLogContent(
             ),
             viewModel = viewModel,
             modifier = modifier,
+            aquariumName = state.setup.aquarium.name,
         )
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(
             state = state.rapidSession,
@@ -260,9 +266,10 @@ private fun AquariumShell(
             NavigationBar {
                 MainDestination.entries.forEach { destination ->
                     val label = when (destination) {
-                        MainDestination.HOME -> stringResource(Res.string.navigation_home)
+                        MainDestination.TANK -> stringResource(Res.string.navigation_tank)
                         MainDestination.HISTORY -> stringResource(Res.string.navigation_history)
-                        MainDestination.SETTINGS -> stringResource(Res.string.navigation_settings)
+                        MainDestination.TRENDS -> stringResource(Res.string.navigation_trends)
+                        MainDestination.MORE -> stringResource(Res.string.navigation_more)
                     }
                     NavigationBarItem(
                         selected = state.destination == destination,
@@ -270,9 +277,10 @@ private fun AquariumShell(
                         icon = {
                             Icon(
                                 painterResource(when (destination) {
-                                    MainDestination.HOME -> Res.drawable.ic_home
+                                    MainDestination.TANK -> Res.drawable.ic_tank
                                     MainDestination.HISTORY -> Res.drawable.ic_history
-                                    MainDestination.SETTINGS -> Res.drawable.ic_settings
+                                    MainDestination.TRENDS -> Res.drawable.ic_trends
+                                    MainDestination.MORE -> Res.drawable.ic_more
                                 }),
                                 contentDescription = null,
                             )
@@ -285,9 +293,10 @@ private fun AquariumShell(
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding)
         when (state.destination) {
-            MainDestination.HOME -> AquariumHome(state, viewModel, contentModifier)
+            MainDestination.TANK -> TankHome(state, viewModel, contentModifier)
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
-            MainDestination.SETTINGS -> PortableDataSettings(
+            MainDestination.TRENDS -> TrendsScreen(state, viewModel, contentModifier)
+            MainDestination.MORE -> PortableDataSettings(
                 homeState = state,
                 state = state.portableData,
                 accountState = state.accountSettings,
@@ -353,206 +362,164 @@ private fun PortableDataSettings(
     externalLinks: ExternalLinks,
     modifier: Modifier,
 ) {
+    val proActive = proState.purchaseStatus == ProPurchaseStatus.ACTIVE
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("settings-list").padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item { Spacer(Modifier.height(8.dp)) }
-        item { ScreenHeading(Res.string.settings_title, Res.string.portable_data_description) }
         item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(Res.string.aquariums_title), style = MaterialTheme.typography.titleMedium)
-                    homeState.aquariums.forEach { aquarium ->
-                        if (homeState.setup?.aquarium?.id == aquarium.id) {
-                            Button(
-                                onClick = {},
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                            ) { Text(aquarium.name) }
-                        } else {
-                            OutlinedButton(
-                                onClick = { viewModel.selectAquarium(aquarium.id) },
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                            ) { Text(aquarium.name) }
-                        }
+            CarnetScreenTitle(stringResource(Res.string.navigation_more), null, Modifier.padding(top = 12.dp))
+        }
+        moreSection(Res.string.more_section_tasks) {
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.open_tasks),
+                    onClick = viewModel::openTasks,
+                    trailingIcon = Res.drawable.ic_chevron_right,
+                )
+            }
+        }
+        moreSection(Res.string.aquariums_title) {
+            homeState.aquariums.forEach { aquarium ->
+                moreItem {
+                    val current = homeState.setup?.aquarium?.id == aquarium.id
+                    MoreRow(
+                        aquarium.name,
+                        onClick = { viewModel.selectAquarium(aquarium.id) },
+                        selected = current,
+                        trailingIcon = if (current) Res.drawable.ic_check else null,
+                    )
+                }
+            }
+            moreItem { MoreRow(stringResource(Res.string.add_aquarium), onClick = viewModel::openCreateAquarium) }
+            moreItem { MoreRow(stringResource(Res.string.edit_aquarium), onClick = viewModel::openEditAquarium) }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.archive_aquarium),
+                    onClick = viewModel::archiveCurrentAquarium,
+                    enabled = proActive && homeState.aquariums.size > 1,
+                    supporting = if (proActive) null else stringResource(Res.string.free_one_aquarium_limit),
+                )
+            }
+        }
+        moreSection(Res.string.more_section_plan) {
+            moreItem {
+                MoreRow(
+                    stringResource(if (proActive) Res.string.pro_active else Res.string.free_plan),
+                    supporting = stringResource(Res.string.subscription_settings_description),
+                )
+            }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.view_free_and_pro),
+                    onClick = viewModel::openProPaywall,
+                    trailingIcon = Res.drawable.ic_chevron_right,
+                )
+            }
+        }
+        moreSection(Res.string.account_title) {
+            moreItem {
+                MoreRow(
+                    accountState.identity?.email ?: stringResource(Res.string.account_local_only),
+                    supporting = stringResource(
+                        when (syncState.status) {
+                            SyncStatus.SYNCED -> Res.string.sync_status_synced
+                            SyncStatus.PENDING -> Res.string.sync_status_pending
+                            SyncStatus.FAILED -> Res.string.sync_status_failed
+                        },
+                    ),
+                )
+            }
+        }
+        accountState.pendingDeletion?.let {
+            moreSection(Res.string.account_deletion_pending) {
+                moreItem {
+                    MoreRow(
+                        accountState.localizedSafeDetail() ?: stringResource(Res.string.account_deletion_pending_description),
+                    )
+                }
+                if (accountState.showDeletionReauthenticationAction) {
+                    moreItem {
+                        MoreRow(
+                            stringResource(Res.string.continue_with_google),
+                            onClick = viewModel::reauthenticateAccountDeletionWithGoogle,
+                            enabled = !accountState.isWorking,
+                        )
                     }
-                    Button(
-                        onClick = viewModel::openCreateAquarium,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(stringResource(Res.string.add_aquarium)) }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        OutlinedButton(
-                            onClick = viewModel::openEditAquarium,
-                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        ) { Text(stringResource(Res.string.edit_aquarium)) }
-                        OutlinedButton(
-                            onClick = viewModel::archiveCurrentAquarium,
-                            enabled = proState.purchaseStatus == ProPurchaseStatus.ACTIVE &&
-                                homeState.aquariums.size > 1,
-                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        ) { Text(stringResource(Res.string.archive_aquarium)) }
+                    moreItem {
+                        MoreRow(
+                            stringResource(Res.string.send_deletion_magic_link),
+                            onClick = viewModel::requestDeletionMagicLink,
+                            enabled = !accountState.isWorking,
+                        )
                     }
-                    if (proState.purchaseStatus != ProPurchaseStatus.ACTIVE) {
-                        Text(
-                            stringResource(Res.string.free_one_aquarium_limit),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium,
+                } else {
+                    moreItem {
+                        MoreRow(
+                            stringResource(Res.string.retry_account_deletion),
+                            onClick = viewModel::retryAccountDeletion,
+                            enabled = !accountState.isWorking,
                         )
                     }
                 }
             }
         }
-        item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(
-                            if (proState.purchaseStatus == ProPurchaseStatus.ACTIVE) {
-                                Res.string.pro_active
-                            } else {
-                                Res.string.free_plan
-                            },
-                        ),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        stringResource(Res.string.subscription_settings_description),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Button(
-                        onClick = viewModel::openProPaywall,
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                    ) {
-                        Text(stringResource(Res.string.view_free_and_pro))
-                    }
-                }
-            }
-        }
-        if (state.message != null || state.importProblem != null) {
-            item { PortableDataMessage(state) }
-        }
-        item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(Res.string.account_title), style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        accountState.identity?.email ?: stringResource(Res.string.account_local_only),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Text(
-                        when (syncState.status) {
-                            SyncStatus.SYNCED -> stringResource(Res.string.sync_status_synced)
-                            SyncStatus.PENDING -> stringResource(Res.string.sync_status_pending)
-                            SyncStatus.FAILED -> stringResource(Res.string.sync_status_failed)
-                        },
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-        accountState.pendingDeletion?.let {
+        moreSection(Res.string.portable_data_title) {
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(Res.string.account_deletion_pending), style = MaterialTheme.typography.titleMedium)
-                        Text(accountState.localizedSafeDetail() ?: stringResource(Res.string.account_deletion_pending_description))
-                        if (accountState.showDeletionReauthenticationAction) {
-                            Button(
-                                onClick = viewModel::reauthenticateAccountDeletionWithGoogle,
-                                enabled = !accountState.isWorking,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                            ) { Text(stringResource(Res.string.continue_with_google)) }
-                            OutlinedButton(
-                                onClick = viewModel::requestDeletionMagicLink,
-                                enabled = !accountState.isWorking,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                            ) { Text(stringResource(Res.string.send_deletion_magic_link)) }
-                        } else {
-                            Button(
-                                onClick = viewModel::retryAccountDeletion,
-                                enabled = !accountState.isWorking,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                            ) { Text(stringResource(Res.string.retry_account_deletion)) }
-                        }
-                    }
-                }
-            }
-        }
-        item {
-            Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(Res.string.portable_data_title), style = MaterialTheme.typography.titleMedium)
                 Text(
                     stringResource(Res.string.portable_data_replace_explanation),
+                    modifier = Modifier.padding(bottom = 8.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Button(
+            }
+            if (state.message != null || state.importProblem != null) {
+                moreItem { PortableDataMessage(state) }
+            }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.export_data),
                     onClick = onExportData,
                     enabled = !state.isWorking,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(Res.string.export_data))
-                }
-                OutlinedButton(
-                    onClick = onRequestImport,
-                    enabled = !state.isWorking,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) {
-                    Text(stringResource(Res.string.restore_from_export))
-                }
+                )
+            }
+            moreItem {
+                MoreRow(stringResource(Res.string.restore_from_export), onClick = onRequestImport, enabled = !state.isWorking)
             }
         }
-        }
-        item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(stringResource(Res.string.account_actions), style = MaterialTheme.typography.titleMedium)
-                    if (accountState.identity != null && accountState.pendingDeletion == null) {
-                        OutlinedButton(
-                            onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.LOGOUT) },
-                            enabled = !accountState.isWorking,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                        ) { Text(stringResource(Res.string.sign_out)) }
-                        OutlinedButton(
-                            onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.DELETE) },
-                            enabled = !accountState.isWorking,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                        ) { Text(stringResource(Res.string.delete_account)) }
-                    } else {
-                        Text(stringResource(Res.string.account_local_only_description))
-                    }
-                }
+        moreSection(Res.string.more_section_help) {
+            moreItem { MoreRow(stringResource(Res.string.send_feedback), onClick = viewModel::openFeedback) }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.privacy_policy),
+                    onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.PRIVACY) },
+                )
+            }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.support),
+                    onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.SUPPORT) },
+                )
             }
         }
-        item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(Res.string.feedback_title), style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        stringResource(Res.string.feedback_settings_description),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        moreSection(Res.string.account_actions) {
+            if (accountState.identity != null && accountState.pendingDeletion == null) {
+                moreItem {
+                    MoreRow(
+                        stringResource(Res.string.sign_out),
+                        onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.LOGOUT) },
+                        enabled = !accountState.isWorking,
                     )
-                    OutlinedButton(
-                        onClick = viewModel::openFeedback,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) {
-                        Text(stringResource(Res.string.send_feedback))
-                    }
                 }
-            }
-        }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                TextButton(onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.PRIVACY) }) {
-                    Text(stringResource(Res.string.privacy_policy))
+                moreItem {
+                    MoreRow(
+                        stringResource(Res.string.delete_account),
+                        onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.DELETE) },
+                        enabled = !accountState.isWorking,
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
-                TextButton(onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.SUPPORT) }) {
-                    Text(stringResource(Res.string.support))
-                }
+            } else {
+                moreItem { MoreRow(stringResource(Res.string.account_local_only_description)) }
             }
         }
         item {
@@ -563,6 +530,58 @@ private fun PortableDataSettings(
     }
     AccountSettingsDialog(accountState.dialog, viewModel, externalLinks)
     homeState.aquariumEditor?.let { editor -> AquariumEditorDialog(editor, viewModel) }
+}
+
+private fun LazyListScope.moreSection(title: StringResource, rows: LazyListScope.() -> Unit) {
+    item { CarnetSectionTitle(stringResource(title), Modifier.padding(top = 20.dp, bottom = 4.dp)) }
+    rows()
+    item { CarnetDivider() }
+}
+
+private fun LazyListScope.moreItem(content: @Composable () -> Unit) {
+    item { Column { CarnetDivider(); content() } }
+}
+
+/** One list row: 56 dp minimum, a single accessible unit; no [onClick] makes it a plain read-only line. */
+@Composable
+private fun MoreRow(
+    label: String,
+    modifier: Modifier = Modifier,
+    supporting: String? = null,
+    onClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
+    selected: Boolean? = null,
+    color: Color = MaterialTheme.colorScheme.onSurface,
+    trailingIcon: DrawableResource? = null,
+) {
+    val interaction = when {
+        onClick == null -> Modifier
+        selected != null -> Modifier.selectable(selected, enabled, Role.RadioButton, onClick = onClick)
+        else -> Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+    }
+    Row(
+        modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).then(interaction).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (enabled) color else color.copy(alpha = 0.5f),
+            )
+            if (supporting != null) {
+                Text(
+                    supporting,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (trailingIcon != null) {
+            Spacer(Modifier.width(12.dp))
+            Icon(painterResource(trailingIcon), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        }
+    }
 }
 
 @Composable
@@ -741,10 +760,7 @@ private fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         ScreenHeading(Res.string.profile_title, Res.string.profile_description)
-        Column(
-            modifier = Modifier.selectableGroup(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+        Column(modifier = Modifier.selectableGroup()) {
             ProfileOption(
                 title = stringResource(Res.string.profile_established),
                 description = stringResource(Res.string.profile_established_description),
@@ -763,6 +779,7 @@ private fun ProfileScreen(
                 selected = selected == AquariumProfile.PLANTED_SHRIMP,
                 onClick = { onSelected(AquariumProfile.PLANTED_SHRIMP) },
             )
+            CarnetDivider()
         }
         Spacer(Modifier.height(8.dp))
         PrimaryButton(Res.string.continue_to_aquarium, onContinue)
@@ -776,13 +793,14 @@ private fun ProfileOption(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton),
-    ) {
+    Column {
+        CarnetDivider()
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 56.dp)
+                .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
+                .padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             RadioButton(selected = selected, onClick = null)
@@ -822,7 +840,7 @@ private fun AquariumDetailsScreen(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(stringResource(Res.string.volume_unit_label), style = MaterialTheme.typography.titleMedium)
+        CarnetSectionTitle(stringResource(Res.string.volume_unit_label))
         Column(Modifier.selectableGroup()) {
             VolumeUnitOption(
                 text = stringResource(Res.string.unit_liters),
@@ -867,9 +885,11 @@ private fun ParametersScreen(
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item { ScreenHeading(Res.string.parameters_title, Res.string.parameters_description) }
+        item {
+            ScreenHeading(Res.string.parameters_title, Res.string.parameters_description)
+            Spacer(Modifier.height(16.dp))
+        }
         itemsIndexed(state.parameters, key = { _, item -> item.parameter.storageValue }) { index, item ->
             ParameterEditor(
                 state = item,
@@ -878,10 +898,14 @@ private fun ParametersScreen(
                 viewModel = viewModel,
             )
         }
+        item { CarnetDivider() }
         if (state.showParameterValidationError) {
             item { ErrorText(Res.string.invalid_parameters) }
         }
-        item { PrimaryButton(Res.string.try_mini_session, viewModel::continueToPractice) }
+        item {
+            Spacer(Modifier.height(16.dp))
+            PrimaryButton(Res.string.try_mini_session, viewModel::continueToPractice)
+        }
     }
 }
 
@@ -896,9 +920,10 @@ private fun ParameterEditor(
     val moveUpDescription = stringResource(Res.string.move_parameter_up, label)
     val moveDownDescription = stringResource(Res.string.move_parameter_down, label)
     val enabledDescription = stringResource(Res.string.enabled_for_parameter, label)
-    Card(Modifier.fillMaxWidth()) {
+    Column {
+        CarnetDivider()
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1267,184 +1292,15 @@ private fun AquariumEditorDialog(editor: AquariumEditorUiState, viewModel: HomeV
 
 @Composable
 private fun PlanCard(title: StringResource, description: StringResource) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        CarnetSectionTitle(stringResource(title))
+        Text(
+            stringResource(description),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
-
-@Composable
-private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
-    val aquarium = requireNotNull(state.setup).aquarium
-    Column(
-        modifier = modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        LazyColumn(
-            modifier = Modifier.weight(1f).testTag("home-list"),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            item {
-                Card(
-                    Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(aquarium.name, style = MaterialTheme.typography.headlineSmall)
-                                Text(aquarium.formattedVolume(), color = MaterialTheme.colorScheme.onPrimaryContainer)
-                            }
-                            AquariumArtwork(Modifier.size(72.dp))
-                        }
-                        Text(
-                            stringResource(
-                                when (state.syncState.status) {
-                                    SyncStatus.SYNCED -> Res.string.sync_status_synced
-                                    SyncStatus.PENDING -> Res.string.sync_status_pending
-                                    SyncStatus.FAILED -> Res.string.sync_status_failed
-                                },
-                            ),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (state.syncState.status == SyncStatus.SYNCED) {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            } else {
-                                MaterialTheme.colorScheme.primary
-                            },
-                        )
-                    }
-                }
-            }
-            item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            stringResource(
-                                if (state.latestSession == null) Res.string.no_session_yet else Res.string.session_saved,
-                            ),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        Text(
-                            state.latestSession?.let { session ->
-                                sessionSavedDescription(
-                                    measurementCount = session.measurements.size,
-                                    actionCount = session.maintenanceActions.size,
-                                )
-                            } ?: stringResource(Res.string.no_session_description),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        if (state.latestSession != null) {
-                            TextButton(onClick = viewModel::openSessionDetails) {
-                                Text(stringResource(Res.string.view_session_details))
-                            }
-                        }
-                    }
-                }
-            }
-            if (state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION) {
-                item {
-                    PrimaryButton(Res.string.continue_after_session, viewModel::continueAfterSessionConfirmation)
-                }
-            }
-            item { HomeMeasurements(state) }
-            if (state.syncState.status == SyncStatus.FAILED) {
-                item {
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                stringResource(
-                                    when (state.syncState.failure?.category) {
-                                        SyncFailureCategory.NETWORK -> Res.string.sync_failure_network
-                                        SyncFailureCategory.CONFLICT -> Res.string.sync_failure_conflict
-                                        SyncFailureCategory.SERVER -> Res.string.sync_failure_server
-                                        SyncFailureCategory.UNKNOWN, null -> Res.string.sync_failure_unknown
-                                    },
-                                ),
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            state.syncState.failure?.technicalDetail
-                                ?.takeIf(String::isNotBlank)
-                                ?.let { detail ->
-                                    Text(
-                                        detail,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            TextButton(
-                                onClick = viewModel::retrySynchronization,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                            ) {
-                                Text(stringResource(Res.string.sync_retry))
-                            }
-                        }
-                    }
-                }
-            }
-            val pendingTasks = state.tasks.pendingOccurrences.filter { it.aquariumId == aquarium.id }.take(3)
-            if (pendingTasks.isNotEmpty()) {
-                item { Text(stringResource(Res.string.tasks_title), style = MaterialTheme.typography.titleLarge) }
-                itemsIndexed(pendingTasks, key = { _, task -> task.id }) { _, task ->
-                    Card(onClick = viewModel::openTasks, modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(task.title, style = MaterialTheme.typography.titleMedium)
-                            val formatter = currentLocalizedFormatters()
-                            Text(stringResource(Res.string.task_due_value,
-                                formatter.date(task.dueDate.year, task.dueDate.month, task.dueDate.day),
-                                task.minuteOfDay?.let(formatter::time) ?: stringResource(Res.string.task_no_time)),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-            }
-            if (state.accountInvitationPrompt == AccountInvitationPrompt.REMINDER) {
-                item {
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                stringResource(Res.string.account_invitation_title),
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                            Text(
-                                stringResource(Res.string.account_invitation_description),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            TextButton(
-                                onClick = viewModel::continueAfterSessionConfirmation,
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                            ) {
-                                Text(stringResource(Res.string.review_account_options))
-                            }
-                        }
-                    }
-                }
-            }
-
-        }
-        TextButton(
-            onClick = viewModel::openTasks,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) {
-            Text(stringResource(Res.string.open_tasks))
-        }
-        PrimaryButton(Res.string.new_session, viewModel::openRapidSession)
-    }
-}
-
-@Composable
-private fun sessionSavedDescription(measurementCount: Int, actionCount: Int): String = stringResource(
-    Res.string.session_saved_description,
-    pluralStringResource(Res.plurals.session_measurement_count, measurementCount, measurementCount),
-    pluralStringResource(Res.plurals.session_maintenance_count, actionCount, actionCount),
-)
 
 @Composable
 private fun StandardScreen(
@@ -1460,14 +1316,7 @@ private fun StandardScreen(
 
 @Composable
 private fun ScreenHeading(title: StringResource, description: StringResource) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(title), style = MaterialTheme.typography.headlineMedium)
-        Text(
-            stringResource(description),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
+    CarnetScreenTitle(stringResource(title), stringResource(description))
 }
 
 @Composable
@@ -1507,7 +1356,7 @@ internal fun BuiltInParameter.label(): String = stringResource(
 )
 
 @Composable
-private fun Aquarium.formattedVolume(): String {
+internal fun Aquarium.formattedVolume(): String {
     val formatted = currentLocalizedFormatters().number(volume)
     return when (volumeUnit) {
         VolumeUnit.LITERS -> stringResource(Res.string.volume_liters_format, formatted)

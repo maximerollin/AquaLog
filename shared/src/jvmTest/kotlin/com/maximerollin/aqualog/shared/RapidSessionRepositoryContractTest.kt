@@ -236,6 +236,124 @@ class RapidSessionRepositoryContractTest {
         database.close()
     }
 
+    @Test
+    fun `latest readings keep the newest value of each parameter with its own date`() = runTest {
+        val fixture = sessionFixture()
+        val setup = fixture.createConfiguredAquarium()
+        val (ph, nitrate) = setup.parameters.filter(ParameterDefinition::isActive).take(2)
+        fixture.repository.saveRapidSession(
+            RapidSessionInput(
+                aquariumId = setup.aquarium.id,
+                occurredAtEpochMillis = 1_700_000_000_000L,
+                idempotencyKey = "reading-a",
+                measurementInputs = mapOf(ph.id to "7.0", nitrate.id to "10"),
+            ),
+        )
+        fixture.repository.saveRapidSession(
+            RapidSessionInput(
+                aquariumId = setup.aquarium.id,
+                occurredAtEpochMillis = 1_700_000_500_000L,
+                idempotencyKey = "reading-b",
+                measurementInputs = mapOf(ph.id to "7.4"),
+            ),
+        )
+
+        val readings = fixture.repository.observeLatestReadings(setup.aquarium.id).first()
+
+        assertEquals(
+            setOf(
+                LatestReading(ph.id, 7.4, 1_700_000_500_000L, previousValue = 7.0),
+                LatestReading(nitrate.id, 10.0, 1_700_000_000_000L, previousValue = null),
+            ),
+            readings.toSet(),
+        )
+        assertEquals(2, readings.size)
+        fixture.close()
+    }
+
+    @Test
+    fun `latest readings carry the second newest value of the same parameter`() = runTest {
+        val fixture = sessionFixture()
+        val setup = fixture.createConfiguredAquarium()
+        val (ph, nitrate) = setup.parameters.filter(ParameterDefinition::isActive).take(2)
+        listOf(
+            Triple(1_700_000_000_000L, "a", mapOf(ph.id to "6.8")),
+            Triple(1_700_000_300_000L, "b", mapOf(ph.id to "7.0", nitrate.id to "10")),
+            Triple(1_700_000_200_000L, "c", mapOf(ph.id to "6.9")), // entered late, dated in between
+            Triple(1_700_000_500_000L, "d", mapOf(nitrate.id to "20")),
+            Triple(1_700_000_600_000L, "e", mapOf(ph.id to "7.4")),
+        ).forEach { (at, key, inputs) ->
+            fixture.repository.saveRapidSession(
+                RapidSessionInput(aquariumId = setup.aquarium.id, occurredAtEpochMillis = at, idempotencyKey = key, measurementInputs = inputs),
+            )
+        }
+
+        assertEquals(
+            setOf(
+                LatestReading(ph.id, 7.4, 1_700_000_600_000L, previousValue = 7.0),
+                LatestReading(nitrate.id, 20.0, 1_700_000_500_000L, previousValue = 10.0),
+            ),
+            fixture.repository.observeLatestReadings(setup.aquarium.id).first().toSet(),
+        )
+        fixture.close()
+    }
+
+    @Test
+    fun `latest readings follow an edited Session date and a deleted Session`() = runTest {
+        val fixture = sessionFixture()
+        val setup = fixture.createConfiguredAquarium()
+        val ph = setup.parameters.first(ParameterDefinition::isActive)
+        fixture.repository.saveRapidSession(
+            RapidSessionInput(
+                aquariumId = setup.aquarium.id,
+                occurredAtEpochMillis = 1_700_000_000_000L,
+                idempotencyKey = "reading-a",
+                measurementInputs = mapOf(ph.id to "7.0"),
+            ),
+        )
+        val later = fixture.repository.saveRapidSession(
+            RapidSessionInput(
+                aquariumId = setup.aquarium.id,
+                occurredAtEpochMillis = 1_700_000_500_000L,
+                idempotencyKey = "reading-b",
+                measurementInputs = mapOf(ph.id to "7.4"),
+            ),
+        )
+
+        fixture.repository.updateSession(
+            SessionEditInput(
+                sessionId = later.session.id,
+                aquariumId = setup.aquarium.id,
+                occurredAtEpochMillis = 1_699_000_000_000L,
+                measurementInputs = mapOf(ph.id to "7.4"),
+            ),
+        )
+        assertEquals(
+            listOf(LatestReading(ph.id, 7.0, 1_700_000_000_000L, previousValue = 7.4)),
+            fixture.repository.observeLatestReadings(setup.aquarium.id).first(),
+        )
+
+        fixture.repository.deleteSession(later.session.id)
+        assertEquals(
+            listOf(LatestReading(ph.id, 7.0, 1_700_000_000_000L)),
+            fixture.repository.observeLatestReadings(setup.aquarium.id).first(),
+        )
+        fixture.close()
+    }
+
+    @Test
+    fun `outside indicative range uses the definition bounds`() {
+        val bounded = ParameterDefinition(
+            id = "p", aquariumId = "a", parameter = BuiltInParameter.entries.first(), isActive = true,
+            position = 0, unit = "", precision = 1, indicativeMinimum = 6.5, indicativeMaximum = 7.5,
+        )
+        assertTrue(bounded.isOutsideIndicativeRange(6.4))
+        assertEquals(false, bounded.isOutsideIndicativeRange(7.5))
+        assertTrue(bounded.isOutsideIndicativeRange(7.6))
+        val open = bounded.copy(indicativeMinimum = null, indicativeMaximum = null)
+        assertEquals(false, open.isOutsideIndicativeRange(1_000.0))
+    }
+
     private fun sessionFixture(): SessionFixture {
         val path = Files.createTempDirectory("aqualog-rapid-session")
             .resolve("aqualog.db")

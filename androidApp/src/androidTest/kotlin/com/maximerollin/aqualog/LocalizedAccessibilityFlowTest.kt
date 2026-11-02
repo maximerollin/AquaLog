@@ -11,7 +11,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasImeAction
@@ -19,6 +21,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -72,7 +75,7 @@ class LocalizedAccessibilityFlowTest {
         }
         ActivityScenario.launch(MainActivity::class.java).use {
             val localized = localizedContext("de")
-            val settings = localized.getString(Res.string.navigation_settings)
+            val settings = localized.getString(Res.string.navigation_more)
             awaitText(settings)
             compose.onNodeWithText(settings).performClick()
             val restore = localized.getString(Res.string.restore_from_export)
@@ -84,6 +87,39 @@ class LocalizedAccessibilityFlowTest {
             assertTrue("Restore action must render its text", layouts.isNotEmpty())
             assertFalse("Restore action must not clip its visible label", layouts.any { it.hasVisualOverflow })
             captureAndInspect("restore-complete-de-dark-large.png")
+        }
+    }
+
+    @Test
+    fun selectedMaintenanceChip_exposesA48dpRemoveTarget_andADeselectAction() {
+        configure("en", darkLarge = false)
+        val application = context.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        runBlocking {
+            application.aquariumRepository.createConfiguredAquarium(
+                "Aqua 120", 120.5, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+        }
+        ActivityScenario.launch(MainActivity::class.java).use {
+            val localized = localizedContext("en")
+            val measure = localized.getString(Res.string.measure_action)
+            awaitText(measure)
+            compose.onNodeWithText(measure).performClick()
+            val waterChange = localized.getString(Res.string.action_water_change)
+            awaitText(waterChange)
+            compose.onNodeWithTag("rapid-session-list").performScrollToNode(hasText(waterChange))
+            compose.onNodeWithText(waterChange).performClick()
+            val remove = localized.getString(Res.string.remove_action, waterChange)
+            val target = compose.onNode(hasContentDescription(remove) and hasClickAction())
+            target.assertExists()
+            assertMinimumTouchTarget(target.fetchSemanticsNode().touchBoundsInRoot)
+            val chipActions = compose.onNodeWithText(waterChange)
+                .fetchSemanticsNode().config[SemanticsActions.CustomActions].map { it.label }
+            assertTrue("the chip must expose a deselect action, had $chipActions", remove in chipActions)
+            target.performClick()
+            compose.onAllNodes(hasContentDescription(remove)).assertCountEquals(0)
+            compose.onNodeWithText(waterChange).assertExists()
         }
     }
 
@@ -205,18 +241,19 @@ class LocalizedAccessibilityFlowTest {
             }
             ActivityScenario.launch(MainActivity::class.java).use {
                 val localized = localizedContext(language)
-                val newSession = localized.getString(Res.string.new_session)
-                awaitText(newSession)
+                val measure = localized.getString(Res.string.measure_action)
+                awaitText(measure)
                 assertEssentialActions(
-                    newSession,
-                    localized.getString(Res.string.open_tasks),
+                    measure,
+                    localized.getString(Res.string.home_see_all),
                     localized.getString(Res.string.navigation_history),
-                    localized.getString(Res.string.navigation_settings),
+                    localized.getString(Res.string.navigation_trends),
+                    localized.getString(Res.string.navigation_more),
                 )
                 assertCriticalText("Aqua 120")
                 captureAndInspect("home-$language-$mode.png")
 
-                compose.onNodeWithText(newSession).performClick()
+                compose.onNodeWithText(measure).performClick()
                 val saveSession = localized.getString(Res.string.save_session)
                 awaitText(saveSession)
                 assertAction(saveSession)
@@ -235,28 +272,30 @@ class LocalizedAccessibilityFlowTest {
                 awaitText(cancel)
                 compose.onNodeWithText(cancel).performClick()
 
-                val tasks = localized.getString(Res.string.open_tasks)
+                val tasks = localized.getString(Res.string.home_see_all)
                 compose.onNodeWithText(tasks).performClick()
                 awaitText(localized.getString(Res.string.tasks_title))
                 assertCriticalText(localized.getString(Res.string.tasks_title))
-                compose.onNodeWithTag("task-list").performScrollToNode(
-                    hasText(localized.getString(Res.string.save_task)),
-                )
-                compose.onNode(
-                    hasText(localized.getString(Res.string.save_task)) and hasClickAction(),
-                ).performScrollTo()
-                assertAction(localized.getString(Res.string.save_task))
-                captureAndInspect("tasks-$language-$mode.png")
-                compose.onNodeWithTag("task-list").performScrollToNode(hasText(localized.getString(Res.string.back)))
+                assertAction(localized.getString(Res.string.new_task))
                 assertEssentialActionByTag("tasks-back")
+                captureAndInspect("tasks-$language-$mode.png")
+                compose.onNodeWithText(localized.getString(Res.string.new_task)).performClick()
+                awaitText(localized.getString(Res.string.save_task))
+                compose.onNode(hasText(localized.getString(Res.string.save_task)) and hasClickAction()).performScrollTo()
+                assertAction(localized.getString(Res.string.save_task))
+                captureAndInspect("task-sheet-$language-$mode.png")
+                compose.onNode(hasText(localized.getString(Res.string.close)) and hasClickAction()).performClick()
+                compose.waitUntil(10_000) {
+                    compose.onAllNodes(hasText(localized.getString(Res.string.save_task))).fetchSemanticsNodes().isEmpty()
+                }
                 compose.onNodeWithText(localized.getString(Res.string.back)).performClick()
 
                 compose.onNodeWithText(localized.getString(Res.string.navigation_history)).performClick()
                 awaitText(localized.getString(Res.string.timeline_title))
                 assertCriticalText(localized.getString(Res.string.timeline_title))
                 captureAndInspect("timeline-$language-$mode.png")
-                assertEssentialActions(localized.getString(Res.string.trends_title))
-                compose.onNodeWithText(localized.getString(Res.string.trends_title)).performClick()
+                compose.onNodeWithText(localized.getString(Res.string.navigation_trends)).performClick()
+                compose.onAllNodesWithTag("trend-row")[0].performClick()
                 compose.onNodeWithTag("trend-list").performScrollToNode(
                     hasText(localized.getString(Res.string.trends_exact_values)),
                 )
@@ -264,14 +303,14 @@ class LocalizedAccessibilityFlowTest {
                 assertCriticalText(localized.getString(Res.string.trends_exact_values))
                 captureAndInspect("trends-$language-$mode.png")
 
-                compose.onNodeWithText(localized.getString(Res.string.navigation_settings)).performClick()
+                compose.onNodeWithText(localized.getString(Res.string.navigation_more)).performClick()
                 awaitText(localized.getString(Res.string.aquariums_title))
                 assertAction(localized.getString(Res.string.add_aquarium))
-                scrollAndAssertEssentialAction(localized.getString(Res.string.edit_aquarium))
+                scrollSettingsAndAssertEssentialAction(localized.getString(Res.string.edit_aquarium))
                 captureAndInspect("settings-aquariums-$language-$mode.png")
                 scrollSettingsTo(localized.getString(Res.string.portable_data_title))
-                scrollAndAssertEssentialAction(localized.getString(Res.string.export_data))
-                scrollAndAssertEssentialAction(localized.getString(Res.string.restore_from_export))
+                scrollSettingsAndAssertEssentialAction(localized.getString(Res.string.export_data))
+                scrollSettingsAndAssertEssentialAction(localized.getString(Res.string.restore_from_export))
                 captureAndInspect("settings-export-$language-$mode.png")
                 scrollSettingsTo(localized.getString(Res.string.account_actions))
                 captureAndInspect("settings-account-$language-$mode.png")
@@ -354,14 +393,20 @@ class LocalizedAccessibilityFlowTest {
         action.assertIsDisplayed()
         val bounds = action.fetchSemanticsNode().boundsInRoot
         assertMinimumTouchTarget(bounds)
-        val viewport = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        // A sheet adds a second root with the same bounds as the window.
+        val viewport = compose.onAllNodes(isRoot()).fetchSemanticsNodes().first().boundsInRoot
         assertTrue("$label must not be clipped horizontally", bounds.left >= viewport.left && bounds.right <= viewport.right)
         assertTrue("$label must not be clipped vertically", bounds.top >= viewport.top && bounds.bottom <= viewport.bottom)
     }
 
+    // A label may back several actions (the home's Trends link and the Trends tab): each one is checked.
     private fun assertEssentialActions(vararg labels: String) {
-        val actions = labels.map { label ->
-            val interaction = compose.onNode(hasText(label) and hasClickAction())
+        val actions = labels.flatMap { label ->
+            val matches = compose.onAllNodes(hasText(label) and hasClickAction())
+            val count = matches.fetchSemanticsNodes().size
+            assertTrue("$label must be an action", count > 0)
+            (0 until count).map { index -> label to matches[index] }
+        }.map { (label, interaction) ->
             interaction.assertIsDisplayed()
             val node = interaction.fetchSemanticsNode()
             val accessibleName = buildString {
@@ -411,6 +456,12 @@ class LocalizedAccessibilityFlowTest {
     private fun scrollSettingsTo(label: String) {
         compose.onNodeWithTag("settings-list").performScrollToNode(hasText(label))
         assertTrue(compose.onAllNodes(hasText(label)).fetchSemanticsNodes().isNotEmpty())
+    }
+
+    // A settings row can sit beyond the lazy list's composed items: bring it into composition first.
+    private fun scrollSettingsAndAssertEssentialAction(label: String) {
+        scrollSettingsTo(label)
+        scrollAndAssertEssentialAction(label)
     }
 
     private fun scrollAndAssertEssentialAction(label: String) {

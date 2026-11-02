@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -44,10 +45,12 @@ class SyncStatusFlowTest {
         composeRule.onNodeWithText("Continue for free").performClick()
 
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodes(hasText("○ Sync pending")).fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodes(hasText("Measure")).fetchSemanticsNodes().isNotEmpty()
         }
+        composeRule.onNodeWithText("Measure").assertIsDisplayed()
+        composeRule.onNodeWithText("More").performClick()
+        waitForSettingsText("○ Sync pending")
         composeRule.onNodeWithText("○ Sync pending").assertIsDisplayed()
-        composeRule.onNodeWithText("New Session").assertIsDisplayed()
         scenario.close()
     }
 
@@ -82,9 +85,18 @@ class SyncStatusFlowTest {
         composeRule.onNodeWithText("Connection timed out").assertIsDisplayed()
         composeRule.onNodeWithText("Retry sync").performClick()
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodes(hasText("○ Sync pending")).fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodes(hasText("Retry sync")).fetchSemanticsNodes().isEmpty()
         }
+        composeRule.onNodeWithText("More").performClick()
+        waitForSettingsText("○ Sync pending")
 
         scenario.close()
+    }
+
+    // The settings list is lazy: the status line exists only once it is scrolled into composition.
+    private fun waitForSettingsText(text: String) {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            runCatching { composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(text)) }.isSuccess
+        }
     }
 }

@@ -103,9 +103,18 @@ fun evaluateMeasurement(input: String, definition: ParameterDefinition): Measure
     if (input.isBlank()) return MeasurementFeedback(null, isValid = true, isOutsideIndicativeRange = false)
     val value = parseDecimalInput(input)
         ?: return MeasurementFeedback(null, isValid = false, isOutsideIndicativeRange = false)
-    val outside = definition.indicativeMinimum?.let { value < it } == true ||
-        definition.indicativeMaximum?.let { value > it } == true
-    return MeasurementFeedback(value, isValid = value.isFinite(), isOutsideIndicativeRange = outside)
+    return MeasurementFeedback(value, isValid = value.isFinite(), isOutsideIndicativeRange = definition.isOutsideIndicativeRange(value))
 }
+
+fun ParameterDefinition.isOutsideIndicativeRange(value: Double): Boolean =
+    indicativeMinimum?.let { value < it } == true || indicativeMaximum?.let { value > it } == true
+
+data class LatestReading(
+    val parameterDefinitionId: String,
+    val value: Double,
+    val occurredAtEpochMillis: Long,
+    /** The second-newest value of the same parameter, for the trend; null when there is only one. */
+    val previousValue: Double? = null,
+)
 
 fun parseDecimalInput(input: String): Double? = input.trim().replace(',', '.').toDoubleOrNull()

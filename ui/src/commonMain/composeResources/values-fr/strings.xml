@@ -90,23 +90,22 @@
 
     <string name="home_title">Votre aquarium</string>
     <string name="aquarium_ready">Prêt pour votre prochaine routine</string>
-    <string name="no_session_yet">Pas encore de Session</string>
-    <string name="no_session_description">Les valeurs de votre essai n'ont pas été enregistrées. Commencez lorsque vous avez de vraies Mesures ou une Action d’entretien à enregistrer.</string>
-    <string name="new_session">Nouvelle Session</string>
     <string name="open_tasks">Tâches et rappels</string>
+    <string name="more_section_tasks">Tâches</string>
+    <string name="more_section_plan">Offre</string>
+    <string name="more_section_help">Aide</string>
     <string name="volume_liters_format">%1$s L</string>
     <string name="volume_us_gallons_format">%1$s gal US</string>
 
     <string name="rapid_session_title">Nouvelle Session</string>
     <string name="cancel">Annuler</string>
     <string name="picker_confirm">OK</string>
-    <string name="session_aquarium">Aquarium : %1$s</string>
+    <string name="remove_action">Retirer %1$s</string>
     <string name="earlier_time">−15 minutes</string>
     <string name="later_time">+15 minutes</string>
     <string name="measurements_heading">Mesures</string>
     <string name="measurement_for_parameter">Mesure pour %1$s</string>
     <string name="last_measurement">Dernière mesure : %1$s %2$s · la nouvelle valeur reste vide</string>
-    <string name="no_previous_measurement">Pas encore mesuré · laisser vide pour sauter</string>
     <string name="invalid_measurement">Entrez un nombre décimal en utilisant un point ou une virgule.</string>
     <string name="unusual_measurement">Hors de votre plage indicative. Vérifiez la valeur ; l’enregistrement reste disponible.</string>
     <string name="maintenance_heading">Actions d'entretien</string>
@@ -116,7 +115,6 @@
     <string name="action_vacuum">Siphonnage</string>
     <string name="action_glass">Nettoyage des vitres</string>
     <string name="action_pruning">Taille</string>
-    <string name="edit_action">Modifier</string>
     <string name="action_quantity">Quantité</string>
     <string name="action_product">Produit</string>
     <string name="add_observation">Ajouter une observation</string>
@@ -127,7 +125,6 @@
     <string name="incident">Incident</string>
     <string name="save_session">Enregistrer la session</string>
     <string name="session_save_error">La session n'a pas pu être enregistrée. Vos entrées sont toujours là ; essayer à nouveau.</string>
-    <string name="session_saved">Session enregistrée</string>
     <string name="session_saved_description">Confirmation dans la Chronologie · %1$s · %2$s</string>
     <plurals name="session_measurement_count"><item quantity="one">%1$d Mesure</item><item quantity="other">%1$d Mesures</item></plurals>
     <plurals name="session_maintenance_count"><item quantity="one">%1$d Action d’entretien</item><item quantity="other">%1$d Actions d’entretien</item></plurals>
@@ -160,7 +157,6 @@
     <string name="view_session_details">Afficher les détails de la session</string>
     <string name="session_details">Détails de la Session</string>
     <string name="session_date">Enregistrée le %1$s</string>
-    <string name="session_measurement_detail">%1$s · %2$s %3$s</string>
     <string name="session_action_detail">%1$s · %2$s</string>
     <string name="session_event_detail">%1$s · %2$s</string>
     <string name="edit_session">Modifier la session</string>
@@ -170,10 +166,10 @@
     <string name="delete_session_description">Ses Mesures, Actions d’entretien et Événements seront également supprimés de cet appareil.</string>
     <string name="delete">Supprimer</string>
 
-    <string name="navigation_home">Accueil</string>
+    <string name="navigation_tank">Bac</string>
     <string name="navigation_history">Historique</string>
-    <string name="navigation_settings">Paramètres</string>
-    <string name="settings_title">Paramètres</string>
+    <string name="navigation_trends">Tendances</string>
+    <string name="navigation_more">Plus</string>
     <string name="aquariums_title">Aquariums</string>
     <string name="add_aquarium">Ajouter un aquarium</string>
     <string name="edit_aquarium">Modifier l'aquarium</string>
@@ -182,7 +178,6 @@
     <string name="free_one_aquarium_limit">Free conserve toutes les données existantes et autorise un seul aquarium. Pro débloque des aquariums supplémentaires.</string>
     <string name="settings_placeholder">Les réglages du compte, des unités et de l’apparence seront ajoutés dans leurs sections dédiées.</string>
     <string name="feedback_title">Envoyer des commentaires</string>
-    <string name="feedback_settings_description">Partagez un message volontaire via le canal de commentaires dédié. Ils ne sont jamais copiés dans les analyses de produits ou les rapports d'erreur.</string>
     <string name="send_feedback">Envoyer des commentaires</string>
     <string name="feedback_privacy_explanation">Seul le message que vous tapez ci-dessous est soumis. Aquagenda ne joint pas les valeurs de l'eau, les notes ou observations enregistrées, les noms d'aquarium, les adresses e-mail, les photos ou les identifiants analytiques. Évitez d'ajouter des informations personnelles que vous ne souhaitez pas partager.</string>
     <string name="feedback_message_label">Message de commentaires</string>
@@ -198,7 +193,6 @@
     <string name="sync_failure_unknown">La synchronisation n'a pas été terminée. Vos données locales restent disponibles.</string>
     <string name="sync_retry">Réessayez la synchronisation</string>
     <string name="portable_data_title">Données locales portables</string>
-    <string name="portable_data_description">Enregistrez ou restaurez votre copie Aquagenda locale avec le stockage de documents Android.</string>
     <string name="portable_data_replace_explanation">La restauration valide d'abord l'intégralité du fichier, puis remplace atomiquement les données d'Aquarium sur cet appareil. Les identifiants stables évitent les doublons. Les informations d'identification du compte et les données de facturation ne sont jamais incluses.</string>
     <string name="export_data">Exporter des données</string>
     <string name="restore_from_export">Restaurer depuis l'exportation</string>
@@ -269,30 +263,25 @@
     <string name="timeline_error">L'historique local n'a pas pu être lu. Vos données enregistrées sont toujours sur cet appareil.</string>
     <string name="retry">Réessayer</string>
     <string name="timeline_session">Session</string>
-    <string name="timeline_task">Occurrence de tâche</string>
     <string name="open_session_details">Détails de la session ouverte</string>
     <string name="back_to_timeline">Retour à la Chronologie</string>
     <string name="timeline_events">Événements</string>
-    <plurals name="timeline_measurement_count">
-        <item quantity="one">%1$d mesure</item>
-        <item quantity="other">%1$d mesures</item>
-    </plurals>
     <plurals name="timeline_action_count">
         <item quantity="one">%1$d action d’entretien</item>
         <item quantity="other">%1$d actions d’entretien</item>
     </plurals>
-    <plurals name="timeline_event_count">
-        <item quantity="one">%1$d événement</item>
-        <item quantity="other">%1$d événements</item>
-    </plurals>
 
     <string name="trends_title">Tendances</string>
-    <string name="trends_heading">Tendances récentes</string>
     <string name="trends_free_limit">Les tendances gratuites s'affichent jusqu'à 90 jours. Les données plus anciennes restent enregistrées.</string>
     <string name="trends_parameter_heading">Tendance %1$s</string>
     <string name="trends_indicative_target">Cible indicative %1$s–%2$s %3$s · référence uniquement, pas un diagnostic</string>
     <string name="trends_chart_description">Graphique de tendance %1$s · Marqueurs de lignes pleines et de points circulaires · Cible indicative hachurée · Marqueurs d'événements en diamant</string>
     <string name="trends_legend">● Mesures · ▧ cible indicative hachurée · ◆ Événements</string>
+    <string name="trends_sparkline_legend">Bande teintée : plage indicative · ▲ Changements d'eau</string>
+    <string name="trends_row_expanded">Développé</string>
+    <string name="trends_row_collapsed">Réduit</string>
+    <string name="trends_row_show_chart">Afficher le graphique</string>
+    <string name="trends_row_hide_chart">Masquer le graphique</string>
     <string name="trends_series_label">● Série %1$s</string>
     <string name="parameter_with_unit">%1$s (%2$s)</string>
     <string name="value_with_unit">%1$s %2$s</string>
@@ -355,14 +344,31 @@
     <string name="task_complete">Fait</string>
     <string name="task_postpone">+1 jour</string>
     <string name="task_ignore">Ignorer</string>
+    <string name="task_more_actions">Plus d’actions</string>
     <string name="task_completed">Complété</string>
     <string name="task_postponed">Reporté</string>
     <string name="task_ignored">Ignoré</string>
-    <string name="task_resolved_value">%1$s · résolu sur %2$s</string>
     <string name="allow_notifications">Autoriser les notifications</string>
     <string name="notification_permission_explanation">L'autorisation de notification Android est requise pour afficher les rappels de tâches. Les tâches restent disponibles dans Aquagenda si vous refusez.</string>
     <string name="battery_optimization_explanation">L'optimisation de la batterie Android est active. Cela peut retarder les rappels ; Les tâches et leurs dates d'échéance restent stockées localement.</string>
     <string name="timeline_filters">Filtres</string>
-    <string name="measurement_reading">%1$s · %2$s %3$s</string>
-    <string name="last_measurement_compact">Dernière : %1$s %2$s</string>
+    <string name="measure_action">Mesurer</string>
+    <string name="latest_values_title">Dernières valeurs</string>
+    <string name="home_today">Aujourd’hui</string>
+    <string name="home_see_all">Tout voir</string>
+    <string name="home_task_overdue">en retard</string>
+    <string name="home_change_aquarium">Changer d’aquarium</string>
+    <string name="home_alert_due_today">aujourd’hui</string>
+    <string name="home_nothing_due">Rien à faire · prochaine : %1$s le %2$s</string>
+    <string name="home_no_measurement_yet">Pas encore de mesure</string>
+    <string name="home_status_all_in_range">Tout est dans la plage</string>
+    <plurals name="home_status_outside_range"><item quantity="one">%1$d valeur à surveiller</item><item quantity="other">%1$d valeurs à surveiller</item></plurals>
+    <string name="home_measured_today">mesuré aujourd’hui</string>
+    <string name="home_measured_yesterday">mesuré hier</string>
+    <plurals name="home_measured_days_ago"><item quantity="one">mesuré il y a %1$d j</item><item quantity="other">mesuré il y a %1$d j</item></plurals>
+    <plurals name="reading_age_days"><item quantity="one">il y a %1$d j</item><item quantity="other">il y a %1$d j</item></plurals>
+    <string name="reading_attention_description">hors de votre plage indicative</string>
+    <string name="trend_up">en hausse</string>
+    <string name="trend_down">en baisse</string>
+    <string name="trend_flat">stable</string>
 </resources>

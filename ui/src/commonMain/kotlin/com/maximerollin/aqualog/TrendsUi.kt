@@ -2,7 +2,6 @@ package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,13 +12,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.OutlinedTextField
@@ -39,6 +40,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.maximerollin.aqualog.ui.theme.CarnetDivider
+import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.ParameterTrendSeries
@@ -67,133 +70,157 @@ fun TrendsScreen(
 @Composable
 private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
     val snapshot = state.trends.snapshot
-    val selected = snapshot?.series?.firstOrNull {
-        it.definition.id == state.trends.selectedParameterDefinitionId
-    }
+    val context = listOfNotNull(snapshot?.aquarium?.name, stringResource(state.trends.period.labelRes()))
+        .joinToString(" · ")
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("trend-list"),
         contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(Res.string.trends_heading), style = MaterialTheme.typography.headlineMedium)
-                Text(
-                    stringResource(
-                        if (state.trends.advancedAnalysis == null) Res.string.trends_free_limit
-                        else Res.string.trends_pro_complete_history,
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (state.pro.purchaseStatus != ProPurchaseStatus.ACTIVE) {
-                    TextButton(
-                        onClick = viewModel::openProPaywall,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) {
-                        Text(stringResource(Res.string.unlock_history_beyond_90_days))
-                    }
-                }
-                if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
-                    Button(
-                        onClick = viewModel::showCompleteProHistory,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(stringResource(Res.string.trends_complete_history)) }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = state.trends.customStartDate,
-                            onValueChange = viewModel::updateTrendCustomStart,
-                            label = { Text(stringResource(Res.string.trends_start_date)) },
-                            supportingText = { Text(stringResource(Res.string.date_format_hint)) },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                        OutlinedTextField(
-                            value = state.trends.customEndDate,
-                            onValueChange = viewModel::updateTrendCustomEnd,
-                            label = { Text(stringResource(Res.string.trends_end_date)) },
-                            supportingText = { Text(stringResource(Res.string.date_format_hint)) },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    Button(
-                        onClick = viewModel::applyTrendCustomPeriod,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(stringResource(Res.string.trends_apply_custom_period)) }
-                    if (state.trends.customDateError) {
-                        Text(stringResource(Res.string.trends_invalid_custom_period), color = MaterialTheme.colorScheme.error)
-                    }
-                }
-            }
+            CarnetScreenTitle(stringResource(Res.string.trends_title), context, Modifier.padding(top = 12.dp))
         }
         item { TrendPeriods(state.trends.period, viewModel::selectTrendPeriod) }
-        if (snapshot != null) {
+        snapshot?.series?.sortedBy { it.definition.position }?.forEach { series ->
+            val expanded = series.definition.id == state.trends.selectedParameterDefinitionId
+            item(key = "trend-row-${series.definition.id}") {
+                Column {
+                    CarnetDivider()
+                    TrendSparklineRow(
+                        series = series,
+                        snapshot = snapshot,
+                        selected = expanded,
+                        onClick = { viewModel.selectTrendParameter(if (expanded) null else series.definition.id) },
+                    )
+                }
+            }
+            if (expanded) trendDetails(series, snapshot)
+        }
+        if (snapshot?.series?.isNotEmpty() == true) {
             item {
-                TrendParameters(
-                    snapshot = snapshot,
-                    selectedParameterDefinitionId = state.trends.selectedParameterDefinitionId,
-                    onSelect = viewModel::selectTrendParameter,
+                Text(
+                    stringResource(Res.string.trends_sparkline_legend),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
         }
-        if (selected != null) {
-            item { TrendSeriesHeading(selected) }
-            item { TrendChart(selected, snapshot) }
-            item {
+        item { TrendProRow(state, viewModel) }
+        state.trends.advancedAnalysis?.let { analysis ->
+            item { AdvancedAnalysis(analysis, viewModel::selectTrendIntervention) }
+        }
+    }
+}
+
+/** The existing full chart, exact values and Events, shown in place under the expanded row. */
+private fun LazyListScope.trendDetails(selected: ParameterTrendSeries, snapshot: TrendSnapshot) {
+    item { TrendSeriesHeading(selected) }
+    item { TrendChart(selected, snapshot) }
+    item {
+        Text(
+            stringResource(Res.string.trends_legend),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+    item { Text(stringResource(Res.string.trends_exact_values), style = MaterialTheme.typography.titleLarge) }
+    if (selected.points.isEmpty()) {
+        item { EmptyTrendCard() }
+    } else {
+        items(selected.points, key = { "trend-point-${it.sessionId}" }) { point ->
+            val value = point.value.displayTrendValue(selected.definition.precision)
+            val exactValueDescription = stringResource(
+                Res.string.trends_exact_value_description,
+                value,
+                selected.definition.unit,
+            )
+            Card(
+                Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        contentDescription = exactValueDescription
+                    },
+            ) {
                 Text(
-                    stringResource(Res.string.trends_legend),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
+                    stringResource(
+                        Res.string.timeline_marker_line,
+                        point.occurredAtEpochMillis.displayTrendDate(),
+                        stringResource(Res.string.value_with_unit, value, selected.definition.unit),
+                    ),
+                    modifier = Modifier.padding(16.dp),
                 )
             }
-            item { Text(stringResource(Res.string.trends_exact_values), style = MaterialTheme.typography.titleLarge) }
-            if (selected.points.isEmpty()) {
-                item { EmptyTrendCard() }
-            } else {
-                items(selected.points, key = { "trend-point-${it.sessionId}" }) { point ->
-                    val value = point.value.displayTrendValue(selected.definition.precision)
-                    val exactValueDescription = stringResource(
-                        Res.string.trends_exact_value_description,
-                        value,
-                        selected.definition.unit,
-                    )
-                    Card(
-                        Modifier
-                            .fillMaxWidth()
-                            .semantics {
-                                contentDescription = exactValueDescription
-                            },
-                    ) {
-                        Text(
-                            stringResource(
-                                Res.string.timeline_marker_line,
-                                point.occurredAtEpochMillis.displayTrendDate(),
-                                stringResource(Res.string.value_with_unit, value, selected.definition.unit),
-                            ),
-                            modifier = Modifier.padding(16.dp),
-                        )
-                    }
-                }
+        }
+    }
+    item { Text(stringResource(Res.string.trends_events), style = MaterialTheme.typography.titleLarge) }
+    if (snapshot.events.isEmpty()) {
+        item { Text(stringResource(Res.string.trends_no_events)) }
+    } else {
+        items(snapshot.events, key = { "trend-event-${it.sessionId}" }) { marker ->
+            Card(Modifier.fillMaxWidth()) {
+                Text(
+                    stringResource(
+                        Res.string.timeline_marker_line,
+                        marker.occurredAtEpochMillis.displayTrendDate(),
+                        marker.displayText(),
+                    ),
+                    modifier = Modifier.padding(16.dp),
+                )
             }
-            item { Text(stringResource(Res.string.trends_events), style = MaterialTheme.typography.titleLarge) }
-            if (snapshot.events.isEmpty()) {
-                item { Text(stringResource(Res.string.trends_no_events)) }
-            } else {
-                items(snapshot.events, key = { "trend-event-${it.sessionId}" }) { marker ->
-                    Card(Modifier.fillMaxWidth()) {
-                        Text(
-                            stringResource(
-                                Res.string.timeline_marker_line,
-                                marker.occurredAtEpochMillis.displayTrendDate(),
-                                marker.displayText(),
-                            ),
-                            modifier = Modifier.padding(16.dp),
-                        )
-                    }
-                }
+        }
+    }
+}
+
+/** Last row of the list: the history limit and the Pro entry (complete history, custom period). */
+@Composable
+private fun TrendProRow(state: HomeUiState, viewModel: HomeViewModel) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        CarnetDivider()
+        Text(
+            stringResource(
+                if (state.trends.advancedAnalysis == null) Res.string.trends_free_limit
+                else Res.string.trends_pro_complete_history,
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        if (state.pro.purchaseStatus != ProPurchaseStatus.ACTIVE) {
+            TextButton(
+                onClick = viewModel::openProPaywall,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) {
+                Text(stringResource(Res.string.unlock_history_beyond_90_days))
             }
-            state.trends.advancedAnalysis?.let { analysis ->
-                item { AdvancedAnalysis(analysis, viewModel::selectTrendIntervention) }
+        }
+        if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
+            Button(
+                onClick = viewModel::showCompleteProHistory,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) { Text(stringResource(Res.string.trends_complete_history)) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = state.trends.customStartDate,
+                    onValueChange = viewModel::updateTrendCustomStart,
+                    label = { Text(stringResource(Res.string.trends_start_date)) },
+                    supportingText = { Text(stringResource(Res.string.date_format_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedTextField(
+                    value = state.trends.customEndDate,
+                    onValueChange = viewModel::updateTrendCustomEnd,
+                    label = { Text(stringResource(Res.string.trends_end_date)) },
+                    supportingText = { Text(stringResource(Res.string.date_format_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Button(
+                onClick = viewModel::applyTrendCustomPeriod,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) { Text(stringResource(Res.string.trends_apply_custom_period)) }
+            if (state.trends.customDateError) {
+                Text(stringResource(Res.string.trends_invalid_custom_period), color = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -448,50 +475,23 @@ private fun DescriptiveTrendDirection.label(): String = stringResource(
     },
 )
 
-@Composable
-private fun TrendPeriods(selected: TrendPeriod, onSelect: (TrendPeriod) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        TrendPeriod.entries.forEach { period ->
-            FilterChip(
-                selected = selected == period,
-                onClick = { onSelect(period) },
-                label = {
-                    Text(
-                        stringResource(
-                            when (period) {
-                                TrendPeriod.SEVEN_DAYS -> Res.string.timeline_period_7
-                                TrendPeriod.THIRTY_DAYS -> Res.string.timeline_period_30
-                                TrendPeriod.NINETY_DAYS -> Res.string.timeline_period_90
-                            },
-                        ),
-                    )
-                },
-                modifier = Modifier.heightIn(min = 48.dp),
-            )
-        }
-    }
+private fun TrendPeriod.labelRes() = when (this) {
+    TrendPeriod.SEVEN_DAYS -> Res.string.timeline_period_7
+    TrendPeriod.THIRTY_DAYS -> Res.string.timeline_period_30
+    TrendPeriod.NINETY_DAYS -> Res.string.timeline_period_90
 }
 
 @Composable
-private fun TrendParameters(
-    snapshot: TrendSnapshot,
-    selectedParameterDefinitionId: String?,
-    onSelect: (String) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        snapshot.series.forEach { series ->
-            FilterChip(
-                selected = selectedParameterDefinitionId == series.definition.id,
-                onClick = { onSelect(series.definition.id) },
-                label = { Text(series.definition.parameter.label()) },
+private fun TrendPeriods(selected: TrendPeriod, onSelect: (TrendPeriod) -> Unit) {
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        TrendPeriod.entries.forEachIndexed { index, period ->
+            SegmentedButton(
+                selected = selected == period,
+                onClick = { onSelect(period) },
+                shape = SegmentedButtonDefaults.itemShape(index, TrendPeriod.entries.size),
+                icon = {},
                 modifier = Modifier.heightIn(min = 48.dp),
-            )
+            ) { Text(stringResource(period.labelRes())) }
         }
     }
 }

@@ -32,6 +32,10 @@ class LocalizedFormatters(
         DateFormat.SHORT, DateFormat.SHORT, formatLocale,
     ).apply { timeZone = this@LocalizedFormatters.timeZone }.format(Date(epochMillis))
 
+    fun clock(epochMillis: Long): String = DateFormat.getTimeInstance(DateFormat.SHORT, formatLocale).apply {
+        timeZone = this@LocalizedFormatters.timeZone
+    }.format(Date(epochMillis))
+
     fun date(epochMillis: Long): String = DateFormat.getDateInstance(DateFormat.MEDIUM, formatLocale).apply {
         timeZone = this@LocalizedFormatters.timeZone
     }.format(Date(epochMillis))

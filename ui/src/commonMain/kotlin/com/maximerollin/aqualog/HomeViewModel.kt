@@ -63,6 +63,7 @@ import com.maximerollin.aqualog.shared.SyncState
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.TimelineFilter
 import com.maximerollin.aqualog.shared.TimelineSession
+import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskInput
 import com.maximerollin.aqualog.shared.TaskUsage
@@ -91,6 +92,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.io.Serializable
 import java.time.LocalDate
@@ -133,9 +135,10 @@ data class AccountUiState(
 )
 
 enum class MainDestination {
-    HOME,
+    TANK,
     HISTORY,
-    SETTINGS,
+    TRENDS,
+    MORE,
 }
 
 enum class TimelinePeriod(val days: Int?) {
@@ -143,11 +146,6 @@ enum class TimelinePeriod(val days: Int?) {
     SEVEN_DAYS(7),
     THIRTY_DAYS(30),
     NINETY_DAYS(90),
-}
-
-enum class HistorySection {
-    CHRONOLOGY,
-    TRENDS,
 }
 
 data class TimelineUiState(
@@ -159,7 +157,6 @@ data class TimelineUiState(
     val aquariumId: String? = null,
     val parameterDefinitionId: String? = null,
     val maintenanceActionType: MaintenanceActionType? = null,
-    val selectedSessionId: String? = null,
     val filtersExpanded: Boolean = false,
     val hasRecoverableError: Boolean = false,
 )
@@ -174,6 +171,8 @@ data class TaskUiState(
     val showValidationError: Boolean = false,
     val isSaving: Boolean = false,
     val batteryOptimizationActive: Boolean = false,
+    /** Counts the saves that succeeded: the screen closes its creation sheet when it changes. */
+    val savedCount: Int = 0,
 )
 
 data class TrendsUiState(
@@ -341,13 +340,13 @@ data class HomeUiState(
     val showParameterValidationError: Boolean = false,
     val rapidSession: RapidSessionUiState? = null,
     val latestSession: RecordedSession? = null,
+    val latestReadings: List<LatestReading> = emptyList(),
     val accountInvitationPrompt: AccountInvitationPrompt = AccountInvitationPrompt.NONE,
     val account: AccountUiState = AccountUiState(),
     val sessionDetail: RecordedSession? = null,
     val sessionDetailReturnsToTimeline: Boolean = false,
     val showDeleteConfirmation: Boolean = false,
-    val destination: MainDestination = MainDestination.HOME,
-    val historySection: HistorySection = HistorySection.CHRONOLOGY,
+    val destination: MainDestination = MainDestination.TANK,
     val timeline: TimelineUiState = TimelineUiState(),
     val trends: TrendsUiState = TrendsUiState(),
     val pro: ProUiState = ProUiState(),
@@ -459,20 +458,29 @@ class HomeViewModel(
                         setup = setup,
                         isSaving = false,
                         latestSession = if (setup == null) null else it.latestSession,
+                        latestReadings = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.latestReadings else emptyList(),
                     )
                 }
                 if (setup != null) {
                     restoreRapidSessionContext(setup)
-                    aquariumRepository.observeLatestSession(setup.aquarium.id).collect { latest ->
-                        mutableUiState.update { state ->
-                            state.copy(
-                                latestSession = latest,
-                                sessionDetail = if (state.sessionDetail?.session?.id == latest?.session?.id) {
-                                    latest
-                                } else {
-                                    state.sessionDetail
-                                },
-                            )
+                    // coroutineScope keeps both collectors under collectLatest, so switching Aquarium cancels them.
+                    coroutineScope {
+                        launch {
+                            aquariumRepository.observeLatestReadings(setup.aquarium.id).collect { readings ->
+                                mutableUiState.update { it.copy(latestReadings = readings) }
+                            }
+                        }
+                        aquariumRepository.observeLatestSession(setup.aquarium.id).collect { latest ->
+                            mutableUiState.update { state ->
+                                state.copy(
+                                    latestSession = latest,
+                                    sessionDetail = if (state.sessionDetail?.session?.id == latest?.session?.id) {
+                                        latest
+                                    } else {
+                                        state.sessionDetail
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -1240,7 +1248,7 @@ class HomeViewModel(
                 taskReminderScheduler.schedule(created.occurrence)
                 recordProductEvent(ProductEvent.TaskUsed(TaskUsage.CREATED))
                 updateTasks {
-                    it.copy(title = "", time = "", isSaving = false, showValidationError = false)
+                    it.copy(title = "", time = "", isSaving = false, showValidationError = false, savedCount = it.savedCount + 1)
                 }
             }.onFailure {
                 updateTasks { it.copy(isSaving = false, showValidationError = true) }
@@ -1287,6 +1295,10 @@ class HomeViewModel(
             }
         }
     }
+
+    fun completeTask(occurrence: TaskOccurrence) = resolveTask(occurrence, TaskResolution.COMPLETED)
+
+    fun today(): TaskDate = LocalDate.now(ZoneId.of(currentTimeZoneId())).let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
 
     fun closeRapidSession() {
         setRapidSession(null)
@@ -1371,9 +1383,13 @@ class HomeViewModel(
 
     fun selectDestination(destination: MainDestination) {
         mutableUiState.update { it.copy(destination = destination) }
-        if (destination == MainDestination.HISTORY) {
-            if (timelineJob == null) observeTimeline()
-            if (mutableUiState.value.historySection == HistorySection.TRENDS) observeTrends()
+        when (destination) {
+            MainDestination.HISTORY -> if (timelineJob == null) observeTimeline()
+            MainDestination.TRENDS -> {
+                recordProductEvent(ProductEvent.GraphViewed(mutableUiState.value.trends.period.toGraphPeriod()))
+                observeTrends()
+            }
+            else -> Unit
         }
     }
 
@@ -1393,14 +1409,6 @@ class HomeViewModel(
         it.copy(maintenanceActionType = type)
     }
 
-    fun selectHistorySection(section: HistorySection) {
-        mutableUiState.update { it.copy(historySection = section) }
-        if (section == HistorySection.TRENDS) {
-            recordProductEvent(ProductEvent.GraphViewed(mutableUiState.value.trends.period.toGraphPeriod()))
-            observeTrends()
-        }
-    }
-
     fun selectTrendPeriod(period: TrendPeriod) {
         recordProductEvent(ProductEvent.GraphViewed(period.toGraphPeriod()))
         mutableUiState.update { state ->
@@ -1409,7 +1417,7 @@ class HomeViewModel(
         observeTrends()
     }
 
-    fun selectTrendParameter(parameterDefinitionId: String) {
+    fun selectTrendParameter(parameterDefinitionId: String?) {
         mutableUiState.update { state ->
             state.copy(
                 trends = state.trends.copy(selectedParameterDefinitionId = parameterDefinitionId),
@@ -1489,8 +1497,6 @@ class HomeViewModel(
             )
         }
     }
-
-    fun closeTimelineSession() = closeSessionDetails()
 
     fun toggleTimelineFilters() {
         mutableUiState.update { state ->
@@ -1804,7 +1810,7 @@ class HomeViewModel(
                 ),
             )
         }
-        if (mutableUiState.value.historySection == HistorySection.TRENDS) observeTrends()
+        if (mutableUiState.value.destination == MainDestination.TRENDS) observeTrends()
     }
 
     private suspend fun persistOnboardingAquarium(keepPaywallOpen: Boolean): Boolean {
@@ -1903,7 +1909,7 @@ class HomeViewModel(
 
     private fun updateTimelineFilter(transform: (TimelineUiState) -> TimelineUiState) {
         mutableUiState.update { state ->
-            state.copy(timeline = transform(state.timeline).copy(selectedSessionId = null))
+            state.copy(timeline = transform(state.timeline))
         }
         observeTimeline()
     }
@@ -1927,11 +1933,13 @@ class HomeViewModel(
                 trends = state.trends.copy(selectedParameterDefinitionId = null),
             )
         }
-        if (mutableUiState.value.destination == MainDestination.HISTORY) {
-            observeTimeline()
-            if (mutableUiState.value.historySection == HistorySection.TRENDS) {
-                observeTrends(aquariumId)
-            }
+        // A timeline observer left on the previous Aquarium (we may be on TANK or MORE) must not survive the switch.
+        timelineJob?.cancel()
+        timelineJob = null
+        when (mutableUiState.value.destination) {
+            MainDestination.HISTORY -> observeTimeline()
+            MainDestination.TRENDS -> observeTrends(aquariumId)
+            else -> Unit
         }
     }
 
@@ -2011,7 +2019,6 @@ class HomeViewModel(
                     mutableUiState.update { state ->
                         val selected = state.trends.selectedParameterDefinitionId
                             ?.takeIf { id -> advanced.series.any { it.definition.id == id } }
-                            ?: advanced.series.firstOrNull()?.definition?.id
                         state.copy(
                             trends = state.trends.copy(
                                 isLoading = false,
@@ -2041,7 +2048,6 @@ class HomeViewModel(
                     mutableUiState.update { state ->
                         val selected = state.trends.selectedParameterDefinitionId
                             ?.takeIf { id -> snapshot.series.any { it.definition.id == id } }
-                            ?: snapshot.series.firstOrNull()?.definition?.id
                         state.copy(
                             trends = state.trends.copy(
                                 isLoading = false,
