@@ -228,9 +228,8 @@ class RoomAquariumRepository(
         val setup = requireNotNull(aquariumDao.getSetup(aquariumId)) { "Aquarium does not exist" }.toDomain()
         val activeParameters = setup.parameters.filter(ParameterDefinition::isActive)
             .sortedBy(ParameterDefinition::position)
-        val lastMeasurements = sessionDao.measurementsForAquarium(aquariumId)
-            .distinctBy(MeasurementEntity::parameterDefinitionId)
-            .associate { it.parameterDefinitionId to it.value }
+        val newestReadings = sessionDao.readingsForAquarium(aquariumId).distinctBy(ReadingRow::parameterDefinitionId)
+        val lastMeasurements = newestReadings.associate { it.parameterDefinitionId to it.value }
         val lastActions = sessionDao.maintenanceActionsForAquarium(aquariumId)
             .map(MaintenanceActionEntity::toDomain)
             .distinctBy(MaintenanceAction::type)
@@ -239,6 +238,7 @@ class RoomAquariumRepository(
             activeParameters = activeParameters,
             measurementInputs = activeParameters.associate { it.id to "" },
             lastMeasurements = lastMeasurements,
+            lastMeasurementTimes = newestReadings.associate { it.parameterDefinitionId to it.occurredAtEpochMillis },
             lastMaintenanceActions = lastActions,
         )
     }

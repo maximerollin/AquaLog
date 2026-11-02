@@ -90,6 +90,8 @@ data class RapidSessionContext(
     val activeParameters: List<ParameterDefinition>,
     val measurementInputs: Map<String, String>,
     val lastMeasurements: Map<String, Double>,
+    /** parameterDefinitionId to the occurredAt of its newest reading. */
+    val lastMeasurementTimes: Map<String, Long>,
     val lastMaintenanceActions: Map<MaintenanceActionType, MaintenanceAction>,
 )
 

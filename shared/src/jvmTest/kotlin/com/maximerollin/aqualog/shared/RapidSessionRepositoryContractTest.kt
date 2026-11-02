@@ -68,6 +68,35 @@ class RapidSessionRepositoryContractTest {
     }
 
     @Test
+    fun `context exposes the time of the newest reading per parameter`() = runTest {
+        val fixture = sessionFixture()
+        val setup = fixture.createConfiguredAquarium()
+        val active = setup.parameters.filter(ParameterDefinition::isActive)
+        fixture.repository.saveRapidSession(
+            RapidSessionInput(
+                aquariumId = setup.aquarium.id,
+                occurredAtEpochMillis = 1_700_000_100_000L,
+                idempotencyKey = "old",
+                measurementInputs = mapOf(active[0].id to "24", active[1].id to "7.0"),
+            ),
+        )
+        fixture.repository.saveRapidSession(
+            RapidSessionInput(
+                aquariumId = setup.aquarium.id,
+                occurredAtEpochMillis = 1_700_000_900_000L,
+                idempotencyKey = "new",
+                measurementInputs = mapOf(active[0].id to "25"),
+            ),
+        )
+
+        val context = fixture.repository.loadRapidSessionContext(setup.aquarium.id)
+        assertEquals(1_700_000_900_000L, context.lastMeasurementTimes[active[0].id])
+        assertEquals(1_700_000_100_000L, context.lastMeasurementTimes[active[1].id])
+        assertNull(context.lastMeasurementTimes[active[2].id])
+        fixture.close()
+    }
+
+    @Test
     fun `replaying one save interaction creates only one Session`() = runTest {
         val fixture = sessionFixture()
         val setup = fixture.createConfiguredAquarium()
