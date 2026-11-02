@@ -170,7 +170,6 @@
     <string name="navigation_history">History</string>
     <string name="navigation_trends">Trends</string>
     <string name="navigation_more">More</string>
-    <string name="settings_title">Settings</string>
     <string name="aquariums_title">Aquariums</string>
     <string name="add_aquarium">Add Aquarium</string>
     <string name="edit_aquarium">Edit Aquarium</string>
@@ -179,7 +178,6 @@
     <string name="free_one_aquarium_limit">Free keeps all existing data and allows one Aquarium. Pro unlocks additional Aquariums.</string>
     <string name="settings_placeholder">Account, units and appearance settings will be added in their dedicated slices.</string>
     <string name="feedback_title">Send feedback</string>
-    <string name="feedback_settings_description">Share a voluntary message through the dedicated feedback channel. It is never copied into product analytics or crash reports.</string>
     <string name="send_feedback">Send feedback</string>
     <string name="feedback_privacy_explanation">Only the message you type below is submitted. Aquagenda does not attach water values, saved notes or observations, Aquarium names, email addresses, photos, or analytics identifiers. Avoid adding personal details you do not want to share.</string>
     <string name="feedback_message_label">Feedback message</string>
@@ -195,7 +193,6 @@
     <string name="sync_failure_unknown">Sync did not complete. Your local data remains available.</string>
     <string name="sync_retry">Retry sync</string>
     <string name="portable_data_title">Portable local data</string>
-    <string name="portable_data_description">Save or restore your local Aquagenda copy with Android document storage.</string>
     <string name="portable_data_replace_explanation">Restore validates the whole file first, then atomically replaces Aquarium data on this device. Stable IDs prevent duplicates. Account credentials and billing data are never included.</string>
     <string name="export_data">Export data</string>
     <string name="restore_from_export">Restore from export</string>
@@ -266,21 +263,12 @@
     <string name="timeline_error">Local history could not be read. Your saved data is still on this device.</string>
     <string name="retry">Retry</string>
     <string name="timeline_session">Session</string>
-    <string name="timeline_task">Task occurrence</string>
     <string name="open_session_details">Open Session details</string>
     <string name="back_to_timeline">Back to Chronology</string>
     <string name="timeline_events">Events</string>
-    <plurals name="timeline_measurement_count">
-        <item quantity="one">%1$d Measurement</item>
-        <item quantity="other">%1$d Measurements</item>
-    </plurals>
     <plurals name="timeline_action_count">
         <item quantity="one">%1$d maintenance action</item>
         <item quantity="other">%1$d maintenance actions</item>
-    </plurals>
-    <plurals name="timeline_event_count">
-        <item quantity="one">%1$d Event</item>
-        <item quantity="other">%1$d Events</item>
     </plurals>
 
     <string name="trends_title">Trends</string>
@@ -360,12 +348,10 @@
     <string name="task_completed">Completed</string>
     <string name="task_postponed">Postponed</string>
     <string name="task_ignored">Ignored</string>
-    <string name="task_resolved_value">%1$s · resolved on %2$s</string>
     <string name="allow_notifications">Allow notifications</string>
     <string name="notification_permission_explanation">Android notification permission is required to show Task reminders. Tasks remain available in Aquagenda if you decline.</string>
     <string name="battery_optimization_explanation">Android battery optimization is active. It can delay reminders; Tasks and their due dates remain stored locally.</string>
     <string name="timeline_filters">Filters</string>
-    <string name="measurement_reading">%1$s · %2$s %3$s</string>
     <string name="measure_action">Measure</string>
     <string name="latest_values_title">Latest values</string>
     <string name="home_today">Today</string>

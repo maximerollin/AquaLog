@@ -170,7 +170,6 @@
     <string name="navigation_history">Verlauf</string>
     <string name="navigation_trends">Trends</string>
     <string name="navigation_more">Mehr</string>
-    <string name="settings_title">Einstellungen</string>
     <string name="aquariums_title">Aquarien</string>
     <string name="add_aquarium">Aquarium hinzufügen</string>
     <string name="edit_aquarium">Aquarium bearbeiten</string>
@@ -179,7 +178,6 @@
     <string name="free_one_aquarium_limit">Free behält alle vorhandenen Daten und ermöglicht ein Aquarium. Pro schaltet zusätzliche Aquarien frei.</string>
     <string name="settings_placeholder">Konto-, Einheiten- und Darstellungseinstellungen werden in den entsprechenden Slices hinzugefügt.</string>
     <string name="feedback_title">Feedback senden</string>
-    <string name="feedback_settings_description">Teilen Sie eine freiwillige Nachricht über den speziellen Feedback-Kanal. Es wird niemals in Produktanalysen oder Absturzberichte kopiert.</string>
     <string name="send_feedback">Feedback senden</string>
     <string name="feedback_privacy_explanation">Nur die Nachricht, die Sie unten eingeben, wird übermittelt. Aquagenda fügt keine Wasserwerte, gespeicherten Notizen oder Beobachtungen, Aquariennamen, E-Mail-Adressen, Fotos oder Analysekennungen hinzu. Vermeiden Sie es, persönliche Daten hinzuzufügen, die Sie nicht weitergeben möchten.</string>
     <string name="feedback_message_label">Feedback-Nachricht</string>
@@ -195,7 +193,6 @@
     <string name="sync_failure_unknown">Die Synchronisierung wurde nicht abgeschlossen. Ihre lokalen Daten bleiben verfügbar.</string>
     <string name="sync_retry">Versuchen Sie die Synchronisierung erneut</string>
     <string name="portable_data_title">Tragbare lokale Daten</string>
-    <string name="portable_data_description">Speichern oder wiederherstellen Sie Ihre lokale Aquagenda-Kopie mit der Android-Dokumentenspeicherung.</string>
     <string name="portable_data_replace_explanation">Die Wiederherstellung validiert zunächst die gesamte Datei und ersetzt dann atomar die Aquarium-Daten auf diesem Gerät. Stabile IDs verhindern Duplikate. Kontoanmeldeinformationen und Rechnungsdaten sind niemals enthalten.</string>
     <string name="export_data">Daten exportieren</string>
     <string name="restore_from_export">Aus dem Export wiederherstellen</string>
@@ -266,21 +263,12 @@
     <string name="timeline_error">Der lokale Verlauf konnte nicht gelesen werden. Deine gespeicherten Daten sind weiterhin auf diesem Gerät.</string>
     <string name="retry">Wiederholen</string>
     <string name="timeline_session">Sitzung</string>
-    <string name="timeline_task">Aufgabenvorkommen</string>
     <string name="open_session_details">Sitzungsdetails öffnen</string>
     <string name="back_to_timeline">Zurück zur Chronologie</string>
     <string name="timeline_events">Ereignisse</string>
-    <plurals name="timeline_measurement_count">
-        <item quantity="one">%1$d Messung</item>
-        <item quantity="other">%1$d Messungen</item>
-    </plurals>
     <plurals name="timeline_action_count">
         <item quantity="one">%1$d Wartungsaktion</item>
         <item quantity="other">%1$d Wartungsaktionen</item>
-    </plurals>
-    <plurals name="timeline_event_count">
-        <item quantity="one">%1$d Ereignis</item>
-        <item quantity="other">%1$d Ereignisse</item>
     </plurals>
 
     <string name="trends_title">Trends</string>
@@ -360,12 +348,10 @@
     <string name="task_completed">Vollendet</string>
     <string name="task_postponed">Verschoben</string>
     <string name="task_ignored">Ignoriert</string>
-    <string name="task_resolved_value">%1$s · gelöst auf %2$s</string>
     <string name="allow_notifications">Benachrichtigungen zulassen</string>
     <string name="notification_permission_explanation">Zum Anzeigen von Aufgabenerinnerungen ist eine Android-Benachrichtigungsberechtigung erforderlich. Aufgaben bleiben in Aquagenda verfügbar, wenn Sie ablehnen.</string>
     <string name="battery_optimization_explanation">Die Android-Akkuoptimierung ist aktiv. Es kann Erinnerungen verzögern; Aufgaben und deren Fälligkeitstermine bleiben lokal gespeichert.</string>
     <string name="timeline_filters">Filter</string>
-    <string name="measurement_reading">%1$s · %2$s %3$s</string>
     <string name="measure_action">Messen</string>
     <string name="latest_values_title">Letzte Werte</string>
     <string name="home_today">Heute</string>

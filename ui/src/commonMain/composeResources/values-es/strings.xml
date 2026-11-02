@@ -170,7 +170,6 @@
     <string name="navigation_history">Historial</string>
     <string name="navigation_trends">Tendencias</string>
     <string name="navigation_more">Más</string>
-    <string name="settings_title">Ajustes</string>
     <string name="aquariums_title">Acuarios</string>
     <string name="add_aquarium">Agregar acuario</string>
     <string name="edit_aquarium">Editar acuario</string>
@@ -179,7 +178,6 @@
     <string name="free_one_aquarium_limit">Gratis mantiene todos los datos existentes y permite un Acuario. Pro desbloquea acuarios adicionales.</string>
     <string name="settings_placeholder">Las configuraciones de cuenta, unidades y apariencia se agregarán en sus secciones dedicadas.</string>
     <string name="feedback_title">Enviar comentarios</string>
-    <string name="feedback_settings_description">Comparta un mensaje voluntario a través del canal de comentarios dedicado. Nunca se copia en análisis de productos ni en informes de fallos.</string>
     <string name="send_feedback">Enviar comentarios</string>
     <string name="feedback_privacy_explanation">Sólo se envía el mensaje que escriba a continuación. Aquagenda no adjunta valores del agua, notas u observaciones guardadas, nombres de acuarios, direcciones de correo electrónico, fotografías ni identificadores analíticos. Evite agregar datos personales que no desee compartir.</string>
     <string name="feedback_message_label">Mensaje de retroalimentación</string>
@@ -195,7 +193,6 @@
     <string name="sync_failure_unknown">La sincronización no se completó. Sus datos locales permanecen disponibles.</string>
     <string name="sync_retry">Reintentar sincronización</string>
     <string name="portable_data_title">Datos locales portátiles</string>
-    <string name="portable_data_description">Guarde o restaure su copia local de Aquagenda con el almacenamiento de documentos de Android.</string>
     <string name="portable_data_replace_explanation">Restaurar primero valida todo el archivo y luego reemplaza atómicamente los datos del Acuario en este dispositivo. Las identificaciones estables evitan duplicados. Las credenciales de la cuenta y los datos de facturación nunca se incluyen.</string>
     <string name="export_data">Exportar datos</string>
     <string name="restore_from_export">Restaurar desde exportación</string>
@@ -266,21 +263,12 @@
     <string name="timeline_error">No se pudo leer el historial local. Tus datos guardados siguen en este dispositivo.</string>
     <string name="retry">Reintentar</string>
     <string name="timeline_session">Sesión</string>
-    <string name="timeline_task">Ocurrencia de tarea</string>
     <string name="open_session_details">Abrir detalles de la Sesión</string>
     <string name="back_to_timeline">Volver a Cronología</string>
     <string name="timeline_events">Eventos</string>
-    <plurals name="timeline_measurement_count">
-        <item quantity="one">%1$d medición</item>
-        <item quantity="other">%1$d mediciones</item>
-    </plurals>
     <plurals name="timeline_action_count">
         <item quantity="one">%1$d acción de mantenimiento</item>
         <item quantity="other">%1$d acciones de mantenimiento</item>
-    </plurals>
-    <plurals name="timeline_event_count">
-        <item quantity="one">%1$d evento</item>
-        <item quantity="other">%1$d eventos</item>
     </plurals>
 
     <string name="trends_title">Tendencias</string>
@@ -360,12 +348,10 @@
     <string name="task_completed">Terminado</string>
     <string name="task_postponed">Aplazado</string>
     <string name="task_ignored">ignorado</string>
-    <string name="task_resolved_value">%1$s · resuelto en %2$s</string>
     <string name="allow_notifications">Permitir notificaciones</string>
     <string name="notification_permission_explanation">Se requiere permiso de notificación de Android para mostrar recordatorios de tareas. Las tareas permanecen disponibles en Aquagenda si las rechaza.</string>
     <string name="battery_optimization_explanation">La optimización de la batería de Android está activa. Puede retrasar los recordatorios; Las tareas y sus fechas de vencimiento permanecen almacenadas localmente.</string>
     <string name="timeline_filters">Filtros</string>
-    <string name="measurement_reading">%1$s · %2$s %3$s</string>
     <string name="measure_action">Medir</string>
     <string name="latest_values_title">Últimos valores</string>
     <string name="home_today">Hoy</string>
