@@ -1,44 +1,59 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import org.jetbrains.compose.resources.pluralStringResource
-import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.MaintenanceAction
 import com.maximerollin.aqualog.shared.MaintenanceActionType
-import com.maximerollin.aqualog.shared.SessionEvent
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.TaskResolution
 import com.maximerollin.aqualog.shared.TimelineSession
+import com.maximerollin.aqualog.shared.isOutsideIndicativeRange
+import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
+import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
+import com.maximerollin.aqualog.ui.theme.ReadingValue
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 
 private sealed interface TimelineListItem {
     val timestamp: Long
@@ -55,62 +70,53 @@ private sealed interface TimelineListItem {
     }
 }
 
+
+private val RailWidth = 9.dp
+private val RailGap = 10.dp
+
 @Composable
 fun TimelineScreen(
     state: HomeUiState,
     viewModel: HomeViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val selected = state.timeline.selectedSessionId?.let { selectedId ->
-        state.timeline.entries.firstOrNull { it.session.id == selectedId }
-    }
-    if (selected != null) {
-        TimelineDetail(selected, viewModel, modifier)
-        return
-    }
-
+    val timeline = state.timeline
+    val context = listOfNotNull(
+        state.aquariums.firstOrNull { it.id == timeline.aquariumId }?.name
+            ?: stringResource(Res.string.timeline_all_aquariums),
+        stringResource(timeline.period.labelRes()),
+        state.setup?.parameters?.firstOrNull { it.id == timeline.parameterDefinitionId }?.parameter?.label(),
+        timeline.maintenanceActionType?.label(),
+    ).joinToString(" · ")
     Column(modifier.fillMaxSize()) {
         CarnetScreenTitle(
             stringResource(Res.string.timeline_title),
-            null,
-            Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+            context,
+            Modifier.padding(start = 24.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
+            action = {
+                IconButton(onClick = viewModel::toggleTimelineFilters, modifier = Modifier.size(48.dp)) {
+                    Icon(painterResource(Res.drawable.ic_filter), contentDescription = stringResource(Res.string.timeline_filters))
+                }
+            },
         )
-        TimelineContent(state, viewModel, Modifier.weight(1f), state.timeline.filtersExpanded, viewModel::toggleTimelineFilters)
-    }
-}
-
-@Composable
-private fun TimelineContent(
-    state: HomeUiState,
-    viewModel: HomeViewModel,
-    modifier: Modifier,
-    filtersExpanded: Boolean,
-    onToggleFilters: () -> Unit,
-) {
-    Column(modifier.fillMaxSize()) {
-        Column(
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            if (state.timeline.isOffline) {
-                Text(
-                    stringResource(Res.string.timeline_offline_status),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-        }
-
         when {
-            state.timeline.isLoading -> TimelineLoading()
-            state.timeline.hasRecoverableError -> TimelineError(viewModel::retryTimeline)
-            else -> TimelineList(state, viewModel, filtersExpanded, onToggleFilters)
+            timeline.isLoading -> TimelineLoading()
+            timeline.hasRecoverableError -> TimelineError(viewModel::retryTimeline)
+            else -> TimelineList(state, viewModel)
         }
     }
+    if (timeline.filtersExpanded) TimelineFiltersSheet(state, viewModel)
+}
+
+private fun TimelinePeriod.labelRes() = when (this) {
+    TimelinePeriod.ALL -> Res.string.timeline_period_all
+    TimelinePeriod.SEVEN_DAYS -> Res.string.timeline_period_7
+    TimelinePeriod.THIRTY_DAYS -> Res.string.timeline_period_30
+    TimelinePeriod.NINETY_DAYS -> Res.string.timeline_period_90
 }
 
 @Composable
-private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel, filtersExpanded: Boolean, onToggleFilters: () -> Unit) {
+private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel) {
     val resolvedTasks = state.timeline.resolvedTaskOccurrences.filter { occurrence ->
         val periodStart = state.timeline.period.days?.let { days ->
             System.currentTimeMillis() - days * 24L * 60L * 60L * 1_000L
@@ -124,22 +130,19 @@ private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel, filtersEx
         state.timeline.entries.map(TimelineListItem::SessionItem) +
             resolvedTasks.map(TimelineListItem::TaskItem)
         ).sortedWith(compareByDescending<TimelineListItem> { it.timestamp }.thenBy { it.key })
+    val showAquarium = state.timeline.aquariumId == null && state.aquariums.size > 1
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { TimelineFilters(state, viewModel, filtersExpanded, onToggleFilters) }
-        if (state.timeline.entries.isEmpty() && resolvedTasks.isEmpty()) {
+        if (items.isEmpty()) {
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(Res.string.timeline_empty_title), style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            stringResource(Res.string.timeline_empty_description),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(Res.string.timeline_empty_title), style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        stringResource(Res.string.timeline_empty_description),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         } else {
@@ -147,13 +150,21 @@ private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel, filtersEx
                 val formatter = currentLocalizedFormatters()
                 val date = formatter.date(item.timestamp)
                 if (index == 0 || formatter.date(items[index - 1].timestamp) != date) {
-                    Text(date, modifier = Modifier.padding(top = 12.dp, bottom = 10.dp),
-                        style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        date,
+                        modifier = Modifier.padding(top = 14.dp, bottom = 2.dp).semantics { heading() },
+                        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 15.sp),
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                 }
+                val isLast = index == items.lastIndex ||
+                    formatter.date(items[index + 1].timestamp) != date
                 when (item) {
-                    is TimelineListItem.TaskItem -> TimelineTaskCard(item.occurrence)
-                    is TimelineListItem.SessionItem -> TimelineSessionCard(
+                    is TimelineListItem.TaskItem -> TimelineTaskRow(item.occurrence, isLast)
+                    is TimelineListItem.SessionItem -> TimelineSessionRow(
                         item.entry,
+                        isLast,
+                        showAquarium,
                         onClick = { viewModel.openTimelineSession(item.entry.session.id) },
                     )
                 }
@@ -162,8 +173,38 @@ private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel, filtersEx
     }
 }
 
+/** One journal entry: a decorative rail (dot + line to the next entry of the day) beside its content. */
 @Composable
-private fun TimelineTaskCard(occurrence: TaskOccurrence) {
+private fun RailEntry(
+    dotColor: Color,
+    isLast: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    val lineColor = MaterialTheme.colorScheme.outlineVariant
+    Box(
+        modifier
+            .fillMaxWidth()
+            .drawBehind {
+                val radius = RailWidth.toPx() / 2
+                val centerX = radius
+                val centerY = 12.dp.toPx()
+                drawCircle(dotColor, radius, Offset(centerX, centerY))
+                if (!isLast) {
+                    drawLine(
+                        lineColor,
+                        Offset(centerX, centerY + radius + 3.dp.toPx()),
+                        Offset(centerX, size.height),
+                        strokeWidth = 1.5.dp.toPx(),
+                    )
+                }
+            }
+            .padding(start = RailWidth + RailGap, top = 6.dp, bottom = 6.dp),
+    ) { content() }
+}
+
+@Composable
+private fun TimelineTaskRow(occurrence: TaskOccurrence, isLast: Boolean) {
     val formatter = currentLocalizedFormatters()
     val resolutionLabel = when (occurrence.resolution) {
         TaskResolution.COMPLETED -> stringResource(Res.string.task_completed)
@@ -171,63 +212,129 @@ private fun TimelineTaskCard(occurrence: TaskOccurrence) {
         TaskResolution.IGNORED -> stringResource(Res.string.task_ignored)
         null -> return
     }
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(stringResource(Res.string.timeline_task), style = MaterialTheme.typography.titleMedium)
-            Text(occurrence.title)
+    val resolution = "$resolutionLabel · ${formatter.clock(requireNotNull(occurrence.resolvedAtEpochMillis))}"
+    RailEntry(MaterialTheme.colorScheme.outlineVariant, isLast) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(painterResource(Res.drawable.ic_check), null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(occurrence.title, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
             Text(
-                stringResource(
-                    Res.string.task_resolved_value,
-                    resolutionLabel,
-                    formatter.dateTime(requireNotNull(occurrence.resolvedAtEpochMillis)),
-                ),
+                resolution,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TimelineFilters(state: HomeUiState, viewModel: HomeViewModel, expanded: Boolean, onToggle: () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        TextButton(onClick = onToggle, modifier = Modifier.heightIn(min = 48.dp)) {
-            Text(stringResource(Res.string.timeline_filters))
-        }
-        // The active selections stay visible when the choices are collapsed.
-        if (!expanded) {
-            val periodLabel = when (state.timeline.period) {
-                TimelinePeriod.ALL -> Res.string.timeline_period_all
-                TimelinePeriod.SEVEN_DAYS -> Res.string.timeline_period_7
-                TimelinePeriod.THIRTY_DAYS -> Res.string.timeline_period_30
-                TimelinePeriod.NINETY_DAYS -> Res.string.timeline_period_90
+private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAquarium: Boolean, onClick: () -> Unit) {
+    val formatter = currentLocalizedFormatters()
+    val description = stringResource(Res.string.open_session_details)
+    RailEntry(
+        MaterialTheme.colorScheme.primary,
+        isLast,
+        Modifier
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = description }
+            .heightIn(min = 48.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    stringResource(Res.string.timeline_session),
+                    Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                )
+                Text(
+                    listOfNotNull(
+                        entry.aquarium.name.takeIf { showAquarium },
+                        formatter.clock(entry.session.occurredAtEpochMillis),
+                    ).joinToString(" · "),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            Text(listOfNotNull(
-                stringResource(periodLabel),
-                state.aquariums.firstOrNull { it.id == state.timeline.aquariumId }?.name
-                    ?: stringResource(Res.string.timeline_all_aquariums),
-                state.setup?.parameters?.firstOrNull { it.id == state.timeline.parameterDefinitionId }?.parameter?.label(),
-                state.timeline.maintenanceActionType?.timelineLabel(),
-            ).joinToString(" · "), style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        if (expanded) {
-            FilterRow {
-                TimelinePeriod.entries.forEach { period ->
-                    val label = when (period) {
-                        TimelinePeriod.ALL -> stringResource(Res.string.timeline_period_all)
-                        TimelinePeriod.SEVEN_DAYS -> stringResource(Res.string.timeline_period_7)
-                        TimelinePeriod.THIRTY_DAYS -> stringResource(Res.string.timeline_period_30)
-                        TimelinePeriod.NINETY_DAYS -> stringResource(Res.string.timeline_period_90)
+            if (entry.measurements.isNotEmpty()) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    entry.measurements.sortedBy { it.definition.position }.forEach { item ->
+                        val label = item.definition.parameter.label()
+                        ReadingValue(
+                            value = formatter.number(item.measurement.value, item.definition.precision),
+                            label = label,
+                            unit = item.definition.unit.takeIf { it != label },
+                            attention = item.definition.isOutsideIndicativeRange(item.measurement.value),
+                        )
                     }
+                }
+            }
+            entry.maintenanceActions.forEach { action ->
+                TimelineNoteLine(Res.drawable.ic_drop, action.summary(formatter))
+            }
+            entry.events.forEach { event ->
+                val note = if (event.type == EventType.INCIDENT) {
+                    "${stringResource(Res.string.incident)} · ${event.note}"
+                } else {
+                    event.note
+                }
+                TimelineNoteLine(Res.drawable.ic_note, note)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MaintenanceAction.summary(formatter: LocalizedFormatters): String {
+    val details = listOfNotNull(quantity?.let { formatter.number(it, 2) }, unit, product).joinToString(" ")
+    return listOf(type.label(), details).filter(String::isNotBlank).joinToString(" · ")
+}
+
+@Composable
+private fun TimelineNoteLine(icon: org.jetbrains.compose.resources.DrawableResource, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(painterResource(icon), null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+private fun TimelineFiltersSheet(state: HomeUiState, viewModel: HomeViewModel) {
+    ModalBottomSheet(
+        onDismissRequest = viewModel::toggleTimelineFilters,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        Column(
+            Modifier.navigationBarsPadding().verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp).padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            CarnetSectionTitle(
+                stringResource(Res.string.timeline_filters),
+                actionLabel = stringResource(Res.string.close),
+                onAction = viewModel::toggleTimelineFilters,
+            )
+            if (state.timeline.isOffline) {
+                Text(
+                    stringResource(Res.string.timeline_offline_status),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            FilterGroup {
+                TimelinePeriod.entries.forEach { period ->
                     FilterChip(
                         selected = state.timeline.period == period,
                         onClick = { viewModel.selectTimelinePeriod(period) },
-                        label = { Text(label) },
+                        label = { Text(stringResource(period.labelRes())) },
                         modifier = Modifier.heightIn(min = 48.dp),
                     )
                 }
             }
-            FilterRow {
+            FilterGroup {
                 FilterChip(
                     selected = state.timeline.aquariumId == null,
                     onClick = { viewModel.selectTimelineAquarium(null) },
@@ -243,7 +350,7 @@ private fun TimelineFilters(state: HomeUiState, viewModel: HomeViewModel, expand
                     )
                 }
             }
-            FilterRow {
+            FilterGroup {
                 FilterChip(
                     selected = state.timeline.parameterDefinitionId == null,
                     onClick = { viewModel.selectTimelineParameter(null) },
@@ -259,7 +366,7 @@ private fun TimelineFilters(state: HomeUiState, viewModel: HomeViewModel, expand
                     )
                 }
             }
-            FilterRow {
+            FilterGroup {
                 FilterChip(
                     selected = state.timeline.maintenanceActionType == null,
                     onClick = { viewModel.selectTimelineAction(null) },
@@ -270,7 +377,7 @@ private fun TimelineFilters(state: HomeUiState, viewModel: HomeViewModel, expand
                     FilterChip(
                         selected = state.timeline.maintenanceActionType == type,
                         onClick = { viewModel.selectTimelineAction(type) },
-                        label = { Text(type.timelineLabel()) },
+                        label = { Text(type.label()) },
                         modifier = Modifier.heightIn(min = 48.dp),
                     )
                 }
@@ -279,108 +386,14 @@ private fun TimelineFilters(state: HomeUiState, viewModel: HomeViewModel, expand
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun FilterRow(content: @Composable RowScope.() -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+private fun FilterGroup(content: @Composable () -> Unit) {
+    FlowRow(
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        content = content,
+        content = { content() },
     )
-}
-
-@Composable
-private fun TimelineSessionCard(entry: TimelineSession, onClick: () -> Unit) {
-    val formatter = currentLocalizedFormatters()
-    val description = stringResource(Res.string.open_session_details)
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth().semantics { contentDescription = description },
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(stringResource(Res.string.timeline_session), style = MaterialTheme.typography.titleMedium)
-            Text(formatter.dateTime(entry.session.occurredAtEpochMillis), style = MaterialTheme.typography.bodyMedium)
-            Text(entry.aquarium.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            entry.measurements.forEach { item ->
-                Text(
-                    stringResource(
-                        Res.string.measurement_reading,
-                        item.definition.parameter.label(),
-                        formatter.number(item.measurement.value, item.definition.precision),
-                        item.definition.unit,
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-            entry.maintenanceActions.forEach { action ->
-                Text(listOfNotNull(action.type.timelineLabel(),
-                    action.quantity?.let { formatter.number(it, 2) }, action.unit, action.product)
-                    .filter(String::isNotBlank).joinToString(" · "))
-            }
-            Text(
-                sessionSummary(entry),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    }
-}
-
-@Composable
-private fun TimelineDetail(entry: TimelineSession, viewModel: HomeViewModel, modifier: Modifier) {
-    val formatter = currentLocalizedFormatters()
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
-            TextButton(onClick = viewModel::closeTimelineSession, modifier = Modifier.heightIn(min = 48.dp)) {
-                Text(stringResource(Res.string.back_to_timeline))
-            }
-        }
-        item {
-            Text(stringResource(Res.string.session_details), style = MaterialTheme.typography.headlineMedium)
-            Text(formatter.dateTime(entry.session.occurredAtEpochMillis), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(entry.aquarium.name, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        if (entry.measurements.isNotEmpty()) {
-            item { Text(stringResource(Res.string.measurements_heading), style = MaterialTheme.typography.titleLarge) }
-            items(entry.measurements, key = { it.measurement.id }) { item ->
-                DetailCard(
-                    "${item.definition.parameter.label()} · " +
-                        "${formatter.number(item.measurement.value, item.definition.precision)} ${item.definition.unit}",
-                )
-            }
-        }
-        if (entry.maintenanceActions.isNotEmpty()) {
-            item { Text(stringResource(Res.string.maintenance_heading), style = MaterialTheme.typography.titleLarge) }
-            items(entry.maintenanceActions, key = MaintenanceAction::id) { action ->
-                val details = listOfNotNull(
-                    action.quantity?.let { formatter.number(it, 2) },
-                    action.unit,
-                    action.product,
-                ).joinToString(" ")
-                DetailCard(listOf(action.type.timelineLabel(), details).filter(String::isNotBlank).joinToString(" · "))
-            }
-        }
-        if (entry.events.isNotEmpty()) {
-            item { Text(stringResource(Res.string.timeline_events), style = MaterialTheme.typography.titleLarge) }
-            items(entry.events, key = SessionEvent::id) { event ->
-                val type = when (event.type) {
-                    EventType.OBSERVATION -> stringResource(Res.string.observation)
-                    EventType.INCIDENT -> stringResource(Res.string.incident)
-                }
-                DetailCard("$type · ${event.note}")
-            }
-        }
-    }
-}
-
-@Composable
-private fun DetailCard(text: String) {
-    Card(Modifier.fillMaxWidth()) {
-        Text(text, modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyLarge)
-    }
 }
 
 @Composable
@@ -408,26 +421,3 @@ private fun TimelineError(onRetry: () -> Unit) {
         }
     }
 }
-
-@Composable
-private fun sessionSummary(entry: TimelineSession): String = listOf(
-    pluralStringResource(Res.plurals.timeline_measurement_count, entry.measurements.size, entry.measurements.size),
-    pluralStringResource(
-        Res.plurals.timeline_action_count,
-        entry.maintenanceActions.size,
-        entry.maintenanceActions.size,
-    ),
-    pluralStringResource(Res.plurals.timeline_event_count, entry.events.size, entry.events.size),
-).joinToString(" · ")
-
-@Composable
-private fun MaintenanceActionType.timelineLabel(): String = stringResource(
-    when (this) {
-        MaintenanceActionType.WATER_CHANGE -> Res.string.action_water_change
-        MaintenanceActionType.FERTILIZATION -> Res.string.action_fertilization
-        MaintenanceActionType.FILTER_MAINTENANCE -> Res.string.action_filter
-        MaintenanceActionType.VACUUM -> Res.string.action_vacuum
-        MaintenanceActionType.GLASS_CLEANING -> Res.string.action_glass
-        MaintenanceActionType.PRUNING -> Res.string.action_pruning
-    },
-)

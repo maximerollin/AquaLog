@@ -109,11 +109,11 @@ class TaskFlowTest {
             composeRule.onNodeWithTag("task-list").performScrollToIndex(0)
             composeRule.onNodeWithText("Back").performClick()
             composeRule.onNodeWithText("History").performClick()
-            composeRule.onNodeWithText("Task occurrence").assertIsDisplayed()
+            composeRule.onNode(hasText("Completed", substring = true)).assertIsDisplayed()
             composeRule.onNodeWithText("Change filter wool").assertIsDisplayed()
             composeRule.onNodeWithText("Session").assertIsDisplayed()
             val sessionTop = composeRule.onNodeWithText("Session").fetchSemanticsNode().boundsInRoot.top
-            val taskTop = composeRule.onNodeWithText("Task occurrence").fetchSemanticsNode().boundsInRoot.top
+            val taskTop = composeRule.onNode(hasText("Completed", substring = true)).fetchSemanticsNode().boundsInRoot.top
             assertTrue("Newer Session should appear above the older resolved Task", sessionTop < taskTop)
 
             runBlocking {
@@ -168,7 +168,7 @@ class TaskFlowTest {
             }
             composeRule.onNodeWithText("No pending Task.").assertIsDisplayed()
             composeRule.onNodeWithText("History").performClick()
-            composeRule.onNodeWithText("Task occurrence").assertIsDisplayed()
+            composeRule.onNode(hasText("Completed", substring = true)).assertIsDisplayed()
             composeRule.onNodeWithText("Clean the glass").assertIsDisplayed()
         } finally {
             scenario.close()

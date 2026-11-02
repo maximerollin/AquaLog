@@ -2,6 +2,8 @@ package com.maximerollin.aqualog
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -57,11 +59,15 @@ class TimelineFlowTest {
 
         composeRule.onNodeWithText("History").performClick()
         composeRule.onNodeWithText("Chronology").assertIsDisplayed()
-        composeRule.onNodeWithText("Offline-ready · stored on this device").assertIsDisplayed()
-        composeRule.onNodeWithText("1 Measurement · 1 maintenance action · 1 Event").assertIsDisplayed()
+        // One Session: its reading, maintenance action and Event all show on its journal entry.
+        composeRule.onNodeWithText("24.5").assertIsDisplayed()
+        composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
+        composeRule.onNodeWithText("Clear water").assertIsDisplayed()
 
-        composeRule.onNodeWithText("Filters").performClick()
-        composeRule.onNodeWithText("Temperature").performClick().assertIsSelected()
+        composeRule.onNodeWithContentDescription("Filters").performClick()
+        composeRule.onNodeWithText("Offline-ready · stored on this device").assertIsDisplayed()
+        composeRule.onNode(hasText("Temperature") and isSelectable()).performClick().assertIsSelected()
+        composeRule.onNodeWithText("Close").performClick()
         composeRule.onNodeWithContentDescription("Open Session details").performClick()
         composeRule.onNodeWithText("Session details").assertIsDisplayed()
         composeRule.onNodeWithText("Temperature · 24.5 °C").assertIsDisplayed()
@@ -69,7 +75,8 @@ class TimelineFlowTest {
         composeRule.onNodeWithText("Observation · Clear water").assertIsDisplayed()
 
         composeRule.onNodeWithText("Back to Chronology").performClick()
-        composeRule.onNodeWithText("Temperature").assertIsSelected()
+        composeRule.onNodeWithContentDescription("Filters").performClick()
+        composeRule.onNode(hasText("Temperature") and isSelectable()).assertIsSelected()
         scenario.close()
     }
 }
