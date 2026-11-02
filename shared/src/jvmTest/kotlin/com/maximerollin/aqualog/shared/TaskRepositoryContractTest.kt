@@ -147,6 +147,39 @@ class TaskRepositoryContractTest {
         fixture.close()
     }
 
+    @Test
+    fun `an overdue weekly linked task is completed once and its next occurrence falls after today`() = runTest {
+        val fixture = taskFixture()
+        val aquariumId = fixture.createAquarium().aquarium.id
+        val today = TaskDate(2027, 3, 24)
+        fixture.linkedTask(aquariumId, TaskDate(2027, 3, 10), TaskRecurrence.WEEKLY)
+        val types = setOf(MaintenanceActionType.WATER_CHANGE)
+
+        val first = fixture.repository.completeLinkedTasks(aquariumId, types, today, 1_800_000_000_000L)
+        val second = fixture.repository.completeLinkedTasks(aquariumId, types, today, 1_800_000_000_500L)
+
+        assertEquals(1, first.size)
+        assertEquals(TaskDate(2027, 3, 31), first.single().nextOccurrence?.dueDate)
+        assertTrue(second.isEmpty())
+        fixture.close()
+    }
+
+    @Test
+    fun `ticking a future linked occurrence resolves exactly that occurrence`() = runTest {
+        val fixture = taskFixture()
+        val aquariumId = fixture.createAquarium().aquarium.id
+        val today = TaskDate(2027, 3, 10)
+        val future = fixture.linkedTask(aquariumId, TaskDate(2027, 3, 12), TaskRecurrence.WEEKLY)
+        val types = setOf(MaintenanceActionType.WATER_CHANGE)
+
+        val results = fixture.repository.completeLinkedTasks(aquariumId, types, today, 1_800_000_000_000L, alsoOccurrenceId = future.occurrence.id)
+
+        assertEquals(listOf(future.occurrence.id), results.map { it.resolved.id })
+        assertEquals(TaskDate(2027, 3, 19), results.single().nextOccurrence?.dueDate)
+        assertEquals(listOf(results.single().nextOccurrence?.id), fixture.repository.observePendingTaskOccurrences().first().map { it.id })
+        fixture.close()
+    }
+
     private fun taskFixture(): TaskFixture {
         val path = Files.createTempDirectory("aqualog-tasks").resolve("aqualog.db").toString()
         val database = createAquaLogDatabase(createJvmDatabaseBuilder(path))

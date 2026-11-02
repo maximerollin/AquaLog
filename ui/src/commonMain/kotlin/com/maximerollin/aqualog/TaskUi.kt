@@ -337,7 +337,7 @@ private fun TaskRow(occurrence: TaskOccurrence, viewModel: HomeViewModel) {
             checked = completed,
             onCheckedChange = if (completed) null else { _ ->
                 completed = true
-                viewModel.completeTask(occurrence)
+                viewModel.completeTask(occurrence) { completed = false }
             },
             modifier = Modifier.semantics { contentDescription = completeDescription },
         )

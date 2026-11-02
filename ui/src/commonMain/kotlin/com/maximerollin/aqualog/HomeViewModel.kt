@@ -1313,13 +1313,16 @@ class HomeViewModel(
         }
     }
 
-    /** A linked Tâche records its action (usual quantity) in a Session; saving it resolves the Occurrence. */
-    fun completeTask(occurrence: TaskOccurrence) {
+    /**
+     * A linked Tâche records its action (usual quantity) in a Session, then is resolved, even when not due yet.
+     * [onFailed] lets the row re-enable its checkbox.
+     */
+    fun completeTask(occurrence: TaskOccurrence, onFailed: () -> Unit = {}) {
         val type = occurrence.maintenanceActionType ?: return resolveTask(occurrence, TaskResolution.COMPLETED)
         viewModelScope.launch {
             runCatching {
                 val last = aquariumRepository.loadRapidSessionContext(occurrence.aquariumId).lastMaintenanceActions[type]
-                aquariumRepository.saveRapidSession(
+                val recorded = aquariumRepository.saveRapidSession(
                     RapidSessionInput(
                         aquariumId = occurrence.aquariumId,
                         occurredAtEpochMillis = currentTimeMillis(),
@@ -1327,25 +1330,26 @@ class HomeViewModel(
                         maintenanceActions = listOf(defaultMaintenanceInput(type, last)),
                     ),
                 )
-            }.onSuccess { recorded ->
                 mutableUiState.update { it.copy(latestSession = recorded) }
-                completeLinkedTasks(recorded)
-            }
+                completeLinkedTasks(recorded, alsoOccurrenceId = occurrence.id)
+            }.onFailure { onFailed() }
         }
     }
 
-    private suspend fun completeLinkedTasks(recorded: RecordedSession, alreadyRecorded: Set<MaintenanceActionType> = emptySet()) {
+    /** Throws when the resolution fails, so a caller that must know can react; Session saves ignore it. */
+    private suspend fun completeLinkedTasks(
+        recorded: RecordedSession,
+        alreadyRecorded: Set<MaintenanceActionType> = emptySet(),
+        alsoOccurrenceId: String? = null,
+    ) {
         val types = recorded.maintenanceActions.map { it.type }.toSet() - alreadyRecorded
-        if (types.isEmpty()) return
-        runCatching {
-            aquariumRepository.completeLinkedTasks(recorded.session.aquariumId, types, today(), currentTimeMillis())
-        }.onSuccess { results ->
-            results.forEach { result ->
+        if (types.isEmpty() && alsoOccurrenceId == null) return
+        aquariumRepository.completeLinkedTasks(recorded.session.aquariumId, types, today(), currentTimeMillis(), alsoOccurrenceId)
+            .forEach { result ->
                 taskReminderScheduler.cancel(result.resolved.id)
                 result.nextOccurrence?.let(taskReminderScheduler::schedule)
                 recordProductEvent(ProductEvent.TaskUsed(TaskUsage.COMPLETED))
             }
-        }
     }
 
     fun today(): TaskDate = LocalDate.now(ZoneId.of(currentTimeZoneId())).let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
@@ -1693,7 +1697,7 @@ class HomeViewModel(
                         it.copy(accountInvitationPrompt = AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION)
                     }
                 }
-                completeLinkedTasks(recorded, previousTypes)
+                runCatching { completeLinkedTasks(recorded, previousTypes) }
                 recordProductEvent(
                     ProductEvent.SessionSaved(
                         if (draft.editingSessionId == null) SessionUsage.CREATED else SessionUsage.EDITED,

@@ -218,7 +218,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                 }
             } else {
                 items(tasks.due, key = { it.id }) { task ->
-                    TaskRow(task, today, onComplete = { viewModel.completeTask(task) })
+                    TaskRow(task, today, onComplete = { onFailed -> viewModel.completeTask(task, onFailed) })
                 }
             }
             if (state.accountInvitationPrompt == AccountInvitationPrompt.REMINDER) {
@@ -416,7 +416,7 @@ private fun StatusLine(
 }
 
 @Composable
-private fun TaskRow(task: TaskOccurrence, today: TaskDate, onComplete: () -> Unit) {
+private fun TaskRow(task: TaskOccurrence, today: TaskDate, onComplete: (onFailed: () -> Unit) -> Unit) {
     // Guards against a double tap resolving the occurrence twice before the list refreshes.
     var completed by remember(task.id) { mutableStateOf(false) }
     val formatter = currentLocalizedFormatters()
@@ -425,7 +425,7 @@ private fun TaskRow(task: TaskOccurrence, today: TaskDate, onComplete: () -> Uni
     Row(Modifier.fillMaxWidth().padding(end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
         Checkbox(
             checked = completed,
-            onCheckedChange = if (completed) null else { _ -> completed = true; onComplete() },
+            onCheckedChange = if (completed) null else { _ -> completed = true; onComplete { completed = false } },
             modifier = Modifier.padding(start = 4.dp).semantics { contentDescription = description },
         )
         Column(Modifier.weight(1f)) {

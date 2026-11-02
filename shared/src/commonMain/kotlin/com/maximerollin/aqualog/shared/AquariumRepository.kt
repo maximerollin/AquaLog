@@ -67,12 +67,16 @@ interface AquariumRepository {
 
     suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult
 
-    /** Resolves as COMPLETED every pending linked Occurrence of the Aquarium due on or before [today]. */
+    /**
+     * Resolves as COMPLETED every pending linked Occurrence of the Aquarium due on or before [today], plus
+     * [alsoOccurrenceId] whatever its date. Each next Occurrence falls strictly after [today].
+     */
     suspend fun completeLinkedTasks(
         aquariumId: String,
         actionTypes: Set<MaintenanceActionType>,
         today: TaskDate,
         resolvedAtEpochMillis: Long,
+        alsoOccurrenceId: String? = null,
     ): List<TaskResolutionResult>
 
     fun observePendingTaskOccurrences(): Flow<List<TaskOccurrence>>
@@ -543,7 +547,11 @@ class RoomAquariumRepository(
         return CreatedTask(task, occurrence)
     }
 
-    override suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult {
+    override suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult =
+        resolve(input, catchUpAfter = null)
+
+    /** [catchUpAfter] skips the recurrence dates up to that day, so a late Occurrence is not completed again at once. */
+    private suspend fun resolve(input: TaskResolutionInput, catchUpAfter: TaskDate?): TaskResolutionResult {
         require(input.resolvedAtEpochMillis > 0)
         val task = taskDao.taskForOccurrence(input.occurrenceId).toDomain()
         val pending = observePendingTaskOccurrences().first().firstOrNull { it.id == input.occurrenceId }
@@ -560,7 +568,12 @@ class RoomAquariumRepository(
             } else {
                 pending.next(
                     id = generateId(),
-                    date = nextTaskDate(pending.dueDate, task.recurrence, task.monthlyAnchorDay),
+                    date = generateSequence(nextTaskDate(pending.dueDate, task.recurrence, task.monthlyAnchorDay)) {
+                        nextTaskDate(it, task.recurrence, task.monthlyAnchorDay)
+                    }.first {
+                        catchUpAfter == null ||
+                            compareValuesBy(it, catchUpAfter, TaskDate::year, TaskDate::month, TaskDate::day) > 0
+                    },
                     minute = pending.minuteOfDay,
                     zone = pending.timeZoneId,
                 )
@@ -580,14 +593,18 @@ class RoomAquariumRepository(
         actionTypes: Set<MaintenanceActionType>,
         today: TaskDate,
         resolvedAtEpochMillis: Long,
+        alsoOccurrenceId: String?,
     ): List<TaskResolutionResult> {
         val due = observePendingTaskOccurrences().first().filter {
-            it.aquariumId == aquariumId &&
-                it.maintenanceActionType in actionTypes &&
-                compareValuesBy(it.dueDate, today, TaskDate::year, TaskDate::month, TaskDate::day) <= 0
+            it.aquariumId == aquariumId && (
+                it.id == alsoOccurrenceId || (
+                    it.maintenanceActionType in actionTypes &&
+                        compareValuesBy(it.dueDate, today, TaskDate::year, TaskDate::month, TaskDate::day) <= 0
+                    )
+                )
         }
         return due.map {
-            resolveTaskOccurrence(TaskResolutionInput(it.id, TaskResolution.COMPLETED, resolvedAtEpochMillis))
+            resolve(TaskResolutionInput(it.id, TaskResolution.COMPLETED, resolvedAtEpochMillis), catchUpAfter = today)
         }
     }
 

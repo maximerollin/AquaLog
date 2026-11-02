@@ -224,6 +224,47 @@ class TaskFlowTest {
     }
 
     @Test
+    fun linkedFutureTask_tickedOnTheTaskScreen_isResolved() {
+        val application = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        val inThreeDays = java.time.LocalDate.now().plusDays(3)
+        runBlocking {
+            val setup = application.aquariumRepository.createConfiguredAquarium(
+                name = "Amazonien",
+                volume = 120.0,
+                volumeUnit = VolumeUnit.LITERS,
+                profile = AquariumProfile.ESTABLISHED,
+                parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+            application.aquariumRepository.createTask(
+                TaskInput(
+                    aquariumId = setup.aquarium.id,
+                    title = "Future water change",
+                    recurrence = TaskRecurrence.WEEKLY,
+                    firstDueDate = TaskDate(inThreeDays.year, inThreeDays.monthValue, inThreeDays.dayOfMonth),
+                    minuteOfDay = null,
+                    timeZoneId = java.time.ZoneId.systemDefault().id,
+                    maintenanceActionType = MaintenanceActionType.WATER_CHANGE,
+                ),
+            )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.onNode(hasText("See all") and hasClickAction()).performClick()
+            composeRule.onNodeWithContentDescription("Done, Future water change").performScrollTo().performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                runBlocking { application.aquariumRepository.observeResolvedTaskOccurrences().first().isNotEmpty() }
+            }
+            runBlocking {
+                val pending = application.aquariumRepository.observePendingTaskOccurrences().first().single()
+                assertEquals(inThreeDays.plusDays(7).dayOfMonth, pending.dueDate.day)
+            }
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
     fun newTask_isCreatedInASheet_thatClosesAfterTheSave_andNeverOnAnInvalidForm() {
         val scenario = launchTaskScreen()
         try {
