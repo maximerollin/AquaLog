@@ -67,6 +67,14 @@ interface AquariumRepository {
 
     suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult
 
+    /** Resolves as COMPLETED every pending linked Occurrence of the Aquarium due on or before [today]. */
+    suspend fun completeLinkedTasks(
+        aquariumId: String,
+        actionTypes: Set<MaintenanceActionType>,
+        today: TaskDate,
+        resolvedAtEpochMillis: Long,
+    ): List<TaskResolutionResult>
+
     fun observePendingTaskOccurrences(): Flow<List<TaskOccurrence>>
 
     fun observeResolvedTaskOccurrences(): Flow<List<TaskOccurrence>>
@@ -565,6 +573,22 @@ class RoomAquariumRepository(
             nextOccurrence = next?.toEntity(),
         )
         return TaskResolutionResult(resolvedEntity.toDomain(), nextEntity?.toDomain())
+    }
+
+    override suspend fun completeLinkedTasks(
+        aquariumId: String,
+        actionTypes: Set<MaintenanceActionType>,
+        today: TaskDate,
+        resolvedAtEpochMillis: Long,
+    ): List<TaskResolutionResult> {
+        val due = observePendingTaskOccurrences().first().filter {
+            it.aquariumId == aquariumId &&
+                it.maintenanceActionType in actionTypes &&
+                compareValuesBy(it.dueDate, today, TaskDate::year, TaskDate::month, TaskDate::day) <= 0
+        }
+        return due.map {
+            resolveTaskOccurrence(TaskResolutionInput(it.id, TaskResolution.COMPLETED, resolvedAtEpochMillis))
+        }
     }
 
     override fun observePendingTaskOccurrences(): Flow<List<TaskOccurrence>> =

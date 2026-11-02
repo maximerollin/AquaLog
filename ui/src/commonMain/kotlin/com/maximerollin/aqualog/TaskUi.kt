@@ -24,7 +24,9 @@ import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import com.maximerollin.aqualog.shared.MaintenanceActionType
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -237,6 +239,24 @@ private fun NewTaskSheet(state: TaskUiState, viewModel: HomeViewModel, onDismiss
                     )
                 }
             }
+            Text(stringResource(Res.string.task_link_action_label), style = MaterialTheme.typography.labelLarge)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = state.linkedAction == null,
+                    onClick = { viewModel.selectTaskLinkedAction(null, "") },
+                    label = { Text(stringResource(Res.string.task_link_action_none)) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                )
+                MaintenanceActionType.entries.forEach { type ->
+                    val label = type.label()
+                    FilterChip(
+                        selected = state.linkedAction == type,
+                        onClick = { viewModel.selectTaskLinkedAction(type, label) },
+                        label = { Text(label) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    )
+                }
+            }
             if (state.showValidationError) {
                 Text(stringResource(Res.string.task_validation_error), color = MaterialTheme.colorScheme.error)
             }
@@ -317,12 +337,12 @@ private fun TaskRow(occurrence: TaskOccurrence, viewModel: HomeViewModel) {
             checked = completed,
             onCheckedChange = if (completed) null else { _ ->
                 completed = true
-                viewModel.resolveTask(occurrence, TaskResolution.COMPLETED)
+                viewModel.completeTask(occurrence)
             },
             modifier = Modifier.semantics { contentDescription = completeDescription },
         )
         Column(Modifier.weight(1f)) {
-            Text(occurrence.title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+            LinkedTaskTitle(occurrence.title, occurrence.maintenanceActionType)
             Text(
                 stringResource(
                     Res.string.task_due_value,

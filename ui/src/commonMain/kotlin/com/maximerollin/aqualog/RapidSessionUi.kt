@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
@@ -519,6 +521,21 @@ internal fun MaintenanceActionType.label(): String = stringResource(
         MaintenanceActionType.PRUNING -> Res.string.action_pruning
     },
 )
+
+/** Stroke icon of an action where one exists; the others show the label alone. */
+internal fun MaintenanceActionType.icon(): ImageVector? = when (this) {
+    MaintenanceActionType.WATER_CHANGE -> AquagendaIcons.Droplet
+    MaintenanceActionType.FILTER_MAINTENANCE -> AquagendaIcons.Funnel
+    else -> null
+}
+
+@Composable
+internal fun LinkedTaskTitle(title: String, type: MaintenanceActionType?) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        type?.icon()?.let { Icon(it, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+        Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+    }
+}
 
 internal const val SEPARATOR = " · "
 

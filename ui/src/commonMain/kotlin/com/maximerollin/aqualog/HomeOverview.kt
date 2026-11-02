@@ -4,6 +4,7 @@ import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.ParameterDefinition
+import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
@@ -75,6 +76,16 @@ fun todayTasks(pending: List<TaskOccurrence>, aquariumId: String, today: TaskDat
     val due = own.filter { it.compareDueTo(today) <= 0 }.take(MAX_DUE_TASKS)
     val next = if (due.isEmpty()) own.firstOrNull { it.compareDueTo(today) > 0 } else null
     return TodayTasks(due, next)
+}
+
+/** Whether a linked Tâche of that action is pending and overdue for the Aquarium. */
+fun overdueLinkedAction(
+    pending: List<TaskOccurrence>,
+    aquariumId: String,
+    type: MaintenanceActionType,
+    today: TaskDate,
+): Boolean = pending.any {
+    it.aquariumId == aquariumId && it.maintenanceActionType == type && it.compareDueTo(today) < 0
 }
 
 data class AquariumAlert(val aquarium: Aquarium, val occurrence: TaskOccurrence, val isOverdue: Boolean)

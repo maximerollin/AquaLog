@@ -34,6 +34,7 @@ import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.FeedbackCoordinator
 import com.maximerollin.aqualog.shared.FeedbackGateway
 import com.maximerollin.aqualog.shared.GraphPeriod
+import com.maximerollin.aqualog.shared.MaintenanceAction
 import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
@@ -171,6 +172,7 @@ data class TaskUiState(
     val dueDate: String = "",
     val time: String = "",
     val recurrence: TaskRecurrence = TaskRecurrence.ONCE,
+    val linkedAction: MaintenanceActionType? = null,
     val pendingOccurrences: List<TaskOccurrence> = emptyList(),
     val showValidationError: Boolean = false,
     val isSaving: Boolean = false,
@@ -1226,6 +1228,14 @@ class HomeViewModel(
         it.copy(recurrence = value, showValidationError = false)
     }
 
+    fun selectTaskLinkedAction(type: MaintenanceActionType?, suggestedTitle: String) = updateTasks {
+        it.copy(
+            linkedAction = type,
+            title = if (type != null && it.title.isBlank()) suggestedTitle else it.title,
+            showValidationError = false,
+        )
+    }
+
     fun createTask() {
         val aquariumId = mutableUiState.value.setup?.aquarium?.id ?: return
         val form = mutableUiState.value.tasks
@@ -1248,13 +1258,14 @@ class HomeViewModel(
                         firstDueDate = TaskDate(date.year, date.monthValue, date.dayOfMonth),
                         minuteOfDay = time?.let { it.hour * 60 + it.minute },
                         timeZoneId = currentTimeZoneId(),
+                        maintenanceActionType = form.linkedAction,
                     ),
                 )
             }.onSuccess { created ->
                 taskReminderScheduler.schedule(created.occurrence)
                 recordProductEvent(ProductEvent.TaskUsed(TaskUsage.CREATED))
                 updateTasks {
-                    it.copy(title = "", time = "", isSaving = false, showValidationError = false, savedCount = it.savedCount + 1)
+                    it.copy(title = "", time = "", linkedAction = null, isSaving = false, showValidationError = false, savedCount = it.savedCount + 1)
                 }
             }.onFailure {
                 updateTasks { it.copy(isSaving = false, showValidationError = true) }
@@ -1302,7 +1313,40 @@ class HomeViewModel(
         }
     }
 
-    fun completeTask(occurrence: TaskOccurrence) = resolveTask(occurrence, TaskResolution.COMPLETED)
+    /** A linked Tâche records its action (usual quantity) in a Session; saving it resolves the Occurrence. */
+    fun completeTask(occurrence: TaskOccurrence) {
+        val type = occurrence.maintenanceActionType ?: return resolveTask(occurrence, TaskResolution.COMPLETED)
+        viewModelScope.launch {
+            runCatching {
+                val last = aquariumRepository.loadRapidSessionContext(occurrence.aquariumId).lastMaintenanceActions[type]
+                aquariumRepository.saveRapidSession(
+                    RapidSessionInput(
+                        aquariumId = occurrence.aquariumId,
+                        occurredAtEpochMillis = currentTimeMillis(),
+                        idempotencyKey = generateInteractionId(),
+                        maintenanceActions = listOf(defaultMaintenanceInput(type, last)),
+                    ),
+                )
+            }.onSuccess { recorded ->
+                mutableUiState.update { it.copy(latestSession = recorded) }
+                completeLinkedTasks(recorded)
+            }
+        }
+    }
+
+    private suspend fun completeLinkedTasks(recorded: RecordedSession, alreadyRecorded: Set<MaintenanceActionType> = emptySet()) {
+        val types = recorded.maintenanceActions.map { it.type }.toSet() - alreadyRecorded
+        if (types.isEmpty()) return
+        runCatching {
+            aquariumRepository.completeLinkedTasks(recorded.session.aquariumId, types, today(), currentTimeMillis())
+        }.onSuccess { results ->
+            results.forEach { result ->
+                taskReminderScheduler.cancel(result.resolved.id)
+                result.nextOccurrence?.let(taskReminderScheduler::schedule)
+                recordProductEvent(ProductEvent.TaskUsed(TaskUsage.COMPLETED))
+            }
+        }
+    }
 
     fun today(): TaskDate = LocalDate.now(ZoneId.of(currentTimeZoneId())).let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
 
@@ -1527,23 +1571,8 @@ class HomeViewModel(
         if (type in state.actions) {
             state.copy(actions = state.actions - type, editingAction = null)
         } else {
-            val previous = state.context?.lastMaintenanceActions?.get(type)
-            val default = when (type) {
-                MaintenanceActionType.WATER_CHANGE -> MaintenanceActionInput(type, "20", "%")
-                MaintenanceActionType.FERTILIZATION -> MaintenanceActionInput(type, "1", "mL")
-                else -> MaintenanceActionInput(type)
-            }
             state.copy(
-                actions = state.actions + (
-                    type to previous?.let {
-                        MaintenanceActionInput(
-                            type = type,
-                            quantity = it.quantity.displayInput(),
-                            unit = it.unit.orEmpty(),
-                            product = it.product.orEmpty(),
-                        )
-                    }.orDefault(default)
-                ),
+                actions = state.actions + (type to defaultMaintenanceInput(type, state.context?.lastMaintenanceActions?.get(type))),
                 saveError = false,
             )
         }
@@ -1615,6 +1644,9 @@ class HomeViewModel(
                 return
             }
         }
+        // An edit only resolves the actions it adds, not the ones the Session already had.
+        val previousTypes = mutableUiState.value.sessionDetail?.takeIf { draft.editingSessionId == it.session.id }
+            ?.maintenanceActions?.map { it.type }?.toSet().orEmpty()
         val isFirstSession = draft.editingSessionId == null && mutableUiState.value.latestSession == null
         mutableUiState.update { it.copy(rapidSession = draft.copy(isSaving = true, saveError = false, pendingConcerns = emptyMap())) }
         viewModelScope.launch {
@@ -1661,6 +1693,7 @@ class HomeViewModel(
                         it.copy(accountInvitationPrompt = AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION)
                     }
                 }
+                completeLinkedTasks(recorded, previousTypes)
                 recordProductEvent(
                     ProductEvent.SessionSaved(
                         if (draft.editingSessionId == null) SessionUsage.CREATED else SessionUsage.EDITED,
@@ -2256,7 +2289,17 @@ private fun Double?.displayInput(): String = when {
     else -> toString()
 }
 
-private fun <T> T?.orDefault(default: T): T = this ?: default
+/** The usual quantity of an action: the last recorded one, else the built-in default. */
+fun defaultMaintenanceInput(type: MaintenanceActionType, last: MaintenanceAction?): MaintenanceActionInput =
+    if (last != null) {
+        MaintenanceActionInput(type, last.quantity.displayInput(), last.unit.orEmpty(), last.product.orEmpty())
+    } else {
+        when (type) {
+            MaintenanceActionType.WATER_CHANGE -> MaintenanceActionInput(type, "20", "%")
+            MaintenanceActionType.FERTILIZATION -> MaintenanceActionInput(type, "1", "mL")
+            else -> MaintenanceActionInput(type)
+        }
+    }
 
 private fun TrendPeriod.toGraphPeriod(): GraphPeriod = when (this) {
     TrendPeriod.SEVEN_DAYS -> GraphPeriod.DAYS_7

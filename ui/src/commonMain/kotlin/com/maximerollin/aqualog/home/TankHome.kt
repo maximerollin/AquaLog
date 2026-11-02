@@ -74,6 +74,7 @@ import com.maximerollin.aqualog.shared.SyncFailureCategory
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
+import com.maximerollin.aqualog.LinkedTaskTitle
 import com.maximerollin.aqualog.todayTasks
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.ReadingValue
@@ -428,7 +429,7 @@ private fun TaskRow(task: TaskOccurrence, today: TaskDate, onComplete: () -> Uni
             modifier = Modifier.padding(start = 4.dp).semantics { contentDescription = description },
         )
         Column(Modifier.weight(1f)) {
-            Text(task.title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+            LinkedTaskTitle(task.title, task.maintenanceActionType)
             Text(
                 if (overdue) {
                     stringResource(Res.string.home_task_overdue)

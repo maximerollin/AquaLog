@@ -5,6 +5,9 @@ import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.ParameterDefinition
+import com.maximerollin.aqualog.shared.MaintenanceAction
+import com.maximerollin.aqualog.shared.MaintenanceActionInput
+import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.VolumeUnit
@@ -198,6 +201,27 @@ class HomeOverviewTest {
         val result = todayTasks(pending, "a1", today)
         assertEquals(listOf("1", "3"), result.due.map { it.id })
         assertNull(result.next)
+    }
+
+    @Test
+    fun `overdue linked action only counts an overdue Occurrence of that action and Aquarium`() {
+        val wc = MaintenanceActionType.WATER_CHANGE
+        val pending = listOf(
+            occurrence("1", "a1", yesterday).copy(maintenanceActionType = wc),
+            occurrence("2", "a2", yesterday).copy(maintenanceActionType = wc),
+            occurrence("3", "a1", today).copy(maintenanceActionType = MaintenanceActionType.VACUUM),
+        )
+        assertTrue(overdueLinkedAction(pending, "a1", wc, today))
+        assertFalse(overdueLinkedAction(pending, "a1", MaintenanceActionType.VACUUM, today))
+        assertFalse(overdueLinkedAction(pending.drop(1), "a1", wc, today))
+    }
+
+    @Test
+    fun `default maintenance input reuses the last quantity else the built-in default`() {
+        assertEquals(MaintenanceActionInput(MaintenanceActionType.WATER_CHANGE, "20", "%"), defaultMaintenanceInput(MaintenanceActionType.WATER_CHANGE, null))
+        assertEquals(MaintenanceActionInput(MaintenanceActionType.VACUUM), defaultMaintenanceInput(MaintenanceActionType.VACUUM, null))
+        val last = MaintenanceAction("m", "s", MaintenanceActionType.WATER_CHANGE, 35.0, "%", null)
+        assertEquals(MaintenanceActionInput(MaintenanceActionType.WATER_CHANGE, "35", "%"), defaultMaintenanceInput(MaintenanceActionType.WATER_CHANGE, last))
     }
 
     @Test
