@@ -36,9 +36,13 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -231,12 +235,30 @@ private fun TimelineTaskRow(occurrence: TaskOccurrence, isLast: Boolean) {
 private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAquarium: Boolean, onClick: () -> Unit) {
     val formatter = currentLocalizedFormatters()
     val description = stringResource(Res.string.open_session_details)
+    val attentionCue = stringResource(Res.string.reading_attention_description)
+    val readings = entry.measurements.sortedBy { it.definition.position }.map { item ->
+        val label = item.definition.parameter.label()
+        TimelineReading(
+            value = formatter.number(item.measurement.value, item.definition.precision),
+            unit = item.definition.unit.takeIf { it.isNotBlank() && it != label },
+            label = label,
+            attention = item.definition.isOutsideIndicativeRange(item.measurement.value),
+        )
+    }
+    // Each ReadingValue is its own merged node; the row announces them as one unit with its click action.
+    val readingsSummary = readings.joinToString(", ") { reading ->
+        listOfNotNull(reading.value, reading.unit, reading.label).joinToString(" ") +
+            if (reading.attention) ", $attentionCue" else ""
+    }
     RailEntry(
         MaterialTheme.colorScheme.primary,
         isLast,
         Modifier
             .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = description }
+            .semantics {
+                contentDescription = description
+                if (readingsSummary.isNotEmpty()) stateDescription = readingsSummary
+            }
             .heightIn(min = 48.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -255,18 +277,18 @@ private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAqua
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (entry.measurements.isNotEmpty()) {
+            if (readings.isNotEmpty()) {
                 FlowRow(
+                    modifier = Modifier.clearAndSetSemantics { text = AnnotatedString(readingsSummary) },
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    entry.measurements.sortedBy { it.definition.position }.forEach { item ->
-                        val label = item.definition.parameter.label()
+                    readings.forEach { reading ->
                         ReadingValue(
-                            value = formatter.number(item.measurement.value, item.definition.precision),
-                            label = label,
-                            unit = item.definition.unit.takeIf { it != label },
-                            attention = item.definition.isOutsideIndicativeRange(item.measurement.value),
+                            value = reading.value,
+                            label = reading.label,
+                            unit = reading.unit,
+                            attention = reading.attention,
                         )
                     }
                 }
@@ -285,6 +307,8 @@ private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAqua
         }
     }
 }
+
+private data class TimelineReading(val value: String, val unit: String?, val label: String, val attention: Boolean)
 
 @Composable
 private fun MaintenanceAction.summary(formatter: LocalizedFormatters): String {

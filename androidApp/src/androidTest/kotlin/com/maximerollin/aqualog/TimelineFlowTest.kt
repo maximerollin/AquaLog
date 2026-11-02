@@ -2,6 +2,8 @@ package com.maximerollin.aqualog
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
@@ -60,7 +62,9 @@ class TimelineFlowTest {
         composeRule.onNodeWithText("History").performClick()
         composeRule.onNodeWithText("Chronology").assertIsDisplayed()
         // One Session: its reading, maintenance action and Event all show on its journal entry.
-        composeRule.onNodeWithText("24.5").assertIsDisplayed()
+        composeRule.onNode(
+            hasContentDescription("Open Session details") and hasText("24.5", substring = true) and hasClickAction(),
+        ).assertIsDisplayed()
         composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
         composeRule.onNodeWithText("Clear water").assertIsDisplayed()
 

@@ -114,11 +114,12 @@ class MultiAquariumFlowTest {
             waitForText("measured today", substring = true)
             composeRule.onNodeWithText("History").performClick()
             waitForText("Chronology")
+            // The Chronologie context line names the shown Aquarium (« Nano 30 · All time »).
             composeRule.waitUntil(timeoutMillis = 10_000) {
-                composeRule.onAllNodes(hasText("Nano 30")).fetchSemanticsNodes().isNotEmpty()
+                composeRule.onAllNodes(hasText("Nano 30", substring = true)).fetchSemanticsNodes().isNotEmpty()
             }
             composeRule.onAllNodesWithContentDescription("Open Session details").assertCountEquals(1)
-            composeRule.onNodeWithText("Aqua 120").assertDoesNotExist()
+            composeRule.onNode(hasText("Aqua 120", substring = true)).assertDoesNotExist()
         } finally {
             scenario.close()
         }
