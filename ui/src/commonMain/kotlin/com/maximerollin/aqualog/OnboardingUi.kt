@@ -30,7 +30,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -761,10 +760,7 @@ private fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         ScreenHeading(Res.string.profile_title, Res.string.profile_description)
-        Column(
-            modifier = Modifier.selectableGroup(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+        Column(modifier = Modifier.selectableGroup()) {
             ProfileOption(
                 title = stringResource(Res.string.profile_established),
                 description = stringResource(Res.string.profile_established_description),
@@ -783,6 +779,7 @@ private fun ProfileScreen(
                 selected = selected == AquariumProfile.PLANTED_SHRIMP,
                 onClick = { onSelected(AquariumProfile.PLANTED_SHRIMP) },
             )
+            CarnetDivider()
         }
         Spacer(Modifier.height(8.dp))
         PrimaryButton(Res.string.continue_to_aquarium, onContinue)
@@ -796,13 +793,14 @@ private fun ProfileOption(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton),
-    ) {
+    Column {
+        CarnetDivider()
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .defaultMinSize(minHeight = 56.dp)
+                .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
+                .padding(vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             RadioButton(selected = selected, onClick = null)
@@ -842,7 +840,7 @@ private fun AquariumDetailsScreen(
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(stringResource(Res.string.volume_unit_label), style = MaterialTheme.typography.titleMedium)
+        CarnetSectionTitle(stringResource(Res.string.volume_unit_label))
         Column(Modifier.selectableGroup()) {
             VolumeUnitOption(
                 text = stringResource(Res.string.unit_liters),
@@ -887,9 +885,11 @@ private fun ParametersScreen(
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item { ScreenHeading(Res.string.parameters_title, Res.string.parameters_description) }
+        item {
+            ScreenHeading(Res.string.parameters_title, Res.string.parameters_description)
+            Spacer(Modifier.height(16.dp))
+        }
         itemsIndexed(state.parameters, key = { _, item -> item.parameter.storageValue }) { index, item ->
             ParameterEditor(
                 state = item,
@@ -898,10 +898,14 @@ private fun ParametersScreen(
                 viewModel = viewModel,
             )
         }
+        item { CarnetDivider() }
         if (state.showParameterValidationError) {
             item { ErrorText(Res.string.invalid_parameters) }
         }
-        item { PrimaryButton(Res.string.try_mini_session, viewModel::continueToPractice) }
+        item {
+            Spacer(Modifier.height(16.dp))
+            PrimaryButton(Res.string.try_mini_session, viewModel::continueToPractice)
+        }
     }
 }
 
@@ -916,9 +920,10 @@ private fun ParameterEditor(
     val moveUpDescription = stringResource(Res.string.move_parameter_up, label)
     val moveDownDescription = stringResource(Res.string.move_parameter_down, label)
     val enabledDescription = stringResource(Res.string.enabled_for_parameter, label)
-    Card(Modifier.fillMaxWidth()) {
+    Column {
+        CarnetDivider()
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1287,15 +1292,13 @@ private fun AquariumEditorDialog(editor: AquariumEditorUiState, viewModel: HomeV
 
 @Composable
 private fun PlanCard(title: StringResource, description: StringResource) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
-            Text(
-                stringResource(description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        CarnetSectionTitle(stringResource(title))
+        Text(
+            stringResource(description),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

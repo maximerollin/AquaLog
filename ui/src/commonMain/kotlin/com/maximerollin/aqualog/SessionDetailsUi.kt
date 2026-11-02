@@ -4,15 +4,16 @@ import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -23,7 +24,11 @@ import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.RecordedSession
+import com.maximerollin.aqualog.shared.isOutsideIndicativeRange
+import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
+import com.maximerollin.aqualog.ui.theme.ReadingValue
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SessionDetailsScreen(
     recorded: RecordedSession,
@@ -41,38 +46,40 @@ fun SessionDetailsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(stringResource(Res.string.session_details), style = MaterialTheme.typography.headlineMedium)
-                TextButton(onClick = viewModel::closeSessionDetails) {
-                    Text(
-                        stringResource(
-                            if (returnToTimeline) Res.string.back_to_timeline else Res.string.back,
-                        ),
-                    )
-                }
-            }
-        }
-        item {
-            Text(
-                stringResource(
+            CarnetScreenTitle(
+                title = stringResource(Res.string.session_details),
+                context = stringResource(
                     Res.string.session_date,
                     formatter.shortDateTime(recorded.session.occurredAtEpochMillis),
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                action = {
+                    TextButton(onClick = viewModel::closeSessionDetails, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text(
+                            stringResource(
+                                if (returnToTimeline) Res.string.back_to_timeline else Res.string.back,
+                            ),
+                        )
+                    }
+                },
             )
         }
-        recorded.measurements.forEach { measurement ->
-            val definition = parametersById[measurement.parameterDefinitionId]
-            if (definition != null) {
-                item(measurement.id) {
-                    Text(
-                        stringResource(
-                            Res.string.session_measurement_detail,
-                            definition.parameter.label(),
-                            formatter.number(measurement.value),
-                            definition.unit,
-                        ),
-                    )
+        val readings = recorded.measurements.mapNotNull { measurement ->
+            parametersById[measurement.parameterDefinitionId]?.let { measurement to it }
+        }
+        if (readings.isNotEmpty()) {
+            item {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    readings.forEach { (measurement, definition) ->
+                        ReadingValue(
+                            value = formatter.number(measurement.value),
+                            label = definition.parameter.label(),
+                            unit = definition.unit,
+                            attention = definition.isOutsideIndicativeRange(measurement.value),
+                        )
+                    }
                 }
             }
         }
@@ -83,12 +90,13 @@ fun SessionDetailsScreen(
                     action.unit.orEmpty(),
                     action.product.orEmpty(),
                 ).filter(String::isNotBlank).joinToString(" ")
-                Text(stringResource(Res.string.session_action_detail, action.type.label(), detail))
+                TimelineNoteLine(Res.drawable.ic_drop, stringResource(Res.string.session_action_detail, action.type.label(), detail))
             }
         }
         recorded.events.forEach { event ->
             item(event.id) {
-                Text(
+                TimelineNoteLine(
+                    Res.drawable.ic_note,
                     stringResource(
                         Res.string.session_event_detail,
                         stringResource(

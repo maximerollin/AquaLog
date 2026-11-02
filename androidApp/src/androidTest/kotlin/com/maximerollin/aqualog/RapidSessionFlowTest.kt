@@ -85,7 +85,7 @@ class RapidSessionFlowTest {
             composeRule.onNodeWithText("History").performClick()
             waitForText("Chronology")
             composeRule.onNodeWithContentDescription("Open Session details").performClick()
-            composeRule.onNodeWithText("Temperature · 24.5 °C").assertIsDisplayed()
+            composeRule.onNode(hasText("Temperature") and hasText("24.5")).assertIsDisplayed()
             composeRule.onNodeWithText("Back to Chronology").performClick()
             composeRule.onNodeWithText("More").performClick()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("qualification@example.com"))

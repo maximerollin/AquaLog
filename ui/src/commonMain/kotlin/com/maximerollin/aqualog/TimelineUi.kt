@@ -317,7 +317,7 @@ private fun MaintenanceAction.summary(formatter: LocalizedFormatters): String {
 }
 
 @Composable
-private fun TimelineNoteLine(icon: org.jetbrains.compose.resources.DrawableResource, text: String) {
+internal fun TimelineNoteLine(icon: org.jetbrains.compose.resources.DrawableResource, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Icon(painterResource(icon), null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
         Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

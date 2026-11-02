@@ -74,7 +74,7 @@ class TimelineFlowTest {
         composeRule.onNodeWithText("Close").performClick()
         composeRule.onNodeWithContentDescription("Open Session details").performClick()
         composeRule.onNodeWithText("Session details").assertIsDisplayed()
-        composeRule.onNodeWithText("Temperature · 24.5 °C").assertIsDisplayed()
+        composeRule.onNode(hasText("Temperature") and hasText("24.5")).assertIsDisplayed()
         composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
         composeRule.onNodeWithText("Observation · Clear water").assertIsDisplayed()
 
