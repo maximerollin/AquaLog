@@ -355,6 +355,8 @@ data class HomeUiState(
     val latestReadings: List<LatestReading> = emptyList(),
     /** Tests of the displayed Aquarium due today or overdue, earliest first. */
     val dueTests: List<DueTest> = emptyList(),
+    /** Weeks of regular care for the whole account; 0 hides the line. */
+    val maintenanceSeries: Int = 0,
     val showRhythmSettings: Boolean = false,
     /** Id of the Session after which the « looks cycled » card was set aside for the displayed Aquarium, if any. */
     val cycledDismissedSessionId: String? = null,
@@ -503,6 +505,7 @@ class HomeViewModel(
                             // The setup re-emits when a rhythm changes, so this also follows the rhythm settings.
                             aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).collect { samples ->
                                 mutableUiState.update { it.copy(dueTests = dueTests(setup, samples, today())) }
+                                refreshMaintenanceSeries()
                                 taskReminderScheduler.scheduleDueTests(
                                     aquariumRepository.dueTestSummary(today(), currentTimeZoneId()).nextDueDate,
                                 )
@@ -527,6 +530,7 @@ class HomeViewModel(
         viewModelScope.launch {
             aquariumRepository.observePendingTaskOccurrences().collectLatest { occurrences ->
                 taskReminderScheduler.reconcile(occurrences)
+                refreshMaintenanceSeries()
                 mutableUiState.update { state ->
                     state.copy(tasks = state.tasks.copy(pendingOccurrences = occurrences))
                 }
@@ -1408,6 +1412,11 @@ class HomeViewModel(
     /** null follows the profile default; [NEVER_INTERVAL_DAYS] never reminds. */
     fun updateAnalysisInterval(parameterDefinitionId: String, days: Int?) {
         viewModelScope.launch { aquariumRepository.updateAnalysisInterval(parameterDefinitionId, days) }
+    }
+
+    private suspend fun refreshMaintenanceSeries() {
+        val series = aquariumRepository.maintenanceSeries(today(), currentTimeZoneId())
+        mutableUiState.update { it.copy(maintenanceSeries = series) }
     }
 
     fun today(): TaskDate = LocalDate.now(ZoneId.of(currentTimeZoneId())).let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }

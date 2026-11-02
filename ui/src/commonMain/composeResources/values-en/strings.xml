@@ -364,6 +364,7 @@
     <string name="home_nothing_due">Nothing due · next: %1$s on %2$s</string>
     <string name="home_no_measurement_yet">No measurement yet</string>
     <string name="home_status_all_in_range">All in range</string>
+    <plurals name="series_weeks"><item quantity="one">%1$d week of regular care</item><item quantity="other">%1$d weeks of regular care</item></plurals>
     <plurals name="home_status_outside_range"><item quantity="one">%1$d value to watch</item><item quantity="other">%1$d values to watch</item></plurals>
     <string name="home_measured_today">measured today</string>
     <string name="home_measured_yesterday">measured yesterday</string>

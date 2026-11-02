@@ -5,9 +5,11 @@ import com.maximerollin.aqualog.resources.list_pair
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.TaskDate
+import com.maximerollin.aqualog.shared.assistance.AquariumHistory
 import com.maximerollin.aqualog.shared.assistance.DueTest
 import com.maximerollin.aqualog.shared.assistance.ReadingSample
 import com.maximerollin.aqualog.shared.assistance.dueTests
+import com.maximerollin.aqualog.shared.assistance.weeklySeries
 import com.maximerollin.aqualog.shared.plusDays
 import com.maximerollin.aqualog.shared.toEpochDay
 import java.time.Instant
@@ -47,6 +49,19 @@ suspend fun AquariumRepository.dueTestSummary(today: TaskDate, timeZoneId: Strin
         dueToday = inputs.flatMap { (setup, samples) -> dueTests(setup, samples, today) },
         nextDueDate = inputs.mapNotNull { (setup, samples) -> nextDueDate(setup, samples, today) }
             .minByOrNull { it.toEpochDay() },
+    )
+}
+
+/** The weekly series of every non-archived Aquarium, read once: readings, pending and resolved Tâches. */
+suspend fun AquariumRepository.maintenanceSeries(today: TaskDate, timeZoneId: String): Int {
+    val occurrences = observePendingTaskOccurrences().first() + observeResolvedTaskOccurrences().first()
+    return weeklySeries(
+        observeAquariums().first().mapNotNull { aquarium ->
+            loadSetup(aquarium.id)?.let {
+                AquariumHistory(it, observeReadingSamples(aquarium.id, timeZoneId).first(), occurrences.filter { o -> o.aquariumId == aquarium.id })
+            }
+        },
+        today,
     )
 }
 

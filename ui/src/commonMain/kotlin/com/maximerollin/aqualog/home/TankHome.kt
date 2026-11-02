@@ -168,6 +168,16 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                     modifier = gutter,
                 )
             }
+            if (state.maintenanceSeries >= 1) {
+                item(key = "maintenance-series") {
+                    Text(
+                        pluralStringResource(Res.plurals.series_weeks, state.maintenanceSeries, state.maintenanceSeries),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = gutter.padding(bottom = 8.dp),
+                    )
+                }
+            }
             items(alerts, key = { "alert-${it.aquarium.id}" }) { alert ->
                 AlertRow(alert, onClick = { viewModel.selectAquarium(alert.aquarium.id) }, modifier = gutter)
             }

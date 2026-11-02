@@ -364,6 +364,7 @@
     <string name="home_nothing_due">Niente in scadenza · prossima: %1$s il %2$s</string>
     <string name="home_no_measurement_yet">Nessuna misurazione</string>
     <string name="home_status_all_in_range">Tutto nell’intervallo indicativo</string>
+    <plurals name="series_weeks"><item quantity="one">%1$d settimana di cura regolare</item><item quantity="other">%1$d settimane di cura regolare</item></plurals>
     <plurals name="home_status_outside_range"><item quantity="one">%1$d valore da tenere d’occhio</item><item quantity="other">%1$d valori da tenere d’occhio</item></plurals>
     <string name="home_measured_today">misurato oggi</string>
     <string name="home_measured_yesterday">misurato ieri</string>
