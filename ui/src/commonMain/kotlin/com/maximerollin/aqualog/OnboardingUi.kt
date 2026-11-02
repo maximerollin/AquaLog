@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
+import com.maximerollin.aqualog.home.TankScene
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Arrangement
@@ -1300,12 +1301,12 @@ private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier:
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                 ) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TankScene(aquarium, Modifier.fillMaxWidth())
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 Text(aquarium.name, style = MaterialTheme.typography.headlineSmall)
                                 Text(aquarium.formattedVolume(), color = MaterialTheme.colorScheme.onPrimaryContainer)
                             }
-                            AquariumArtwork(Modifier.size(72.dp))
                         }
                         Text(
                             stringResource(
