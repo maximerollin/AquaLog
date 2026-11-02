@@ -358,6 +358,8 @@ data class HomeUiState(
     val showRhythmSettings: Boolean = false,
     /** Id of the Session after which the « looks cycled » card was set aside for the displayed Aquarium, if any. */
     val cycledDismissedSessionId: String? = null,
+    /** False until the dismissals of the displayed Aquarium were read, so a dismissed card never flashes. */
+    val cycledDismissalsLoaded: Boolean = false,
     val accountInvitationPrompt: AccountInvitationPrompt = AccountInvitationPrompt.NONE,
     val account: AccountUiState = AccountUiState(),
     val sessionDetail: RecordedSession? = null,
@@ -480,6 +482,7 @@ class HomeViewModel(
                         latestReadings = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.latestReadings else emptyList(),
                         dueTests = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.dueTests else emptyList(),
                         cycledDismissedSessionId = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.cycledDismissedSessionId else null,
+                        cycledDismissalsLoaded = setup?.aquarium?.id == it.setup?.aquarium?.id && it.cycledDismissalsLoaded,
                     )
                 }
                 if (setup != null) {
@@ -493,7 +496,7 @@ class HomeViewModel(
                         }
                         launch {
                             aquariumRepository.observeDismissals(setup.aquarium.id).collect { dismissals ->
-                                mutableUiState.update { it.copy(cycledDismissedSessionId = dismissals[CYCLED_PROPOSAL]) }
+                                mutableUiState.update { it.copy(cycledDismissedSessionId = dismissals[CYCLED_PROPOSAL], cycledDismissalsLoaded = true) }
                             }
                         }
                         launch {

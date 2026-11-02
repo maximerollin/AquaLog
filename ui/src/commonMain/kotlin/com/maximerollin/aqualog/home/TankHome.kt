@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -178,7 +180,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                     ) { Text(stringResource(Res.string.continue_after_session)) }
                 }
             }
-            if (looksCycled(setup, state.latestReadings) && state.latestSession?.session?.id != state.cycledDismissedSessionId) {
+            if (state.cycledDismissalsLoaded && looksCycled(setup, state.latestReadings) && state.latestSession?.session?.id != state.cycledDismissedSessionId) {
                 item(key = "cycled-proposal") {
                     CycledProposalCard(viewModel::switchToEstablished, viewModel::dismissCycledProposal, gutter)
                 }
@@ -364,6 +366,7 @@ private fun AlertRow(alert: AquariumAlert, onClick: () -> Unit, modifier: Modifi
 }
 
 /** A one-time proposal: a Cycling Aquarium whose ammonia and nitrite read 0 may move to the established rhythm. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun CycledProposalCard(onSwitch: () -> Unit, onLater: () -> Unit, modifier: Modifier) {
     Column(modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -372,7 +375,7 @@ private fun CycledProposalCard(onSwitch: () -> Unit, onLater: () -> Unit, modifi
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.Center) {
             Button(onClick = onSwitch, shape = MaterialTheme.shapes.medium, modifier = Modifier.heightIn(min = 48.dp)) {
                 Text(stringResource(Res.string.cycled_proposal_switch))
             }
