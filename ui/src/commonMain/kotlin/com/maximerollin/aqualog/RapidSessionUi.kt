@@ -97,12 +97,13 @@ fun RapidSessionScreen(
     modifier: Modifier = Modifier,
 ) {
     val formatter = currentLocalizedFormatters()
+    SaveCheckDialog(state, viewModel)
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
             Surface(color = MaterialTheme.colorScheme.background) {
                 Button(
-                    onClick = viewModel::saveRapidSession,
+                    onClick = { viewModel.saveRapidSession() },
                     shape = MaterialTheme.shapes.medium,
                     enabled = state.canSave,
                     modifier = Modifier

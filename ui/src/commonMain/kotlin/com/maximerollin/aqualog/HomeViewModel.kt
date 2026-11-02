@@ -83,6 +83,8 @@ import com.maximerollin.aqualog.shared.TechnicalFailureKind
 import com.maximerollin.aqualog.shared.OnboardingMilestone
 import com.maximerollin.aqualog.shared.VoluntaryFeedback
 import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.assistance.MeasurementConcern
+import com.maximerollin.aqualog.shared.assistance.checkMeasurement
 import com.maximerollin.aqualog.shared.evaluateMeasurement
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -94,6 +96,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlin.math.pow
+import kotlin.math.round
 import java.io.Serializable
 import java.time.LocalDate
 import java.time.LocalTime
@@ -381,6 +385,8 @@ data class RapidSessionUiState(
     val incident: String = "",
     val isSaving: Boolean = false,
     val saveError: Boolean = false,
+    /** Suspicious values found by the last save attempt, by parameter definition id; never blocks saving. */
+    val pendingConcerns: Map<String, MeasurementConcern> = emptyMap(),
 ) {
     val hasContent: Boolean
         get() = measurementInputs.values.any(String::isNotBlank) ||
@@ -1567,11 +1573,50 @@ class HomeViewModel(
 
     fun updateIncident(value: String) = updateRapidSession { it.copy(incident = value, saveError = false) }
 
-    fun saveRapidSession() {
+    fun applySuggestion(parameterDefinitionId: String) = updateRapidSession { state ->
+        val definition = state.context?.activeParameters?.firstOrNull { it.id == parameterDefinitionId }
+        val suggestion = (state.pendingConcerns[parameterDefinitionId] as? MeasurementConcern.Implausible)?.suggestion
+        if (definition == null || suggestion == null) return@updateRapidSession state
+        val scale = 10.0.pow(definition.precision)
+        state.copy(
+            measurementInputs = state.measurementInputs + (parameterDefinitionId to (round(suggestion * scale) / scale).displayInput()),
+            pendingConcerns = state.pendingConcerns - parameterDefinitionId,
+            saveError = false,
+        )
+    }
+
+    fun dismissConcerns() = updateRapidSession { it.copy(pendingConcerns = emptyMap()) }
+
+    /** Editing skips the big-jump check: the context cannot tell which reading is the edited Session's own. */
+    private fun RapidSessionUiState.concerns(): Map<String, MeasurementConcern> {
+        val context = context ?: return emptyMap()
+        val now = currentTimeMillis()
+        return context.activeParameters.mapNotNull { definition ->
+            val value = evaluateMeasurement(measurementInputs[definition.id].orEmpty(), definition).value
+                ?: return@mapNotNull null
+            val concern = checkMeasurement(
+                definition,
+                value,
+                context.lastMeasurements[definition.id].takeIf { editingSessionId == null },
+                context.lastMeasurementTimes[definition.id],
+                now,
+            )
+            concern?.let { definition.id to it }
+        }.toMap()
+    }
+
+    fun saveRapidSession(confirmed: Boolean = false) {
         val draft = mutableUiState.value.rapidSession ?: return
         if (!draft.canSave) return
+        if (!confirmed) {
+            val concerns = draft.concerns()
+            if (concerns.isNotEmpty()) {
+                updateRapidSession { it.copy(pendingConcerns = concerns) }
+                return
+            }
+        }
         val isFirstSession = draft.editingSessionId == null && mutableUiState.value.latestSession == null
-        mutableUiState.update { it.copy(rapidSession = draft.copy(isSaving = true, saveError = false)) }
+        mutableUiState.update { it.copy(rapidSession = draft.copy(isSaving = true, saveError = false, pendingConcerns = emptyMap())) }
         viewModelScope.launch {
             runCatching {
                 if (draft.editingSessionId == null) {

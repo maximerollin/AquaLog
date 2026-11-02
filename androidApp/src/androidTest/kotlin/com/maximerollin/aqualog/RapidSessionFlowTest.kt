@@ -24,6 +24,11 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
+import com.maximerollin.aqualog.shared.AquariumProfile
+import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.RapidSessionInput
+import com.maximerollin.aqualog.shared.VolumeUnit
+import kotlinx.coroutines.runBlocking
 import com.maximerollin.aqualog.shared.AuthGateway
 import com.maximerollin.aqualog.shared.AuthTokens
 import com.maximerollin.aqualog.shared.AuthenticatedAccount
@@ -167,6 +172,72 @@ class RapidSessionFlowTest {
                 it.config.getOrElseNullable(SemanticsProperties.StateDescription) { null }
                     ?.contains("outside your indicative range") == true
             })
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun implausiblePh_offersTheDecimalFix() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        (context.applicationContext as TestAquaLogApplication).resetRepository()
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            waitForText("Get started")
+            completeMinimalOnboarding()
+            composeRule.onNodeWithText("Measure").performClick()
+            waitForText("Measurements")
+            val ph = composeRule.onNodeWithContentDescription("Measurement for pH")
+            ph.performTextInput("72")
+            composeRule.onNodeWithText("Save Session").performClick()
+            waitForText("Did you mean 7.2?")
+            composeRule.onNodeWithText("pH 72?").assertIsDisplayed()
+            composeRule.onNodeWithText("Fix").performClick()
+            composeRule.onAllNodes(hasText("Did you mean 7.2?")).assertCountEquals(0)
+            composeRule.onNodeWithContentDescription("Measurement for pH").assert(hasText("7.2"))
+            // Nothing was saved: the entry screen is still there.
+            composeRule.onNodeWithText("Save Session").assertIsDisplayed()
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun bigJump_canBeSavedAnyway() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val application = context.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        val (aquariumId, nitrateId) = runBlocking {
+            val setup = application.aquariumRepository.createConfiguredAquarium(
+                name = "Amazonien",
+                volume = 120.0,
+                volumeUnit = VolumeUnit.LITERS,
+                profile = AquariumProfile.ESTABLISHED,
+                parameters = com.maximerollin.aqualog.shared.OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+            val nitrate = setup.parameters.first { it.parameter == BuiltInParameter.NITRATE }
+            application.aquariumRepository.saveRapidSession(
+                RapidSessionInput(
+                    aquariumId = setup.aquarium.id,
+                    occurredAtEpochMillis = System.currentTimeMillis() - 3L * 86_400_000L,
+                    idempotencyKey = "previous-nitrate",
+                    measurementInputs = mapOf(nitrate.id to "20"),
+                ),
+            )
+            setup.aquarium.id to nitrate.id
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            waitForText("Measure")
+            composeRule.onNodeWithText("Measure").performClick()
+            waitForText("Measurements")
+            composeRule.onNodeWithContentDescription("Measurement for Nitrate").performScrollTo().performTextInput("80")
+            composeRule.onNodeWithText("Save Session").performClick()
+            waitForText("Nitrate at 80 while you were at 20 3 days ago, is that right?")
+            composeRule.onNodeWithText("Save anyway").performClick()
+            waitForText("measured today", substring = true)
+            val saved = runBlocking { application.aquariumRepository.loadRapidSessionContext(aquariumId) }
+            assertEquals(80.0, saved.lastMeasurements.getValue(nitrateId), 0.0)
         } finally {
             scenario.close()
         }

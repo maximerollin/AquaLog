@@ -372,4 +372,12 @@
     <string name="trend_up">in aumento</string>
     <string name="trend_down">in calo</string>
     <string name="trend_flat">stabile</string>
+    <string name="check_title">Controlla prima di salvare</string>
+    <string name="check_implausible">%1$s %2$s?</string>
+    <string name="check_implausible_suggestion">Intendevi %1$s?</string>
+    <plurals name="check_big_jump"><item quantity="one">%1$s a %2$s mentre %4$d giorno fa eri a %3$s, è giusto?</item><item quantity="other">%1$s a %2$s mentre %4$d giorni fa eri a %3$s, è giusto?</item></plurals>
+    <string name="check_big_jump_today">%1$s a %2$s mentre oggi eri a %3$s, è giusto?</string>
+    <string name="check_fix">Correggi</string>
+    <string name="check_save_anyway">Salva comunque</string>
+    <string name="check_back">Indietro</string>
 </resources>
