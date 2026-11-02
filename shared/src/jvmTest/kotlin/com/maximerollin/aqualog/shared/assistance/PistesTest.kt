@@ -2,6 +2,7 @@ package com.maximerollin.aqualog.shared.assistance
 
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,20 +18,23 @@ class PistesTest {
         parameter = parameter,
         isActive = true,
         position = 0,
-        unit = "",
+        unit = OnboardingPresets.presetUnit(parameter),
         precision = 1,
         indicativeMinimum = minimum,
         indicativeMaximum = maximum,
     )
 
     @Test
-    fun `direction is null in range, HIGH above the maximum or at the alert threshold, LOW below the minimum or at the alert threshold`() {
+    fun `direction is null in range, HIGH above the maximum, LOW below the minimum, the alert threshold only without a bound`() {
         val ph = definition(BuiltInParameter.PH, minimum = 6.5, maximum = 9.0)
         assertEquals(null, direction(ph, 7.0))
         assertEquals(Direction.HIGH, direction(ph, 9.5))
-        assertEquals(Direction.HIGH, direction(ph, 8.5))
+        assertEquals(null, direction(ph, 8.5))
         assertEquals(Direction.LOW, direction(ph, 6.2))
-        assertEquals(Direction.LOW, direction(ph, 6.0))
+        val open = definition(BuiltInParameter.PH, minimum = null, maximum = null)
+        assertEquals(Direction.HIGH, direction(open, 8.5))
+        assertEquals(Direction.LOW, direction(open, 6.0))
+        assertEquals(null, direction(open.copy(unit = "x"), 8.5))
     }
 
     @Test

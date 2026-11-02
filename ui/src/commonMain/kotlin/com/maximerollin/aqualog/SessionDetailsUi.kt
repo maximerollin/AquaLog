@@ -80,7 +80,7 @@ fun SessionDetailsScreen(
                             value = formatter.number(measurement.value, definition.precision),
                             label = label,
                             unit = definition.unit.takeIf { it.isNotBlank() && it != label },
-                            level = readingLevel(definition, measurement.value),
+                            level = readingLevel(definition, measurement.value, setup.aquarium.profile),
                         )
                     }
                 }

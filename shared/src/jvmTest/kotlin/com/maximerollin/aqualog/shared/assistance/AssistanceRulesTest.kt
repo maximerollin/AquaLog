@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.shared.assistance
 
+import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinition
@@ -14,6 +15,8 @@ class AssistanceRulesTest {
     private fun definition(
         parameter: BuiltInParameter,
         nullRange: Boolean = false,
+        range: ClosedFloatingPointRange<Double>? = null,
+        unit: String? = null,
     ): ParameterDefinition {
         val draft = OnboardingPresets.parametersFor(com.maximerollin.aqualog.shared.AquariumProfile.ESTABLISHED)
             .first { it.parameter == parameter }
@@ -23,15 +26,21 @@ class AssistanceRulesTest {
             parameter = parameter,
             isActive = true,
             position = draft.position,
-            unit = draft.unit,
+            unit = unit ?: draft.unit,
             precision = draft.precision,
-            indicativeMinimum = if (nullRange) null else draft.indicativeMinimum,
-            indicativeMaximum = if (nullRange) null else draft.indicativeMaximum,
+            indicativeMinimum = if (nullRange) null else range?.start ?: draft.indicativeMinimum,
+            indicativeMaximum = if (nullRange) null else range?.endInclusive ?: draft.indicativeMaximum,
         )
     }
 
-    private fun level(parameter: BuiltInParameter, value: Double, nullRange: Boolean = false) =
-        readingLevel(definition(parameter, nullRange), value)
+    private fun level(
+        parameter: BuiltInParameter,
+        value: Double,
+        nullRange: Boolean = false,
+        range: ClosedFloatingPointRange<Double>? = null,
+        unit: String? = null,
+        profile: AquariumProfile = AquariumProfile.ESTABLISHED,
+    ) = readingLevel(definition(parameter, nullRange, range, unit), value, profile)
 
     private fun check(
         parameter: BuiltInParameter,
@@ -119,5 +128,33 @@ class AssistanceRulesTest {
             MeasurementConcern.Implausible(20.0),
             check(BuiltInParameter.NITRATE, 2000.0, previous = 20.0, previousDaysAgo = 1),
         )
+    }
+
+    @Test
+    fun `the person's own range wins over the alert threshold`() {
+        assertEquals(ReadingLevel.OK, level(BuiltInParameter.PH, 8.8, range = 8.0..9.0))
+        assertNull(direction(definition(BuiltInParameter.PH, range = 8.0..9.0), 8.8))
+    }
+
+    @Test
+    fun `alert thresholds are inclusive but only beyond the person's bound`() {
+        assertEquals(ReadingLevel.ALERT, level(BuiltInParameter.PH, 6.0))
+        assertEquals(ReadingLevel.OK, level(BuiltInParameter.PH, 6.0, range = 5.5..7.0))
+        assertEquals(ReadingLevel.ALERT, level(BuiltInParameter.NITRITE, 0.5, range = 0.0..0.0))
+    }
+
+    @Test
+    fun `a unit other than the preset one is judged by its range alone`() {
+        assertEquals(ReadingLevel.OK, level(BuiltInParameter.TEMPERATURE, 77.0, range = 72.0..82.0, unit = "°F"))
+        assertNull(checkMeasurement(definition(BuiltInParameter.TEMPERATURE, range = 72.0..82.0, unit = "°F"), 77.0, 25.0, now - day, now))
+        assertEquals(ReadingLevel.ATTENTION, level(BuiltInParameter.TEMPERATURE, 77.0, range = 60.0..70.0, unit = "°F"))
+        assertEquals(ReadingLevel.OK, level(BuiltInParameter.TDS, 900.0, nullRange = true, unit = "µS/cm"))
+    }
+
+    @Test
+    fun `while cycling ammonia and nitrite stop at ATTENTION`() {
+        assertEquals(ReadingLevel.ATTENTION, level(BuiltInParameter.NITRITE, 2.0, profile = AquariumProfile.CYCLING))
+        assertEquals(ReadingLevel.ATTENTION, level(BuiltInParameter.AMMONIA, 2.0, nullRange = true, profile = AquariumProfile.CYCLING))
+        assertEquals(ReadingLevel.ALERT, level(BuiltInParameter.PH, 8.6, profile = AquariumProfile.CYCLING))
     }
 }

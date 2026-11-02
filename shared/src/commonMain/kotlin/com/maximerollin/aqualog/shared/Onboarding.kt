@@ -89,6 +89,9 @@ object OnboardingPresets {
         }
     }
 
+    /** The unit the built-in rules are written in. */
+    fun presetUnit(parameter: BuiltInParameter): String = defaults(parameter).unit
+
     private fun defaults(parameter: BuiltInParameter): ParameterDefinitionDraft =
         when (parameter) {
             BuiltInParameter.TEMPERATURE -> draft(parameter, "°C", 1, 22.0, 28.0)

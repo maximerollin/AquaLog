@@ -108,6 +108,7 @@
     <string name="last_measurement">Ultima misurazione: %1$s %2$s · il nuovo valore rimane vuoto</string>
     <string name="invalid_measurement">Immettere un numero decimale utilizzando un punto o una virgola.</string>
     <string name="unusual_measurement">Al di fuori dell'intervallo indicativo. Controllare il valore; il salvataggio rimane disponibile.</string>
+    <string name="alert_measurement">Molto al di fuori dell'intervallo indicativo. Controllare il valore; il salvataggio rimane disponibile.</string>
     <string name="maintenance_heading">Azioni di manutenzione</string>
     <string name="action_water_change">Cambio d'acqua</string>
     <string name="action_fertilization">Fertilizzazione</string>
@@ -366,6 +367,7 @@
     <string name="home_status_all_in_range">Tutto nell’intervallo indicativo</string>
     <plurals name="series_weeks"><item quantity="one">%1$d settimana di cura regolare</item><item quantity="other">%1$d settimane di cura regolare</item></plurals>
     <plurals name="home_status_outside_range"><item quantity="one">%1$d valore da tenere d’occhio</item><item quantity="other">%1$d valori da tenere d’occhio</item></plurals>
+    <plurals name="home_status_with_alert"><item quantity="one">%1$s, di cui %2$d molto fuori intervallo</item><item quantity="other">%1$s, di cui %2$d molto fuori intervallo</item></plurals>
     <string name="home_measured_today">misurato oggi</string>
     <string name="home_measured_yesterday">misurato ieri</string>
     <plurals name="home_measured_days_ago"><item quantity="one">misurato %1$d giorno fa</item><item quantity="other">misurato %1$d giorni fa</item></plurals>
@@ -413,8 +415,10 @@
     <string name="pistes_card_collapse">Nascondi gli spunti</string>
     <string name="pistes_retest">Rifai un test %1$s.</string>
     <string name="pistes_retest_tomorrow">domani</string>
+    <string name="pistes_retest_today">oggi</string>
+    <string name="pistes_retest_on_date">il %1$s</string>
+    <string name="pistes_retest_asap">appena possibile</string>
     <string name="pistes_disclaimer">Sono spunti, non una diagnosi: nel dubbio, chiedi consiglio in un negozio specializzato.</string>
-    <plurals name="pistes_retest_in_days"><item quantity="one">tra %1$d giorno</item><item quantity="other">tra %1$d giorni</item></plurals>
     <string name="parameter_short_ammonia">NH₃/NH₄</string>
     <string name="parameter_short_nitrite">NO₂</string>
     <string name="parameter_short_nitrate">NO₃</string>

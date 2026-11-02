@@ -14,6 +14,12 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.maximerollin.aqualog.shared.AquariumProfile
+import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.OnboardingPresets
+import com.maximerollin.aqualog.shared.RapidSessionInput
+import com.maximerollin.aqualog.shared.VolumeUnit
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -74,6 +80,62 @@ class PistesFlowTest {
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasText("Ideas for Nitrite")).fetchSemanticsNodes().isEmpty()
             }
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun alertNitrite_isNamedInTheEntryHint_andInTheStatusLine() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        (context.applicationContext as TestAquaLogApplication).resetRepository()
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            waitForText("Get started")
+            completeMinimalOnboarding()
+            composeRule.onNodeWithText("Measure").performClick()
+            waitForText("Measurements")
+            composeRule.onNodeWithContentDescription("Measurement for Nitrite").performTextInput("0.6")
+            composeRule.onNodeWithText("Far outside your indicative range", substring = true).assertIsDisplayed()
+            composeRule.onNodeWithText("Save Session").performClick()
+            waitForText("Ideas for Nitrite")
+            composeRule.onNodeWithText("Close").performClick()
+            // The status line reads « 1 value to watch, 1 far out of range · measured today » as one text.
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasText("1 value to watch, 1 far out of range", substring = true)).fetchSemanticsNodes().isNotEmpty()
+            }
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun anOlderOutOfRangeReading_datesTheRetestFromItsDay() {
+        val application = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        runBlocking {
+            val setup = application.aquariumRepository.createConfiguredAquarium(
+                name = "Amazonien",
+                volume = 120.0,
+                volumeUnit = VolumeUnit.LITERS,
+                profile = AquariumProfile.ESTABLISHED,
+                parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+            application.aquariumRepository.saveRapidSession(
+                RapidSessionInput(
+                    aquariumId = setup.aquarium.id,
+                    occurredAtEpochMillis = System.currentTimeMillis() - 86_400_000L,
+                    idempotencyKey = "dated-retest",
+                    measurementInputs = mapOf(setup.parameters.first { it.parameter == BuiltInParameter.NITRATE }.id to "60"),
+                ),
+            )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            waitForText("Ideas · Nitrate")
+            composeRule.onNodeWithText("Ideas · Nitrate").performClick()
+            // Nitrate is tested again 3 days after yesterday's reading: a date, neither today nor tomorrow.
+            composeRule.onNodeWithText("Test again on ", substring = true).assertIsDisplayed()
         } finally {
             scenario.close()
         }

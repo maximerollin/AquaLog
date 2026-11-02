@@ -108,6 +108,7 @@
     <string name="last_measurement">Letzte Messung: %1$s %2$s · neuer Wert bleibt leer</string>
     <string name="invalid_measurement">Geben Sie eine Dezimalzahl mit einem Punkt oder Komma ein.</string>
     <string name="unusual_measurement">Außerhalb deines Richtbereichs. Prüfe den Wert; Speichern ist weiterhin möglich.</string>
+    <string name="alert_measurement">Weit außerhalb deines Richtbereichs. Prüfe den Wert; Speichern ist weiterhin möglich.</string>
     <string name="maintenance_heading">Wartungsaktionen</string>
     <string name="action_water_change">Wasserwechsel</string>
     <string name="action_fertilization">Düngung</string>
@@ -366,6 +367,7 @@
     <string name="home_status_all_in_range">Alles im Richtbereich</string>
     <plurals name="series_weeks"><item quantity="one">%1$d Woche regelmäßiger Pflege</item><item quantity="other">%1$d Wochen regelmäßiger Pflege</item></plurals>
     <plurals name="home_status_outside_range"><item quantity="one">%1$d Wert zu beobachten</item><item quantity="other">%1$d Werte zu beobachten</item></plurals>
+    <plurals name="home_status_with_alert"><item quantity="one">%1$s, davon %2$d weit außerhalb</item><item quantity="other">%1$s, davon %2$d weit außerhalb</item></plurals>
     <string name="home_measured_today">heute gemessen</string>
     <string name="home_measured_yesterday">gestern gemessen</string>
     <plurals name="home_measured_days_ago"><item quantity="one">vor %1$d Tag gemessen</item><item quantity="other">vor %1$d Tagen gemessen</item></plurals>
@@ -413,8 +415,10 @@
     <string name="pistes_card_collapse">Ideen ausblenden</string>
     <string name="pistes_retest">Testen Sie %1$s erneut.</string>
     <string name="pistes_retest_tomorrow">morgen</string>
+    <string name="pistes_retest_today">heute</string>
+    <string name="pistes_retest_on_date">am %1$s</string>
+    <string name="pistes_retest_asap">so bald wie möglich</string>
     <string name="pistes_disclaimer">Das sind Anregungen, keine Diagnose: Fragen Sie im Zweifel im Fachgeschäft um Rat.</string>
-    <plurals name="pistes_retest_in_days"><item quantity="one">in %1$d Tag</item><item quantity="other">in %1$d Tagen</item></plurals>
     <string name="parameter_short_ammonia">NH₃/NH₄</string>
     <string name="parameter_short_nitrite">NO₂</string>
     <string name="parameter_short_nitrate">NO₃</string>

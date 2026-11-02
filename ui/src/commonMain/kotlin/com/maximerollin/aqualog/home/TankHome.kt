@@ -94,6 +94,7 @@ import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.ui.theme.attentionMarkColor
 import com.maximerollin.aqualog.ui.theme.levelMarkColor
 import com.maximerollin.aqualog.ui.theme.attentionTextColor
+import com.maximerollin.aqualog.shared.assistance.ReadingSample
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -116,7 +117,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     val alerts = otherAquariumAlerts(state.aquariums, aquarium.id, state.tasks.pendingOccurrences, today)
     val pistes = pistesAdvices(
         setup.parameters,
-        state.latestReadings.associate { it.parameterDefinitionId to it.value },
+        state.latestReadings.map { ReadingSample(it.parameterDefinitionId, it.value, viewModel.dayOf(it.occurredAtEpochMillis)) },
         aquarium.profile,
         overdueLinkedAction(state.tasks.pendingOccurrences, aquarium.id, MaintenanceActionType.WATER_CHANGE, today),
     )
@@ -202,7 +203,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                 }
             }
             if (pistes.isNotEmpty()) {
-                item(key = "pistes") { PistesCard(pistes, aquarium.id, gutter) }
+                item(key = "pistes") { PistesCard(pistes, aquarium.id, today, gutter) }
             }
             item {
                 CarnetSectionTitle(
@@ -298,7 +299,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             contentColor = MaterialTheme.colorScheme.onPrimary,
         ) { Text(stringResource(Res.string.measure_action), fontWeight = FontWeight.SemiBold) }
     }
-    if (state.pistesAfterSave.isNotEmpty()) PistesSheet(state.pistesAfterSave, viewModel::dismissPistes)
+    if (state.pistesAfterSave.isNotEmpty()) PistesSheet(state.pistesAfterSave, viewModel.today(), viewModel::dismissPistes)
     if (showPicker) {
         AquariumPickerSheet(
             aquariums = state.aquariums,
@@ -478,7 +479,13 @@ private fun StatusLine(
             Res.plurals.home_status_outside_range,
             overview.outsideRangeCount,
             overview.outsideRangeCount,
-        )
+        ).let { outside ->
+            if (overview.hasAlert) {
+                pluralStringResource(Res.plurals.home_status_with_alert, overview.alertCount, outside, overview.alertCount)
+            } else {
+                outside
+            }
+        }
         else -> stringResource(Res.string.home_status_all_in_range)
     }
     val since = overview.latestReadingAtEpochMillis?.let {

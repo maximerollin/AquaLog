@@ -92,7 +92,7 @@ import com.maximerollin.aqualog.shared.assistance.WeeklySummary
 import com.maximerollin.aqualog.shared.assistance.summaryWeekStart
 import com.maximerollin.aqualog.shared.assistance.weeklySeries
 import com.maximerollin.aqualog.shared.assistance.weeklySummary
-import com.maximerollin.aqualog.shared.assistance.PisteAdvice
+import com.maximerollin.aqualog.shared.assistance.ReadingSample
 import com.maximerollin.aqualog.shared.assistance.checkMeasurement
 import com.maximerollin.aqualog.shared.evaluateMeasurement
 import kotlinx.coroutines.Job
@@ -356,7 +356,7 @@ data class HomeUiState(
     val rapidSession: RapidSessionUiState? = null,
     val latestSession: RecordedSession? = null,
     /** Advice for the new out-of-range values of the Session just saved; shown once, then dismissed. */
-    val pistesAfterSave: List<PisteAdvice> = emptyList(),
+    val pistesAfterSave: List<DatedPisteAdvice> = emptyList(),
     val latestReadings: List<LatestReading> = emptyList(),
     /** Tests of the displayed Aquarium due today or overdue, earliest first. */
     val dueTests: List<DueTest> = emptyList(),
@@ -1449,7 +1449,10 @@ class HomeViewModel(
         }
     }
 
-    fun today(): TaskDate = Instant.ofEpochMilli(currentTimeMillis()).atZone(ZoneId.of(currentTimeZoneId())).toLocalDate()
+    fun today(): TaskDate = dayOf(currentTimeMillis())
+
+    /** The local day of [epochMillis] in the clock's time zone. */
+    fun dayOf(epochMillis: Long): TaskDate = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.of(currentTimeZoneId())).toLocalDate()
         .let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
 
     fun closeRapidSession() {
@@ -1819,7 +1822,7 @@ class HomeViewModel(
             overdueLinkedAction(state.tasks.pendingOccurrences, setup.aquarium.id, MaintenanceActionType.WATER_CHANGE, today())
         val advices = pistesAdvices(
             setup.parameters,
-            recorded.measurements.associate { it.parameterDefinitionId to it.value },
+            recorded.measurements.map { ReadingSample(it.parameterDefinitionId, it.value, dayOf(recorded.session.occurredAtEpochMillis)) },
             setup.aquarium.profile,
             overdue,
         )

@@ -1,6 +1,8 @@
 package com.maximerollin.aqualog.shared.assistance
 
+import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.isOutsideIndicativeRange
 import kotlin.math.abs
@@ -28,13 +30,30 @@ fun ruleFor(parameter: BuiltInParameter): ParameterRule = when (parameter) {
     BuiltInParameter.SALINITY -> ParameterRule(null, null, 0.0..50.0, 5.0)
 }
 
-fun readingLevel(definition: ParameterDefinition, value: Double): ReadingLevel {
+/** The built-in rules only know the preset units; a value in °F or in another kit's scale is judged by its range alone. */
+private fun ParameterDefinition.usesPresetUnit(): Boolean =
+    unit.trim().equals(OnboardingPresets.presetUnit(parameter), ignoreCase = true)
+
+/** The side whose alert threshold [value] reaches, only in the preset unit and beyond the person's own bound on that side. */
+internal fun alertSide(definition: ParameterDefinition, value: Double): Direction? {
+    if (!definition.usesPresetUnit()) return null
     val rule = ruleFor(definition.parameter)
     return when {
-        rule.alertBelow?.let { value <= it } == true || rule.alertAbove?.let { value >= it } == true -> ReadingLevel.ALERT
-        definition.isOutsideIndicativeRange(value) -> ReadingLevel.ATTENTION
-        else -> ReadingLevel.OK
+        rule.alertAbove?.let { value >= it } == true && definition.indicativeMaximum?.let { value > it } != false -> Direction.HIGH
+        rule.alertBelow?.let { value <= it } == true && definition.indicativeMinimum?.let { value < it } != false -> Direction.LOW
+        else -> null
     }
+}
+
+/** Ammonia and nitrite: expected while cycling, and the only parameters followed up after an out-of-range test. */
+internal val NITROGEN_WASTE = setOf(BuiltInParameter.AMMONIA, BuiltInParameter.NITRITE)
+
+/** While [profile] is Cycling, ammonia and nitrite are expected, so they never go beyond ATTENTION. */
+fun readingLevel(definition: ParameterDefinition, value: Double, profile: AquariumProfile): ReadingLevel = when {
+    alertSide(definition, value) != null ->
+        if (profile == AquariumProfile.CYCLING && definition.parameter in NITROGEN_WASTE) ReadingLevel.ATTENTION else ReadingLevel.ALERT
+    definition.isOutsideIndicativeRange(value) -> ReadingLevel.ATTENTION
+    else -> ReadingLevel.OK
 }
 
 sealed interface MeasurementConcern {
@@ -53,6 +72,7 @@ fun checkMeasurement(
     previousAtEpochMillis: Long?,
     nowEpochMillis: Long,
 ): MeasurementConcern? {
+    if (!definition.usesPresetUnit()) return null
     val rule = ruleFor(definition.parameter)
     if (value !in rule.plausible) {
         // A null range never rejects a candidate, so the plausible range alone decides then.

@@ -33,49 +33,62 @@ import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.ParameterDefinition
+import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.assistance.PisteAdvice
 import com.maximerollin.aqualog.shared.assistance.PisteKey
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
+import com.maximerollin.aqualog.shared.assistance.ReadingSample
 import com.maximerollin.aqualog.shared.assistance.direction
 import com.maximerollin.aqualog.shared.assistance.pistesFor
 import com.maximerollin.aqualog.shared.assistance.readingLevel
+import com.maximerollin.aqualog.shared.plusDays
+import com.maximerollin.aqualog.shared.toEpochDay
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.ChevronRight
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** One advice per out-of-range value, ALERT before ATTENTION, then by parameter position; [values] is by definition id. */
+/** An advice and the day to test again: the reading's day plus the pistes' delay. */
+data class DatedPisteAdvice(val advice: PisteAdvice, val retestOn: TaskDate)
+
+/** One advice per out-of-range reading, ALERT before ATTENTION, then by parameter position. */
 fun pistesAdvices(
     definitions: List<ParameterDefinition>,
-    values: Map<String, Double>,
+    readings: List<ReadingSample>,
     profile: AquariumProfile,
     waterChangeOverdue: Boolean,
-): List<PisteAdvice> = definitions.filter { it.isActive }.sortedBy { it.position }
-    .mapNotNull { definition ->
-        val value = values[definition.id] ?: return@mapNotNull null
-        val direction = direction(definition, value) ?: return@mapNotNull null
-        (if (readingLevel(definition, value) == ReadingLevel.ALERT) 0 else 1) to
-            pistesFor(definition.parameter, direction, profile, waterChangeOverdue)
-    }
-    .sortedBy { it.first } // stable: keeps parameter position within a level
-    .map { it.second }
+): List<DatedPisteAdvice> {
+    val byDefinition = readings.associateBy { it.parameterDefinitionId }
+    return definitions.filter { it.isActive }.sortedBy { it.position }
+        .mapNotNull { definition ->
+            val reading = byDefinition[definition.id] ?: return@mapNotNull null
+            val direction = direction(definition, reading.value) ?: return@mapNotNull null
+            val advice = pistesFor(definition.parameter, direction, profile, waterChangeOverdue)
+            (if (readingLevel(definition, reading.value, profile) == ReadingLevel.ALERT) 0 else 1) to
+                DatedPisteAdvice(advice, reading.day.plusDays(advice.retestInDays))
+        }
+        .sortedBy { it.first } // stable: keeps parameter position within a level
+        .map { it.second }
+}
 
 /** The advice blocks followed by one disclaimer; plain readable text, no hidden semantics. */
 @Composable
-fun PistesContent(advices: List<PisteAdvice>, modifier: Modifier = Modifier) {
+fun PistesContent(advices: List<DatedPisteAdvice>, today: TaskDate, modifier: Modifier = Modifier) {
+    val formatter = currentLocalizedFormatters()
     Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        advices.forEach { advice ->
+        advices.forEach { (advice, retestOn) ->
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 CarnetSectionTitle(stringResource(Res.string.pistes_title, advice.parameter.label()))
                 advice.pistes.forEach { Text(it.text(), style = MaterialTheme.typography.bodyMedium) }
-                val days = advice.retestInDays
+                val days = retestOn.toEpochDay() - today.toEpochDay()
+                val retest = when {
+                    days < 0 -> stringResource(Res.string.pistes_retest_asap)
+                    days == 0L -> stringResource(Res.string.pistes_retest_today)
+                    days == 1L -> stringResource(Res.string.pistes_retest_tomorrow)
+                    else -> stringResource(Res.string.pistes_retest_on_date, formatter.date(retestOn.year, retestOn.month, retestOn.day))
+                }
                 Text(
-                    stringResource(
-                        Res.string.pistes_retest,
-                        if (days == 1) stringResource(Res.string.pistes_retest_tomorrow)
-                        else pluralStringResource(Res.plurals.pistes_retest_in_days, days, days),
-                    ),
+                    stringResource(Res.string.pistes_retest, retest),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -91,9 +104,9 @@ fun PistesContent(advices: List<PisteAdvice>, modifier: Modifier = Modifier) {
 
 /** Collapsed by default to « Pistes · parameters »; the header is one clickable unit. */
 @Composable
-fun PistesCard(advices: List<PisteAdvice>, aquariumId: String, modifier: Modifier = Modifier) {
+fun PistesCard(advices: List<DatedPisteAdvice>, aquariumId: String, today: TaskDate, modifier: Modifier = Modifier) {
     var expanded by rememberSaveable("pistes-$aquariumId") { mutableStateOf(false) }
-    val names = advices.map { it.parameter.label() }
+    val names = advices.map { it.advice.parameter.label() }
     val title = stringResource(Res.string.pistes_card_collapsed, names.joinToString(", "))
     val state = stringResource(if (expanded) Res.string.trends_row_expanded else Res.string.trends_row_collapsed)
     Column(modifier.fillMaxWidth()) {
@@ -119,21 +132,21 @@ fun PistesCard(advices: List<PisteAdvice>, aquariumId: String, modifier: Modifie
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        if (expanded) PistesContent(advices, Modifier.padding(bottom = 12.dp))
+        if (expanded) PistesContent(advices, today, Modifier.padding(bottom = 12.dp))
     }
 }
 
 /** Shown right after saving a Session with new out-of-range values; never blocks anything. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PistesSheet(advices: List<PisteAdvice>, onDismiss: () -> Unit) {
+fun PistesSheet(advices: List<DatedPisteAdvice>, today: TaskDate, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(
             Modifier.navigationBarsPadding().verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp).padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            PistesContent(advices)
+            PistesContent(advices, today)
             TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Text(stringResource(Res.string.close))
             }

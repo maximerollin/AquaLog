@@ -108,6 +108,7 @@
     <string name="last_measurement">Dernière mesure : %1$s %2$s · la nouvelle valeur reste vide</string>
     <string name="invalid_measurement">Entrez un nombre décimal en utilisant un point ou une virgule.</string>
     <string name="unusual_measurement">Hors de votre plage indicative. Vérifiez la valeur ; l’enregistrement reste disponible.</string>
+    <string name="alert_measurement">Très en dehors de votre plage indicative. Vérifiez la valeur ; l’enregistrement reste possible.</string>
     <string name="maintenance_heading">Actions d'entretien</string>
     <string name="action_water_change">Changement d'eau</string>
     <string name="action_fertilization">Fertilisation</string>
@@ -366,6 +367,7 @@
     <string name="home_status_all_in_range">Tout est dans la plage</string>
     <plurals name="series_weeks"><item quantity="one">%1$d semaine d’entretien régulier</item><item quantity="other">%1$d semaines d’entretien régulier</item></plurals>
     <plurals name="home_status_outside_range"><item quantity="one">%1$d valeur à surveiller</item><item quantity="other">%1$d valeurs à surveiller</item></plurals>
+    <plurals name="home_status_with_alert"><item quantity="one">%1$s, dont %2$d très hors plage</item><item quantity="other">%1$s, dont %2$d très hors plage</item></plurals>
     <string name="home_measured_today">mesuré aujourd’hui</string>
     <string name="home_measured_yesterday">mesuré hier</string>
     <plurals name="home_measured_days_ago"><item quantity="one">mesuré il y a %1$d j</item><item quantity="other">mesuré il y a %1$d j</item></plurals>
@@ -413,8 +415,10 @@
     <string name="pistes_card_collapse">Masquer les pistes</string>
     <string name="pistes_retest">Refaites un test %1$s.</string>
     <string name="pistes_retest_tomorrow">demain</string>
+    <string name="pistes_retest_today">aujourd’hui</string>
+    <string name="pistes_retest_on_date">le %1$s</string>
+    <string name="pistes_retest_asap">dès que possible</string>
     <string name="pistes_disclaimer">Ce sont des pistes, pas un diagnostic : en cas de doute, demandez conseil en magasin spécialisé.</string>
-    <plurals name="pistes_retest_in_days"><item quantity="one">dans %1$d jour</item><item quantity="other">dans %1$d jours</item></plurals>
     <string name="parameter_short_ammonia">NH₃/NH₄</string>
     <string name="parameter_short_nitrite">NO₂</string>
     <string name="parameter_short_nitrate">NO₃</string>

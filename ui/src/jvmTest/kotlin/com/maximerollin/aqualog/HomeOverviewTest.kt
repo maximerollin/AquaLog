@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.shared.Aquarium
+import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.LatestReading
@@ -8,6 +9,7 @@ import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.MaintenanceAction
 import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
+import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.VolumeUnit
@@ -35,7 +37,8 @@ class HomeOverviewTest {
         active: Boolean = true,
     ) = ParameterDefinition(
         id = "d-${parameter.storageValue}", aquariumId = "a1", parameter = parameter, isActive = active,
-        position = position, unit = "", precision = 1, indicativeMinimum = min, indicativeMaximum = max,
+        position = position, unit = OnboardingPresets.presetUnit(parameter), precision = 1,
+        indicativeMinimum = min, indicativeMaximum = max,
     )
 
     private fun setup(vararg definitions: ParameterDefinition) = AquariumSetup(aquarium(), definitions.toList())
@@ -257,5 +260,18 @@ class HomeOverviewTest {
         assertEquals(listOf("a2", "a4"), alerts.map { it.aquarium.id })
         assertEquals(listOf("2", "5"), alerts.map { it.occurrence.id })
         assertEquals(listOf(true, false), alerts.map { it.isOverdue })
+    }
+
+    @Test
+    fun `alerts are counted, and capped at ATTENTION for ammonia and nitrite while cycling`() {
+        val ph = definition(BuiltInParameter.PH, 0, 6.5, 7.5)
+        val nitrite = definition(BuiltInParameter.NITRITE, 1, 0.0, 0.0)
+        val readings = listOf(reading(ph, 8.6), reading(nitrite, 1.0))
+        val established = homeOverview(setup(ph, nitrite), readings)
+        assertEquals(2, established.alertCount)
+        val cycling = homeOverview(AquariumSetup(aquarium().copy(profile = AquariumProfile.CYCLING), listOf(ph, nitrite)), readings)
+        assertEquals(listOf(ReadingLevel.ALERT, ReadingLevel.ATTENTION), cycling.values.map { it.level })
+        assertEquals(1, cycling.alertCount)
+        assertEquals(2, cycling.outsideRangeCount)
     }
 }

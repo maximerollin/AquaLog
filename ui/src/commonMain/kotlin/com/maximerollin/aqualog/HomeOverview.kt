@@ -31,8 +31,10 @@ data class HomeOverview(
     val outsideRangeCount: Int,
     /** The newest Measurement of an active parameter: a Session with only maintenance does not count. */
     val latestReadingAtEpochMillis: Long?,
-    val hasAlert: Boolean = false,
-)
+    val alertCount: Int = 0,
+) {
+    val hasAlert: Boolean get() = alertCount > 0
+}
 
 fun homeOverview(setup: AquariumSetup, readings: List<LatestReading>): HomeOverview {
     val byDefinition = readings.associateBy { it.parameterDefinitionId }
@@ -44,7 +46,7 @@ fun homeOverview(setup: AquariumSetup, readings: List<LatestReading>): HomeOverv
             definition = definition,
             value = reading?.value,
             occurredAtEpochMillis = reading?.occurredAtEpochMillis,
-            level = reading?.let { readingLevel(definition, it.value) } ?: ReadingLevel.OK,
+            level = reading?.let { readingLevel(definition, it.value, setup.aquarium.profile) } ?: ReadingLevel.OK,
             isOlderThanLatestReading = reading != null && latestAt != null && reading.occurredAtEpochMillis < latestAt,
             trend = reading?.previousValue?.let { trend(reading.value, it, definition.precision) },
         )
@@ -53,7 +55,7 @@ fun homeOverview(setup: AquariumSetup, readings: List<LatestReading>): HomeOverv
     val values = all.sortedBy { if (it.level != ReadingLevel.OK) 0 else if (it.value != null) 1 else 2 }
         .take(MAX_HOME_VALUES)
         .sortedBy { it.definition.position }
-    return HomeOverview(values, all.count { it.level != ReadingLevel.OK }, latestAt, all.any { it.level == ReadingLevel.ALERT })
+    return HomeOverview(values, all.count { it.level != ReadingLevel.OK }, latestAt, all.count { it.level == ReadingLevel.ALERT })
 }
 
 /** Flat when both values show the same at the parameter's precision (half a displayed step apart at most). */

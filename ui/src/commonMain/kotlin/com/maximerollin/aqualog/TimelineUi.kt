@@ -245,7 +245,7 @@ private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAqua
             value = formatter.number(item.measurement.value, item.definition.precision),
             unit = item.definition.unit.takeIf { it.isNotBlank() && it != label },
             label = label,
-            level = readingLevel(item.definition, item.measurement.value),
+            level = readingLevel(item.definition, item.measurement.value, entry.aquarium.profile),
         )
     }
     // Each ReadingValue is its own merged node; the row announces them as one unit with its click action.

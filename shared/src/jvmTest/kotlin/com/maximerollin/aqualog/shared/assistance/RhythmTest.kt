@@ -5,6 +5,7 @@ import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.LatestReading
+import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.VolumeUnit
@@ -31,7 +32,7 @@ class RhythmTest {
         parameter = parameter,
         isActive = active,
         position = BuiltInParameter.entries.indexOf(parameter),
-        unit = "",
+        unit = OnboardingPresets.presetUnit(parameter),
         precision = 1,
         indicativeMinimum = min,
         indicativeMaximum = max,
@@ -106,13 +107,13 @@ class RhythmTest {
     }
 
     @Test
-    fun `an out-of-range sample yesterday makes nitrite and ammonia follow-ups due today`() {
+    fun `an ALERT sample yesterday makes nitrite and ammonia follow-ups due today`() {
         val ph = definition(BuiltInParameter.PH, min = 6.5, max = 7.5)
         val nitrite = definition(BuiltInParameter.NITRITE)
         val ammonia = definition(BuiltInParameter.AMMONIA)
         val due = dueTests(
             setup(AquariumProfile.ESTABLISHED, ph, ammonia, nitrite),
-            listOf(sample(BuiltInParameter.PH, 8.0, 1), sample(BuiltInParameter.NITRITE, 0.0, 1)),
+            listOf(sample(BuiltInParameter.PH, 8.6, 1), sample(BuiltInParameter.NITRITE, 0.0, 1)),
             today,
         )
         val ammoniaDue = due.single { it.definition.parameter == BuiltInParameter.AMMONIA }
@@ -125,13 +126,58 @@ class RhythmTest {
     @Test
     fun `a nitrite reading after the follow-up date clears it`() {
         val ph = definition(BuiltInParameter.PH, min = 6.5, max = 7.5, interval = NEVER_INTERVAL_DAYS)
-        val nitrite = definition(BuiltInParameter.NITRITE, interval = NEVER_INTERVAL_DAYS)
-        val samples = listOf(sample(BuiltInParameter.PH, 8.0, 5), sample(BuiltInParameter.NITRITE, 0.0, 1))
+        val nitrite = definition(BuiltInParameter.NITRITE)
+        val samples = listOf(sample(BuiltInParameter.PH, 8.6, 5), sample(BuiltInParameter.NITRITE, 0.0, 1))
         // T = 5 days ago: follow-ups at T+1 (4 ago) and T+3 (2 ago); the reading 1 day ago covers both.
         assertTrue(dueTests(setup(AquariumProfile.ESTABLISHED, ph, nitrite), samples, today).isEmpty())
         // Without it, the earliest follow-up is reported.
         val due = dueTests(setup(AquariumProfile.ESTABLISHED, ph, nitrite), samples.take(1), today).single()
         assertEquals(today.plusDays(-4), due.dueDate)
+    }
+
+    @Test
+    fun `while cycling daily out-of-range nitrite only follows the rhythm`() {
+        val nitrite = definition(BuiltInParameter.NITRITE, min = 0.0, max = 0.0)
+        val samples = (0..6).map { sample(BuiltInParameter.NITRITE, 1.0, it) }
+        val cycling = setup(AquariumProfile.CYCLING, nitrite)
+        assertTrue(dueTests(cycling, samples, today).isEmpty())
+        val inTwoDays = dueTests(cycling, samples, today.plusDays(2)).single()
+        assertEquals(DueReason.RHYTHM, inTwoDays.reason)
+        assertEquals(today.plusDays(2), inTwoDays.dueDate)
+        assertTrue((0..6).none { day -> dueTests(cycling, samples.drop(1), today.plusDays(day)).any { it.reason == DueReason.FOLLOW_UP } })
+    }
+
+    @Test
+    fun `a chronic pH in ATTENTION does not bring nitrite follow-ups`() {
+        val ph = definition(BuiltInParameter.PH, min = 6.5, max = 7.5)
+        val nitrite = definition(BuiltInParameter.NITRITE)
+        val samples = listOf(sample(BuiltInParameter.PH, 7.8, 1), sample(BuiltInParameter.NITRITE, 0.0, 1))
+        val established = setup(AquariumProfile.ESTABLISHED, ph, nitrite)
+        assertTrue((0..5).none { day -> dueTests(established, samples, today.plusDays(day)).any { it.definition == nitrite } })
+    }
+
+    @Test
+    fun `nitrite in ATTENTION brings follow-ups, but never when set to never`() {
+        val nitrite = definition(BuiltInParameter.NITRITE, min = 0.0, max = 0.0)
+        val due = dueTests(setup(AquariumProfile.ESTABLISHED, nitrite), listOf(sample(BuiltInParameter.NITRITE, 0.25, 1)), today).single()
+        assertEquals(DueReason.FOLLOW_UP, due.reason)
+        assertEquals(today, due.dueDate)
+        val never = nitrite.copy(analysisIntervalDays = NEVER_INTERVAL_DAYS)
+        assertTrue((0..7).all { dueTests(setup(AquariumProfile.ESTABLISHED, never), listOf(sample(BuiltInParameter.NITRITE, 0.25, 1)), today.plusDays(it)).isEmpty() })
+    }
+
+    @Test
+    fun `an out-of-range reading is due again at the pistes' retest day until a later reading`() {
+        val nitrate = definition(BuiltInParameter.NITRATE, min = 0.0, max = 40.0)
+        val high = listOf(sample(BuiltInParameter.NITRATE, 60.0, 0))
+        val established = setup(AquariumProfile.ESTABLISHED, nitrate)
+        assertTrue(dueTests(established, high, today.plusDays(2)).isEmpty())
+        val retest = dueTests(established, high, today.plusDays(3)).single()
+        assertEquals(DueReason.FOLLOW_UP, retest.reason)
+        assertEquals(today.plusDays(3), retest.dueDate)
+        // A later in-range reading clears it; the rhythm is back to 7 days.
+        val cleared = high + sample(BuiltInParameter.NITRATE, 20.0, -1)
+        assertTrue(dueTests(established, cleared, today.plusDays(3)).isEmpty())
     }
 
     @Test

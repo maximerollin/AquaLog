@@ -81,7 +81,7 @@ fun TrendSparklineRow(
     val definition = series.definition
     val label = definition.parameter.label()
     val latest = series.points.lastOrNull()
-    val level = latest?.let { readingLevel(definition, it.value) } ?: ReadingLevel.OK
+    val level = latest?.let { readingLevel(definition, it.value, snapshot.aquarium.profile) } ?: ReadingLevel.OK
     val chartDescription = if (latest == null) {
         stringResource(Res.string.trends_no_measurements)
     } else {

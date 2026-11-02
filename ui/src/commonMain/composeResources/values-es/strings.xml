@@ -108,6 +108,7 @@
     <string name="last_measurement">Última medición: %1$s %2$s · el nuevo valor permanece vacío</string>
     <string name="invalid_measurement">Ingrese un número decimal usando un punto o una coma.</string>
     <string name="unusual_measurement">Fuera del intervalo indicativo. Comprueba el valor; aún puedes guardarlo.</string>
+    <string name="alert_measurement">Muy fuera del intervalo indicativo. Comprueba el valor; aún puedes guardarlo.</string>
     <string name="maintenance_heading">Acciones de mantenimiento</string>
     <string name="action_water_change">Cambio de agua</string>
     <string name="action_fertilization">Fertilización</string>
@@ -366,6 +367,7 @@
     <string name="home_status_all_in_range">Todo en el rango indicativo</string>
     <plurals name="series_weeks"><item quantity="one">%1$d semana de cuidado regular</item><item quantity="other">%1$d semanas de cuidado regular</item></plurals>
     <plurals name="home_status_outside_range"><item quantity="one">%1$d valor a vigilar</item><item quantity="other">%1$d valores a vigilar</item></plurals>
+    <plurals name="home_status_with_alert"><item quantity="one">%1$s, %2$d muy fuera del rango</item><item quantity="other">%1$s, %2$d muy fuera del rango</item></plurals>
     <string name="home_measured_today">medido hoy</string>
     <string name="home_measured_yesterday">medido ayer</string>
     <plurals name="home_measured_days_ago"><item quantity="one">medido hace %1$d día</item><item quantity="other">medido hace %1$d días</item></plurals>
@@ -413,8 +415,10 @@
     <string name="pistes_card_collapse">Ocultar las pistas</string>
     <string name="pistes_retest">Repite la prueba %1$s.</string>
     <string name="pistes_retest_tomorrow">mañana</string>
+    <string name="pistes_retest_today">hoy</string>
+    <string name="pistes_retest_on_date">el %1$s</string>
+    <string name="pistes_retest_asap">lo antes posible</string>
     <string name="pistes_disclaimer">Son pistas, no un diagnóstico: ante la duda, pide consejo en una tienda especializada.</string>
-    <plurals name="pistes_retest_in_days"><item quantity="one">en %1$d día</item><item quantity="other">en %1$d días</item></plurals>
     <string name="parameter_short_ammonia">NH₃/NH₄</string>
     <string name="parameter_short_nitrite">NO₂</string>
     <string name="parameter_short_nitrate">NO₃</string>

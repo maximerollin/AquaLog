@@ -214,7 +214,7 @@ fun RapidSessionScreen(
                     val feedback = evaluateMeasurement(input, definition)
                     val description = stringResource(Res.string.measurement_for_parameter, definition.parameter.label())
                     val invalidText = stringResource(Res.string.invalid_measurement)
-                    val level = feedback.value?.takeIf { feedback.isValid }?.let { readingLevel(definition, it) } ?: ReadingLevel.OK
+                    val level = feedback.value?.takeIf { feedback.isValid }?.let { readingLevel(definition, it, aquarium.profile) } ?: ReadingLevel.OK
                     val levelText = levelDescription(level)
                     val muted = MaterialTheme.colorScheme.onSurfaceVariant
                     val name = definition.parameter.label()
@@ -288,6 +288,7 @@ fun RapidSessionScreen(
                         }
                         val hint = when {
                             !feedback.isValid -> invalidText
+                            level == ReadingLevel.ALERT -> stringResource(Res.string.alert_measurement)
                             level != ReadingLevel.OK -> stringResource(Res.string.unusual_measurement)
                             else -> null
                         }

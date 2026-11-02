@@ -65,14 +65,11 @@ data class PisteAdvice(
     val retestInDays: Int,
 )
 
-/** HIGH above the indicative maximum or at/above the alert threshold, LOW below the minimum or at/below it, null in range. */
-fun direction(definition: ParameterDefinition, value: Double): Direction? {
-    val rule = ruleFor(definition.parameter)
-    return when {
-        definition.indicativeMaximum?.let { value > it } == true || rule.alertAbove?.let { value >= it } == true -> Direction.HIGH
-        definition.indicativeMinimum?.let { value < it } == true || rule.alertBelow?.let { value <= it } == true -> Direction.LOW
-        else -> null
-    }
+/** HIGH above the indicative maximum, LOW below the minimum, else the alert side (see [alertSide]); null in range. */
+fun direction(definition: ParameterDefinition, value: Double): Direction? = when {
+    definition.indicativeMaximum?.let { value > it } == true -> Direction.HIGH
+    definition.indicativeMinimum?.let { value < it } == true -> Direction.LOW
+    else -> alertSide(definition, value)
 }
 
 private data class Recipe(val pistes: List<PisteKey>, val retestInDays: Int)
@@ -130,9 +127,7 @@ fun pistesFor(
     waterChangeOverdue: Boolean,
 ): PisteAdvice {
     // Cycling: ammonia and nitrite are expected, so the usual corrective pistes would mislead.
-    if (profile == AquariumProfile.CYCLING && direction == Direction.HIGH &&
-        (parameter == BuiltInParameter.AMMONIA || parameter == BuiltInParameter.NITRITE)
-    ) {
+    if (profile == AquariumProfile.CYCLING && direction == Direction.HIGH && parameter in NITROGEN_WASTE) {
         return PisteAdvice(parameter, direction, listOf(PisteKey.CYCLING_NORMAL), 2)
     }
     val recipe = recipes[parameter to direction] ?: genericRecipe
