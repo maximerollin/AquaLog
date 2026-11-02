@@ -73,6 +73,19 @@ class PistesTest {
     }
 
     @Test
+    fun `gh high with overdue water change keeps the osmosis piste`() {
+        val advice = pistesFor(BuiltInParameter.GH, Direction.HIGH, AquariumProfile.ESTABLISHED, waterChangeOverdue = true)
+        assertEquals(listOf(PisteKey.WATER_CHANGE_OVERDUE, PisteKey.CUT_WITH_OSMOSIS), advice.pistes)
+    }
+
+    @Test
+    fun `cycling ammonia high with overdue water change still gives the cycling note`() {
+        val advice = pistesFor(BuiltInParameter.AMMONIA, Direction.HIGH, AquariumProfile.CYCLING, waterChangeOverdue = true)
+        assertEquals(listOf(PisteKey.CYCLING_NORMAL), advice.pistes)
+        assertEquals(2, advice.retestInDays)
+    }
+
+    @Test
     fun `unknown combination gives the generic pistes`() {
         val advice = pistesFor(BuiltInParameter.NITRATE, Direction.LOW, AquariumProfile.ESTABLISHED, waterChangeOverdue = false)
         assertEquals(listOf(PisteKey.RETEST_TO_CONFIRM, PisteKey.WATER_CHANGE_PARTIAL), advice.pistes)

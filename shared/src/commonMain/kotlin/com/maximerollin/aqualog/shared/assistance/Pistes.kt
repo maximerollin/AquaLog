@@ -121,7 +121,6 @@ private val waterChangePistes = setOf(
     PisteKey.WATER_CHANGE_PARTIAL,
     PisteKey.WATER_CHANGE_SOFTER_WATER,
     PisteKey.WATER_CHANGE_PURER_WATER,
-    PisteKey.CUT_WITH_OSMOSIS,
 )
 
 fun pistesFor(
