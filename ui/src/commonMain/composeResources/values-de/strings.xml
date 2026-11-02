@@ -157,7 +157,6 @@
     <string name="view_session_details">Sitzungsdetails anzeigen</string>
     <string name="session_details">Sitzungsdetails</string>
     <string name="session_date">Aufgenommen am %1$s</string>
-    <string name="session_measurement_detail">%1$s · %2$s %3$s</string>
     <string name="session_action_detail">%1$s · %2$s</string>
     <string name="session_event_detail">%1$s · %2$s</string>
     <string name="edit_session">Sitzung bearbeiten</string>

@@ -66,7 +66,7 @@ class SessionReliabilityFlowTest {
         waitForText("measured today", substring = true)
         composeRule.onNode(hasText("measured today", substring = true) and hasClickAction()).performClick()
         composeRule.onNodeWithText("Session details").assertIsDisplayed()
-        composeRule.onNode(hasText("Temperature") and hasText("24.5")).assertIsDisplayed()
+        composeRule.onNode(hasText("Temperature") and hasText("24.5") and hasText("°C")).assertIsDisplayed()
         composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
         composeRule.onNodeWithText("Observation · Eau claire").assertIsDisplayed()
 
@@ -94,7 +94,7 @@ class SessionReliabilityFlowTest {
 
         waitForText("Session details")
         waitForText("25.1")
-        composeRule.onNode(hasText("Temperature") and hasText("25.1")).assertIsDisplayed()
+        composeRule.onNode(hasText("Temperature") and hasText("25.1") and hasText("°C")).assertIsDisplayed()
         composeRule.onNodeWithText("Fertilization · 1 mL").performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("Incident · Filtre corrigé").assertIsDisplayed()
         scenario.close()
@@ -103,7 +103,7 @@ class SessionReliabilityFlowTest {
         waitForText("measured today", substring = true)
         composeRule.onNode(hasText("measured today", substring = true) and hasClickAction()).performClick()
         waitForText("25.1")
-        composeRule.onNode(hasText("Temperature") and hasText("25.1")).assertIsDisplayed()
+        composeRule.onNode(hasText("Temperature") and hasText("25.1") and hasText("°C")).assertIsDisplayed()
         composeRule.onNodeWithText("Delete Session").performClick()
         composeRule.onNodeWithText("Delete this Session?").assertIsDisplayed()
         composeRule.onNodeWithText("Delete", useUnmergedTree = true).performClick()

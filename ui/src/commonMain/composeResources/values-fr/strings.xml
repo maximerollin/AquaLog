@@ -157,7 +157,6 @@
     <string name="view_session_details">Afficher les détails de la session</string>
     <string name="session_details">Détails de la Session</string>
     <string name="session_date">Enregistrée le %1$s</string>
-    <string name="session_measurement_detail">%1$s · %2$s %3$s</string>
     <string name="session_action_detail">%1$s · %2$s</string>
     <string name="session_event_detail">%1$s · %2$s</string>
     <string name="edit_session">Modifier la session</string>
