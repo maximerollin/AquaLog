@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -34,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -55,7 +57,9 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -134,16 +138,25 @@ fun RapidSessionScreen(
         val focusManager = LocalFocusManager.current
         // Once per screen, not per composition of the first row: scrolling it back in must not steal the focus.
         val firstFieldFocus = remember { FocusRequester() }
-        LaunchedEffect(context.activeParameters.firstOrNull()?.id) {
-            if (context.activeParameters.isNotEmpty()) {
+        val listState = rememberLazyListState()
+        val firstParameterId = context.activeParameters.firstOrNull()?.id
+        LaunchedEffect(firstParameterId) {
+            if (firstParameterId != null) {
                 withFrameNanos { }
-                firstFieldFocus.requestFocus()
+                // The first row must be composed for its requester to be attached (short viewport, large text).
+                if (listState.layoutInfo.visibleItemsInfo.none { it.key == firstParameterId }) {
+                    listState.scrollToItem(FIRST_PARAMETER_ITEM_INDEX)
+                    withFrameNanos { }
+                }
+                // shortcut: a row that still is not attached skips the auto-focus instead of crashing, the user taps it.
+                runCatching { firstFieldFocus.requestFocus() }
             }
         }
         BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
             // Rows keep their 48 dp height; at large text or on a very narrow screen they stack instead of shrinking.
             val stacked = LocalDensity.current.fontScale >= 1.3f || maxWidth - 48.dp < 280.dp
             LazyColumn(
+                state = listState,
                 modifier = Modifier.fillMaxSize().testTag("rapid-session-list"),
                 contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp),
             ) {
@@ -414,10 +427,19 @@ private fun ParameterDefinition.rangeText(formatter: LocalizedFormatters): Strin
 private fun MaintenanceChip(type: MaintenanceActionType, action: MaintenanceActionInput?, viewModel: HomeViewModel) {
     val label = type.label()
     val summary = action?.let { listOf(it.quantity, it.unit, it.product).filter(String::isNotBlank).joinToString(" ") }
+    val remove = stringResource(Res.string.remove_action, label)
     FilterChip(
         selected = action != null,
         // A selected chip opens its quantity editor; the trailing icon is what removes it.
         onClick = { if (action == null) viewModel.toggleMaintenanceAction(type) else viewModel.editMaintenanceAction(type) },
+        // Also a custom action: a nested clickable can be dropped when the chip is merged for accessibility services.
+        modifier = if (action != null) {
+            Modifier.semantics {
+                customActions = listOf(CustomAccessibilityAction(remove) { viewModel.toggleMaintenanceAction(type); true })
+            }
+        } else {
+            Modifier
+        },
         label = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(label)
@@ -429,11 +451,15 @@ private fun MaintenanceChip(type: MaintenanceActionType, action: MaintenanceActi
         },
         trailingIcon = if (action != null) {
             {
-                Icon(
-                    painterResource(Res.drawable.ic_close),
-                    stringResource(Res.string.remove_action, label),
-                    Modifier.clickable(role = Role.Button) { viewModel.toggleMaintenanceAction(type) },
-                )
+                Box(
+                    Modifier
+                        .minimumInteractiveComponentSize()
+                        .clickable(role = Role.Button) { viewModel.toggleMaintenanceAction(type) }
+                        .semantics { contentDescription = remove },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(painterResource(Res.drawable.ic_close), contentDescription = null)
+                }
             }
         } else {
             null
@@ -484,3 +510,6 @@ internal fun MaintenanceActionType.label(): String = stringResource(
 )
 
 private const val SEPARATOR = " · "
+
+// Header, then the Measurements section title, then one item per parameter.
+private const val FIRST_PARAMETER_ITEM_INDEX = 2

@@ -11,7 +11,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasImeAction
@@ -84,6 +86,39 @@ class LocalizedAccessibilityFlowTest {
             assertTrue("Restore action must render its text", layouts.isNotEmpty())
             assertFalse("Restore action must not clip its visible label", layouts.any { it.hasVisualOverflow })
             captureAndInspect("restore-complete-de-dark-large.png")
+        }
+    }
+
+    @Test
+    fun selectedMaintenanceChip_exposesA48dpRemoveTarget_andADeselectAction() {
+        configure("en", darkLarge = false)
+        val application = context.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        runBlocking {
+            application.aquariumRepository.createConfiguredAquarium(
+                "Aqua 120", 120.5, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+        }
+        ActivityScenario.launch(MainActivity::class.java).use {
+            val localized = localizedContext("en")
+            val measure = localized.getString(Res.string.measure_action)
+            awaitText(measure)
+            compose.onNodeWithText(measure).performClick()
+            val waterChange = localized.getString(Res.string.action_water_change)
+            awaitText(waterChange)
+            compose.onNodeWithTag("rapid-session-list").performScrollToNode(hasText(waterChange))
+            compose.onNodeWithText(waterChange).performClick()
+            val remove = localized.getString(Res.string.remove_action, waterChange)
+            val target = compose.onNode(hasContentDescription(remove) and hasClickAction())
+            target.assertExists()
+            assertMinimumTouchTarget(target.fetchSemanticsNode().touchBoundsInRoot)
+            val chipActions = compose.onNodeWithText(waterChange)
+                .fetchSemanticsNode().config[SemanticsActions.CustomActions].map { it.label }
+            assertTrue("the chip must expose a deselect action, had $chipActions", remove in chipActions)
+            target.performClick()
+            compose.onAllNodes(hasContentDescription(remove)).assertCountEquals(0)
+            compose.onNodeWithText(waterChange).assertExists()
         }
     }
 
