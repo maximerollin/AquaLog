@@ -91,6 +91,9 @@
     <string name="home_title">Il tuo acquario</string>
     <string name="aquarium_ready">Pronto per la tua prossima routine</string>
     <string name="open_tasks">Attività e promemoria</string>
+    <string name="more_section_tasks">Attività</string>
+    <string name="more_section_plan">Piano</string>
+    <string name="more_section_help">Aiuto</string>
     <string name="volume_liters_format">%1$s L</string>
     <string name="volume_us_gallons_format">%1$s Gal</string>
 

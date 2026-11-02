@@ -306,11 +306,11 @@ class LocalizedAccessibilityFlowTest {
                 compose.onNodeWithText(localized.getString(Res.string.navigation_more)).performClick()
                 awaitText(localized.getString(Res.string.aquariums_title))
                 assertAction(localized.getString(Res.string.add_aquarium))
-                scrollAndAssertEssentialAction(localized.getString(Res.string.edit_aquarium))
+                scrollSettingsAndAssertEssentialAction(localized.getString(Res.string.edit_aquarium))
                 captureAndInspect("settings-aquariums-$language-$mode.png")
                 scrollSettingsTo(localized.getString(Res.string.portable_data_title))
-                scrollAndAssertEssentialAction(localized.getString(Res.string.export_data))
-                scrollAndAssertEssentialAction(localized.getString(Res.string.restore_from_export))
+                scrollSettingsAndAssertEssentialAction(localized.getString(Res.string.export_data))
+                scrollSettingsAndAssertEssentialAction(localized.getString(Res.string.restore_from_export))
                 captureAndInspect("settings-export-$language-$mode.png")
                 scrollSettingsTo(localized.getString(Res.string.account_actions))
                 captureAndInspect("settings-account-$language-$mode.png")
@@ -456,6 +456,12 @@ class LocalizedAccessibilityFlowTest {
     private fun scrollSettingsTo(label: String) {
         compose.onNodeWithTag("settings-list").performScrollToNode(hasText(label))
         assertTrue(compose.onAllNodes(hasText(label)).fetchSemanticsNodes().isNotEmpty())
+    }
+
+    // A settings row can sit beyond the lazy list's composed items: bring it into composition first.
+    private fun scrollSettingsAndAssertEssentialAction(label: String) {
+        scrollSettingsTo(label)
+        scrollAndAssertEssentialAction(label)
     }
 
     private fun scrollAndAssertEssentialAction(label: String) {

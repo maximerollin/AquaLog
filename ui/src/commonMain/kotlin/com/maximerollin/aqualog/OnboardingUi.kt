@@ -2,7 +2,9 @@ package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.home.TankHome
+import com.maximerollin.aqualog.ui.theme.CarnetDivider
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
+import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,7 +18,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -43,6 +48,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.painterResource
+import androidx.compose.ui.graphics.Color
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -356,206 +363,164 @@ private fun PortableDataSettings(
     externalLinks: ExternalLinks,
     modifier: Modifier,
 ) {
+    val proActive = proState.purchaseStatus == ProPurchaseStatus.ACTIVE
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("settings-list").padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item { Spacer(Modifier.height(8.dp)) }
-        item { ScreenHeading(Res.string.settings_title, Res.string.portable_data_description) }
         item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(Res.string.aquariums_title), style = MaterialTheme.typography.titleMedium)
-                    homeState.aquariums.forEach { aquarium ->
-                        if (homeState.setup?.aquarium?.id == aquarium.id) {
-                            Button(
-                                onClick = {},
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                            ) { Text(aquarium.name) }
-                        } else {
-                            OutlinedButton(
-                                onClick = { viewModel.selectAquarium(aquarium.id) },
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                            ) { Text(aquarium.name) }
-                        }
+            CarnetScreenTitle(stringResource(Res.string.navigation_more), null, Modifier.padding(top = 12.dp))
+        }
+        moreSection(Res.string.more_section_tasks) {
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.open_tasks),
+                    onClick = viewModel::openTasks,
+                    trailingIcon = Res.drawable.ic_chevron_right,
+                )
+            }
+        }
+        moreSection(Res.string.aquariums_title) {
+            homeState.aquariums.forEach { aquarium ->
+                moreItem {
+                    val current = homeState.setup?.aquarium?.id == aquarium.id
+                    MoreRow(
+                        aquarium.name,
+                        onClick = { viewModel.selectAquarium(aquarium.id) },
+                        selected = current,
+                        trailingIcon = if (current) Res.drawable.ic_check else null,
+                    )
+                }
+            }
+            moreItem { MoreRow(stringResource(Res.string.add_aquarium), onClick = viewModel::openCreateAquarium) }
+            moreItem { MoreRow(stringResource(Res.string.edit_aquarium), onClick = viewModel::openEditAquarium) }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.archive_aquarium),
+                    onClick = viewModel::archiveCurrentAquarium,
+                    enabled = proActive && homeState.aquariums.size > 1,
+                    supporting = if (proActive) null else stringResource(Res.string.free_one_aquarium_limit),
+                )
+            }
+        }
+        moreSection(Res.string.more_section_plan) {
+            moreItem {
+                MoreRow(
+                    stringResource(if (proActive) Res.string.pro_active else Res.string.free_plan),
+                    supporting = stringResource(Res.string.subscription_settings_description),
+                )
+            }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.view_free_and_pro),
+                    onClick = viewModel::openProPaywall,
+                    trailingIcon = Res.drawable.ic_chevron_right,
+                )
+            }
+        }
+        moreSection(Res.string.account_title) {
+            moreItem {
+                MoreRow(
+                    accountState.identity?.email ?: stringResource(Res.string.account_local_only),
+                    supporting = stringResource(
+                        when (syncState.status) {
+                            SyncStatus.SYNCED -> Res.string.sync_status_synced
+                            SyncStatus.PENDING -> Res.string.sync_status_pending
+                            SyncStatus.FAILED -> Res.string.sync_status_failed
+                        },
+                    ),
+                )
+            }
+        }
+        accountState.pendingDeletion?.let {
+            moreSection(Res.string.account_deletion_pending) {
+                moreItem {
+                    MoreRow(
+                        accountState.localizedSafeDetail() ?: stringResource(Res.string.account_deletion_pending_description),
+                    )
+                }
+                if (accountState.showDeletionReauthenticationAction) {
+                    moreItem {
+                        MoreRow(
+                            stringResource(Res.string.continue_with_google),
+                            onClick = viewModel::reauthenticateAccountDeletionWithGoogle,
+                            enabled = !accountState.isWorking,
+                        )
                     }
-                    Button(
-                        onClick = viewModel::openCreateAquarium,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(stringResource(Res.string.add_aquarium)) }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        OutlinedButton(
-                            onClick = viewModel::openEditAquarium,
-                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        ) { Text(stringResource(Res.string.edit_aquarium)) }
-                        OutlinedButton(
-                            onClick = viewModel::archiveCurrentAquarium,
-                            enabled = proState.purchaseStatus == ProPurchaseStatus.ACTIVE &&
-                                homeState.aquariums.size > 1,
-                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        ) { Text(stringResource(Res.string.archive_aquarium)) }
+                    moreItem {
+                        MoreRow(
+                            stringResource(Res.string.send_deletion_magic_link),
+                            onClick = viewModel::requestDeletionMagicLink,
+                            enabled = !accountState.isWorking,
+                        )
                     }
-                    if (proState.purchaseStatus != ProPurchaseStatus.ACTIVE) {
-                        Text(
-                            stringResource(Res.string.free_one_aquarium_limit),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium,
+                } else {
+                    moreItem {
+                        MoreRow(
+                            stringResource(Res.string.retry_account_deletion),
+                            onClick = viewModel::retryAccountDeletion,
+                            enabled = !accountState.isWorking,
                         )
                     }
                 }
             }
         }
-        item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        stringResource(
-                            if (proState.purchaseStatus == ProPurchaseStatus.ACTIVE) {
-                                Res.string.pro_active
-                            } else {
-                                Res.string.free_plan
-                            },
-                        ),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        stringResource(Res.string.subscription_settings_description),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Button(
-                        onClick = viewModel::openProPaywall,
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                    ) {
-                        Text(stringResource(Res.string.view_free_and_pro))
-                    }
-                }
-            }
-        }
-        if (state.message != null || state.importProblem != null) {
-            item { PortableDataMessage(state) }
-        }
-        item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(Res.string.account_title), style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        accountState.identity?.email ?: stringResource(Res.string.account_local_only),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Text(
-                        when (syncState.status) {
-                            SyncStatus.SYNCED -> stringResource(Res.string.sync_status_synced)
-                            SyncStatus.PENDING -> stringResource(Res.string.sync_status_pending)
-                            SyncStatus.FAILED -> stringResource(Res.string.sync_status_failed)
-                        },
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-        }
-        accountState.pendingDeletion?.let {
+        moreSection(Res.string.portable_data_title) {
             item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(Res.string.account_deletion_pending), style = MaterialTheme.typography.titleMedium)
-                        Text(accountState.localizedSafeDetail() ?: stringResource(Res.string.account_deletion_pending_description))
-                        if (accountState.showDeletionReauthenticationAction) {
-                            Button(
-                                onClick = viewModel::reauthenticateAccountDeletionWithGoogle,
-                                enabled = !accountState.isWorking,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                            ) { Text(stringResource(Res.string.continue_with_google)) }
-                            OutlinedButton(
-                                onClick = viewModel::requestDeletionMagicLink,
-                                enabled = !accountState.isWorking,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                            ) { Text(stringResource(Res.string.send_deletion_magic_link)) }
-                        } else {
-                            Button(
-                                onClick = viewModel::retryAccountDeletion,
-                                enabled = !accountState.isWorking,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                            ) { Text(stringResource(Res.string.retry_account_deletion)) }
-                        }
-                    }
-                }
-            }
-        }
-        item {
-            Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(Res.string.portable_data_title), style = MaterialTheme.typography.titleMedium)
                 Text(
                     stringResource(Res.string.portable_data_replace_explanation),
+                    modifier = Modifier.padding(bottom = 8.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Button(
+            }
+            if (state.message != null || state.importProblem != null) {
+                moreItem { PortableDataMessage(state) }
+            }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.export_data),
                     onClick = onExportData,
                     enabled = !state.isWorking,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(Res.string.export_data))
-                }
-                OutlinedButton(
-                    onClick = onRequestImport,
-                    enabled = !state.isWorking,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) {
-                    Text(stringResource(Res.string.restore_from_export))
-                }
+                )
+            }
+            moreItem {
+                MoreRow(stringResource(Res.string.restore_from_export), onClick = onRequestImport, enabled = !state.isWorking)
             }
         }
-        }
-        item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(stringResource(Res.string.account_actions), style = MaterialTheme.typography.titleMedium)
-                    if (accountState.identity != null && accountState.pendingDeletion == null) {
-                        OutlinedButton(
-                            onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.LOGOUT) },
-                            enabled = !accountState.isWorking,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                        ) { Text(stringResource(Res.string.sign_out)) }
-                        OutlinedButton(
-                            onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.DELETE) },
-                            enabled = !accountState.isWorking,
-                            modifier = Modifier.fillMaxWidth().height(48.dp),
-                        ) { Text(stringResource(Res.string.delete_account)) }
-                    } else {
-                        Text(stringResource(Res.string.account_local_only_description))
-                    }
-                }
+        moreSection(Res.string.more_section_help) {
+            moreItem { MoreRow(stringResource(Res.string.send_feedback), onClick = viewModel::openFeedback) }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.privacy_policy),
+                    onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.PRIVACY) },
+                )
+            }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.support),
+                    onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.SUPPORT) },
+                )
             }
         }
-        item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(Res.string.feedback_title), style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        stringResource(Res.string.feedback_settings_description),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        moreSection(Res.string.account_actions) {
+            if (accountState.identity != null && accountState.pendingDeletion == null) {
+                moreItem {
+                    MoreRow(
+                        stringResource(Res.string.sign_out),
+                        onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.LOGOUT) },
+                        enabled = !accountState.isWorking,
                     )
-                    OutlinedButton(
-                        onClick = viewModel::openFeedback,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) {
-                        Text(stringResource(Res.string.send_feedback))
-                    }
                 }
-            }
-        }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                TextButton(onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.PRIVACY) }) {
-                    Text(stringResource(Res.string.privacy_policy))
+                moreItem {
+                    MoreRow(
+                        stringResource(Res.string.delete_account),
+                        onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.DELETE) },
+                        enabled = !accountState.isWorking,
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
-                TextButton(onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.SUPPORT) }) {
-                    Text(stringResource(Res.string.support))
-                }
+            } else {
+                moreItem { MoreRow(stringResource(Res.string.account_local_only_description)) }
             }
         }
         item {
@@ -566,6 +531,58 @@ private fun PortableDataSettings(
     }
     AccountSettingsDialog(accountState.dialog, viewModel, externalLinks)
     homeState.aquariumEditor?.let { editor -> AquariumEditorDialog(editor, viewModel) }
+}
+
+private fun LazyListScope.moreSection(title: StringResource, rows: LazyListScope.() -> Unit) {
+    item { CarnetSectionTitle(stringResource(title), Modifier.padding(top = 20.dp, bottom = 4.dp)) }
+    rows()
+    item { CarnetDivider() }
+}
+
+private fun LazyListScope.moreItem(content: @Composable () -> Unit) {
+    item { Column { CarnetDivider(); content() } }
+}
+
+/** One list row: 56 dp minimum, a single accessible unit; no [onClick] makes it a plain read-only line. */
+@Composable
+private fun MoreRow(
+    label: String,
+    modifier: Modifier = Modifier,
+    supporting: String? = null,
+    onClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
+    selected: Boolean? = null,
+    color: Color = MaterialTheme.colorScheme.onSurface,
+    trailingIcon: DrawableResource? = null,
+) {
+    val interaction = when {
+        onClick == null -> Modifier
+        selected != null -> Modifier.selectable(selected, enabled, Role.RadioButton, onClick = onClick)
+        else -> Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+    }
+    Row(
+        modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).then(interaction).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (enabled) color else color.copy(alpha = 0.5f),
+            )
+            if (supporting != null) {
+                Text(
+                    supporting,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (trailingIcon != null) {
+            Spacer(Modifier.width(12.dp))
+            Icon(painterResource(trailingIcon), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        }
+    }
 }
 
 @Composable
