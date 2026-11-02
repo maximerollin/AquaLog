@@ -49,6 +49,7 @@ data class ParameterDefinition(
     val precision: Int,
     val indicativeMinimum: Double?,
     val indicativeMaximum: Double?,
+    val analysisIntervalDays: Int? = null,
 )
 
 object OnboardingPresets {

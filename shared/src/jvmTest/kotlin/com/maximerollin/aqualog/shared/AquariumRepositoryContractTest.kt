@@ -29,6 +29,10 @@ class AquariumRepositoryContractTest {
         BundledSQLiteDriver().open(databasePath).use { connection ->
             connection.execSQL("DROP TABLE selected_aquarium")
             connection.execSQL("ALTER TABLE aquariums DROP COLUMN isArchived")
+            connection.execSQL("DROP TABLE assistant_dismissals")
+            connection.execSQL("ALTER TABLE parameter_definitions DROP COLUMN analysisIntervalDays")
+            connection.execSQL("ALTER TABLE tasks DROP COLUMN maintenanceActionType")
+            connection.execSQL("ALTER TABLE task_occurrences DROP COLUMN maintenanceActionType")
             connection.execSQL(
                 "UPDATE room_master_table SET identity_hash = '954d0dd95a58b7427e20e1a1f515177e' WHERE id = 42",
             )

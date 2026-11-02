@@ -37,6 +37,9 @@ interface AquariumRepository {
 
     suspend fun updateParameterDefinition(parameter: ParameterDefinition): ParameterDefinition
 
+    /** Sets the per-Aquarium analysis rhythm of one Parameter; null means the profile default. */
+    suspend fun updateAnalysisInterval(parameterDefinitionId: String, days: Int?): ParameterDefinition
+
     suspend fun loadRapidSessionContext(aquariumId: String): RapidSessionContext
 
     suspend fun saveRapidSession(input: RapidSessionInput): RecordedSession
@@ -222,6 +225,12 @@ class RoomAquariumRepository(
         )
         onSyncNeeded()
         return normalized
+    }
+
+    override suspend fun updateAnalysisInterval(parameterDefinitionId: String, days: Int?): ParameterDefinition {
+        require(days == null || days > 0) { "Analysis interval must be positive" }
+        val existing = requireNotNull(aquariumDao.getParameter(parameterDefinitionId)) { "Parameter does not exist" }
+        return updateParameterDefinition(existing.toDomain().copy(analysisIntervalDays = days))
     }
 
     override suspend fun loadRapidSessionContext(aquariumId: String): RapidSessionContext {
@@ -508,6 +517,7 @@ class RoomAquariumRepository(
             title = input.title.trim(),
             recurrence = input.recurrence,
             monthlyAnchorDay = input.firstDueDate.day,
+            maintenanceActionType = input.maintenanceActionType,
         )
         val occurrence = TaskOccurrence(
             id = generateId(),
@@ -519,6 +529,7 @@ class RoomAquariumRepository(
             timeZoneId = input.timeZoneId,
             resolution = null,
             resolvedAtEpochMillis = null,
+            maintenanceActionType = input.maintenanceActionType,
         )
         taskDao.create(task.toEntity(), occurrence.toEntity())
         return CreatedTask(task, occurrence)
@@ -779,7 +790,14 @@ private fun randomSyncOperationKey(): String = Random.nextBytes(16).joinToString
     byte.toUByte().toString(radix = 16).padStart(2, '0')
 }
 
-private fun AquariumTask.toEntity() = TaskEntity(id, aquariumId, title, recurrence.storageValue, monthlyAnchorDay)
+private fun AquariumTask.toEntity() = TaskEntity(
+    id,
+    aquariumId,
+    title,
+    recurrence.storageValue,
+    monthlyAnchorDay,
+    maintenanceActionType?.storageValue,
+)
 
 private fun TaskEntity.toDomain() = AquariumTask(
     id,
@@ -787,6 +805,7 @@ private fun TaskEntity.toDomain() = AquariumTask(
     title,
     TaskRecurrence.fromStorageValue(recurrence),
     monthlyAnchorDay,
+    maintenanceActionType?.let(MaintenanceActionType::fromStorageValue),
 )
 
 private fun TaskOccurrence.toEntity() = TaskOccurrenceEntity(
@@ -801,6 +820,7 @@ private fun TaskOccurrence.toEntity() = TaskOccurrenceEntity(
     timeZoneId = timeZoneId,
     resolution = resolution?.storageValue,
     resolvedAtEpochMillis = resolvedAtEpochMillis,
+    maintenanceActionType = maintenanceActionType?.storageValue,
 )
 
 private fun TaskOccurrenceEntity.toDomain() = TaskOccurrence(
@@ -813,6 +833,7 @@ private fun TaskOccurrenceEntity.toDomain() = TaskOccurrence(
     timeZoneId = timeZoneId,
     resolution = resolution?.let(TaskResolution::fromStorageValue),
     resolvedAtEpochMillis = resolvedAtEpochMillis,
+    maintenanceActionType = maintenanceActionType?.let(MaintenanceActionType::fromStorageValue),
 )
 
 private fun TaskOccurrence.next(id: String, date: TaskDate, minute: Int?, zone: String) = copy(
@@ -859,6 +880,7 @@ private fun ParameterDefinitionEntity.toDomain() = ParameterDefinition(
     precision = precision,
     indicativeMinimum = indicativeMinimum,
     indicativeMaximum = indicativeMaximum,
+    analysisIntervalDays = analysisIntervalDays,
 )
 
 private fun ParameterDefinition.toEntity() = ParameterDefinitionEntity(
@@ -871,6 +893,7 @@ private fun ParameterDefinition.toEntity() = ParameterDefinitionEntity(
     precision = precision,
     indicativeMinimum = indicativeMinimum,
     indicativeMaximum = indicativeMaximum,
+    analysisIntervalDays = analysisIntervalDays,
 )
 
 private fun Session.toEntity(idempotencyKey: String) = SessionEntity(

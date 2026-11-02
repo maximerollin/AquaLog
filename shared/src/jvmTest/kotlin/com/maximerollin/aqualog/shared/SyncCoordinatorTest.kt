@@ -92,6 +92,37 @@ class SyncCoordinatorTest {
     }
 
     @Test
+    fun `updateAnalysisInterval queues a parameter_definition sync operation`() = runTest {
+        val first = fixture()
+        val second = fixture()
+        val setup = first.repository.createConfiguredAquarium(
+            "Amazonien", 120.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+            OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+        )
+        val cloud = InMemorySyncBackend(false)
+        val provider = FixedSyncSessionProvider(SyncSession("account-1", "access-token"))
+        assertIs<SyncRunResult.Synchronized>(SyncCoordinator(first.repository, cloud, provider).runOnce())
+        val parameter = setup.parameters.first()
+
+        val updated = first.repository.updateAnalysisInterval(parameter.id, 10)
+
+        assertEquals(parameter.copy(analysisIntervalDays = 10), updated)
+        val batch = first.repository.pendingSyncBatch()
+        assertEquals(listOf(SyncEntityType.PARAMETER_DEFINITION), batch.operations.map { it.entityType })
+        assertEquals(parameter.id, batch.operations.single().entityId)
+        assertEquals(10, batch.parameterDefinitions.single().analysisIntervalDays)
+        assertIs<SyncRunResult.Synchronized>(SyncCoordinator(first.repository, cloud, provider).runOnce())
+        assertIs<SyncRunResult.Synchronized>(SyncCoordinator(second.repository, cloud, provider).runOnce())
+        assertEquals(
+            10,
+            second.repository.observeCurrentSetup().first()!!.parameters.single { it.id == parameter.id }
+                .analysisIntervalDays,
+        )
+        first.database.close()
+        second.database.close()
+    }
+
+    @Test
     fun `removing Session children queues remote deletions that do not resurrect on another device`() = runTest {
         val first = fixture()
         val second = fixture()

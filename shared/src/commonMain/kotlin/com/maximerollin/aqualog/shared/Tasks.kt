@@ -29,6 +29,7 @@ data class AquariumTask(
     val title: String,
     val recurrence: TaskRecurrence,
     val monthlyAnchorDay: Int,
+    val maintenanceActionType: MaintenanceActionType? = null,
 )
 
 data class TaskOccurrence(
@@ -41,6 +42,7 @@ data class TaskOccurrence(
     val timeZoneId: String,
     val resolution: TaskResolution?,
     val resolvedAtEpochMillis: Long?,
+    val maintenanceActionType: MaintenanceActionType? = null,
 )
 
 data class TaskInput(
@@ -50,6 +52,7 @@ data class TaskInput(
     val firstDueDate: TaskDate,
     val minuteOfDay: Int?,
     val timeZoneId: String,
+    val maintenanceActionType: MaintenanceActionType? = null,
 )
 
 data class CreatedTask(val task: AquariumTask, val occurrence: TaskOccurrence)
