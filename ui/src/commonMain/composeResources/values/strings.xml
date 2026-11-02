@@ -429,4 +429,12 @@
     <string name="cycled_proposal_text">Your tank looks cycled. Switch to the rhythm of an established tank?</string>
     <string name="cycled_proposal_switch">Switch to established</string>
     <string name="cycled_proposal_later">Later</string>
+    <string name="weekly_summary_title">Weekly summary</string>
+    <plurals name="weekly_summary_tests"><item quantity="one">%1$d test done</item><item quantity="other">%1$d tests done</item></plurals>
+    <plurals name="weekly_summary_tasks"><item quantity="one">%1$d task completed</item><item quantity="other">%1$d tasks completed</item></plurals>
+    <string name="weekly_summary_change">%1$s %2$s → %3$s, %4$s</string>
+    <string name="weekly_summary_rising">rising</string>
+    <string name="weekly_summary_falling">falling</string>
+    <string name="weekly_summary_next_week">Next week: test %1$s</string>
+    <string name="weekly_summary_pro_invite">Value changes and next week's tests with Pro</string>
 </resources>

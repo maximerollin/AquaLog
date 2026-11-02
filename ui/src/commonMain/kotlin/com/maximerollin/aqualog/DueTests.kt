@@ -9,13 +9,14 @@ import com.maximerollin.aqualog.shared.assistance.AquariumHistory
 import com.maximerollin.aqualog.shared.assistance.DueTest
 import com.maximerollin.aqualog.shared.assistance.ReadingSample
 import com.maximerollin.aqualog.shared.assistance.dueTests
-import com.maximerollin.aqualog.shared.assistance.weeklySeries
 import com.maximerollin.aqualog.shared.plusDays
 import com.maximerollin.aqualog.shared.toEpochDay
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.temporal.TemporalAdjusters
 import kotlinx.coroutines.flow.first
 import org.jetbrains.compose.resources.getString
 
@@ -52,17 +53,24 @@ suspend fun AquariumRepository.dueTestSummary(today: TaskDate, timeZoneId: Strin
     )
 }
 
-/** The weekly series of every non-archived Aquarium, read once: readings, pending and resolved Tâches. */
-suspend fun AquariumRepository.maintenanceSeries(today: TaskDate, timeZoneId: String): Int {
+/** Every non-archived Aquarium with its readings, pending and resolved Tâches, read once. */
+suspend fun AquariumRepository.aquariumHistories(timeZoneId: String): List<AquariumHistory> {
     val occurrences = observePendingTaskOccurrences().first() + observeResolvedTaskOccurrences().first()
-    return weeklySeries(
-        observeAquariums().first().mapNotNull { aquarium ->
-            loadSetup(aquarium.id)?.let {
-                AquariumHistory(it, observeReadingSamples(aquarium.id, timeZoneId).first(), occurrences.filter { o -> o.aquariumId == aquarium.id })
-            }
-        },
-        today,
-    )
+    return observeAquariums().first().mapNotNull { aquarium ->
+        loadSetup(aquarium.id)?.let {
+            AquariumHistory(it, observeReadingSamples(aquarium.id, timeZoneId).first(), occurrences.filter { o -> o.aquariumId == aquarium.id })
+        }
+    }
+}
+
+private val SUMMARY_TIME: LocalTime = LocalTime.of(19, 0)
+
+/** The next Sunday 19:00 local strictly after [now]. */
+fun nextSundaySummary(now: Long, zone: ZoneId): Long {
+    val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+    return generateSequence(today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY))) { it.plusWeeks(1) }
+        .map { it.atTime(SUMMARY_TIME).atZone(zone).toInstant().toEpochMilli() }
+        .first { it > now }
 }
 
 /** « NO₃, pH et GH »: [labels] without duplicates, separated by commas, the last two by [pair]. */

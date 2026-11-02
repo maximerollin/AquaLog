@@ -128,6 +128,7 @@ class LocalizedAccessibilityFlowTest {
         localeManager.applicationLocales = LocaleList.getEmptyLocaleList()
         uiModeManager.setApplicationNightMode(UiModeManager.MODE_NIGHT_AUTO)
         setFontScale(1f)
+        (context.applicationContext as TestAquaLogApplication).clockMillis = null
     }
 
     @Test
@@ -217,6 +218,13 @@ class LocalizedAccessibilityFlowTest {
             configure(language, darkLarge)
             val application = context.applicationContext as TestAquaLogApplication
             application.resetRepository()
+            // The Sunday summary card (Sunday and Monday only) moves « See all »: keep this first-screen check midweek.
+            val shift = when (java.time.LocalDate.now().dayOfWeek) {
+                java.time.DayOfWeek.SUNDAY -> 3L
+                java.time.DayOfWeek.MONDAY -> 2L
+                else -> 0L
+            }
+            application.clockMillis = System.currentTimeMillis() + shift * 86_400_000L
             runBlocking {
                 val setup = application.aquariumRepository.createConfiguredAquarium(
                     name = "Aqua 120",

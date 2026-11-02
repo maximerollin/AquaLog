@@ -18,6 +18,7 @@ import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.SyncCoordinator
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
+import java.time.ZoneId
 import java.util.UUID
 
 open class AquaLogApplication : Application() {
@@ -79,6 +80,10 @@ open class AquaLogApplication : Application() {
     open val taskReminderScheduler: TaskReminderScheduler by lazy {
         AndroidTaskReminderScheduler(this)
     }
+
+    /** The home's clock; instrumented tests replace it. */
+    open val currentTimeMillis: () -> Long = System::currentTimeMillis
+    open val currentTimeZoneId: () -> String = { ZoneId.systemDefault().id }
 
     private val observabilityConfiguration by lazy { ObservabilityConfiguration.fromBuildConfig() }
 

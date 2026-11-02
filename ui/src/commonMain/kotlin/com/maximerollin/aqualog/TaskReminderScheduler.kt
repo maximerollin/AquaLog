@@ -13,5 +13,8 @@ interface TaskReminderScheduler {
     /** One reminder for due tests at [nextDueTestReminder] of [at]; null cancels it. */
     fun scheduleDueTests(at: TaskDate?)
 
+    /** The Sunday summary at [nextSundaySummary]; scheduling again replaces it. */
+    fun scheduleWeeklySummary()
+
     fun isBatteryOptimizationActive(): Boolean
 }

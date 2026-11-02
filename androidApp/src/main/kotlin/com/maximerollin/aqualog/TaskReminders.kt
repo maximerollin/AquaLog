@@ -14,6 +14,7 @@ import android.os.Build
 import android.os.PowerManager
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
+import com.maximerollin.aqualog.shared.assistance.weeklySeries
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -63,6 +64,19 @@ class AndroidTaskReminderScheduler(
         }
     }
 
+    override fun scheduleWeeklySummary() {
+        alarmManager.setAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            nextSundaySummary(nowMillis(), ZoneId.systemDefault()),
+            PendingIntent.getBroadcast(
+                context,
+                WEEKLY_SUMMARY_REQUEST_CODE,
+                Intent(context, WeeklySummaryReceiver::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            ),
+        )
+    }
+
     override fun isBatteryOptimizationActive(): Boolean {
         val powerManager = context.getSystemService(PowerManager::class.java)
         return !powerManager.isIgnoringBatteryOptimizations(context.packageName)
@@ -92,6 +106,7 @@ class AndroidTaskReminderScheduler(
         internal const val EXTRA_TASK_TITLE = "task-title"
         private const val MINIMUM_DELAY_MILLIS = 1_000L
         private const val DUE_TESTS_REQUEST_CODE = 0x7e57
+        private const val WEEKLY_SUMMARY_REQUEST_CODE = 0xb11a
     }
 }
 
@@ -144,6 +159,7 @@ private fun postReminder(context: Context, notificationId: Int, title: String, t
 
 private const val CHANNEL_ID = "task-reminders"
 private const val DUE_TESTS_NOTIFICATION_ID = 0x7e57
+private const val WEEKLY_SUMMARY_NOTIFICATION_ID = 0xb11a
 
 /** Fires at 09:00 while tests are due: lists them across Aquariums, then schedules the next reminder. */
 class DueTestReminderReceiver : BroadcastReceiver() {
@@ -166,6 +182,34 @@ class DueTestReminderReceiver : BroadcastReceiver() {
     }
 }
 
+/** Fires Sunday 19:00: one summary for every Aquarium in free text only (Pro is not known here), then next Sunday's. */
+class WeeklySummaryReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val application = context.applicationContext as? AquaLogApplication ?: return
+        // Before the permission check, so the weekly chain survives a missing permission.
+        application.taskReminderScheduler.scheduleWeeklySummary()
+        if (cannotNotify(context)) return
+        val pending = goAsync()
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            try {
+                val zone = ZoneId.systemDefault()
+                val histories = application.aquariumRepository.aquariumHistories(zone.id)
+                if (histories.isNotEmpty()) {
+                    val series = weeklySeries(histories, localToday(), zone)
+                    val text = if (series > 0) {
+                        context.resources.getQuantityString(R.plurals.weekly_summary_notification, series, series)
+                    } else {
+                        context.getString(R.string.weekly_summary_notification_ready)
+                    }
+                    postReminder(context, WEEKLY_SUMMARY_NOTIFICATION_ID, text, null)
+                }
+            } finally {
+                pending.finish()
+            }
+        }
+    }
+}
+
 class TaskRescheduleReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action !in SUPPORTED_ACTIONS) return
@@ -175,6 +219,7 @@ class TaskRescheduleReceiver : BroadcastReceiver() {
             try {
                 val occurrences = application.aquariumRepository.observePendingTaskOccurrences().first()
                 application.taskReminderScheduler.reconcile(occurrences)
+                application.taskReminderScheduler.scheduleWeeklySummary()
                 application.taskReminderScheduler.scheduleDueTests(
                     application.aquariumRepository.dueTestSummary(localToday(), ZoneId.systemDefault().id).nextDueDate,
                 )

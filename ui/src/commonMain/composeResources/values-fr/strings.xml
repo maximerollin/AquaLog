@@ -429,4 +429,12 @@
     <string name="cycled_proposal_text">Votre bac a l'air cyclé. Passer au rythme d'un bac établi ?</string>
     <string name="cycled_proposal_switch">Passer en établi</string>
     <string name="cycled_proposal_later">Plus tard</string>
+    <string name="weekly_summary_title">Bilan de la semaine</string>
+    <plurals name="weekly_summary_tests"><item quantity="one">%1$d test fait</item><item quantity="other">%1$d tests faits</item></plurals>
+    <plurals name="weekly_summary_tasks"><item quantity="one">%1$d tâche cochée</item><item quantity="other">%1$d tâches cochées</item></plurals>
+    <string name="weekly_summary_change">%1$s %2$s → %3$s, %4$s</string>
+    <string name="weekly_summary_rising">en hausse</string>
+    <string name="weekly_summary_falling">en baisse</string>
+    <string name="weekly_summary_next_week">Semaine prochaine : tester %1$s</string>
+    <string name="weekly_summary_pro_invite">Évolution des valeurs et tests de la semaine prochaine avec Pro</string>
 </resources>

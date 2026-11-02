@@ -4,4 +4,9 @@
     <string name="task_notification_channel">Task reminders</string>
     <string name="task_notification_text">Open Aquagenda to complete, postpone or ignore this occurrence.</string>
     <string name="due_tests_notification_text">Tests due: %1$s</string>
+    <string name="weekly_summary_notification_ready">Your weekly summary is ready</string>
+    <plurals name="weekly_summary_notification">
+        <item quantity="one">Your weekly summary is ready · %1$d week of regular care</item>
+        <item quantity="other">Your weekly summary is ready · %1$d weeks of regular care</item>
+    </plurals>
 </resources>

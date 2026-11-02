@@ -4,4 +4,9 @@
     <string name="task_notification_channel">Aufgabenerinnerungen</string>
     <string name="task_notification_text">Öffnen Sie Aquagenda, um dieses Ereignis abzuschließen, zu verschieben oder zu ignorieren.</string>
     <string name="due_tests_notification_text">Fällige Tests: %1$s</string>
+    <string name="weekly_summary_notification_ready">Ihre Wochenbilanz ist bereit</string>
+    <plurals name="weekly_summary_notification">
+        <item quantity="one">Ihre Wochenbilanz ist bereit · %1$d Woche regelmäßige Pflege</item>
+        <item quantity="other">Ihre Wochenbilanz ist bereit · %1$d Wochen regelmäßige Pflege</item>
+    </plurals>
 </resources>

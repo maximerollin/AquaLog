@@ -4,4 +4,9 @@
     <string name="task_notification_channel">Rappels de tâches</string>
     <string name="task_notification_text">Ouvrez Aquagenda pour terminer, reporter ou ignorer cette occurrence.</string>
     <string name="due_tests_notification_text">Tests à faire : %1$s</string>
+    <string name="weekly_summary_notification_ready">Votre bilan de la semaine est prêt</string>
+    <plurals name="weekly_summary_notification">
+        <item quantity="one">Votre bilan de la semaine est prêt · %1$d semaine d’entretien régulier</item>
+        <item quantity="other">Votre bilan de la semaine est prêt · %1$d semaines d’entretien régulier</item>
+    </plurals>
 </resources>

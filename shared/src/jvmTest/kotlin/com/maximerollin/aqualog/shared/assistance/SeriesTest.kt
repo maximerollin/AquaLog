@@ -16,6 +16,7 @@ import kotlin.test.assertEquals
 class SeriesTest {
     // Wednesday; the current week starts Monday 2026-11-02, the last finished weeks Oct 26, Oct 19, Oct 12.
     private val today = TaskDate(2026, 11, 4)
+    private val utc = java.time.ZoneOffset.UTC
     private val created = java.time.LocalDate.of(2026, 9, 1).atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli()
 
     private fun day(month: Int, day: Int) = TaskDate(2026, month, day)
@@ -49,13 +50,13 @@ class SeriesTest {
     @Test
     fun `three kept weeks give 3`() {
         val readings = listOf(day(10, 13), day(10, 20), day(10, 27))
-        assertEquals(3, weeklySeries(listOf(history(readings)), today))
+        assertEquals(3, weeklySeries(listOf(history(readings)), today, utc))
     }
 
     @Test
     fun `a missed week breaks`() {
         val readings = listOf(day(10, 13), day(10, 27))
-        assertEquals(1, weeklySeries(listOf(history(readings)), today))
+        assertEquals(1, weeklySeries(listOf(history(readings)), today, utc))
     }
 
     @Test
@@ -65,20 +66,20 @@ class SeriesTest {
             occurrence(day(10, 14), TaskResolution.COMPLETED, day(10, 14)),
             occurrence(day(10, 28), TaskResolution.COMPLETED, day(10, 28)),
         )
-        assertEquals(2, weeklySeries(listOf(history(occurrences = done, interval = 30)), today))
+        assertEquals(2, weeklySeries(listOf(history(occurrences = done, interval = 30)), today, utc))
     }
 
     @Test
     fun `a reading on Monday after the week still counts`() {
-        assertEquals(2, weeklySeries(listOf(history(listOf(day(10, 26)))), today))
-        assertEquals(1, weeklySeries(listOf(history(listOf(day(10, 27)))), today))
+        assertEquals(2, weeklySeries(listOf(history(listOf(day(10, 26)))), today, utc))
+        assertEquals(1, weeklySeries(listOf(history(listOf(day(10, 27)))), today, utc))
     }
 
     @Test
     fun `an ignored task breaks the week`() {
         val readings = listOf(day(10, 13), day(10, 20), day(10, 27))
         val ignored = listOf(occurrence(day(10, 21), TaskResolution.IGNORED, day(10, 21)))
-        assertEquals(1, weeklySeries(listOf(history(readings, ignored)), today))
+        assertEquals(1, weeklySeries(listOf(history(readings, ignored)), today, utc))
     }
 
     @Test
@@ -87,31 +88,31 @@ class SeriesTest {
         val late = listOf(occurrence(day(10, 21), TaskResolution.COMPLETED, day(10, 27)))
         val pending = listOf(occurrence(day(10, 21), null))
         val onTime = listOf(occurrence(day(10, 21), TaskResolution.COMPLETED, day(10, 26)))
-        assertEquals(1, weeklySeries(listOf(history(readings, late)), today))
-        assertEquals(1, weeklySeries(listOf(history(readings, pending)), today))
-        assertEquals(3, weeklySeries(listOf(history(readings, onTime)), today))
+        assertEquals(1, weeklySeries(listOf(history(readings, late)), today, utc))
+        assertEquals(1, weeklySeries(listOf(history(readings, pending)), today, utc))
+        assertEquals(3, weeklySeries(listOf(history(readings, onTime)), today, utc))
     }
 
     @Test
     fun `a postponed occurrence does not count itself`() {
         val readings = listOf(day(10, 13), day(10, 20), day(10, 27))
         val postponed = listOf(occurrence(day(10, 21), TaskResolution.POSTPONED, day(10, 21)))
-        assertEquals(3, weeklySeries(listOf(history(readings, postponed)), today))
+        assertEquals(3, weeklySeries(listOf(history(readings, postponed)), today, utc))
     }
 
     @Test
     fun `two aquariums - one missing breaks`() {
         val every = listOf(day(10, 13), day(10, 20), day(10, 27))
         val gap = listOf(day(10, 13), day(10, 27))
-        assertEquals(1, weeklySeries(listOf(history(every, id = "a"), history(gap, id = "b")), today))
-        assertEquals(3, weeklySeries(listOf(history(every, id = "a"), history(every, id = "b")), today))
+        assertEquals(1, weeklySeries(listOf(history(every, id = "a"), history(gap, id = "b")), today, utc))
+        assertEquals(3, weeklySeries(listOf(history(every, id = "a"), history(every, id = "b")), today, utc))
     }
 
     @Test
     fun `current week met adds one, unmet does not break`() {
         val finished = listOf(day(10, 13), day(10, 20), day(10, 27))
-        assertEquals(3, weeklySeries(listOf(history(finished)), today))
-        assertEquals(4, weeklySeries(listOf(history(finished + day(11, 3))), today))
+        assertEquals(3, weeklySeries(listOf(history(finished)), today, utc))
+        assertEquals(4, weeklySeries(listOf(history(finished + day(11, 3))), today, utc))
     }
 
     @Test
@@ -122,11 +123,26 @@ class SeriesTest {
             )))
         }
         // Created the week of Oct 26, kept; the current week is met too.
-        assertEquals(2, weeklySeries(listOf(brandNew.copy(samples = brandNew.samples + ReadingSample("aq-nitrate", 10.0, day(10, 28)))), today))
+        assertEquals(2, weeklySeries(listOf(brandNew.copy(samples = brandNew.samples + ReadingSample("aq-nitrate", 10.0, day(10, 28)))), today, utc))
+    }
+
+    @Test
+    fun `an Aquarium's first week is read in the given zone, and earlier weeks are neutral for it only`() {
+        val paris = java.time.ZoneId.of("Europe/Paris")
+        val old = history(listOf(day(10, 13), day(10, 20), day(10, 27)), id = "old")
+        // Monday Oct 26 00:30 in Paris is still Sunday Oct 25 in UTC.
+        val created = java.time.ZonedDateTime.of(2026, 10, 26, 0, 30, 0, 0, paris).toInstant().toEpochMilli()
+        val new = history(listOf(day(10, 27)), id = "new").let {
+            it.copy(setup = it.setup.copy(aquarium = it.setup.aquarium.copy(createdAtEpochMillis = created)))
+        }
+        // In Paris the new one starts the week of Oct 26: Oct 12 and Oct 19 only need the old one, which kept them.
+        assertEquals(3, weeklySeries(listOf(old, new), today, paris))
+        // Read in UTC it would have missed the week of Oct 19.
+        assertEquals(1, weeklySeries(listOf(old, new), today, utc))
     }
 
     @Test
     fun `no history gives 0`() {
-        assertEquals(0, weeklySeries(emptyList(), today))
+        assertEquals(0, weeklySeries(emptyList(), today, utc))
     }
 }

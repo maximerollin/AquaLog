@@ -88,6 +88,10 @@ import com.maximerollin.aqualog.shared.assistance.DueTest
 import com.maximerollin.aqualog.shared.assistance.MeasurementConcern
 import com.maximerollin.aqualog.shared.assistance.NEVER_INTERVAL_DAYS
 import com.maximerollin.aqualog.shared.assistance.dueTests
+import com.maximerollin.aqualog.shared.assistance.WeeklySummary
+import com.maximerollin.aqualog.shared.assistance.summaryWeekStart
+import com.maximerollin.aqualog.shared.assistance.weeklySeries
+import com.maximerollin.aqualog.shared.assistance.weeklySummary
 import com.maximerollin.aqualog.shared.assistance.PisteAdvice
 import com.maximerollin.aqualog.shared.assistance.checkMeasurement
 import com.maximerollin.aqualog.shared.evaluateMeasurement
@@ -104,6 +108,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.pow
 import kotlin.math.round
 import java.io.Serializable
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -357,6 +362,8 @@ data class HomeUiState(
     val dueTests: List<DueTest> = emptyList(),
     /** Weeks of regular care for the whole account; 0 hides the line. */
     val maintenanceSeries: Int = 0,
+    /** The displayed Aquarium's Sunday summary, on Sunday and Monday only. */
+    val weeklySummary: WeeklySummary? = null,
     val showRhythmSettings: Boolean = false,
     /** Id of the Session after which the « looks cycled » card was set aside for the displayed Aquarium, if any. */
     val cycledDismissedSessionId: String? = null,
@@ -465,9 +472,11 @@ class HomeViewModel(
     val uiState: StateFlow<HomeUiState> = mutableUiState.asStateFlow()
     private var timelineJob: Job? = null
     private var trendsJob: Job? = null
+    private var weeklyJob: Job? = null
     private var lastObservedSyncState: SyncState? = null
 
     init {
+        taskReminderScheduler.scheduleWeeklySummary()
         viewModelScope.launch {
             aquariumRepository.observeAquariums().collect { aquariums ->
                 mutableUiState.update { it.copy(aquariums = aquariums) }
@@ -483,6 +492,7 @@ class HomeViewModel(
                         latestSession = if (setup == null) null else it.latestSession,
                         latestReadings = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.latestReadings else emptyList(),
                         dueTests = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.dueTests else emptyList(),
+                        weeklySummary = it.weeklySummary.takeIf { _ -> setup?.aquarium?.id == it.setup?.aquarium?.id },
                         cycledDismissedSessionId = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.cycledDismissedSessionId else null,
                         cycledDismissalsLoaded = setup?.aquarium?.id == it.setup?.aquarium?.id && it.cycledDismissalsLoaded,
                     )
@@ -505,7 +515,7 @@ class HomeViewModel(
                             // The setup re-emits when a rhythm changes, so this also follows the rhythm settings.
                             aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).collect { samples ->
                                 mutableUiState.update { it.copy(dueTests = dueTests(setup, samples, today())) }
-                                refreshMaintenanceSeries()
+                                refreshWeekly()
                                 taskReminderScheduler.scheduleDueTests(
                                     aquariumRepository.dueTestSummary(today(), currentTimeZoneId()).nextDueDate,
                                 )
@@ -530,10 +540,10 @@ class HomeViewModel(
         viewModelScope.launch {
             aquariumRepository.observePendingTaskOccurrences().collectLatest { occurrences ->
                 taskReminderScheduler.reconcile(occurrences)
-                refreshMaintenanceSeries()
                 mutableUiState.update { state ->
                     state.copy(tasks = state.tasks.copy(pendingOccurrences = occurrences))
                 }
+                refreshWeekly()
             }
         }
         viewModelScope.launch {
@@ -1414,12 +1424,33 @@ class HomeViewModel(
         viewModelScope.launch { aquariumRepository.updateAnalysisInterval(parameterDefinitionId, days) }
     }
 
-    private suspend fun refreshMaintenanceSeries() {
-        val series = aquariumRepository.maintenanceSeries(today(), currentTimeZoneId())
-        mutableUiState.update { it.copy(maintenanceSeries = series) }
+    /**
+     * Series and Sunday summary in their own job, latest call wins: the collectors that call it are never delayed,
+     * and a failure (an invalid imported zone, say) leaves the previous values instead of stopping them.
+     */
+    private fun refreshWeekly() {
+        weeklyJob?.cancel()
+        weeklyJob = viewModelScope.launch {
+            runCatching {
+                val today = today()
+                val zoneId = currentTimeZoneId()
+                val histories = aquariumRepository.aquariumHistories(zoneId)
+                val series = weeklySeries(histories, today, ZoneId.of(zoneId))
+                val shownId = mutableUiState.value.setup?.aquarium?.id
+                val summary = summaryWeekStart(today)?.let { start ->
+                    histories.firstOrNull { it.setup.aquarium.id == shownId }?.let { weeklySummary(it, start, series) }
+                }
+                Triple(series, shownId, summary)
+            }.onSuccess { (series, shownId, summary) ->
+                mutableUiState.update {
+                    it.copy(maintenanceSeries = series, weeklySummary = summary.takeIf { _ -> it.setup?.aquarium?.id == shownId })
+                }
+            }
+        }
     }
 
-    fun today(): TaskDate = LocalDate.now(ZoneId.of(currentTimeZoneId())).let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
+    fun today(): TaskDate = Instant.ofEpochMilli(currentTimeMillis()).atZone(ZoneId.of(currentTimeZoneId())).toLocalDate()
+        .let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
 
     fun closeRapidSession() {
         setRapidSession(null)
@@ -2283,6 +2314,8 @@ class HomeViewModel(
             feedbackGateway: FeedbackGateway = DisabledFeedbackGateway,
             reviewCoordinator: ReviewCoordinator? = null,
             onSyncRetryRequested: () -> Unit = {},
+            currentTimeMillis: () -> Long = System::currentTimeMillis,
+            currentTimeZoneId: () -> String = { ZoneId.systemDefault().id },
         ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
@@ -2297,6 +2330,8 @@ class HomeViewModel(
                         feedbackGateway = feedbackGateway,
                         reviewCoordinator = reviewCoordinator,
                         onSyncRetryRequested = onSyncRetryRequested,
+                        currentTimeMillis = currentTimeMillis,
+                        currentTimeZoneId = currentTimeZoneId,
                         savedStateHandle = createSavedStateHandle(),
                     )
                 }
@@ -2317,6 +2352,7 @@ private object NoOpTaskReminderScheduler : TaskReminderScheduler {
     override fun cancel(occurrenceId: String) = Unit
     override fun reconcile(occurrences: List<TaskOccurrence>) = Unit
     override fun scheduleDueTests(at: TaskDate?) = Unit
+    override fun scheduleWeeklySummary() = Unit
     override fun isBatteryOptimizationActive(): Boolean = false
 }
 

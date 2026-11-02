@@ -429,4 +429,12 @@
     <string name="cycled_proposal_text">Il tuo acquario sembra maturo. Passare al ritmo di un acquario stabilito?</string>
     <string name="cycled_proposal_switch">Passa a stabilito</string>
     <string name="cycled_proposal_later">Più tardi</string>
+    <string name="weekly_summary_title">Riepilogo della settimana</string>
+    <plurals name="weekly_summary_tests"><item quantity="one">%1$d test fatto</item><item quantity="other">%1$d test fatti</item></plurals>
+    <plurals name="weekly_summary_tasks"><item quantity="one">%1$d attività completata</item><item quantity="other">%1$d attività completate</item></plurals>
+    <string name="weekly_summary_change">%1$s %2$s → %3$s, %4$s</string>
+    <string name="weekly_summary_rising">in aumento</string>
+    <string name="weekly_summary_falling">in calo</string>
+    <string name="weekly_summary_next_week">Settimana prossima: testare %1$s</string>
+    <string name="weekly_summary_pro_invite">Andamento dei valori e test della settimana prossima con Pro</string>
 </resources>

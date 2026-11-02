@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity() {
             feedbackGateway = application.feedbackGateway,
             reviewCoordinator = reviewCoordinator,
             onSyncRetryRequested = { AndroidSyncScheduler.requestImmediate(application) },
+            currentTimeMillis = application.currentTimeMillis,
+            currentTimeZoneId = application.currentTimeZoneId,
         )
     }
 

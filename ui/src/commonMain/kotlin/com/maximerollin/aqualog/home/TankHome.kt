@@ -69,6 +69,7 @@ import com.maximerollin.aqualog.homeOverview
 import com.maximerollin.aqualog.otherAquariumAlerts
 import com.maximerollin.aqualog.PistesCard
 import com.maximerollin.aqualog.joinLabels
+import com.maximerollin.aqualog.ProPurchaseStatus
 import com.maximerollin.aqualog.shortLabelResource
 import com.maximerollin.aqualog.shared.assistance.DueTest
 import com.maximerollin.aqualog.shared.assistance.looksCycled
@@ -176,6 +177,11 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = gutter.padding(bottom = 8.dp),
                     )
+                }
+            }
+            state.weeklySummary?.let { summary ->
+                item(key = "weekly-summary") {
+                    WeeklySummaryCard(summary, state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE, viewModel::openProPaywall, gutter)
                 }
             }
             items(alerts, key = { "alert-${it.aquarium.id}" }) { alert ->

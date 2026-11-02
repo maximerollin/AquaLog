@@ -80,6 +80,10 @@ class TestAquaLogApplication : AquaLogApplication() {
     override val taskReminderScheduler: TaskReminderScheduler
         get() = recordingTaskReminderScheduler
 
+    /** A fixed home clock for the next launched activity; null follows the system time. */
+    var clockMillis: Long? = null
+    override val currentTimeMillis: () -> Long = { clockMillis ?: System.currentTimeMillis() }
+
     override val aquariumRepository: AquariumRepository
         get() = requireNotNull(repository) { "resetRepository() must run before launching MainActivity" }
 
@@ -147,6 +151,7 @@ class TestAquaLogApplication : AquaLogApplication() {
         bindRepository(newRepository, newDatabase)
         deletionResult = CloudAccountDeletionResult.Completed
         recordingTaskReminderScheduler.reset()
+        clockMillis = null
         analyticsPayloads.clear()
         recordedFeedback.clear()
         verifiedProEntitlement = null
@@ -222,6 +227,8 @@ class RecordingTaskReminderScheduler : TaskReminderScheduler {
     override fun scheduleDueTests(at: TaskDate?) {
         scheduledDueTestDates += at
     }
+
+    override fun scheduleWeeklySummary() = Unit
 
     override fun isBatteryOptimizationActive(): Boolean = false
 

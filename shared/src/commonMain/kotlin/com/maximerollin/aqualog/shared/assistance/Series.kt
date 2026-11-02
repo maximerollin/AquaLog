@@ -18,24 +18,30 @@ data class AquariumHistory(
 private enum class Outcome { MET, OPEN, MISSED }
 
 private const val GRACE_DAYS = 1L
-private const val MILLIS_PER_DAY = 86_400_000L
 
 /** Monday of the week holding [epochDay] (1970-01-01 was a Thursday). */
-private fun mondayOf(epochDay: Long) = epochDay - (epochDay + 3).mod(7L)
+internal fun mondayOf(epochDay: Long) = epochDay - (epochDay + 3).mod(7L)
+
+/** The local day a resolution was recorded, in the occurrence's own zone. */
+internal fun TaskOccurrence.resolvedDay(): Long? =
+    resolvedAtEpochMillis?.let { Instant.ofEpochMilli(it).atZone(ZoneId.of(timeZoneId)).toLocalDate().toEpochDay() }
 
 /**
  * Consecutive weeks (Monday to Sunday) of regular care, going back from the last finished week, plus the current week once met.
  * A week requires a reading of every active parameter tested at least weekly and every Tâche due in it done; each may be
  * met until the day after the week ends. A week with no requirement is skipped; the current week never breaks the series.
- * shortcut: parameters and rhythms are today's, history of setup changes is not stored; an Aquarium's start is read in UTC.
+ * Each Aquarium counts from the week it was created in, read in [zone]; earlier weeks are neutral for it.
+ * shortcut: parameters and rhythms are today's, history of setup changes is not stored.
  */
-fun weeklySeries(histories: List<AquariumHistory>, today: TaskDate): Int {
+fun weeklySeries(histories: List<AquariumHistory>, today: TaskDate, zone: ZoneId): Int {
     val todayDay = today.toEpochDay()
     val thisWeek = mondayOf(todayDay)
-    val firstWeek = histories.minOfOrNull { mondayOf(it.setup.aquarium.createdAtEpochMillis.floorDiv(MILLIS_PER_DAY)) } ?: return 0
+    fun AquariumHistory.firstWeek() =
+        mondayOf(Instant.ofEpochMilli(setup.aquarium.createdAtEpochMillis).atZone(zone).toLocalDate().toEpochDay())
+    val firstWeek = histories.minOfOrNull { it.firstWeek() } ?: return 0
 
     fun week(start: Long): Outcome? {
-        val outcomes = histories.filter { start >= mondayOf(it.setup.aquarium.createdAtEpochMillis.floorDiv(MILLIS_PER_DAY)) }
+        val outcomes = histories.filter { start >= it.firstWeek() }
             .flatMap { outcomes(it, start, todayDay) }
         return outcomes.firstOrNull { it == Outcome.MISSED } ?: outcomes.firstOrNull { it == Outcome.OPEN } ?: outcomes.firstOrNull()
     }
@@ -71,9 +77,7 @@ private fun outcomes(history: AquariumHistory, start: Long, today: Long): List<O
         .map { occurrence ->
             when (occurrence.resolution) {
                 TaskResolution.IGNORED -> Outcome.MISSED
-                TaskResolution.COMPLETED -> outcome(occurrence.resolvedAtEpochMillis?.let {
-                    Instant.ofEpochMilli(it).atZone(ZoneId.of(occurrence.timeZoneId)).toLocalDate().toEpochDay()
-                })
+                TaskResolution.COMPLETED -> outcome(occurrence.resolvedDay())
                 else -> outcome(null)
             }
         }
