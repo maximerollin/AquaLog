@@ -288,6 +288,7 @@
     <string name="trends_indicative_target">Cible indicative %1$s–%2$s %3$s · référence uniquement, pas un diagnostic</string>
     <string name="trends_chart_description">Graphique de tendance %1$s · Marqueurs de lignes pleines et de points circulaires · Cible indicative hachurée · Marqueurs d'événements en diamant</string>
     <string name="trends_legend">● Mesures · ▧ cible indicative hachurée · ◆ Événements</string>
+    <string name="trends_sparkline_legend">Bande teintée : plage indicative · ▲ Changements d'eau</string>
     <string name="trends_series_label">● Série %1$s</string>
     <string name="parameter_with_unit">%1$s (%2$s)</string>
     <string name="value_with_unit">%1$s %2$s</string>

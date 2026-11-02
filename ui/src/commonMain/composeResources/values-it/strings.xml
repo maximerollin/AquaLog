@@ -288,6 +288,7 @@
     <string name="trends_indicative_target">Target indicativo %1$s–%2$s %3$s · solo riferimento, non diagnosi</string>
     <string name="trends_chart_description">Grafico di tendenza %1$s · indicatori di linee continue e punti circolari · target indicativo tratteggiato · indicatori di eventi a rombo</string>
     <string name="trends_legend">● Misurazioni · ▧ target indicativo tratteggiato · ◆ Eventi</string>
+    <string name="trends_sparkline_legend">Fascia colorata: intervallo indicativo · ▲ Cambi d'acqua</string>
     <string name="trends_series_label">● Serie %1$s</string>
     <string name="parameter_with_unit">%1$s (%2$s)</string>
     <string name="value_with_unit">%1$s %2$s</string>

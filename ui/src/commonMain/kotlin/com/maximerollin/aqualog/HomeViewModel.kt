@@ -1415,7 +1415,7 @@ class HomeViewModel(
         observeTrends()
     }
 
-    fun selectTrendParameter(parameterDefinitionId: String) {
+    fun selectTrendParameter(parameterDefinitionId: String?) {
         mutableUiState.update { state ->
             state.copy(
                 trends = state.trends.copy(selectedParameterDefinitionId = parameterDefinitionId),
@@ -2017,7 +2017,6 @@ class HomeViewModel(
                     mutableUiState.update { state ->
                         val selected = state.trends.selectedParameterDefinitionId
                             ?.takeIf { id -> advanced.series.any { it.definition.id == id } }
-                            ?: advanced.series.firstOrNull()?.definition?.id
                         state.copy(
                             trends = state.trends.copy(
                                 isLoading = false,
@@ -2047,7 +2046,6 @@ class HomeViewModel(
                     mutableUiState.update { state ->
                         val selected = state.trends.selectedParameterDefinitionId
                             ?.takeIf { id -> snapshot.series.any { it.definition.id == id } }
-                            ?: snapshot.series.firstOrNull()?.definition?.id
                         state.copy(
                             trends = state.trends.copy(
                                 isLoading = false,

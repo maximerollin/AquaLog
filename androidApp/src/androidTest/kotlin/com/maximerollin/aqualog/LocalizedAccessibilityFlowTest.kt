@@ -21,6 +21,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -292,6 +293,7 @@ class LocalizedAccessibilityFlowTest {
                 assertCriticalText(localized.getString(Res.string.timeline_title))
                 captureAndInspect("timeline-$language-$mode.png")
                 compose.onNodeWithText(localized.getString(Res.string.navigation_trends)).performClick()
+                compose.onAllNodesWithTag("trend-row")[0].performClick()
                 compose.onNodeWithTag("trend-list").performScrollToNode(
                     hasText(localized.getString(Res.string.trends_exact_values)),
                 )

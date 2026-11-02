@@ -5,7 +5,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
@@ -78,11 +82,16 @@ class TrendsFlowTest {
         composeRule.onNodeWithText("30 days").assertIsSelected()
         composeRule.onNodeWithText("7 days").assertIsDisplayed()
         composeRule.onNodeWithText("90 days").assertIsDisplayed()
-        composeRule.onNodeWithText("Temperature").assertIsSelected()
-        composeRule.onNodeWithText("Indicative target 22–28 °C · reference only, not a diagnosis")
-            .assertIsDisplayed()
+        // Small multiples: one row per Parameter, all collapsed with their miniature chart at first.
+        composeRule.onNodeWithText("24.5", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("7.2", substring = true).assertIsDisplayed()
         val chartDescription = "Temperature trend chart · solid line and circle point markers · " +
             "hatched indicative target · diamond Event markers"
+        composeRule.onNodeWithContentDescription(chartDescription).assertIsDisplayed()
+        composeRule.onAllNodesWithText("Exact values").assertCountEquals(0)
+        parameterRow("Temperature").performClick()
+        composeRule.onNodeWithText("Indicative target 22–28 °C · reference only, not a diagnosis")
+            .assertIsDisplayed()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription(chartDescription))
         composeRule.onNodeWithContentDescription(chartDescription).assertIsDisplayed()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription("Exact value 24.5 °C"))
@@ -96,8 +105,10 @@ class TrendsFlowTest {
         composeRule.onNodeWithText("Free trends show up to 90 days. Older data stays saved.")
             .assertIsDisplayed()
 
-        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("pH"))
-        composeRule.onNodeWithText("pH").performClick().assertIsSelected()
+        // Only one row is expanded at a time: opening pH folds Temperature back.
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("pH") and hasClickAction())
+        parameterRow("pH").performClick()
+        composeRule.onAllNodesWithContentDescription("Exact value 24.5 °C").assertCountEquals(0)
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription("Exact value 7.2 pH"))
         composeRule.onNodeWithContentDescription("Exact value 7.2 pH").assertIsDisplayed()
 
@@ -114,8 +125,8 @@ class TrendsFlowTest {
             )
         }
         trendsTab().performClick()
-        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("TDS"))
-        composeRule.onNodeWithText("TDS").performClick().assertIsSelected()
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("TDS") and hasClickAction())
+        parameterRow("TDS").performClick()
         composeRule.onNodeWithTag("trend-list")
             .performScrollToNode(hasText("Indicative target 100–300 ppm · reference only, not a diagnosis"))
         composeRule.onNodeWithText("Indicative target 100–300 ppm · reference only, not a diagnosis")
@@ -212,6 +223,8 @@ class TrendsFlowTest {
         scenario.close()
         scenario = ActivityScenario.launch(MainActivity::class.java)
         trendsTab().performClick()
+        composeRule.onNodeWithTag("trend-list")
+            .performScrollToNode(hasText("Free trends show up to 90 days. Older data stays saved."))
         composeRule.onNodeWithText("Free trends show up to 90 days. Older data stays saved.").assertIsDisplayed()
         assertTrue(
             runBlocking { application.aquariumRepository.observeTimeline(com.maximerollin.aqualog.shared.TimelineFilter()).first() }
@@ -219,6 +232,8 @@ class TrendsFlowTest {
         )
         scenario.close()
     }
+
+    private fun parameterRow(label: String) = composeRule.onNode(hasClickAction() and hasText(label))
 
     // The home's "Latest values" section also offers a Trends action; target the navigation item.
     private fun trendsTab() = composeRule.onNode(

@@ -288,6 +288,7 @@
     <string name="trends_indicative_target">Indikatives Ziel %1$s–%2$s %3$s · nur Referenz, keine Diagnose</string>
     <string name="trends_chart_description">%1$s Trenddiagramm · durchgezogene Linien- und Kreispunktmarkierungen · schraffiertes Richtziel · rautenförmige Ereignismarkierungen</string>
     <string name="trends_legend">● Messungen · ▧ schraffiertes Richtziel · ◆ Ereignisse</string>
+    <string name="trends_sparkline_legend">Getönter Streifen: Richtbereich · ▲ Wasserwechsel</string>
     <string name="trends_series_label">● Datenreihe %1$s</string>
     <string name="parameter_with_unit">%1$s (%2$s)</string>
     <string name="value_with_unit">%1$s %2$s</string>

@@ -173,7 +173,7 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithText("History").performClick()
         composeRule.onNodeWithText("Chronology").assertIsDisplayed()
         composeRule.onNodeWithText("Trends").performClick()
-        composeRule.onNodeWithText("Recent trends").assertIsDisplayed()
+        composeRule.onNodeWithText("30 days").assertIsDisplayed()
 
         composeRule.onNodeWithText("Tank").performClick()
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Review account options"))

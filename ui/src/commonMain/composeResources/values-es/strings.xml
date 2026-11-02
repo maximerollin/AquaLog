@@ -288,6 +288,7 @@
     <string name="trends_indicative_target">Objetivo indicativo %1$s–%2$s %3$s · solo referencia, no diagnóstico</string>
     <string name="trends_chart_description">Gráfico de tendencias %1$s · marcadores de puntos circulares y de líneas continuas · objetivo indicativo rayado · marcadores de eventos en forma de diamante</string>
     <string name="trends_legend">● Mediciones · ▧ objetivo indicativo rayado · ◆ Eventos</string>
+    <string name="trends_sparkline_legend">Banda sombreada: rango indicativo · ▲ Cambios de agua</string>
     <string name="trends_series_label">● Serie %1$s</string>
     <string name="parameter_with_unit">%1$s (%2$s)</string>
     <string name="value_with_unit">%1$s %2$s</string>
