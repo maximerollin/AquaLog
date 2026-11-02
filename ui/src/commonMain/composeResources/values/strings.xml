@@ -97,13 +97,12 @@
     <string name="rapid_session_title">New Session</string>
     <string name="cancel">Cancel</string>
     <string name="picker_confirm">OK</string>
-    <string name="session_aquarium">Aquarium: %1$s</string>
+    <string name="remove_action">Remove %1$s</string>
     <string name="earlier_time">−15 min</string>
     <string name="later_time">+15 min</string>
     <string name="measurements_heading">Measurements</string>
     <string name="measurement_for_parameter">Measurement for %1$s</string>
     <string name="last_measurement">Last: %1$s %2$s · new value stays empty</string>
-    <string name="no_previous_measurement">Not measured yet · leave empty to skip</string>
     <string name="invalid_measurement">Enter a decimal number using a point or comma.</string>
     <string name="unusual_measurement">Outside your indicative range. Check the value; saving remains available.</string>
     <string name="maintenance_heading">Maintenance actions</string>
@@ -113,7 +112,6 @@
     <string name="action_vacuum">Vacuum</string>
     <string name="action_glass">Glass cleaning</string>
     <string name="action_pruning">Pruning</string>
-    <string name="edit_action">Edit</string>
     <string name="action_quantity">Quantity</string>
     <string name="action_product">Product</string>
     <string name="add_observation">Add observation</string>
@@ -361,7 +359,6 @@
     <string name="battery_optimization_explanation">Android battery optimization is active. It can delay reminders; Tasks and their due dates remain stored locally.</string>
     <string name="timeline_filters">Filters</string>
     <string name="measurement_reading">%1$s · %2$s %3$s</string>
-    <string name="last_measurement_compact">Last: %1$s %2$s</string>
     <string name="measure_action">Measure</string>
     <string name="latest_values_title">Latest values</string>
     <string name="home_today">Today</string>

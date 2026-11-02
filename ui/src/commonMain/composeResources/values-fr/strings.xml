@@ -97,13 +97,12 @@
     <string name="rapid_session_title">Nouvelle Session</string>
     <string name="cancel">Annuler</string>
     <string name="picker_confirm">OK</string>
-    <string name="session_aquarium">Aquarium : %1$s</string>
+    <string name="remove_action">Retirer %1$s</string>
     <string name="earlier_time">−15 minutes</string>
     <string name="later_time">+15 minutes</string>
     <string name="measurements_heading">Mesures</string>
     <string name="measurement_for_parameter">Mesure pour %1$s</string>
     <string name="last_measurement">Dernière mesure : %1$s %2$s · la nouvelle valeur reste vide</string>
-    <string name="no_previous_measurement">Pas encore mesuré · laisser vide pour sauter</string>
     <string name="invalid_measurement">Entrez un nombre décimal en utilisant un point ou une virgule.</string>
     <string name="unusual_measurement">Hors de votre plage indicative. Vérifiez la valeur ; l’enregistrement reste disponible.</string>
     <string name="maintenance_heading">Actions d'entretien</string>
@@ -113,7 +112,6 @@
     <string name="action_vacuum">Siphonnage</string>
     <string name="action_glass">Nettoyage des vitres</string>
     <string name="action_pruning">Taille</string>
-    <string name="edit_action">Modifier</string>
     <string name="action_quantity">Quantité</string>
     <string name="action_product">Produit</string>
     <string name="add_observation">Ajouter une observation</string>
@@ -361,7 +359,6 @@
     <string name="battery_optimization_explanation">L'optimisation de la batterie Android est active. Cela peut retarder les rappels ; Les tâches et leurs dates d'échéance restent stockées localement.</string>
     <string name="timeline_filters">Filtres</string>
     <string name="measurement_reading">%1$s · %2$s %3$s</string>
-    <string name="last_measurement_compact">Dernière : %1$s %2$s</string>
     <string name="measure_action">Mesurer</string>
     <string name="latest_values_title">Dernières valeurs</string>
     <string name="home_today">Aujourd’hui</string>

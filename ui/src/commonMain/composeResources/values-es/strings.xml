@@ -97,13 +97,12 @@
     <string name="rapid_session_title">Nueva sesión</string>
     <string name="cancel">Cancelar</string>
     <string name="picker_confirm">Aceptar</string>
-    <string name="session_aquarium">Acuario: %1$s</string>
+    <string name="remove_action">Quitar %1$s</string>
     <string name="earlier_time">−15 minutos</string>
     <string name="later_time">+15 minutos</string>
     <string name="measurements_heading">Medidas</string>
     <string name="measurement_for_parameter">Medición para %1$s</string>
     <string name="last_measurement">Última medición: %1$s %2$s · el nuevo valor permanece vacío</string>
-    <string name="no_previous_measurement">Aún no medido · dejar vacío para omitir</string>
     <string name="invalid_measurement">Ingrese un número decimal usando un punto o una coma.</string>
     <string name="unusual_measurement">Fuera del intervalo indicativo. Comprueba el valor; aún puedes guardarlo.</string>
     <string name="maintenance_heading">Acciones de mantenimiento</string>
@@ -113,7 +112,6 @@
     <string name="action_vacuum">Sifonado del fondo</string>
     <string name="action_glass">Limpieza de cristales</string>
     <string name="action_pruning">Poda</string>
-    <string name="edit_action">Editar</string>
     <string name="action_quantity">Cantidad</string>
     <string name="action_product">Producto</string>
     <string name="add_observation">Añadir observación</string>
@@ -361,7 +359,6 @@
     <string name="battery_optimization_explanation">La optimización de la batería de Android está activa. Puede retrasar los recordatorios; Las tareas y sus fechas de vencimiento permanecen almacenadas localmente.</string>
     <string name="timeline_filters">Filtros</string>
     <string name="measurement_reading">%1$s · %2$s %3$s</string>
-    <string name="last_measurement_compact">Última: %1$s %2$s</string>
     <string name="measure_action">Medir</string>
     <string name="latest_values_title">Últimos valores</string>
     <string name="home_today">Hoy</string>
