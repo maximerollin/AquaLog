@@ -6,7 +6,7 @@
     <string name="due_tests_notification_text">Fällige Tests: %1$s</string>
     <string name="weekly_summary_notification_ready">Ihre Wochenbilanz ist bereit</string>
     <plurals name="weekly_summary_notification">
-        <item quantity="one">Ihre Wochenbilanz ist bereit · %1$d Woche regelmäßige Pflege</item>
-        <item quantity="other">Ihre Wochenbilanz ist bereit · %1$d Wochen regelmäßige Pflege</item>
+        <item quantity="one">Ihre Wochenbilanz ist bereit · %1$d Woche regelmäßiger Pflege</item>
+        <item quantity="other">Ihre Wochenbilanz ist bereit · %1$d Wochen regelmäßiger Pflege</item>
     </plurals>
 </resources>

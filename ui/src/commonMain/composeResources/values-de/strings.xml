@@ -364,7 +364,7 @@
     <string name="home_nothing_due">Nichts fällig · nächste: %1$s am %2$s</string>
     <string name="home_no_measurement_yet">Noch keine Messung</string>
     <string name="home_status_all_in_range">Alles im Richtbereich</string>
-    <plurals name="series_weeks"><item quantity="one">%1$d Woche regelmäßige Pflege</item><item quantity="other">%1$d Wochen regelmäßige Pflege</item></plurals>
+    <plurals name="series_weeks"><item quantity="one">%1$d Woche regelmäßiger Pflege</item><item quantity="other">%1$d Wochen regelmäßiger Pflege</item></plurals>
     <plurals name="home_status_outside_range"><item quantity="one">%1$d Wert zu beobachten</item><item quantity="other">%1$d Werte zu beobachten</item></plurals>
     <string name="home_measured_today">heute gemessen</string>
     <string name="home_measured_yesterday">gestern gemessen</string>

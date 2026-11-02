@@ -125,9 +125,7 @@ class LocalizedAccessibilityFlowTest {
 
     @After
     fun restoreDeviceConfiguration() {
-        localeManager.applicationLocales = LocaleList.getEmptyLocaleList()
-        uiModeManager.setApplicationNightMode(UiModeManager.MODE_NIGHT_AUTO)
-        setFontScale(1f)
+        restoreDisplay()
         (context.applicationContext as TestAquaLogApplication).clockMillis = null
     }
 
@@ -357,12 +355,6 @@ class LocalizedAccessibilityFlowTest {
         compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
     }
 
-    private fun assertMinimumTouchTarget(bounds: Rect) {
-        val density = context.resources.displayMetrics.density
-        assertTrue("touch width must be >= 48dp, was ${bounds.width / density}", bounds.width / density >= 47.9f)
-        assertTrue("touch height must be >= 48dp, was ${bounds.height / density}", bounds.height / density >= 47.9f)
-    }
-
     private fun assertRapidSessionFocusOrder(vararg parameterTags: String) {
         parameterTags.forEachIndexed { index, parameter ->
             val tag = "rapid-measurement-$parameter"
@@ -371,26 +363,6 @@ class LocalizedAccessibilityFlowTest {
             val expectedAction = if (index == parameterTags.lastIndex) ImeAction.Done else ImeAction.Next
             compose.onNode(hasTestTag(tag) and hasImeAction(expectedAction)).assertExists()
             if (expectedAction == ImeAction.Next) field.performImeAction()
-        }
-    }
-
-    private fun configure(language: String, darkLarge: Boolean) {
-        localeManager.applicationLocales = LocaleList.forLanguageTags(language)
-        uiModeManager.setApplicationNightMode(
-            if (darkLarge) UiModeManager.MODE_NIGHT_YES else UiModeManager.MODE_NIGHT_NO,
-        )
-        setFontScale(if (darkLarge) 1.5f else 1f)
-    }
-
-    // Wait for the command and the resulting configuration, so a stale scale never lands mid-test.
-    private fun setFontScale(scale: Float) {
-        ParcelFileDescriptor.AutoCloseInputStream(
-            instrumentation.uiAutomation.executeShellCommand("settings put system font_scale $scale"),
-        ).use { it.readBytes() }
-        val deadline = SystemClock.uptimeMillis() + 5_000
-        while (context.applicationContext.resources.configuration.fontScale != scale) {
-            check(SystemClock.uptimeMillis() < deadline) { "Font scale $scale was not applied" }
-            SystemClock.sleep(50)
         }
     }
 

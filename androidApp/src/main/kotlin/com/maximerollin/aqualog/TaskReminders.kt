@@ -13,6 +13,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
 import com.maximerollin.aqualog.shared.TaskDate
+import com.maximerollin.aqualog.shared.TechnicalComponent
+import com.maximerollin.aqualog.shared.TechnicalFailure
+import com.maximerollin.aqualog.shared.TechnicalFailureKind
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.assistance.weeklySeries
 import kotlinx.coroutines.CoroutineScope
@@ -203,6 +206,9 @@ class WeeklySummaryReceiver : BroadcastReceiver() {
                     }
                     postReminder(context, WEEKLY_SUMMARY_NOTIFICATION_ID, text, null)
                 }
+            } catch (failure: Exception) {
+                // An imported Tâche with a malformed zone (ZoneId.of throws) must not crash the process every Sunday.
+                application.crashReporter.record(TechnicalFailure(TechnicalFailureKind.NON_FATAL, TechnicalComponent.DATABASE))
             } finally {
                 pending.finish()
             }
@@ -218,8 +224,8 @@ class TaskRescheduleReceiver : BroadcastReceiver() {
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 val occurrences = application.aquariumRepository.observePendingTaskOccurrences().first()
-                application.taskReminderScheduler.reconcile(occurrences)
                 application.taskReminderScheduler.scheduleWeeklySummary()
+                application.taskReminderScheduler.reconcile(occurrences)
                 application.taskReminderScheduler.scheduleDueTests(
                     application.aquariumRepository.dueTestSummary(localToday(), ZoneId.systemDefault().id).nextDueDate,
                 )

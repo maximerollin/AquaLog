@@ -1,6 +1,18 @@
 package com.maximerollin.aqualog
 
+import android.graphics.Bitmap
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.isRoot
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.test.services.storage.TestStorage
+import com.maximerollin.aqualog.resources.Res
+import com.maximerollin.aqualog.resources.weekly_summary_pro_invite
+import com.maximerollin.aqualog.resources.weekly_summary_tasks
+import com.maximerollin.aqualog.resources.weekly_summary_tests
+import com.maximerollin.aqualog.resources.weekly_summary_title
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -26,6 +38,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -125,6 +139,53 @@ class WeeklySummaryFlowTest {
             assertAbsent("Weekly summary")
         } finally {
             scenario.close()
+        }
+    }
+
+    @Test
+    fun summaryCard_germanDarkLargeText_staysReadable_andItsInvitationReachable() {
+        configure("de", darkLarge = true)
+        try {
+            prepareWeek()
+            val de = LocalizedStrings("de")
+            val title = de.getString(Res.string.weekly_summary_title)
+            val counts = listOf(
+                de.getQuantityString(Res.plurals.weekly_summary_tests, 6, 6),
+                de.getQuantityString(Res.plurals.weekly_summary_tasks, 1, 1),
+            ).joinToString(" · ")
+            val invite = de.getString(Res.string.weekly_summary_pro_invite)
+            ActivityScenario.launch(MainActivity::class.java).use {
+                waitForText(invite)
+                listOf(title, counts, invite).forEach { text ->
+                    scrollTo(text)
+                    val layouts = mutableListOf<TextLayoutResult>()
+                    composeRule.onNodeWithText(text, useUnmergedTree = true)
+                        .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { action -> action(layouts) }
+                    assertTrue("$text must render", layouts.isNotEmpty())
+                    // Not hasVisualOverflow: the action lays a short line out at full width, so its width check misfires.
+                    assertFalse(
+                        "$text must not be clipped",
+                        layouts.any { layout -> layout.didOverflowHeight || (0 until layout.lineCount).any(layout::isLineEllipsized) },
+                    )
+                }
+                val button = composeRule.onNode(hasText(invite) and hasClickAction()).fetchSemanticsNode()
+                assertMinimumTouchTarget(button.touchBoundsInRoot)
+                val viewport = composeRule.onAllNodes(isRoot()).fetchSemanticsNodes().first().boundsInRoot
+                val bounds = button.boundsInRoot
+                assertTrue(
+                    "the invitation must be inside the viewport",
+                    bounds.left >= viewport.left && bounds.right <= viewport.right &&
+                        bounds.top >= viewport.top && bounds.bottom <= viewport.bottom,
+                )
+                scrollTo(title)
+                composeRule.waitForIdle()
+                val screenshot = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
+                TestStorage().openOutputFile("task-12-de-dark-1.5.png").use {
+                    assertTrue(screenshot.compress(Bitmap.CompressFormat.PNG, 100, it))
+                }
+            }
+        } finally {
+            restoreDisplay()
         }
     }
 
