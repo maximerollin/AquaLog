@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -39,8 +40,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -91,6 +94,9 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     val gutter = Modifier.padding(horizontal = 16.dp)
     val alerts = otherAquariumAlerts(state.aquariums, aquarium.id, state.tasks.pendingOccurrences, today)
     var showPicker by remember { mutableStateOf(false) }
+    val currentIndex = state.aquariums.indexOfFirst { it.id == aquarium.id }.coerceAtLeast(0)
+    val pager = rememberPagerState(initialPage = currentIndex) { state.aquariums.size }
+    val canMeasure = measureTargetsShownAquarium(state.aquariums, pager.settledPage, aquarium.id, pager.isScrollInProgress)
 
     Box(modifier.fillMaxSize()) {
         // The only scrollable on the home: tests rely on a single node with a scroll action.
@@ -99,7 +105,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             contentPadding = PaddingValues(bottom = 88.dp),
         ) {
             item {
-                AquariumScene(state.aquariums, aquarium, todayDate, viewModel::selectAquarium) { showPicker = true }
+                AquariumScene(state.aquariums, aquarium, pager, todayDate, viewModel::selectAquarium) { showPicker = true }
             }
             item {
                 StatusLine(
@@ -197,8 +203,10 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             }
         }
         ExtendedFloatingActionButton(
-            onClick = viewModel::openRapidSession,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).heightIn(min = 48.dp),
+            onClick = { if (canMeasure) viewModel.openRapidSession() },
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).heightIn(min = 48.dp)
+                .alpha(if (canMeasure) 1f else .38f)
+                .semantics { if (!canMeasure) disabled() },
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
         ) { Text(stringResource(Res.string.measure_action), fontWeight = FontWeight.SemiBold) }
@@ -220,11 +228,19 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     }
 }
 
+/**
+ * « Measure » records into the current Aquarium, so it is only live while the scene shows that one:
+ * not mid-swipe, and not between a settled swipe and the selection catching up.
+ */
+internal fun measureTargetsShownAquarium(aquariums: List<Aquarium>, settledPage: Int, currentId: String, scrolling: Boolean): Boolean =
+    aquariums.size < 2 || (!scrolling && aquariums.getOrNull(settledPage)?.id == currentId)
+
 /** One scene, or a pager of scenes with dots when there are several Aquariums; settling on a page selects it. */
 @Composable
 private fun AquariumScene(
     aquariums: List<Aquarium>,
     current: Aquarium,
+    pager: PagerState,
     today: LocalDate,
     onSelect: (String) -> Unit,
     onChangeAquarium: () -> Unit,
@@ -234,7 +250,6 @@ private fun AquariumScene(
         return
     }
     val currentIndex = aquariums.indexOfFirst { it.id == current.id }.coerceAtLeast(0)
-    val pager = rememberPagerState(initialPage = currentIndex) { aquariums.size }
     val currentId by rememberUpdatedState(current.id)
     val shown by rememberUpdatedState(aquariums)
     // The Aquarium changed elsewhere (picker, band, Settings): follow it.
