@@ -27,10 +27,12 @@ import com.maximerollin.aqualog.resources.home_no_measurement_yet
 import com.maximerollin.aqualog.resources.ic_trend_down
 import com.maximerollin.aqualog.resources.ic_trend_flat
 import com.maximerollin.aqualog.resources.ic_trend_up
+import com.maximerollin.aqualog.resources.reading_alert_description
 import com.maximerollin.aqualog.resources.reading_attention_description
 import com.maximerollin.aqualog.resources.trend_down
 import com.maximerollin.aqualog.resources.trend_flat
 import com.maximerollin.aqualog.resources.trend_up
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -98,6 +100,14 @@ fun CarnetSectionTitle(
     }
 }
 
+/** The words that announce a level, since colour alone must not carry it; null for OK. */
+@Composable
+fun levelDescription(level: ReadingLevel): String? = when (level) {
+    ReadingLevel.OK -> null
+    ReadingLevel.ATTENTION -> stringResource(Res.string.reading_attention_description)
+    ReadingLevel.ALERT -> stringResource(Res.string.reading_alert_description)
+}
+
 /** A measurement: big number, small unit, optional trend arrow, label below, optional age line. A null value was never measured. */
 @Composable
 fun ReadingValue(
@@ -105,7 +115,7 @@ fun ReadingValue(
     label: String,
     modifier: Modifier = Modifier,
     unit: String? = null,
-    attention: Boolean = false,
+    level: ReadingLevel = ReadingLevel.OK,
     age: String? = null,
     trend: Trend? = null,
 ) {
@@ -121,14 +131,14 @@ fun ReadingValue(
         label,
         age,
         trendIcon?.let { stringResource(it.second) },
-        if (attention) stringResource(Res.string.reading_attention_description) else null,
+        levelDescription(level),
     ).joinToString(", ")
     Column(modifier.semantics(mergeDescendants = true) { contentDescription = description }) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 value ?: "—",
                 style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
-                color = if (attention) attentionTextColor() else MaterialTheme.colorScheme.onSurface,
+                color = levelTextColor(level) ?: MaterialTheme.colorScheme.onSurface,
             )
             if (unit != null && value != null) {
                 Spacer(Modifier.width(2.dp))

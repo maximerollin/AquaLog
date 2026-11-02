@@ -76,7 +76,9 @@ import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.todayTasks
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.ReadingValue
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.ui.theme.attentionMarkColor
+import com.maximerollin.aqualog.ui.theme.levelMarkColor
 import com.maximerollin.aqualog.ui.theme.attentionTextColor
 import java.time.Instant
 import java.time.LocalDate
@@ -177,7 +179,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                             label = label,
                             modifier = Modifier.weight(1f),
                             unit = value.definition.unit.takeIf { it.isNotBlank() && it != label }, // pH's unit is pH
-                            attention = value.isOutsideRange,
+                            level = value.level,
                             age = value.occurredAtEpochMillis?.takeIf { value.isOlderThanLatestReading }
                                 ?.let { daysSince(it, todayDate) }?.takeIf { it > 0 }
                                 ?.let { days -> pluralStringResource(Res.plurals.reading_age_days, days, days) },
@@ -385,6 +387,7 @@ private fun StatusLine(
         }
     }
     val dot = when {
+        overview.hasAlert -> levelMarkColor(ReadingLevel.ALERT)!!
         overview.outsideRangeCount > 0 -> attentionMarkColor()
         measured -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.outline

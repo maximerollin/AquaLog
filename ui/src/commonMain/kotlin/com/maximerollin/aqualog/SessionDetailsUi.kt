@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.RecordedSession
-import com.maximerollin.aqualog.shared.isOutsideIndicativeRange
+import com.maximerollin.aqualog.shared.assistance.readingLevel
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.ui.theme.ReadingValue
 
@@ -79,7 +79,7 @@ fun SessionDetailsScreen(
                             value = formatter.number(measurement.value, definition.precision),
                             label = label,
                             unit = definition.unit.takeIf { it.isNotBlank() && it != label },
-                            attention = definition.isOutsideIndicativeRange(measurement.value),
+                            level = readingLevel(definition, measurement.value),
                         )
                     }
                 }

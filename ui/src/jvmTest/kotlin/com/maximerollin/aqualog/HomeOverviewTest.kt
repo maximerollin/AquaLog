@@ -8,6 +8,7 @@ import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -52,7 +53,15 @@ class HomeOverviewTest {
             listOf(reading(ph, 7.2), reading(nitrite, 0.25), reading(nitrate, 20.0)),
         )
         assertEquals(listOf(ph, nitrite, nitrate), overview.values.map { it.definition })
-        assertEquals(listOf(false, true, false), overview.values.map { it.isOutsideRange })
+        assertEquals(listOf(ReadingLevel.OK, ReadingLevel.ATTENTION, ReadingLevel.OK), overview.values.map { it.level })
+        assertEquals(1, overview.outsideRangeCount)
+    }
+
+    @Test
+    fun `nitrite 0_6 is ALERT and counts as out of range`() {
+        val nitrite = definition(BuiltInParameter.NITRITE, 0, 0.0, 0.0)
+        val overview = homeOverview(setup(nitrite), listOf(reading(nitrite, 0.6)))
+        assertEquals(ReadingLevel.ALERT, overview.values.single().level)
         assertEquals(1, overview.outsideRangeCount)
     }
 
@@ -62,14 +71,14 @@ class HomeOverviewTest {
         val value = homeOverview(setup(gh), emptyList()).values.single()
         assertNull(value.value)
         assertNull(value.occurredAtEpochMillis)
-        assertFalse(value.isOutsideRange)
+        assertEquals(ReadingLevel.OK, value.level)
     }
 
     @Test
     fun `parameter without range is never out of range`() {
         val tds = definition(BuiltInParameter.TDS, 0)
-        val value = homeOverview(setup(tds), listOf(reading(tds, 900.0))).values.single()
-        assertFalse(value.isOutsideRange)
+        val value = homeOverview(setup(tds), listOf(reading(tds, 500.0))).values.single()
+        assertEquals(ReadingLevel.OK, value.level)
     }
 
     @Test
@@ -82,7 +91,7 @@ class HomeOverviewTest {
     @Test
     fun `more than six active parameters keep the out of range ones`() {
         val definitions = BuiltInParameter.entries.take(8).mapIndexed { index, parameter ->
-            definition(parameter, index, 0.0, 10.0)
+            definition(parameter, index, 0.0, 30.0)
         }
         val readings = definitions.mapIndexed { index, d -> reading(d, if (index == 7) 50.0 else 5.0) }
         val overview = homeOverview(setup(*definitions.toTypedArray()), readings)
@@ -95,9 +104,9 @@ class HomeOverviewTest {
     @Test
     fun `outside range count covers every active parameter, not only the six shown`() {
         val definitions = BuiltInParameter.entries.take(8).mapIndexed { index, parameter ->
-            definition(parameter, index, 0.0, 10.0)
+            definition(parameter, index, 0.0, 30.0)
         }
-        val readings = definitions.mapIndexed { index, d -> reading(d, if (index == 0) 5.0 else 50.0) }
+        val readings = definitions.mapIndexed { index, d -> reading(d, if (index == 0) 20.0 else 50.0) }
         val overview = homeOverview(setup(*definitions.toTypedArray()), readings)
         assertEquals(6, overview.values.size)
         assertEquals(7, overview.outsideRangeCount)

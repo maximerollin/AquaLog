@@ -10,6 +10,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import androidx.compose.ui.unit.dp
 
 private val LightColors = lightColorScheme(
@@ -48,11 +49,32 @@ val AttentionMark = Color(0xFFB87A10)
 val AttentionTextDark = Color(0xFFE4B65A)
 val AttentionMarkDark = Color(0xFFE0A93B)
 
+// Alert = value beyond its alert threshold; same text/mark contrast rules as attention.
+val AlertText = Color(0xFFA3341F)
+val AlertMark = Color(0xFFB83A25)
+val AlertTextDark = Color(0xFFFF8A75)
+val AlertMarkDark = Color(0xFFF2705A)
+
 @Composable
 fun attentionTextColor(): Color = if (isDarkSurface()) AttentionTextDark else AttentionText
 
 @Composable
 fun attentionMarkColor(): Color = if (isDarkSurface()) AttentionMarkDark else AttentionMark
+
+/** Text colour of a reading at [level]; null for OK so callers keep their default. */
+@Composable
+fun levelTextColor(level: ReadingLevel): Color? = when (level) {
+    ReadingLevel.OK -> null
+    ReadingLevel.ATTENTION -> attentionTextColor()
+    ReadingLevel.ALERT -> if (isDarkSurface()) AlertTextDark else AlertText
+}
+
+@Composable
+fun levelMarkColor(level: ReadingLevel): Color? = when (level) {
+    ReadingLevel.OK -> null
+    ReadingLevel.ATTENTION -> attentionMarkColor()
+    ReadingLevel.ALERT -> if (isDarkSurface()) AlertMarkDark else AlertMark
+}
 
 // Follows the theme actually applied, not the system setting, so an explicit darkTheme argument is honoured.
 @Composable

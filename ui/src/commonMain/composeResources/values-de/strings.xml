@@ -368,6 +368,7 @@
     <plurals name="home_measured_days_ago"><item quantity="one">vor %1$d Tag gemessen</item><item quantity="other">vor %1$d Tagen gemessen</item></plurals>
     <plurals name="reading_age_days"><item quantity="one">vor %1$d T.</item><item quantity="other">vor %1$d T.</item></plurals>
     <string name="reading_attention_description">außerhalb Ihres Richtbereichs</string>
+    <string name="reading_alert_description">weit außerhalb Ihres Richtbereichs</string>
     <string name="trend_up">steigend</string>
     <string name="trend_down">fallend</string>
     <string name="trend_flat">stabil</string>

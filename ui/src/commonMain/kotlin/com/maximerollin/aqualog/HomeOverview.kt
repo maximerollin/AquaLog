@@ -6,7 +6,8 @@ import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
-import com.maximerollin.aqualog.shared.isOutsideIndicativeRange
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
+import com.maximerollin.aqualog.shared.assistance.readingLevel
 import kotlin.math.abs
 import kotlin.math.pow
 
@@ -19,7 +20,7 @@ data class HomeValue(
     val definition: ParameterDefinition,
     val value: Double?,
     val occurredAtEpochMillis: Long?,
-    val isOutsideRange: Boolean,
+    val level: ReadingLevel,
     val isOlderThanLatestReading: Boolean,
     val trend: Trend? = null,
 )
@@ -29,6 +30,7 @@ data class HomeOverview(
     val outsideRangeCount: Int,
     /** The newest Measurement of an active parameter: a Session with only maintenance does not count. */
     val latestReadingAtEpochMillis: Long?,
+    val hasAlert: Boolean = false,
 )
 
 fun homeOverview(setup: AquariumSetup, readings: List<LatestReading>): HomeOverview {
@@ -41,16 +43,16 @@ fun homeOverview(setup: AquariumSetup, readings: List<LatestReading>): HomeOverv
             definition = definition,
             value = reading?.value,
             occurredAtEpochMillis = reading?.occurredAtEpochMillis,
-            isOutsideRange = reading != null && definition.isOutsideIndicativeRange(reading.value),
+            level = reading?.let { readingLevel(definition, it.value) } ?: ReadingLevel.OK,
             isOlderThanLatestReading = reading != null && latestAt != null && reading.occurredAtEpochMillis < latestAt,
             trend = reading?.previousValue?.let { trend(reading.value, it, definition.precision) },
         )
     }
     // Trimming priority: out of range, then measured, then never measured (stable sort keeps position order).
-    val values = all.sortedBy { if (it.isOutsideRange) 0 else if (it.value != null) 1 else 2 }
+    val values = all.sortedBy { if (it.level != ReadingLevel.OK) 0 else if (it.value != null) 1 else 2 }
         .take(MAX_HOME_VALUES)
         .sortedBy { it.definition.position }
-    return HomeOverview(values, all.count { it.isOutsideRange }, latestAt)
+    return HomeOverview(values, all.count { it.level != ReadingLevel.OK }, latestAt, all.any { it.level == ReadingLevel.ALERT })
 }
 
 /** Flat when both values show the same at the parameter's precision (half a displayed step apart at most). */

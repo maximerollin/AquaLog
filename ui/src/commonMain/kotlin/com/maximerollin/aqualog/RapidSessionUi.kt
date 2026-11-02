@@ -83,8 +83,11 @@ import com.maximerollin.aqualog.shared.evaluateMeasurement
 import com.maximerollin.aqualog.ui.theme.CarnetDivider
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
-import com.maximerollin.aqualog.ui.theme.attentionMarkColor
-import com.maximerollin.aqualog.ui.theme.attentionTextColor
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
+import com.maximerollin.aqualog.shared.assistance.readingLevel
+import com.maximerollin.aqualog.ui.theme.levelDescription
+import com.maximerollin.aqualog.ui.theme.levelMarkColor
+import com.maximerollin.aqualog.ui.theme.levelTextColor
 
 @Composable
 fun RapidSessionScreen(
@@ -208,18 +211,19 @@ fun RapidSessionScreen(
                     val feedback = evaluateMeasurement(input, definition)
                     val description = stringResource(Res.string.measurement_for_parameter, definition.parameter.label())
                     val invalidText = stringResource(Res.string.invalid_measurement)
-                    val attentionText = stringResource(Res.string.reading_attention_description)
+                    val level = feedback.value?.takeIf { feedback.isValid }?.let { readingLevel(definition, it) } ?: ReadingLevel.OK
+                    val levelText = levelDescription(level)
                     val muted = MaterialTheme.colorScheme.onSurfaceVariant
                     val name = definition.parameter.label()
                     val unit = definition.unit
                     val flag = when {
                         !feedback.isValid -> MaterialTheme.colorScheme.error
-                        feedback.isOutsideIndicativeRange -> attentionMarkColor()
+                        level != ReadingLevel.OK -> levelMarkColor(level)
                         else -> null
                     }
                     val valueColor = when {
                         !feedback.isValid -> MaterialTheme.colorScheme.error
-                        feedback.isOutsideIndicativeRange -> attentionTextColor()
+                        level != ReadingLevel.OK -> levelTextColor(level)!!
                         else -> MaterialTheme.colorScheme.onSurface
                     }
                     val label: @Composable () -> Unit = {
@@ -253,7 +257,7 @@ fun RapidSessionScreen(
                                 .semantics {
                                     contentDescription = description
                                     // The underline colour is not announced: TalkBack hears the error or the attention as words.
-                                    stateDescription = listOf(unit, attentionText.takeIf { feedback.isOutsideIndicativeRange }.orEmpty())
+                                    stateDescription = listOf(unit, levelText.orEmpty())
                                         .filter(String::isNotBlank).joinToString(", ")
                                     if (!feedback.isValid) error(invalidText)
                                 },
@@ -281,7 +285,7 @@ fun RapidSessionScreen(
                         }
                         val hint = when {
                             !feedback.isValid -> invalidText
-                            feedback.isOutsideIndicativeRange -> stringResource(Res.string.unusual_measurement)
+                            level != ReadingLevel.OK -> stringResource(Res.string.unusual_measurement)
                             else -> null
                         }
                         if (hint != null) {
@@ -289,7 +293,7 @@ fun RapidSessionScreen(
                                 hint,
                                 modifier = Modifier.padding(bottom = 6.dp),
                                 style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
-                                color = if (!feedback.isValid) MaterialTheme.colorScheme.error else attentionTextColor(),
+                                color = if (!feedback.isValid) MaterialTheme.colorScheme.error else levelTextColor(level)!!,
                             )
                         }
                         // Stacked, the value's own line already closes the row: a second line would double it.

@@ -368,6 +368,7 @@
     <plurals name="home_measured_days_ago"><item quantity="one">mesuré il y a %1$d j</item><item quantity="other">mesuré il y a %1$d j</item></plurals>
     <plurals name="reading_age_days"><item quantity="one">il y a %1$d j</item><item quantity="other">il y a %1$d j</item></plurals>
     <string name="reading_attention_description">hors de votre plage indicative</string>
+    <string name="reading_alert_description">très en dehors de votre plage indicative</string>
     <string name="trend_up">en hausse</string>
     <string name="trend_down">en baisse</string>
     <string name="trend_flat">stable</string>

@@ -28,6 +28,7 @@ class CarnetColorTest {
             assertTrue(contrast(scheme.onBackground, scheme.background) >= 4.5f, "onBackground dark=$dark")
             assertTrue(contrast(scheme.primary, scheme.background) >= 4.5f, "primary dark=$dark")
             assertTrue(contrast(attention, scheme.background) >= 4.5f, "attention dark=$dark")
+            assertTrue(contrast(if (dark) AlertTextDark else AlertText, scheme.background) >= 4.5f, "alert dark=$dark")
         }
     }
 
@@ -36,6 +37,14 @@ class CarnetColorTest {
         for (dark in listOf(false, true)) {
             val mark = if (dark) AttentionMarkDark else AttentionMark
             assertTrue(contrast(mark, aquaLogColorScheme(dark).background) >= 3.0f, "attention mark dark=$dark")
+        }
+    }
+
+    @Test
+    fun `alert mark reaches 3 to 1 on paper in both schemes`() {
+        for (dark in listOf(false, true)) {
+            val mark = if (dark) AlertMarkDark else AlertMark
+            assertTrue(contrast(mark, aquaLogColorScheme(dark).background) >= 3.0f, "alert mark dark=$dark")
         }
     }
 }

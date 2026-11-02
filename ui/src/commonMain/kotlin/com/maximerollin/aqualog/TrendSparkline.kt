@@ -30,7 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maximerollin.aqualog.resources.Res
-import com.maximerollin.aqualog.resources.reading_attention_description
 import com.maximerollin.aqualog.resources.trends_chart_description
 import com.maximerollin.aqualog.resources.trends_no_measurements
 import com.maximerollin.aqualog.resources.trends_row_collapsed
@@ -40,9 +39,11 @@ import com.maximerollin.aqualog.resources.trends_row_show_chart
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.ParameterTrendSeries
 import com.maximerollin.aqualog.shared.TrendSnapshot
-import com.maximerollin.aqualog.shared.isOutsideIndicativeRange
-import com.maximerollin.aqualog.ui.theme.attentionMarkColor
-import com.maximerollin.aqualog.ui.theme.attentionTextColor
+import com.maximerollin.aqualog.shared.assistance.readingLevel
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
+import com.maximerollin.aqualog.ui.theme.levelDescription
+import com.maximerollin.aqualog.ui.theme.levelMarkColor
+import com.maximerollin.aqualog.ui.theme.levelTextColor
 import org.jetbrains.compose.resources.stringResource
 
 /** Value scale shared by the line and the range band: min/max over the points and the indicative range. */
@@ -80,13 +81,12 @@ fun TrendSparklineRow(
     val definition = series.definition
     val label = definition.parameter.label()
     val latest = series.points.lastOrNull()
-    val attention = latest != null && definition.isOutsideIndicativeRange(latest.value)
+    val level = latest?.let { readingLevel(definition, it.value) } ?: ReadingLevel.OK
     val chartDescription = if (latest == null) {
         stringResource(Res.string.trends_no_measurements)
     } else {
         stringResource(Res.string.trends_chart_description, label)
     }
-    val attentionCue = stringResource(Res.string.reading_attention_description)
     val unit = definition.unit.takeIf { it.isNotBlank() && it != label }
     val valueText = latest?.value?.let { currentLocalizedFormatters().number(it, definition.precision) }
     // Merged descriptions replace the visible Text for screen readers, so the reading and the name are spoken here;
@@ -94,11 +94,11 @@ fun TrendSparklineRow(
     val spokenReading = listOfNotNull(
         listOfNotNull(valueText, unit).joinToString(" ").takeIf { it.isNotEmpty() },
         label,
-        attentionCue.takeIf { attention },
+        levelDescription(level),
     ).joinToString(", ")
     val stateText = stringResource(if (selected) Res.string.trends_row_expanded else Res.string.trends_row_collapsed)
     val actionLabel = stringResource(if (selected) Res.string.trends_row_hide_chart else Res.string.trends_row_show_chart)
-    val lineColor = if (attention) attentionMarkColor() else MaterialTheme.colorScheme.primary
+    val lineColor = levelMarkColor(level) ?: MaterialTheme.colorScheme.primary
     val bandColor = MaterialTheme.colorScheme.primaryContainer
     val markerColor = MaterialTheme.colorScheme.primary
     val waterChanges = snapshot.events.filter { MaintenanceActionType.WATER_CHANGE in it.maintenanceActionTypes }
@@ -120,7 +120,7 @@ fun TrendSparklineRow(
                 Text(
                     valueText ?: "—",
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 22.sp, fontWeight = FontWeight.SemiBold),
-                    color = if (attention) attentionTextColor() else MaterialTheme.colorScheme.onSurface,
+                    color = levelTextColor(level) ?: MaterialTheme.colorScheme.onSurface,
                 )
                 if (unit != null) {
                     Spacer(Modifier.width(2.dp))

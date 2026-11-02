@@ -52,7 +52,8 @@ import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.TaskResolution
 import com.maximerollin.aqualog.shared.TimelineSession
-import com.maximerollin.aqualog.shared.isOutsideIndicativeRange
+import com.maximerollin.aqualog.shared.assistance.readingLevel
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.ReadingValue
@@ -235,6 +236,7 @@ private fun TimelineTaskRow(occurrence: TaskOccurrence, isLast: Boolean) {
 private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAquarium: Boolean, onClick: () -> Unit) {
     val formatter = currentLocalizedFormatters()
     val description = stringResource(Res.string.open_session_details)
+    val alertCue = stringResource(Res.string.reading_alert_description)
     val attentionCue = stringResource(Res.string.reading_attention_description)
     val readings = entry.measurements.sortedBy { it.definition.position }.map { item ->
         val label = item.definition.parameter.label()
@@ -242,13 +244,17 @@ private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAqua
             value = formatter.number(item.measurement.value, item.definition.precision),
             unit = item.definition.unit.takeIf { it.isNotBlank() && it != label },
             label = label,
-            attention = item.definition.isOutsideIndicativeRange(item.measurement.value),
+            level = readingLevel(item.definition, item.measurement.value),
         )
     }
     // Each ReadingValue is its own merged node; the row announces them as one unit with its click action.
     val readingsSummary = readings.joinToString(", ") { reading ->
         listOfNotNull(reading.value, reading.unit, reading.label).joinToString(" ") +
-            if (reading.attention) ", $attentionCue" else ""
+            when (reading.level) {
+                ReadingLevel.OK -> ""
+                ReadingLevel.ATTENTION -> ", $attentionCue"
+                ReadingLevel.ALERT -> ", $alertCue"
+            }
     }
     RailEntry(
         MaterialTheme.colorScheme.primary,
@@ -288,7 +294,7 @@ private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAqua
                             value = reading.value,
                             label = reading.label,
                             unit = reading.unit,
-                            attention = reading.attention,
+                            level = reading.level,
                         )
                     }
                 }
@@ -308,7 +314,7 @@ private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAqua
     }
 }
 
-private data class TimelineReading(val value: String, val unit: String?, val label: String, val attention: Boolean)
+private data class TimelineReading(val value: String, val unit: String?, val label: String, val level: ReadingLevel)
 
 @Composable
 private fun MaintenanceAction.summary(formatter: LocalizedFormatters): String {
