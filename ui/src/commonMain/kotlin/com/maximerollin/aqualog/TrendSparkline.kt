@@ -23,9 +23,8 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.expand
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +33,10 @@ import com.maximerollin.aqualog.resources.Res
 import com.maximerollin.aqualog.resources.reading_attention_description
 import com.maximerollin.aqualog.resources.trends_chart_description
 import com.maximerollin.aqualog.resources.trends_no_measurements
+import com.maximerollin.aqualog.resources.trends_row_collapsed
+import com.maximerollin.aqualog.resources.trends_row_expanded
+import com.maximerollin.aqualog.resources.trends_row_hide_chart
+import com.maximerollin.aqualog.resources.trends_row_show_chart
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.ParameterTrendSeries
 import com.maximerollin.aqualog.shared.TrendSnapshot
@@ -84,6 +87,17 @@ fun TrendSparklineRow(
         stringResource(Res.string.trends_chart_description, label)
     }
     val attentionCue = stringResource(Res.string.reading_attention_description)
+    val unit = definition.unit.takeIf { it.isNotBlank() && it != label }
+    val valueText = latest?.value?.let { currentLocalizedFormatters().number(it, definition.precision) }
+    // Merged descriptions replace the visible Text for screen readers, so the reading and the name are spoken here;
+    // the miniature's own description is merged after it.
+    val spokenReading = listOfNotNull(
+        listOfNotNull(valueText, unit).joinToString(" ").takeIf { it.isNotEmpty() },
+        label,
+        attentionCue.takeIf { attention },
+    ).joinToString(", ")
+    val stateText = stringResource(if (selected) Res.string.trends_row_expanded else Res.string.trends_row_collapsed)
+    val actionLabel = stringResource(if (selected) Res.string.trends_row_hide_chart else Res.string.trends_row_show_chart)
     val lineColor = if (attention) attentionMarkColor() else MaterialTheme.colorScheme.primary
     val bandColor = MaterialTheme.colorScheme.primaryContainer
     val markerColor = MaterialTheme.colorScheme.primary
@@ -92,10 +106,10 @@ fun TrendSparklineRow(
         Modifier
             .fillMaxWidth()
             .testTag("trend-row")
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(role = Role.Button, onClickLabel = actionLabel, onClick = onClick)
             .semantics(mergeDescendants = true) {
-                if (attention) contentDescription = attentionCue
-                if (selected) collapse { onClick(); true } else expand { onClick(); true }
+                contentDescription = spokenReading
+                stateDescription = stateText
             }
             .heightIn(min = 64.dp)
             .padding(vertical = 8.dp),
@@ -104,11 +118,10 @@ fun TrendSparklineRow(
         Column(Modifier.weight(2f)) {
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    latest?.value?.let { currentLocalizedFormatters().number(it, definition.precision) } ?: "—",
+                    valueText ?: "—",
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 22.sp, fontWeight = FontWeight.SemiBold),
                     color = if (attention) attentionTextColor() else MaterialTheme.colorScheme.onSurface,
                 )
-                val unit = definition.unit.takeIf { it.isNotBlank() && it != label }
                 if (unit != null) {
                     Spacer(Modifier.width(2.dp))
                     Text(

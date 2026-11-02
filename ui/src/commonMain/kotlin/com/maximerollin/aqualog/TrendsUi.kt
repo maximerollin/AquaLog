@@ -81,7 +81,7 @@ private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier:
             CarnetScreenTitle(stringResource(Res.string.trends_title), context, Modifier.padding(top = 12.dp))
         }
         item { TrendPeriods(state.trends.period, viewModel::selectTrendPeriod) }
-        snapshot?.series?.forEach { series ->
+        snapshot?.series?.sortedBy { it.definition.position }?.forEach { series ->
             val expanded = series.definition.id == state.trends.selectedParameterDefinitionId
             item(key = "trend-row-${series.definition.id}") {
                 Column {

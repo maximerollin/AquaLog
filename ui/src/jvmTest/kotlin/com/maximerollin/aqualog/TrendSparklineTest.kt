@@ -35,4 +35,16 @@ class TrendSparklineTest {
         assertEquals(0f, result[1].y)
         assertEquals(30f, result[0].y)
     }
+
+    @Test
+    fun `an empty series has no points`() {
+        assertEquals(emptyList(), sparklinePoints(series(), 0L, 1_000L, 100f, 30f))
+    }
+
+    @Test
+    fun `flat values without a range sit in the middle`() {
+        val flat = series(0L to 7.0, 1_000L to 7.0)
+        val noRange = flat.copy(definition = flat.definition.copy(indicativeMinimum = null, indicativeMaximum = null))
+        assertEquals(listOf(Offset(0f, 15f), Offset(100f, 15f)), sparklinePoints(noRange, 0L, 1_000L, 100f, 30f))
+    }
 }

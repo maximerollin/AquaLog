@@ -89,7 +89,16 @@ class TrendsFlowTest {
             "hatched indicative target · diamond Event markers"
         composeRule.onNodeWithContentDescription(chartDescription).assertIsDisplayed()
         composeRule.onAllNodesWithText("Exact values").assertCountEquals(0)
+        // TalkBack reads the merged description instead of the Text: it must carry the reading and the name.
+        composeRule.onNode(
+            hasTestTag("trend-row") and hasContentDescription("24.5 °C, Temperature") and hasClickAction() and
+                SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Collapsed"),
+        ).assertIsDisplayed()
         parameterRow("Temperature").performClick()
+        composeRule.onNode(
+            hasTestTag("trend-row") and hasContentDescription("24.5 °C, Temperature") and
+                SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Expanded"),
+        ).assertIsDisplayed()
         composeRule.onNodeWithText("Indicative target 22–28 °C · reference only, not a diagnosis")
             .assertIsDisplayed()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription(chartDescription))

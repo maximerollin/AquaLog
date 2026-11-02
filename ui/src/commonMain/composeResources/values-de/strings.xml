@@ -282,13 +282,16 @@
     </plurals>
 
     <string name="trends_title">Trends</string>
-    <string name="trends_heading">Aktuelle Trends</string>
     <string name="trends_free_limit">Kostenlose Trends werden bis zu 90 Tage angezeigt. Ältere Daten bleiben gespeichert.</string>
     <string name="trends_parameter_heading">%1$s-Trend</string>
     <string name="trends_indicative_target">Indikatives Ziel %1$s–%2$s %3$s · nur Referenz, keine Diagnose</string>
     <string name="trends_chart_description">%1$s Trenddiagramm · durchgezogene Linien- und Kreispunktmarkierungen · schraffiertes Richtziel · rautenförmige Ereignismarkierungen</string>
     <string name="trends_legend">● Messungen · ▧ schraffiertes Richtziel · ◆ Ereignisse</string>
     <string name="trends_sparkline_legend">Getönter Streifen: Richtbereich · ▲ Wasserwechsel</string>
+    <string name="trends_row_expanded">Aufgeklappt</string>
+    <string name="trends_row_collapsed">Zugeklappt</string>
+    <string name="trends_row_show_chart">Diagramm anzeigen</string>
+    <string name="trends_row_hide_chart">Diagramm ausblenden</string>
     <string name="trends_series_label">● Datenreihe %1$s</string>
     <string name="parameter_with_unit">%1$s (%2$s)</string>
     <string name="value_with_unit">%1$s %2$s</string>
