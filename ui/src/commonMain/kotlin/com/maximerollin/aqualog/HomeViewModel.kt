@@ -171,6 +171,8 @@ data class TaskUiState(
     val showValidationError: Boolean = false,
     val isSaving: Boolean = false,
     val batteryOptimizationActive: Boolean = false,
+    /** Counts the saves that succeeded: the screen closes its creation sheet when it changes. */
+    val savedCount: Int = 0,
 )
 
 data class TrendsUiState(
@@ -1246,7 +1248,7 @@ class HomeViewModel(
                 taskReminderScheduler.schedule(created.occurrence)
                 recordProductEvent(ProductEvent.TaskUsed(TaskUsage.CREATED))
                 updateTasks {
-                    it.copy(title = "", time = "", isSaving = false, showValidationError = false)
+                    it.copy(title = "", time = "", isSaving = false, showValidationError = false, savedCount = it.savedCount + 1)
                 }
             }.onFailure {
                 updateTasks { it.copy(isSaving = false, showValidationError = true) }

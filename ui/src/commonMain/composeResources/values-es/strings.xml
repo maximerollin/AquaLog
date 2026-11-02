@@ -354,6 +354,7 @@
     <string name="task_complete">Hecho</string>
     <string name="task_postpone">+1 día</string>
     <string name="task_ignore">Ignorar</string>
+    <string name="task_more_actions">Más acciones</string>
     <string name="task_completed">Terminado</string>
     <string name="task_postponed">Aplazado</string>
     <string name="task_ignored">ignorado</string>

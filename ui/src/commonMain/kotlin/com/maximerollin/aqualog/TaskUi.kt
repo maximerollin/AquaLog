@@ -1,6 +1,26 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
+import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
+import org.jetbrains.compose.resources.painterResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -47,137 +67,184 @@ import java.time.LocalTime
 import java.time.ZoneOffset
 
 @Composable
-fun TaskScreen(state: TaskUiState, viewModel: HomeViewModel, modifier: Modifier = Modifier) {
-    val formatter = currentLocalizedFormatters()
+fun TaskScreen(
+    state: TaskUiState,
+    viewModel: HomeViewModel,
+    modifier: Modifier = Modifier,
+    aquariumName: String? = null,
+) {
     val requestNotifications = rememberNotificationPermissionRequest()
-    var pickingDate by rememberSaveable { mutableStateOf(false) }
-    var pickingTime by rememberSaveable { mutableStateOf(false) }
+    var creating by rememberSaveable { mutableStateOf(false) }
+    var seenSaves by remember { mutableStateOf(state.savedCount) }
+    // The sheet closes after a successful save only; an invalid or failed save keeps it open.
+    LaunchedEffect(state.savedCount) {
+        if (state.savedCount != seenSaves) {
+            seenSaves = state.savedCount
+            creating = false
+        }
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("task-list"),
-        contentPadding = PaddingValues(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(start = 24.dp, end = 12.dp, top = 12.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(stringResource(Res.string.tasks_title), style = MaterialTheme.typography.headlineMedium)
-                TextButton(
-                    onClick = viewModel::closeTasks,
-                    modifier = Modifier.testTag("tasks-back").requiredSizeIn(minWidth = 48.dp, minHeight = 48.dp),
-                ) {
-                    Text(stringResource(Res.string.back))
-                }
-            }
+            CarnetScreenTitle(
+                stringResource(Res.string.tasks_title),
+                aquariumName,
+                action = {
+                    TextButton(
+                        onClick = viewModel::closeTasks,
+                        modifier = Modifier.testTag("tasks-back").requiredSizeIn(minWidth = 48.dp, minHeight = 48.dp),
+                    ) {
+                        Text(stringResource(Res.string.back))
+                    }
+                },
+            )
         }
+        // One banner: the permission comes first, the battery note once notifications are allowed.
         if (requestNotifications != null) {
             item {
-                ReminderInformationCard(stringResource(Res.string.notification_permission_explanation)) {
-                    Button(
-                        onClick = requestNotifications,
-                        modifier = Modifier.heightIn(min = 48.dp),
-                    ) { Text(stringResource(Res.string.allow_notifications)) }
-                }
+                ReminderBanner(
+                    stringResource(Res.string.notification_permission_explanation),
+                    stringResource(Res.string.allow_notifications),
+                    requestNotifications,
+                    Modifier.padding(end = 12.dp),
+                )
             }
-        }
-        if (state.batteryOptimizationActive) {
-            item { ReminderInformationCard(stringResource(Res.string.battery_optimization_explanation)) }
+        } else if (state.batteryOptimizationActive) {
+            item {
+                ReminderBanner(
+                    stringResource(Res.string.battery_optimization_explanation),
+                    modifier = Modifier.padding(end = 12.dp),
+                )
+            }
         }
         item {
-            Card(Modifier.fillMaxWidth()) {
-                Column(
-                    Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(stringResource(Res.string.new_task), style = MaterialTheme.typography.titleLarge)
-                    OutlinedTextField(
-                        value = state.title,
-                        onValueChange = viewModel::updateTaskTitle,
-                        label = { Text(stringResource(Res.string.task_title_label)) },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
-                    val selectedDate = runCatching { LocalDate.parse(state.dueDate) }
-                        .getOrElse { LocalDate.now() }
-                    OutlinedButton(
-                        onClick = { pickingDate = true },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    ) {
-                        Column {
-                            Text(stringResource(Res.string.task_due_date_label))
-                            Text(
-                                formatter.date(selectedDate.year, selectedDate.monthValue, selectedDate.dayOfMonth),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                    val selectedTime = runCatching { LocalTime.parse(state.time) }
-                        .getOrElse { LocalTime.of(9, 0) }
-                    OutlinedButton(
-                        onClick = { pickingTime = true },
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    ) {
-                        Column {
-                            Text(stringResource(Res.string.task_time_label))
-                            Text(
-                                state.time.toMinuteOfDayOrNull()?.let(formatter::time)
-                                    ?: stringResource(Res.string.task_no_time),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-                    if (pickingDate) {
-                        TaskDatePickerDialog(
-                            selectedDate = selectedDate,
-                            onDateSelected = { viewModel.updateTaskDueDate(it.toString()) },
-                            onDismiss = { pickingDate = false },
-                        )
-                    }
-                    if (pickingTime) {
-                        TaskTimePickerDialog(
-                            selectedTime = selectedTime,
-                            onTimeSelected = { viewModel.updateTaskTime("%02d:%02d".format(it.hour, it.minute)) },
-                            onDismiss = { pickingTime = false },
-                        )
-                    }
-                    if (state.time.isNotBlank()) {
-                        TextButton(
-                            onClick = { viewModel.updateTaskTime("") },
-                            modifier = Modifier.heightIn(min = 48.dp),
-                        ) {
-                            Text(stringResource(Res.string.clear_task_time))
-                        }
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        TaskRecurrence.entries.forEach { recurrence ->
-                            FilterChip(
-                                selected = state.recurrence == recurrence,
-                                onClick = { viewModel.selectTaskRecurrence(recurrence) },
-                                label = { Text(recurrence.label()) },
-                                modifier = Modifier.heightIn(min = 48.dp),
-                            )
-                        }
-                    }
-                    if (state.showValidationError) {
-                        Text(stringResource(Res.string.task_validation_error), color = MaterialTheme.colorScheme.error)
-                    }
-                    Button(
-                        onClick = viewModel::createTask,
-                        enabled = !state.isSaving,
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(stringResource(Res.string.save_task)) }
-                }
-            }
+            CarnetSectionTitle(
+                stringResource(Res.string.pending_tasks),
+                Modifier.padding(top = 8.dp),
+                actionLabel = stringResource(Res.string.new_task),
+                onAction = { creating = true },
+            )
         }
-        item { Text(stringResource(Res.string.pending_tasks), style = MaterialTheme.typography.titleLarge) }
         if (state.pendingOccurrences.isEmpty()) {
-            item { Text(stringResource(Res.string.no_pending_tasks)) }
+            item {
+                Text(
+                    stringResource(Res.string.no_pending_tasks),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         } else {
             items(state.pendingOccurrences, key = TaskOccurrence::id) { occurrence ->
-                TaskOccurrenceCard(occurrence, viewModel)
+                TaskRow(occurrence, viewModel)
             }
+        }
+    }
+    if (creating) NewTaskSheet(state, viewModel, onDismiss = { creating = false })
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun NewTaskSheet(state: TaskUiState, viewModel: HomeViewModel, onDismiss: () -> Unit) {
+    val formatter = currentLocalizedFormatters()
+    var pickingDate by rememberSaveable { mutableStateOf(false) }
+    var pickingTime by rememberSaveable { mutableStateOf(false) }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+    ) {
+        Column(
+            Modifier.navigationBarsPadding().imePadding().verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp).padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CarnetSectionTitle(
+                stringResource(Res.string.new_task),
+                actionLabel = stringResource(Res.string.close),
+                onAction = onDismiss,
+            )
+            OutlinedTextField(
+                value = state.title,
+                onValueChange = viewModel::updateTaskTitle,
+                label = { Text(stringResource(Res.string.task_title_label)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+            val selectedDate = runCatching { LocalDate.parse(state.dueDate) }
+                .getOrElse { LocalDate.now() }
+            OutlinedButton(
+                onClick = { pickingDate = true },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            ) {
+                Column {
+                    Text(stringResource(Res.string.task_due_date_label))
+                    Text(
+                        formatter.date(selectedDate.year, selectedDate.monthValue, selectedDate.dayOfMonth),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+            val selectedTime = runCatching { LocalTime.parse(state.time) }
+                .getOrElse { LocalTime.of(9, 0) }
+            OutlinedButton(
+                onClick = { pickingTime = true },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            ) {
+                Column {
+                    Text(stringResource(Res.string.task_time_label))
+                    Text(
+                        state.time.toMinuteOfDayOrNull()?.let(formatter::time)
+                            ?: stringResource(Res.string.task_no_time),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+            if (pickingDate) {
+                TaskDatePickerDialog(
+                    selectedDate = selectedDate,
+                    onDateSelected = { viewModel.updateTaskDueDate(it.toString()) },
+                    onDismiss = { pickingDate = false },
+                )
+            }
+            if (pickingTime) {
+                TaskTimePickerDialog(
+                    selectedTime = selectedTime,
+                    onTimeSelected = { viewModel.updateTaskTime("%02d:%02d".format(it.hour, it.minute)) },
+                    onDismiss = { pickingTime = false },
+                )
+            }
+            if (state.time.isNotBlank()) {
+                TextButton(
+                    onClick = { viewModel.updateTaskTime("") },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) {
+                    Text(stringResource(Res.string.clear_task_time))
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                TaskRecurrence.entries.forEach { recurrence ->
+                    FilterChip(
+                        selected = state.recurrence == recurrence,
+                        onClick = { viewModel.selectTaskRecurrence(recurrence) },
+                        label = { Text(recurrence.label()) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    )
+                }
+            }
+            if (state.showValidationError) {
+                Text(stringResource(Res.string.task_validation_error), color = MaterialTheme.colorScheme.error)
+            }
+            Button(
+                onClick = viewModel::createTask,
+                enabled = !state.isSaving,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            ) { Text(stringResource(Res.string.save_task)) }
         }
     }
 }
@@ -221,41 +288,70 @@ private fun TaskTimePickerDialog(selectedTime: LocalTime, onTimeSelected: (Local
 }
 
 @Composable
-private fun ReminderInformationCard(message: String, action: (@Composable () -> Unit)? = null) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            action?.invoke()
+private fun ReminderBanner(
+    message: String,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    Card(modifier.fillMaxWidth()) {
+        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (actionLabel != null && onAction != null) {
+                TextButton(onClick = onAction, modifier = Modifier.heightIn(min = 48.dp)) { Text(actionLabel) }
+            }
         }
     }
 }
 
 @Composable
-private fun TaskOccurrenceCard(occurrence: TaskOccurrence, viewModel: HomeViewModel) {
+private fun TaskRow(occurrence: TaskOccurrence, viewModel: HomeViewModel) {
     val formatter = currentLocalizedFormatters()
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(occurrence.title, style = MaterialTheme.typography.titleMedium)
+    // Guards against a double tap resolving the occurrence twice before the list refreshes.
+    var completed by remember(occurrence.id) { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
+    val completeDescription = "${stringResource(Res.string.task_complete)}, ${occurrence.title}"
+    val moreDescription = "${stringResource(Res.string.task_more_actions)}, ${occurrence.title}"
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(
+            checked = completed,
+            onCheckedChange = if (completed) null else { _ ->
+                completed = true
+                viewModel.resolveTask(occurrence, TaskResolution.COMPLETED)
+            },
+            modifier = Modifier.semantics { contentDescription = completeDescription },
+        )
+        Column(Modifier.weight(1f)) {
+            Text(occurrence.title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
             Text(
                 stringResource(
                     Res.string.task_due_value,
                     formatter.date(occurrence.dueDate.year, occurrence.dueDate.month, occurrence.dueDate.day),
                     occurrence.minuteOfDay?.let(formatter::time) ?: stringResource(Res.string.task_no_time),
                 ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = { viewModel.resolveTask(occurrence, TaskResolution.COMPLETED) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) { Text(stringResource(Res.string.task_complete)) }
-                OutlinedButton(
-                    onClick = { viewModel.resolveTask(occurrence, TaskResolution.POSTPONED) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) { Text(stringResource(Res.string.task_postpone)) }
-                TextButton(
-                    onClick = { viewModel.resolveTask(occurrence, TaskResolution.IGNORED) },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) { Text(stringResource(Res.string.task_ignore)) }
+        }
+        Box {
+            IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(48.dp)) {
+                Icon(painterResource(Res.drawable.ic_more_vert), contentDescription = moreDescription)
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.task_postpone)) },
+                    onClick = {
+                        menuOpen = false
+                        viewModel.resolveTask(occurrence, TaskResolution.POSTPONED)
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.task_ignore)) },
+                    onClick = {
+                        menuOpen = false
+                        viewModel.resolveTask(occurrence, TaskResolution.IGNORED)
+                    },
+                )
             }
         }
     }

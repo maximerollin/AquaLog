@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -38,6 +39,7 @@ class TaskFlowTest {
     fun taskDate_isChosenWithTouchFriendlyPicker() {
         val scenario = launchTaskScreen()
         try {
+            composeRule.onNodeWithText("New Task").performClick()
             composeRule.onNodeWithText("First due date").performClick()
             composeRule.onNodeWithTag("task-date-picker").assertIsDisplayed()
             pressBack()
@@ -50,6 +52,7 @@ class TaskFlowTest {
     fun optionalTaskTime_isChosenWithTouchFriendlyPicker() {
         val scenario = launchTaskScreen()
         try {
+            composeRule.onNodeWithText("New Task").performClick()
             composeRule.onNodeWithText("Time (optional)").performClick()
             composeRule.onNodeWithTag("task-time-picker").assertIsDisplayed()
             pressBack()
@@ -86,7 +89,7 @@ class TaskFlowTest {
         try {
             composeRule.onNode(hasText("See all") and hasClickAction()).performClick()
             composeRule.onNodeWithText("Change filter wool").performScrollTo().assertIsDisplayed()
-            composeRule.onNodeWithText("Done").performScrollTo().assertIsDisplayed().performClick()
+            composeRule.onNodeWithContentDescription("Done, Change filter wool").performScrollTo().assertIsDisplayed().performClick()
             composeRule.waitUntil(timeoutMillis = 5_000) {
                 runBlocking {
                     application.aquariumRepository.observeResolvedTaskOccurrences().first()
@@ -170,6 +173,71 @@ class TaskFlowTest {
             composeRule.onNodeWithText("History").performClick()
             composeRule.onNode(hasText("Completed", substring = true)).assertIsDisplayed()
             composeRule.onNodeWithText("Clean the glass").assertIsDisplayed()
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun newTask_isCreatedInASheet_thatClosesAfterTheSave_andNeverOnAnInvalidForm() {
+        val scenario = launchTaskScreen()
+        try {
+            composeRule.onNodeWithText("No pending Task.").assertIsDisplayed()
+            composeRule.onNodeWithText("New Task").performClick()
+            composeRule.onNodeWithText("Save Task").performClick()
+            composeRule.onNodeWithText("Task title").assertIsDisplayed()
+            composeRule.onNodeWithText("Task title").performTextInput("Clean the glass")
+            composeRule.onNodeWithText("Save Task").performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                composeRule.onAllNodes(hasText("Task title")).fetchSemanticsNodes().isEmpty()
+            }
+            composeRule.onNodeWithText("Clean the glass").assertIsDisplayed()
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun overflowMenu_postponesAndIgnoresAPendingTask() {
+        val application = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        runBlocking {
+            val setup = application.aquariumRepository.createConfiguredAquarium(
+                name = "Amazonien",
+                volume = 120.0,
+                volumeUnit = VolumeUnit.LITERS,
+                profile = AquariumProfile.ESTABLISHED,
+                parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+            listOf("Rinse the filter", "Trim the plants").forEach { title ->
+                application.aquariumRepository.createTask(
+                    TaskInput(
+                        aquariumId = setup.aquarium.id,
+                        title = title,
+                        recurrence = TaskRecurrence.ONCE,
+                        firstDueDate = TaskDate(2026, 10, 7),
+                        minuteOfDay = null,
+                        timeZoneId = "Europe/Paris",
+                    ),
+                )
+            }
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.onNode(hasText("See all") and hasClickAction()).performClick()
+            composeRule.onNodeWithContentDescription("More actions, Rinse the filter").performClick()
+            composeRule.onNodeWithText("+1 day").performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                runBlocking {
+                    application.aquariumRepository.observePendingTaskOccurrences().first()
+                        .any { it.title == "Rinse the filter" && it.dueDate == TaskDate(2026, 10, 8) }
+                }
+            }
+            composeRule.onNodeWithContentDescription("More actions, Trim the plants").performClick()
+            composeRule.onNodeWithText("Ignore").performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                composeRule.onAllNodes(hasText("Trim the plants")).fetchSemanticsNodes().isEmpty()
+            }
         } finally {
             scenario.close()
         }

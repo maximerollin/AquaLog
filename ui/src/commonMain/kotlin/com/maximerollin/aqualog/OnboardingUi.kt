@@ -82,6 +82,7 @@ fun AquaLogContent(
             ),
             viewModel = viewModel,
             modifier = modifier,
+            aquariumName = state.setup.aquarium.name,
         )
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(
             state = state.rapidSession,

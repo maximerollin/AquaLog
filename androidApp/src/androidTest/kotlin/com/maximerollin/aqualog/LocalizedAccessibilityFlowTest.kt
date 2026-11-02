@@ -276,16 +276,18 @@ class LocalizedAccessibilityFlowTest {
                 compose.onNodeWithText(tasks).performClick()
                 awaitText(localized.getString(Res.string.tasks_title))
                 assertCriticalText(localized.getString(Res.string.tasks_title))
-                compose.onNodeWithTag("task-list").performScrollToNode(
-                    hasText(localized.getString(Res.string.save_task)),
-                )
-                compose.onNode(
-                    hasText(localized.getString(Res.string.save_task)) and hasClickAction(),
-                ).performScrollTo()
-                assertAction(localized.getString(Res.string.save_task))
-                captureAndInspect("tasks-$language-$mode.png")
-                compose.onNodeWithTag("task-list").performScrollToNode(hasText(localized.getString(Res.string.back)))
+                assertAction(localized.getString(Res.string.new_task))
                 assertEssentialActionByTag("tasks-back")
+                captureAndInspect("tasks-$language-$mode.png")
+                compose.onNodeWithText(localized.getString(Res.string.new_task)).performClick()
+                awaitText(localized.getString(Res.string.save_task))
+                compose.onNode(hasText(localized.getString(Res.string.save_task)) and hasClickAction()).performScrollTo()
+                assertAction(localized.getString(Res.string.save_task))
+                captureAndInspect("task-sheet-$language-$mode.png")
+                compose.onNode(hasText(localized.getString(Res.string.close)) and hasClickAction()).performClick()
+                compose.waitUntil(10_000) {
+                    compose.onAllNodes(hasText(localized.getString(Res.string.save_task))).fetchSemanticsNodes().isEmpty()
+                }
                 compose.onNodeWithText(localized.getString(Res.string.back)).performClick()
 
                 compose.onNodeWithText(localized.getString(Res.string.navigation_history)).performClick()
@@ -391,7 +393,8 @@ class LocalizedAccessibilityFlowTest {
         action.assertIsDisplayed()
         val bounds = action.fetchSemanticsNode().boundsInRoot
         assertMinimumTouchTarget(bounds)
-        val viewport = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        // A sheet adds a second root with the same bounds as the window.
+        val viewport = compose.onAllNodes(isRoot()).fetchSemanticsNodes().first().boundsInRoot
         assertTrue("$label must not be clipped horizontally", bounds.left >= viewport.left && bounds.right <= viewport.right)
         assertTrue("$label must not be clipped vertically", bounds.top >= viewport.top && bounds.bottom <= viewport.bottom)
     }
