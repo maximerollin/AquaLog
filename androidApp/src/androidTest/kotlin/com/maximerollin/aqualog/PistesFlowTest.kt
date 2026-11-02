@@ -1,6 +1,8 @@
 package com.maximerollin.aqualog
 
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
@@ -45,6 +47,33 @@ class PistesFlowTest {
             }
             composeRule.onNodeWithText("Ideas · Nitrite").performClick()
             composeRule.onNodeWithText("Change 30% of the water.").assertIsDisplayed()
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun sheetShowsOnce_leavingTheHomeWithoutClosingDismissesIt_andTheCardStays() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        (context.applicationContext as TestAquaLogApplication).resetRepository()
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            waitForText("Get started")
+            completeMinimalOnboarding()
+            composeRule.onNodeWithText("Measure").performClick()
+            waitForText("Measurements")
+            composeRule.onNodeWithContentDescription("Measurement for Nitrite").performTextInput("0.25")
+            composeRule.onNodeWithText("Save Session").performClick()
+            waitForText("Ideas for Nitrite")
+
+            // The scrim blocks touches, so leave the home through the semantics action, as a programmatic navigation would.
+            composeRule.onNodeWithText("History").performSemanticsAction(SemanticsActions.OnClick)
+            waitForText("Chronology")
+            composeRule.onNodeWithText("Tank").performClick()
+            waitForText("Ideas · Nitrite")
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasText("Ideas for Nitrite")).fetchSemanticsNodes().isEmpty()
+            }
         } finally {
             scenario.close()
         }

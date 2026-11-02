@@ -592,6 +592,7 @@ class HomeViewModel(
     }
 
     fun selectAquarium(aquariumId: String) {
+        dismissPistes()
         viewModelScope.launch {
             aquariumRepository.selectAquarium(aquariumId)
             activateAquariumContext(aquariumId)
@@ -1182,6 +1183,7 @@ class HomeViewModel(
 
     fun openRapidSession() {
         val setup = mutableUiState.value.setup ?: return
+        dismissPistes()
         val draft = RapidSessionUiState(
             idempotencyKey = generateInteractionId(),
             aquariumId = setup.aquarium.id,
@@ -1205,6 +1207,7 @@ class HomeViewModel(
     }
 
     fun openTasks() {
+        dismissPistes()
         val today = LocalDate.now(ZoneId.of(currentTimeZoneId()))
         mutableUiState.update { state ->
             state.copy(
@@ -1364,6 +1367,7 @@ class HomeViewModel(
     fun openSessionDetails() {
         mutableUiState.update { state ->
             state.copy(
+                pistesAfterSave = emptyList(),
                 sessionDetail = state.latestSession,
                 sessionDetailReturnsToTimeline = false,
             )
@@ -1439,7 +1443,7 @@ class HomeViewModel(
     }
 
     fun selectDestination(destination: MainDestination) {
-        mutableUiState.update { it.copy(destination = destination) }
+        mutableUiState.update { it.copy(destination = destination, pistesAfterSave = emptyList()) }
         when (destination) {
             MainDestination.HISTORY -> if (timelineJob == null) observeTimeline()
             MainDestination.TRENDS -> {

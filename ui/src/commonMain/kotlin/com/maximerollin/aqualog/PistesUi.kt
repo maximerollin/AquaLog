@@ -91,8 +91,8 @@ fun PistesContent(advices: List<PisteAdvice>, modifier: Modifier = Modifier) {
 
 /** Collapsed by default to « Pistes · parameters »; the header is one clickable unit. */
 @Composable
-fun PistesCard(advices: List<PisteAdvice>, modifier: Modifier = Modifier) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
+fun PistesCard(advices: List<PisteAdvice>, aquariumId: String, modifier: Modifier = Modifier) {
+    var expanded by rememberSaveable("pistes-$aquariumId") { mutableStateOf(false) }
     val names = advices.map { it.parameter.label() }
     val title = stringResource(Res.string.pistes_card_collapsed, names.joinToString(", "))
     val state = stringResource(if (expanded) Res.string.trends_row_expanded else Res.string.trends_row_collapsed)

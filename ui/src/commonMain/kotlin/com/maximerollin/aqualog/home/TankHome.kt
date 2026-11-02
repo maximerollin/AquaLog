@@ -165,9 +165,6 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             items(alerts, key = { "alert-${it.aquarium.id}" }) { alert ->
                 AlertRow(alert, onClick = { viewModel.selectAquarium(alert.aquarium.id) }, modifier = gutter)
             }
-            if (pistes.isNotEmpty()) {
-                item(key = "pistes") { PistesCard(pistes, gutter) }
-            }
             if (state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION) {
                 item {
                     Button(
@@ -176,6 +173,9 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                         modifier = gutter.fillMaxWidth().heightIn(min = 48.dp),
                     ) { Text(stringResource(Res.string.continue_after_session)) }
                 }
+            }
+            if (pistes.isNotEmpty()) {
+                item(key = "pistes") { PistesCard(pistes, aquarium.id, gutter) }
             }
             item {
                 CarnetSectionTitle(
