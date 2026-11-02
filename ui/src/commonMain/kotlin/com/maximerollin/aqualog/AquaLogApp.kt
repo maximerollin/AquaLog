@@ -6,6 +6,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /** Links configured by the host app (a blank URL means not configured) and how to open them. */
@@ -23,6 +24,11 @@ fun AquaLogApp(
     externalLinks: ExternalLinks,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // A notification tap brings back a home computed on an earlier day.
+    LifecycleStartEffect(viewModel) {
+        viewModel.refreshForToday()
+        onStopOrDispose { }
+    }
     Scaffold { contentPadding ->
         AquaLogContent(
             state = uiState,

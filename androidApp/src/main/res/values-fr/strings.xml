@@ -2,6 +2,8 @@
 <resources>
     <string name="app_name">Aquagenda</string>
     <string name="task_notification_channel">Rappels de tâches</string>
+    <string name="due_tests_notification_channel">Tests à faire</string>
+    <string name="weekly_summary_notification_channel">Bilan de la semaine</string>
     <string name="task_notification_text">Ouvrez Aquagenda pour terminer, reporter ou ignorer cette occurrence.</string>
     <string name="due_tests_notification_text">Tests à faire : %1$s</string>
     <string name="weekly_summary_notification_ready">Votre bilan de la semaine est prêt</string>

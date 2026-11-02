@@ -360,6 +360,8 @@ data class HomeUiState(
     val latestReadings: List<LatestReading> = emptyList(),
     /** Tests of the displayed Aquarium due today or overdue, earliest first. */
     val dueTests: List<DueTest> = emptyList(),
+    /** The day the date-dependent home was last computed for: a new day recomposes it (see [HomeViewModel.refreshForToday]). */
+    val computedForDay: TaskDate? = null,
     /** Weeks of regular care for the whole account; 0 hides the line. */
     val maintenanceSeries: Int = 0,
     /** The displayed Aquarium's Sunday summary, on Sunday and Monday only. */
@@ -516,9 +518,12 @@ class HomeViewModel(
                             aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).collect { samples ->
                                 mutableUiState.update { it.copy(dueTests = dueTests(setup, samples, today())) }
                                 refreshWeekly()
-                                taskReminderScheduler.scheduleDueTests(
-                                    aquariumRepository.dueTestSummary(today(), currentTimeZoneId()).nextDueDate,
-                                )
+                                // A failing read or alarm must not end this collector: the home keeps following the readings.
+                                runCatching {
+                                    taskReminderScheduler.scheduleDueTests(
+                                        aquariumRepository.dueTestSummary(today(), currentTimeZoneId()).nextDueDate,
+                                    )
+                                }
                             }
                         }
                         aquariumRepository.observeLatestSession(setup.aquarium.id).collect { latest ->
@@ -1379,7 +1384,8 @@ class HomeViewModel(
                         maintenanceActions = listOf(defaultMaintenanceInput(type, last)),
                     ),
                 )
-                mutableUiState.update { it.copy(latestSession = recorded) }
+                // A Tâche of another Aquarium (from the agenda) must not replace the displayed one's latest Session.
+                mutableUiState.update { if (it.setup?.aquarium?.id == occurrence.aquariumId) it.copy(latestSession = recorded) else it }
                 completeLinkedTasks(recorded, alsoOccurrenceId = occurrence.id)
             }.onFailure { onFailed() }
         }
@@ -1422,6 +1428,24 @@ class HomeViewModel(
     /** null follows the profile default; [NEVER_INTERVAL_DAYS] never reminds. */
     fun updateAnalysisInterval(parameterDefinitionId: String, days: Int?) {
         viewModelScope.launch { aquariumRepository.updateAnalysisInterval(parameterDefinitionId, days) }
+    }
+
+    /**
+     * Back in the foreground (after a notification tap, say), the day may have changed since the collectors last ran:
+     * due tests, the series, the Sunday summary and every « today » on the home are computed again.
+     */
+    fun refreshForToday() {
+        val day = today()
+        mutableUiState.update { it.copy(computedForDay = day) }
+        refreshWeekly()
+        val setup = mutableUiState.value.setup ?: return
+        viewModelScope.launch {
+            runCatching {
+                dueTests(setup, aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).first(), day)
+            }.onSuccess { due ->
+                mutableUiState.update { if (it.setup?.aquarium?.id == setup.aquarium.id) it.copy(dueTests = due) else it }
+            }
+        }
     }
 
     /**

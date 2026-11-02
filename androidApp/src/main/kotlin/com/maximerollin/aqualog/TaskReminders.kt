@@ -118,7 +118,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
         if (cannotNotify(context)) return
         val title = intent.getStringExtra(AndroidTaskReminderScheduler.EXTRA_TASK_TITLE).orEmpty()
         val occurrenceId = intent.getStringExtra(AndroidTaskReminderScheduler.EXTRA_OCCURRENCE_ID) ?: return
-        postReminder(context, occurrenceId.hashCode(), title, context.getString(R.string.task_notification_text))
+        postReminder(context, ReminderChannel.TASKS, occurrenceId.hashCode(), title, context.getString(R.string.task_notification_text))
     }
 }
 
@@ -126,18 +126,24 @@ private fun cannotNotify(context: Context): Boolean =
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
         context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
 
+private fun AquaLogApplication.recordBackgroundFailure() =
+    crashReporter.record(TechnicalFailure(TechnicalFailureKind.NON_FATAL, TechnicalComponent.DATABASE))
+
 private fun localToday(): TaskDate = LocalDate.now().let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
 
-/** Posts on the « task-reminders » channel; tapping opens the app. */
-private fun postReminder(context: Context, notificationId: Int, title: String, text: String?) {
+/** Each kind of notification has its own channel, so one can be silenced without the others. */
+private enum class ReminderChannel(val id: String, val nameRes: Int) {
+    TASKS("task-reminders", R.string.task_notification_channel),
+    DUE_TESTS("due-tests", R.string.due_tests_notification_channel),
+    WEEKLY_SUMMARY("weekly-summary", R.string.weekly_summary_notification_channel),
+}
+
+/** Posts on [channel]; tapping opens the app. */
+private fun postReminder(context: Context, channel: ReminderChannel, notificationId: Int, title: String, text: String?) {
     val notifications = context.getSystemService(NotificationManager::class.java)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         notifications.createNotificationChannel(
-            NotificationChannel(
-                CHANNEL_ID,
-                context.getString(R.string.task_notification_channel),
-                NotificationManager.IMPORTANCE_DEFAULT,
-            ),
+            NotificationChannel(channel.id, context.getString(channel.nameRes), NotificationManager.IMPORTANCE_DEFAULT),
         )
     }
     val openApp = PendingIntent.getActivity(
@@ -147,7 +153,7 @@ private fun postReminder(context: Context, notificationId: Int, title: String, t
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
     val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        android.app.Notification.Builder(context, CHANNEL_ID)
+        android.app.Notification.Builder(context, channel.id)
     } else {
         @Suppress("DEPRECATION")
         android.app.Notification.Builder(context)
@@ -160,7 +166,6 @@ private fun postReminder(context: Context, notificationId: Int, title: String, t
     notifications.notify(notificationId, notification)
 }
 
-private const val CHANNEL_ID = "task-reminders"
 private const val DUE_TESTS_NOTIFICATION_ID = 0x7e57
 private const val WEEKLY_SUMMARY_NOTIFICATION_ID = 0xb11a
 
@@ -175,9 +180,11 @@ class DueTestReminderReceiver : BroadcastReceiver() {
                 val summary = application.aquariumRepository.dueTestSummary(localToday(), ZoneId.systemDefault().id)
                 if (summary.dueToday.isNotEmpty()) {
                     val text = context.getString(R.string.due_tests_notification_text, dueTestsLabels(summary.dueToday))
-                    postReminder(context, DUE_TESTS_NOTIFICATION_ID, text, null)
+                    postReminder(context, ReminderChannel.DUE_TESTS, DUE_TESTS_NOTIFICATION_ID, text, null)
                 }
                 application.taskReminderScheduler.scheduleDueTests(summary.nextDueDate)
+            } catch (failure: Exception) {
+                application.recordBackgroundFailure()
             } finally {
                 pending.finish()
             }
@@ -204,11 +211,11 @@ class WeeklySummaryReceiver : BroadcastReceiver() {
                     } else {
                         context.getString(R.string.weekly_summary_notification_ready)
                     }
-                    postReminder(context, WEEKLY_SUMMARY_NOTIFICATION_ID, text, null)
+                    postReminder(context, ReminderChannel.WEEKLY_SUMMARY, WEEKLY_SUMMARY_NOTIFICATION_ID, text, null)
                 }
             } catch (failure: Exception) {
                 // An imported Tâche with a malformed zone (ZoneId.of throws) must not crash the process every Sunday.
-                application.crashReporter.record(TechnicalFailure(TechnicalFailureKind.NON_FATAL, TechnicalComponent.DATABASE))
+                application.recordBackgroundFailure()
             } finally {
                 pending.finish()
             }
@@ -222,13 +229,17 @@ class TaskRescheduleReceiver : BroadcastReceiver() {
         val application = context.applicationContext as? AquaLogApplication ?: return
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            val scheduler = application.taskReminderScheduler
             try {
-                val occurrences = application.aquariumRepository.observePendingTaskOccurrences().first()
-                application.taskReminderScheduler.scheduleWeeklySummary()
-                application.taskReminderScheduler.reconcile(occurrences)
-                application.taskReminderScheduler.scheduleDueTests(
+                scheduler.scheduleWeeklySummary()
+                // A malformed imported zone fails reconcile; the due tests are still scheduled after it.
+                runCatching { scheduler.reconcile(application.aquariumRepository.observePendingTaskOccurrences().first()) }
+                    .onFailure { application.recordBackgroundFailure() }
+                scheduler.scheduleDueTests(
                     application.aquariumRepository.dueTestSummary(localToday(), ZoneId.systemDefault().id).nextDueDate,
                 )
+            } catch (failure: Exception) {
+                application.recordBackgroundFailure()
             } finally {
                 pending.finish()
             }

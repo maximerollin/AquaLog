@@ -13,10 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.shared.assistance.MeasurementConcern
+import com.maximerollin.aqualog.shared.toEpochDay
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
-
-private const val DAY_MILLIS = 24L * 60 * 60 * 1000
 
 /** Never blocks: the person can fix, save anyway or go back (spec 4.3.2). */
 @Composable
@@ -52,7 +51,8 @@ fun SaveCheckDialog(state: RapidSessionUiState, viewModel: HomeViewModel) {
                         }
                         is MeasurementConcern.BigJump -> {
                             val previous = formatter.number(concern.previous, definition.precision)
-                            val days = ((System.currentTimeMillis() - concern.previousAtEpochMillis) / DAY_MILLIS).toInt()
+                            // Calendar days on the VM clock, like the home's « il y a N jours ».
+                            val days = (viewModel.today().toEpochDay() - viewModel.dayOf(concern.previousAtEpochMillis).toEpochDay()).toInt()
                             Text(
                                 if (days <= 0) {
                                     stringResource(Res.string.check_big_jump_today, name, entered, previous)
