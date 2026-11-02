@@ -84,7 +84,10 @@ import com.maximerollin.aqualog.shared.TechnicalFailureKind
 import com.maximerollin.aqualog.shared.OnboardingMilestone
 import com.maximerollin.aqualog.shared.VoluntaryFeedback
 import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.assistance.DueTest
 import com.maximerollin.aqualog.shared.assistance.MeasurementConcern
+import com.maximerollin.aqualog.shared.assistance.NEVER_INTERVAL_DAYS
+import com.maximerollin.aqualog.shared.assistance.dueTests
 import com.maximerollin.aqualog.shared.assistance.PisteAdvice
 import com.maximerollin.aqualog.shared.assistance.checkMeasurement
 import com.maximerollin.aqualog.shared.evaluateMeasurement
@@ -350,6 +353,9 @@ data class HomeUiState(
     /** Advice for the new out-of-range values of the Session just saved; shown once, then dismissed. */
     val pistesAfterSave: List<PisteAdvice> = emptyList(),
     val latestReadings: List<LatestReading> = emptyList(),
+    /** Tests of the displayed Aquarium due today or overdue, earliest first. */
+    val dueTests: List<DueTest> = emptyList(),
+    val showRhythmSettings: Boolean = false,
     val accountInvitationPrompt: AccountInvitationPrompt = AccountInvitationPrompt.NONE,
     val account: AccountUiState = AccountUiState(),
     val sessionDetail: RecordedSession? = null,
@@ -470,6 +476,7 @@ class HomeViewModel(
                         isSaving = false,
                         latestSession = if (setup == null) null else it.latestSession,
                         latestReadings = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.latestReadings else emptyList(),
+                        dueTests = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.dueTests else emptyList(),
                     )
                 }
                 if (setup != null) {
@@ -479,6 +486,15 @@ class HomeViewModel(
                         launch {
                             aquariumRepository.observeLatestReadings(setup.aquarium.id).collect { readings ->
                                 mutableUiState.update { it.copy(latestReadings = readings) }
+                            }
+                        }
+                        launch {
+                            // The setup re-emits when a rhythm changes, so this also follows the rhythm settings.
+                            aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).collect { samples ->
+                                mutableUiState.update { it.copy(dueTests = dueTests(setup, samples, today())) }
+                                taskReminderScheduler.scheduleDueTests(
+                                    aquariumRepository.dueTestSummary(today(), currentTimeZoneId()).nextDueDate,
+                                )
                             }
                         }
                         aquariumRepository.observeLatestSession(setup.aquarium.id).collect { latest ->
@@ -1181,7 +1197,8 @@ class HomeViewModel(
         viewModelScope.launch { persistOnboardingAquarium(keepPaywallOpen = false) }
     }
 
-    fun openRapidSession() {
+    /** Opens entry for the current Aquarium, [firstParameterIds] (the due tests) listed first. */
+    fun openRapidSession(firstParameterIds: List<String> = emptyList()) {
         val setup = mutableUiState.value.setup ?: return
         dismissPistes()
         val draft = RapidSessionUiState(
@@ -1196,7 +1213,8 @@ class HomeViewModel(
                 val current = state.rapidSession
                 if (current?.idempotencyKey != draft.idempotencyKey) state else {
                     val hydrated = current.copy(
-                        context = context,
+                        // A stable sort: requested parameters first, each group keeps its position order.
+                        context = context.copy(activeParameters = context.activeParameters.sortedBy { it.id !in firstParameterIds }),
                         measurementInputs = context.measurementInputs,
                     )
                     savedStateHandle[rapidSessionDraftKey] = hydrated.toSnapshot()
@@ -1356,6 +1374,15 @@ class HomeViewModel(
                 result.nextOccurrence?.let(taskReminderScheduler::schedule)
                 recordProductEvent(ProductEvent.TaskUsed(TaskUsage.COMPLETED))
             }
+    }
+
+    fun openRhythmSettings() = mutableUiState.update { it.copy(showRhythmSettings = true) }
+
+    fun closeRhythmSettings() = mutableUiState.update { it.copy(showRhythmSettings = false) }
+
+    /** null follows the profile default; [NEVER_INTERVAL_DAYS] never reminds. */
+    fun updateAnalysisInterval(parameterDefinitionId: String, days: Int?) {
+        viewModelScope.launch { aquariumRepository.updateAnalysisInterval(parameterDefinitionId, days) }
     }
 
     fun today(): TaskDate = LocalDate.now(ZoneId.of(currentTimeZoneId())).let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
@@ -2253,6 +2280,7 @@ private object NoOpTaskReminderScheduler : TaskReminderScheduler {
     override fun schedule(occurrence: TaskOccurrence) = Unit
     override fun cancel(occurrenceId: String) = Unit
     override fun reconcile(occurrences: List<TaskOccurrence>) = Unit
+    override fun scheduleDueTests(at: TaskDate?) = Unit
     override fun isBatteryOptimizationActive(): Boolean = false
 }
 

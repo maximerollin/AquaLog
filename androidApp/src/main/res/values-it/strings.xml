@@ -3,4 +3,5 @@
     <string name="app_name">Aquagenda</string>
     <string name="task_notification_channel">Promemoria attività</string>
     <string name="task_notification_text">Apri Aquagenda per completare, posticipare o ignorare questo evento.</string>
+    <string name="due_tests_notification_text">Test da fare: %1$s</string>
 </resources>

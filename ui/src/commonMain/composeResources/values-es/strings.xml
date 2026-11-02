@@ -414,4 +414,15 @@
     <string name="pistes_retest_tomorrow">mañana</string>
     <string name="pistes_disclaimer">Son pistas, no un diagnóstico: ante la duda, pide consejo en una tienda especializada.</string>
     <plurals name="pistes_retest_in_days"><item quantity="one">en %1$d día</item><item quantity="other">en %1$d días</item></plurals>
+    <string name="parameter_short_ammonia">NH₃/NH₄</string>
+    <string name="parameter_short_nitrite">NO₂</string>
+    <string name="parameter_short_nitrate">NO₃</string>
+    <string name="parameter_short_phosphate">PO₄</string>
+    <string name="due_tests_row">Medir %1$s</string>
+    <string name="list_pair">%1$s y %2$s</string>
+    <string name="rhythm_title">Frecuencia de análisis</string>
+    <string name="rhythm_never">Nunca</string>
+    <string name="rhythm_auto_never">Auto (nunca)</string>
+    <plurals name="rhythm_auto_days"><item quantity="one">Auto (%1$d día)</item><item quantity="other">Auto (%1$d días)</item></plurals>
+    <plurals name="rhythm_days"><item quantity="one">%1$d día</item><item quantity="other">%1$d días</item></plurals>
 </resources>

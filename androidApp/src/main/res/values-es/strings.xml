@@ -3,4 +3,5 @@
     <string name="app_name">Aquagenda</string>
     <string name="task_notification_channel">Recordatorios de tareas</string>
     <string name="task_notification_text">Abra Aquagenda para completar, posponer o ignorar este suceso.</string>
+    <string name="due_tests_notification_text">Pruebas pendientes: %1$s</string>
 </resources>

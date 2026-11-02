@@ -1,5 +1,8 @@
 package com.maximerollin.aqualog.shared
 
+import com.maximerollin.aqualog.shared.assistance.ReadingSample
+import java.time.Instant
+import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -49,6 +52,12 @@ interface AquariumRepository {
     fun observeSession(sessionId: String): Flow<RecordedSession?>
 
     fun observeLatestReadings(aquariumId: String): Flow<List<LatestReading>>
+
+    /** Every reading of the Aquarium, dated by its day in [timeZoneId], newest first. */
+    fun observeReadingSamples(aquariumId: String, timeZoneId: String): Flow<List<ReadingSample>>
+
+    /** One Aquarium with its Parameters, read once; null when it does not exist. */
+    suspend fun loadSetup(aquariumId: String): AquariumSetup?
 
     suspend fun updateSession(input: SessionEditInput): RecordedSession
 
@@ -331,6 +340,17 @@ class RoomAquariumRepository(
                 LatestReading(id, readings[0].value, readings[0].occurredAtEpochMillis, readings.getOrNull(1)?.value)
             }
         }
+
+    override fun observeReadingSamples(aquariumId: String, timeZoneId: String): Flow<List<ReadingSample>> =
+        sessionDao.observeReadingsForAquarium(aquariumId).map { rows ->
+            val zone = ZoneId.of(timeZoneId)
+            rows.map { row ->
+                val day = Instant.ofEpochMilli(row.occurredAtEpochMillis).atZone(zone).toLocalDate()
+                ReadingSample(row.parameterDefinitionId, row.value, TaskDate(day.year, day.monthValue, day.dayOfMonth))
+            }
+        }
+
+    override suspend fun loadSetup(aquariumId: String): AquariumSetup? = aquariumDao.getSetup(aquariumId)?.toDomain()
 
     override fun observeSession(sessionId: String): Flow<RecordedSession?> =
         sessionDao.observeById(sessionId).map { it?.toDomain() }

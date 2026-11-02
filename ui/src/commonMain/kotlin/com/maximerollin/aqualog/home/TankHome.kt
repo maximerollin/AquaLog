@@ -66,6 +66,9 @@ import com.maximerollin.aqualog.AquariumAlert
 import com.maximerollin.aqualog.homeOverview
 import com.maximerollin.aqualog.otherAquariumAlerts
 import com.maximerollin.aqualog.PistesCard
+import com.maximerollin.aqualog.joinLabels
+import com.maximerollin.aqualog.shortLabelResource
+import com.maximerollin.aqualog.shared.assistance.DueTest
 import com.maximerollin.aqualog.PistesSheet
 import com.maximerollin.aqualog.overdueLinkedAction
 import com.maximerollin.aqualog.pistesAdvices
@@ -215,6 +218,16 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                     onAction = viewModel::openTasks,
                 )
             }
+            if (state.dueTests.isNotEmpty()) {
+                item(key = "due-tests") {
+                    DueTestsRow(
+                        state.dueTests,
+                        enabled = canMeasure,
+                        onClick = { viewModel.openRapidSession(state.dueTests.map { it.definition.id }) },
+                        modifier = gutter,
+                    )
+                }
+            }
             if (tasks.due.isEmpty()) {
                 item {
                     Text(
@@ -339,6 +352,34 @@ private fun AlertRow(alert: AquariumAlert, onClick: () -> Unit, modifier: Modifi
             AquagendaIcons.ChevronRight,
             contentDescription = null,
             modifier = Modifier.size(20.dp).clearAndSetSemantics { },
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** « Tester NO₃ et pH ›»: one row for every due test of the Aquarium, opening entry with those parameters first. */
+@Composable
+private fun DueTestsRow(tests: List<DueTest>, enabled: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    val labels = joinLabels(tests.map { stringResource(it.definition.parameter.shortLabelResource()) }) { first, last ->
+        stringResource(Res.string.list_pair, first, last)
+    }
+    Row(
+        Modifier.clickable(enabled = enabled, role = Role.Button, onClickLabel = stringResource(Res.string.measure_action), onClick = onClick)
+            .then(modifier).fillMaxWidth().heightIn(min = 48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(AquagendaIcons.Droplet, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+        Text(
+            stringResource(Res.string.due_tests_row, labels),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Icon(
+            AquagendaIcons.ChevronRight,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }

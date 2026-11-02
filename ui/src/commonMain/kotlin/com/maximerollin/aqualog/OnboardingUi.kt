@@ -90,6 +90,7 @@ fun AquaLogContent(
             modifier = modifier,
             aquariumName = state.setup.aquarium.name,
         )
+        state.showRhythmSettings && state.setup != null -> RhythmSettingsScreen(state.setup, viewModel, modifier)
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(
             state = state.rapidSession,
             aquarium = state.setup.aquarium,
@@ -394,6 +395,13 @@ private fun PortableDataSettings(
             moreItem { MoreRow(stringResource(Res.string.edit_aquarium), onClick = viewModel::openEditAquarium) }
             moreItem {
                 MoreRow(
+                    stringResource(Res.string.rhythm_title),
+                    onClick = viewModel::openRhythmSettings,
+                    trailingIcon = AquagendaIcons.ChevronRight,
+                )
+            }
+            moreItem {
+                MoreRow(
                     stringResource(Res.string.archive_aquarium),
                     onClick = viewModel::archiveCurrentAquarium,
                     enabled = proActive && homeState.aquariums.size > 1,
@@ -544,7 +552,7 @@ private fun LazyListScope.moreItem(content: @Composable () -> Unit) {
 
 /** One list row: 56 dp minimum, a single accessible unit; no [onClick] makes it a plain read-only line. */
 @Composable
-private fun MoreRow(
+internal fun MoreRow(
     label: String,
     modifier: Modifier = Modifier,
     supporting: String? = null,
@@ -1340,20 +1348,29 @@ private fun ErrorText(message: StringResource) {
 }
 
 @Composable
-internal fun BuiltInParameter.label(): String = stringResource(
-    when (this) {
-        BuiltInParameter.TEMPERATURE -> Res.string.parameter_temperature
-        BuiltInParameter.PH -> Res.string.parameter_ph
-        BuiltInParameter.AMMONIA -> Res.string.parameter_ammonia
-        BuiltInParameter.NITRITE -> Res.string.parameter_nitrite
-        BuiltInParameter.NITRATE -> Res.string.parameter_nitrate
-        BuiltInParameter.GH -> Res.string.parameter_gh
-        BuiltInParameter.KH -> Res.string.parameter_kh
-        BuiltInParameter.TDS -> Res.string.parameter_tds
-        BuiltInParameter.PHOSPHATE -> Res.string.parameter_phosphate
-        BuiltInParameter.SALINITY -> Res.string.parameter_salinity
-    },
-)
+internal fun BuiltInParameter.label(): String = stringResource(labelResource())
+
+internal fun BuiltInParameter.labelResource(): StringResource = when (this) {
+    BuiltInParameter.TEMPERATURE -> Res.string.parameter_temperature
+    BuiltInParameter.PH -> Res.string.parameter_ph
+    BuiltInParameter.AMMONIA -> Res.string.parameter_ammonia
+    BuiltInParameter.NITRITE -> Res.string.parameter_nitrite
+    BuiltInParameter.NITRATE -> Res.string.parameter_nitrate
+    BuiltInParameter.GH -> Res.string.parameter_gh
+    BuiltInParameter.KH -> Res.string.parameter_kh
+    BuiltInParameter.TDS -> Res.string.parameter_tds
+    BuiltInParameter.PHOSPHATE -> Res.string.parameter_phosphate
+    BuiltInParameter.SALINITY -> Res.string.parameter_salinity
+}
+
+/** The chemical symbol where there is one (« NO₃ »), otherwise the usual label. */
+internal fun BuiltInParameter.shortLabelResource(): StringResource = when (this) {
+    BuiltInParameter.AMMONIA -> Res.string.parameter_short_ammonia
+    BuiltInParameter.NITRITE -> Res.string.parameter_short_nitrite
+    BuiltInParameter.NITRATE -> Res.string.parameter_short_nitrate
+    BuiltInParameter.PHOSPHATE -> Res.string.parameter_short_phosphate
+    else -> labelResource()
+}
 
 @Composable
 internal fun Aquarium.formattedVolume(): String {

@@ -301,6 +301,31 @@ class RapidSessionRepositoryContractTest {
     }
 
     @Test
+    fun `reading samples are dated in the given time zone, newest first`() = runTest {
+        val fixture = sessionFixture()
+        val setup = fixture.createConfiguredAquarium()
+        val ph = setup.parameters.first(ParameterDefinition::isActive)
+        // 2023-11-14T22:13:20Z: still the 14th in UTC, already the 15th in Tokyo.
+        listOf(1_700_000_000_000L to "a", 1_700_100_000_000L to "b").forEach { (at, key) ->
+            fixture.repository.saveRapidSession(
+                RapidSessionInput(setup.aquarium.id, at, key, measurementInputs = mapOf(ph.id to "7.0")),
+            )
+        }
+
+        assertEquals(
+            listOf(TaskDate(2023, 11, 16), TaskDate(2023, 11, 14)),
+            fixture.repository.observeReadingSamples(setup.aquarium.id, "UTC").first().map { it.day },
+        )
+        assertEquals(
+            TaskDate(2023, 11, 15),
+            fixture.repository.observeReadingSamples(setup.aquarium.id, "Asia/Tokyo").first().last().day,
+        )
+        assertEquals(setup, fixture.repository.loadSetup(setup.aquarium.id))
+        assertNull(fixture.repository.loadSetup("missing"))
+        fixture.close()
+    }
+
+    @Test
     fun `latest readings carry the second newest value of the same parameter`() = runTest {
         val fixture = sessionFixture()
         val setup = fixture.createConfiguredAquarium()

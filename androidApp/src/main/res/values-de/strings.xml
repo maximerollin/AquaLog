@@ -3,4 +3,5 @@
     <string name="app_name">Aquagenda</string>
     <string name="task_notification_channel">Aufgabenerinnerungen</string>
     <string name="task_notification_text">Öffnen Sie Aquagenda, um dieses Ereignis abzuschließen, zu verschieben oder zu ignorieren.</string>
+    <string name="due_tests_notification_text">Fällige Tests: %1$s</string>
 </resources>

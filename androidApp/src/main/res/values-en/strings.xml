@@ -3,4 +3,5 @@
     <string name="app_name">Aquagenda</string>
     <string name="task_notification_channel">Task reminders</string>
     <string name="task_notification_text">Open Aquagenda to complete, postpone or ignore this occurrence.</string>
+    <string name="due_tests_notification_text">Tests due: %1$s</string>
 </resources>
