@@ -1,5 +1,6 @@
 -- Per-Aquarium analysis rhythm of a Parameter (lot 2). Null means the profile default, so rows written
--- before this column, and payloads from older clients, stay valid. Like is_archived, the initial
+-- before this column stay valid; a payload without the key (older client) keeps the stored value, an explicit
+-- null resets it to the default. Like is_archived, the initial
 -- account copy (migrate_initial_copy) is left unchanged: the next parameter_definition upsert carries it.
 alter table public.parameter_definitions
     add column analysis_interval_days integer
@@ -32,7 +33,10 @@ begin
     );
     if p_entity_type = 'parameter_definition' and p_kind = 'upsert' then
         update public.parameter_definitions
-        set analysis_interval_days = (p_payload->>'analysis_interval_days')::integer
+        set analysis_interval_days = case
+            when p_payload ? 'analysis_interval_days' then (p_payload->>'analysis_interval_days')::integer
+            else analysis_interval_days
+        end
         where id = p_entity_id and account_id = auth.uid();
     end if;
 end;
