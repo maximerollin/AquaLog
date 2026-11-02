@@ -425,4 +425,7 @@
     <string name="rhythm_auto_never">Auto (mai)</string>
     <plurals name="rhythm_auto_days"><item quantity="one">Auto (%1$d giorno)</item><item quantity="other">Auto (%1$d giorni)</item></plurals>
     <plurals name="rhythm_days"><item quantity="one">%1$d giorno</item><item quantity="other">%1$d giorni</item></plurals>
+    <string name="cycled_proposal_text">Il tuo acquario sembra maturo. Passare al ritmo di un acquario stabilito?</string>
+    <string name="cycled_proposal_switch">Passa a stabilito</string>
+    <string name="cycled_proposal_later">Più tardi</string>
 </resources>

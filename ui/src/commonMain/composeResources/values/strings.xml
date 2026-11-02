@@ -425,4 +425,7 @@
     <string name="rhythm_auto_never">Auto (never)</string>
     <plurals name="rhythm_auto_days"><item quantity="one">Auto (%1$d day)</item><item quantity="other">Auto (%1$d days)</item></plurals>
     <plurals name="rhythm_days"><item quantity="one">%1$d day</item><item quantity="other">%1$d days</item></plurals>
+    <string name="cycled_proposal_text">Your tank looks cycled. Switch to the rhythm of an established tank?</string>
+    <string name="cycled_proposal_switch">Switch to established</string>
+    <string name="cycled_proposal_later">Later</string>
 </resources>

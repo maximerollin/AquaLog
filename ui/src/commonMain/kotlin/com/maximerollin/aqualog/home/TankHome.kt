@@ -69,6 +69,7 @@ import com.maximerollin.aqualog.PistesCard
 import com.maximerollin.aqualog.joinLabels
 import com.maximerollin.aqualog.shortLabelResource
 import com.maximerollin.aqualog.shared.assistance.DueTest
+import com.maximerollin.aqualog.shared.assistance.looksCycled
 import com.maximerollin.aqualog.PistesSheet
 import com.maximerollin.aqualog.overdueLinkedAction
 import com.maximerollin.aqualog.pistesAdvices
@@ -175,6 +176,11 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                         shape = MaterialTheme.shapes.medium,
                         modifier = gutter.fillMaxWidth().heightIn(min = 48.dp),
                     ) { Text(stringResource(Res.string.continue_after_session)) }
+                }
+            }
+            if (looksCycled(setup, state.latestReadings) && state.latestSession?.session?.id != state.cycledDismissedSessionId) {
+                item(key = "cycled-proposal") {
+                    CycledProposalCard(viewModel::switchToEstablished, viewModel::dismissCycledProposal, gutter)
                 }
             }
             if (pistes.isNotEmpty()) {
@@ -354,6 +360,26 @@ private fun AlertRow(alert: AquariumAlert, onClick: () -> Unit, modifier: Modifi
             modifier = Modifier.size(20.dp).clearAndSetSemantics { },
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+/** A one-time proposal: a Cycling Aquarium whose ammonia and nitrite read 0 may move to the established rhythm. */
+@Composable
+private fun CycledProposalCard(onSwitch: () -> Unit, onLater: () -> Unit, modifier: Modifier) {
+    Column(modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            stringResource(Res.string.cycled_proposal_text),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Button(onClick = onSwitch, shape = MaterialTheme.shapes.medium, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(Res.string.cycled_proposal_switch))
+            }
+            TextButton(onClick = onLater, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(Res.string.cycled_proposal_later))
+            }
+        }
     }
 }
 

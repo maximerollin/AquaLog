@@ -23,6 +23,7 @@ import com.maximerollin.aqualog.shared.assistance.NEVER_INTERVAL_DAYS
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import java.time.LocalDate
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -120,6 +121,45 @@ class TankHomeDueTestsFlowTest {
             composeRule.waitUntil(timeoutMillis = 5_000) {
                 application.recordingTaskReminderScheduler.scheduledDueTestDates.lastOrNull() == inAWeek
             }
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun cycledProposal_switchesProfile_andLaterHidesItUntilTheNextSession() {
+        application.resetRepository()
+        val (setup, parametersBefore) = runBlocking {
+            val repository = application.aquariumRepository
+            val setup = repository.createConfiguredAquarium(
+                "Cyclage", 60.0, VolumeUnit.LITERS, AquariumProfile.CYCLING,
+                OnboardingPresets.parametersFor(AquariumProfile.CYCLING),
+            )
+            val zeros = setup.parameters.filter { it.parameter in listOf(BuiltInParameter.AMMONIA, BuiltInParameter.NITRITE) }
+                .associate { it.id to "0" }
+            repository.saveRapidSession(RapidSessionInput(setup.aquarium.id, System.currentTimeMillis() - 86_400_000L, "first", zeros))
+            setup to repository.loadSetup(setup.aquarium.id)!!.parameters
+        }
+        val proposal = "Your tank looks cycled. Switch to the rhythm of an established tank?"
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            waitForText(proposal)
+            composeRule.onNodeWithText("Later").performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) { composeRule.onAllNodes(hasText(proposal)).fetchSemanticsNodes().isEmpty() }
+            // A newer Session that still looks cycled brings the proposal back.
+            runBlocking {
+                val zeros = setup.parameters.filter { it.parameter in listOf(BuiltInParameter.AMMONIA, BuiltInParameter.NITRITE) }
+                    .associate { it.id to "0" }
+                application.aquariumRepository.saveRapidSession(
+                    RapidSessionInput(setup.aquarium.id, System.currentTimeMillis(), "second", zeros),
+                )
+            }
+            waitForText(proposal)
+            composeRule.onNodeWithText("Switch to established").performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) { composeRule.onAllNodes(hasText(proposal)).fetchSemanticsNodes().isEmpty() }
+            val after = runBlocking { application.aquariumRepository.loadSetup(setup.aquarium.id)!! }
+            assertEquals(AquariumProfile.ESTABLISHED, after.aquarium.profile)
+            assertEquals(parametersBefore, after.parameters)
         } finally {
             scenario.close()
         }

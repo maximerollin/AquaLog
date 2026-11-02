@@ -356,6 +356,8 @@ data class HomeUiState(
     /** Tests of the displayed Aquarium due today or overdue, earliest first. */
     val dueTests: List<DueTest> = emptyList(),
     val showRhythmSettings: Boolean = false,
+    /** Id of the Session after which the « looks cycled » card was set aside for the displayed Aquarium, if any. */
+    val cycledDismissedSessionId: String? = null,
     val accountInvitationPrompt: AccountInvitationPrompt = AccountInvitationPrompt.NONE,
     val account: AccountUiState = AccountUiState(),
     val sessionDetail: RecordedSession? = null,
@@ -477,6 +479,7 @@ class HomeViewModel(
                         latestSession = if (setup == null) null else it.latestSession,
                         latestReadings = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.latestReadings else emptyList(),
                         dueTests = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.dueTests else emptyList(),
+                        cycledDismissedSessionId = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.cycledDismissedSessionId else null,
                     )
                 }
                 if (setup != null) {
@@ -486,6 +489,11 @@ class HomeViewModel(
                         launch {
                             aquariumRepository.observeLatestReadings(setup.aquarium.id).collect { readings ->
                                 mutableUiState.update { it.copy(latestReadings = readings) }
+                            }
+                        }
+                        launch {
+                            aquariumRepository.observeDismissals(setup.aquarium.id).collect { dismissals ->
+                                mutableUiState.update { it.copy(cycledDismissedSessionId = dismissals[CYCLED_PROPOSAL]) }
                             }
                         }
                         launch {
@@ -1374,6 +1382,20 @@ class HomeViewModel(
                 result.nextOccurrence?.let(taskReminderScheduler::schedule)
                 recordProductEvent(ProductEvent.TaskUsed(TaskUsage.COMPLETED))
             }
+    }
+
+    /** The profile follows the Aquarium; parameters and ranges stay as they are, the rhythm follows the new profile. */
+    fun switchToEstablished() {
+        val aquarium = mutableUiState.value.setup?.aquarium ?: return
+        viewModelScope.launch { aquariumRepository.updateAquarium(aquarium.copy(profile = AquariumProfile.ESTABLISHED)) }
+    }
+
+    /** Hides the « looks cycled » card until a newer Session is recorded. */
+    fun dismissCycledProposal() {
+        val state = mutableUiState.value
+        val aquariumId = state.setup?.aquarium?.id ?: return
+        val sessionId = state.latestSession?.session?.id ?: return
+        viewModelScope.launch { aquariumRepository.dismiss(aquariumId, CYCLED_PROPOSAL, sessionId) }
     }
 
     fun openRhythmSettings() = mutableUiState.update { it.copy(showRhythmSettings = true) }
@@ -2275,6 +2297,8 @@ internal fun ProEntitlement.analyticsProductOrNull(): ProProduct? = when (produc
     LIFETIME_PRO_PRODUCT_ID -> ProProduct.LIFETIME
     else -> null
 }
+
+private const val CYCLED_PROPOSAL = "cycled"
 
 private object NoOpTaskReminderScheduler : TaskReminderScheduler {
     override fun schedule(occurrence: TaskOccurrence) = Unit

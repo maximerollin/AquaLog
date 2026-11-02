@@ -59,6 +59,11 @@ interface AquariumRepository {
     /** One Aquarium with its Parameters, read once; null when it does not exist. */
     suspend fun loadSetup(aquariumId: String): AquariumSetup?
 
+    /** Local-only: assistant card kind to the id of the Session that last dismissed it. */
+    fun observeDismissals(aquariumId: String): Flow<Map<String, String>>
+
+    suspend fun dismiss(aquariumId: String, kind: String, sessionId: String)
+
     suspend fun updateSession(input: SessionEditInput): RecordedSession
 
     suspend fun deleteSession(sessionId: String)
@@ -103,6 +108,7 @@ class RoomAquariumRepository(
     private val aquariumDao = database.aquariumDao()
     private val sessionDao = database.sessionDao()
     private val taskDao = database.taskDao()
+    private val assistantDao = database.assistantDao()
     private val accountDao = database.accountDao()
     private val accountControlDao = database.accountControlDao()
     private val syncDao = database.syncDao()
@@ -351,6 +357,11 @@ class RoomAquariumRepository(
         }
 
     override suspend fun loadSetup(aquariumId: String): AquariumSetup? = aquariumDao.getSetup(aquariumId)?.toDomain()
+
+    override fun observeDismissals(aquariumId: String): Flow<Map<String, String>> = assistantDao.observeDismissals(aquariumId)
+
+    override suspend fun dismiss(aquariumId: String, kind: String, sessionId: String) =
+        assistantDao.dismiss(aquariumId, kind, sessionId)
 
     override fun observeSession(sessionId: String): Flow<RecordedSession?> =
         sessionDao.observeById(sessionId).map { it?.toDomain() }
