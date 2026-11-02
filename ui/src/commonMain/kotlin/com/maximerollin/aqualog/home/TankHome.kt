@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.home
 
+import com.maximerollin.aqualog.ui.icon.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -84,7 +85,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -320,7 +320,7 @@ private fun AlertRow(alert: AquariumAlert, onClick: () -> Unit, modifier: Modifi
             color = MaterialTheme.colorScheme.onBackground,
         )
         Icon(
-            painterResource(Res.drawable.ic_chevron_right),
+            AquagendaIcons.ChevronRight,
             contentDescription = null,
             modifier = Modifier.size(20.dp).clearAndSetSemantics { },
             tint = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -1,5 +1,7 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.ui.icon.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.home.TankHome
 import com.maximerollin.aqualog.ui.theme.CarnetDivider
@@ -46,9 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import org.jetbrains.compose.resources.painterResource
 import androidx.compose.ui.graphics.Color
-import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -276,12 +276,12 @@ private fun AquariumShell(
                         onClick = { viewModel.selectDestination(destination) },
                         icon = {
                             Icon(
-                                painterResource(when (destination) {
-                                    MainDestination.TANK -> Res.drawable.ic_tank
-                                    MainDestination.HISTORY -> Res.drawable.ic_history
-                                    MainDestination.TRENDS -> Res.drawable.ic_trends
-                                    MainDestination.MORE -> Res.drawable.ic_more
-                                }),
+                                when (destination) {
+                                    MainDestination.TANK -> AquagendaIcons.Fish
+                                    MainDestination.HISTORY -> AquagendaIcons.RotateCcwClock
+                                    MainDestination.TRENDS -> AquagendaIcons.TrendingUp
+                                    MainDestination.MORE -> AquagendaIcons.Menu
+                                },
                                 contentDescription = null,
                             )
                         },
@@ -374,7 +374,7 @@ private fun PortableDataSettings(
                 MoreRow(
                     stringResource(Res.string.open_tasks),
                     onClick = viewModel::openTasks,
-                    trailingIcon = Res.drawable.ic_chevron_right,
+                    trailingIcon = AquagendaIcons.ChevronRight,
                 )
             }
         }
@@ -386,7 +386,7 @@ private fun PortableDataSettings(
                         aquarium.name,
                         onClick = { viewModel.selectAquarium(aquarium.id) },
                         selected = current,
-                        trailingIcon = if (current) Res.drawable.ic_check else null,
+                        trailingIcon = if (current) AquagendaIcons.Check else null,
                     )
                 }
             }
@@ -412,7 +412,7 @@ private fun PortableDataSettings(
                 MoreRow(
                     stringResource(Res.string.view_free_and_pro),
                     onClick = viewModel::openProPaywall,
-                    trailingIcon = Res.drawable.ic_chevron_right,
+                    trailingIcon = AquagendaIcons.ChevronRight,
                 )
             }
         }
@@ -552,7 +552,7 @@ private fun MoreRow(
     enabled: Boolean = true,
     selected: Boolean? = null,
     color: Color = MaterialTheme.colorScheme.onSurface,
-    trailingIcon: DrawableResource? = null,
+    trailingIcon: ImageVector? = null,
 ) {
     val interaction = when {
         onClick == null -> Modifier
@@ -579,7 +579,7 @@ private fun MoreRow(
         }
         if (trailingIcon != null) {
             Spacer(Modifier.width(12.dp))
-            Icon(painterResource(trailingIcon), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(trailingIcon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         }
     }
 }

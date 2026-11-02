@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.ui.icon.*
 import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,7 +56,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -169,14 +169,14 @@ fun RapidSessionScreen(
                     val timeControls: @Composable () -> Unit = {
                         IconButton(onClick = { viewModel.shiftSessionTimeByMinutes(-15) }) {
                             Icon(
-                                painterResource(Res.drawable.ic_chevron_left),
+                                AquagendaIcons.ChevronLeft,
                                 stringResource(Res.string.earlier_time),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                         }
                         IconButton(onClick = { viewModel.shiftSessionTimeByMinutes(15) }) {
                             Icon(
-                                painterResource(Res.drawable.ic_chevron_right),
+                                AquagendaIcons.ChevronRight,
                                 stringResource(Res.string.later_time),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
@@ -469,7 +469,7 @@ private fun MaintenanceChip(type: MaintenanceActionType, action: MaintenanceActi
                         .semantics { contentDescription = remove },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(painterResource(Res.drawable.ic_close), contentDescription = null)
+                    Icon(AquagendaIcons.X, contentDescription = null)
                 }
             }
         } else {

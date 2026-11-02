@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.ui.icon.*
 import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -92,13 +93,13 @@ fun SessionDetailsScreen(
                     action.unit.orEmpty(),
                     action.product.orEmpty(),
                 ).filter(String::isNotBlank).joinToString(" ")
-                TimelineNoteLine(Res.drawable.ic_drop, stringResource(Res.string.session_action_detail, action.type.label(), detail))
+                TimelineNoteLine(AquagendaIcons.Droplet, stringResource(Res.string.session_action_detail, action.type.label(), detail))
             }
         }
         recorded.events.forEach { event ->
             item(event.id) {
                 TimelineNoteLine(
-                    Res.drawable.ic_note,
+                    AquagendaIcons.NotepadText,
                     stringResource(
                         Res.string.session_event_detail,
                         stringResource(

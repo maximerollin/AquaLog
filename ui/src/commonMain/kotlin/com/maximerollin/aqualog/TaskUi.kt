@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.ui.icon.*
 import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.imePadding
@@ -20,7 +21,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
-import org.jetbrains.compose.resources.painterResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -335,7 +335,7 @@ private fun TaskRow(occurrence: TaskOccurrence, viewModel: HomeViewModel) {
         }
         Box {
             IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(48.dp)) {
-                Icon(painterResource(Res.drawable.ic_more_vert), contentDescription = moreDescription)
+                Icon(AquagendaIcons.EllipsisVertical, contentDescription = moreDescription)
             }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 DropdownMenuItem(

@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.ui.theme
 
+import com.maximerollin.aqualog.ui.icon.*
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,16 +25,12 @@ import androidx.compose.material3.Icon
 import com.maximerollin.aqualog.Trend
 import com.maximerollin.aqualog.resources.Res
 import com.maximerollin.aqualog.resources.home_no_measurement_yet
-import com.maximerollin.aqualog.resources.ic_trend_down
-import com.maximerollin.aqualog.resources.ic_trend_flat
-import com.maximerollin.aqualog.resources.ic_trend_up
 import com.maximerollin.aqualog.resources.reading_alert_description
 import com.maximerollin.aqualog.resources.reading_attention_description
 import com.maximerollin.aqualog.resources.trend_down
 import com.maximerollin.aqualog.resources.trend_flat
 import com.maximerollin.aqualog.resources.trend_up
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -120,9 +117,9 @@ fun ReadingValue(
     trend: Trend? = null,
 ) {
     val trendIcon = when (trend) {
-        Trend.UP -> Res.drawable.ic_trend_up to Res.string.trend_up
-        Trend.DOWN -> Res.drawable.ic_trend_down to Res.string.trend_down
-        Trend.FLAT -> Res.drawable.ic_trend_flat to Res.string.trend_flat
+        Trend.UP -> AquagendaIcons.ArrowUp to Res.string.trend_up
+        Trend.DOWN -> AquagendaIcons.ArrowDown to Res.string.trend_down
+        Trend.FLAT -> AquagendaIcons.ArrowRight to Res.string.trend_flat
         null -> null
     }
     // Spoken as words: colour and arrows alone must not carry the attention state or the trend.
@@ -150,7 +147,7 @@ fun ReadingValue(
             }
             if (trendIcon != null) {
                 Icon(
-                    painterResource(trendIcon.first),
+                    trendIcon.first,
                     contentDescription = null,
                     modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(16.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
