@@ -19,6 +19,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -96,26 +97,38 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     var showPicker by remember { mutableStateOf(false) }
     val currentIndex = state.aquariums.indexOfFirst { it.id == aquarium.id }.coerceAtLeast(0)
     val pager = rememberPagerState(initialPage = currentIndex) { state.aquariums.size }
+    // Set when a swipe asks for an Aquarium, cleared once it is the current one: independent of the pager's layout.
+    var pendingSwipeSelection by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(aquarium.id, state.aquariums) {
+        if (pendingSwipeSelection == aquarium.id || state.aquariums.none { it.id == pendingSwipeSelection }) {
+            pendingSwipeSelection = null
+        }
+    }
+    val listState = rememberLazyListState()
     val shownAquariums by rememberUpdatedState(state.aquariums)
     val currentId by rememberUpdatedState(aquarium.id)
     // Both effects live here, not in the scene item: the scene can be scrolled off-screen while the Aquarium changes.
     LaunchedEffect(currentIndex, state.aquariums.size) {
         pagerSyncTarget(currentIndex, state.aquariums.size, pager.currentPage)?.let {
-            if (pager.layoutInfo.visiblePagesInfo.isEmpty()) pager.scrollToPage(it) else pager.animateScrollToPage(it)
+            if (listState.layoutInfo.visibleItemsInfo.any { item -> item.index == 0 }) pager.animateScrollToPage(it) else pager.scrollToPage(it)
         }
     }
     LaunchedEffect(pager) {
         snapshotFlow { pager.settledPage }.collect { page ->
             shownAquariums.getOrNull(page)?.takeIf { it.id != currentId && shownAquariums.size > 1 }
-                ?.let { viewModel.selectAquarium(it.id) }
+                ?.let {
+                    pendingSwipeSelection = it.id
+                    viewModel.selectAquarium(it.id)
+                }
         }
     }
-    val canMeasure = measureTargetsShownAquarium(state.aquariums, pager.settledPage, aquarium.id, pager.isScrollInProgress)
+    val canMeasure = measureTargetsShownAquarium(state.aquariums.size, pager.isScrollInProgress, pendingSwipeSelection != null)
 
     Box(modifier.fillMaxSize()) {
         // The only scrollable on the home: tests rely on a single node with a scroll action.
         LazyColumn(
             Modifier.fillMaxSize().testTag("home-list"),
+            state = listState,
             contentPadding = PaddingValues(bottom = 88.dp),
         ) {
             item {
@@ -244,10 +257,10 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
 
 /**
  * « Measure » records into the current Aquarium, so it is only live while the scene shows that one:
- * not mid-swipe, and not between a settled swipe and the selection catching up.
+ * not mid-swipe, and not between a swipe asking for another Aquarium and the selection catching up.
  */
-internal fun measureTargetsShownAquarium(aquariums: List<Aquarium>, settledPage: Int, currentId: String, scrolling: Boolean): Boolean =
-    aquariums.size < 2 || (!scrolling && aquariums.getOrNull(settledPage)?.id == currentId)
+internal fun measureTargetsShownAquarium(aquariumCount: Int, scrolling: Boolean, swipeSelectionPending: Boolean): Boolean =
+    aquariumCount < 2 || (!scrolling && !swipeSelectionPending)
 
 /** The page the pager must scroll to so it shows the current Aquarium, or null when it already does. */
 internal fun pagerSyncTarget(currentIndex: Int, pageCount: Int, currentPage: Int): Int? =

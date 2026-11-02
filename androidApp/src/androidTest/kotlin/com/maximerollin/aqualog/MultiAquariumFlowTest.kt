@@ -2,6 +2,8 @@ package com.maximerollin.aqualog
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -151,6 +153,46 @@ class MultiAquariumFlowTest {
                 composeRule.onAllNodes(hasText("Nano 30")).fetchSemanticsNodes().isNotEmpty()
             }
             composeRule.onNodeWithText("Aqua 120").assertDoesNotExist()
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun measureStaysLiveAfterABandTapWithTheSceneScrolledAway() {
+        val application = twoAquariums()
+        runBlocking {
+            val nano = application.aquariumRepository.observeAquariums().first().first { it.name == "Nano 30" }
+            val yesterday = LocalDate.now().minusDays(1)
+            application.aquariumRepository.createTask(
+                TaskInput(
+                    aquariumId = nano.id,
+                    title = "Change filter wool",
+                    recurrence = TaskRecurrence.ONCE,
+                    firstDueDate = TaskDate(yesterday.year, yesterday.monthValue, yesterday.dayOfMonth),
+                    minuteOfDay = null,
+                    timeZoneId = ZoneId.systemDefault().id,
+                ),
+            )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasText("Nano 30", substring = true) and hasClickAction()).fetchSemanticsNodes().isNotEmpty()
+            }
+            // Items: scene, status, band. Scrolling to the band puts the scene off-screen.
+            composeRule.onNodeWithTag("home-list").performScrollToIndex(2)
+            composeRule.onNode(hasText("Nano 30", substring = true) and hasClickAction()).performClick()
+            // « Nano 30 » is now current: its task shows under Today, the scene is still scrolled away.
+            waitForText("Change filter wool")
+            composeRule.onNodeWithText("Measure").assertIsEnabled()
+            composeRule.onNodeWithTag("home-list").performScrollToIndex(0)
+            composeRule.onNodeWithText("Measure").assertIsEnabled().performClick()
+            waitForText("Measurements")
+            composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
+            composeRule.onNodeWithText("Save Session").performClick()
+            // The Session went into « Nano 30 »: its home says so.
+            waitForText("measured today", substring = true)
         } finally {
             scenario.close()
         }
