@@ -382,4 +382,36 @@
     <string name="check_fix">Corregir</string>
     <string name="check_save_anyway">Guardar de todos modos</string>
     <string name="check_back">Volver</string>
+    <string name="piste_water_change_30">Cambia el 30 % del agua.</string>
+    <string name="piste_water_change_30_to_50">Cambia del 30 al 50 % del agua.</string>
+    <string name="piste_water_change_partial">Cambia una parte del agua.</string>
+    <string name="piste_water_change_softer_water">Cambia una parte del agua con agua más blanda.</string>
+    <string name="piste_water_change_purer_water">Cambia una parte del agua con agua más pura.</string>
+    <string name="piste_cut_with_osmosis">Corta el agua con agua de ósmosis.</string>
+    <string name="piste_water_change_overdue">Tu cambio de agua está atrasado: empieza por ahí.</string>
+    <string name="piste_feed_less_2_days">Da menos comida durante 2 días.</string>
+    <string name="piste_add_starter_bacteria">Añade bacterias de arranque.</string>
+    <string name="piste_add_ammonia_detoxifier">Añade un acondicionador de agua que neutralice el amoníaco.</string>
+    <string name="piste_check_food_amount">Revisa la cantidad de comida.</string>
+    <string name="piste_add_fast_growing_plants">Añade plantas de crecimiento rápido.</string>
+    <string name="piste_check_kh_low_drops_ph">Revisa el KH: un KH bajo hace caer el pH.</string>
+    <string name="piste_add_kh_buffer">Añade un tampón para subir el KH.</string>
+    <string name="piste_check_tap_water_and_decor">Revisa el agua del grifo y los adornos calcáreos.</string>
+    <string name="piste_check_heater_setting">Revisa el ajuste del calentador.</string>
+    <string name="piste_vent_or_lights_off">Ventila la superficie o apaga la iluminación unas horas.</string>
+    <string name="piste_check_heater_works">Comprueba que el calentador funciona.</string>
+    <string name="piste_adjust_heater_power">Adapta su potencia al volumen del acuario.</string>
+    <string name="piste_add_remineralizer">Añade un remineralizador.</string>
+    <string name="piste_reduce_food">Reduce la comida.</string>
+    <string name="piste_add_anti_phosphate">Añade un antifosfatos.</string>
+    <string name="piste_retest_to_confirm">Repite la prueba para confirmar.</string>
+    <string name="piste_cycling_normal">Durante el ciclado, el amoníaco y los nitritos son normales. Espera a que vuelvan a 0 antes de añadir peces.</string>
+    <string name="pistes_title">Pistas para %1$s</string>
+    <string name="pistes_card_collapsed">Pistas · %1$s</string>
+    <string name="pistes_card_expand">Mostrar las pistas</string>
+    <string name="pistes_card_collapse">Ocultar las pistas</string>
+    <string name="pistes_retest">Repite la prueba %1$s.</string>
+    <string name="pistes_retest_tomorrow">mañana</string>
+    <string name="pistes_disclaimer">Son pistas, no un diagnóstico: ante la duda, pide consejo en una tienda especializada.</string>
+    <plurals name="pistes_retest_in_days"><item quantity="one">en %1$d día</item><item quantity="other">en %1$d días</item></plurals>
 </resources>

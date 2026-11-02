@@ -382,4 +382,36 @@
     <string name="check_fix">Correggi</string>
     <string name="check_save_anyway">Salva comunque</string>
     <string name="check_back">Indietro</string>
+    <string name="piste_water_change_30">Cambia il 30% dell'acqua.</string>
+    <string name="piste_water_change_30_to_50">Cambia dal 30 al 50% dell'acqua.</string>
+    <string name="piste_water_change_partial">Cambia una parte dell'acqua.</string>
+    <string name="piste_water_change_softer_water">Cambia una parte dell'acqua con acqua più dolce.</string>
+    <string name="piste_water_change_purer_water">Cambia una parte dell'acqua con acqua più pura.</string>
+    <string name="piste_cut_with_osmosis">Taglia l'acqua con acqua osmotica.</string>
+    <string name="piste_water_change_overdue">Il tuo cambio d'acqua è in ritardo: parti da lì.</string>
+    <string name="piste_feed_less_2_days">Dai meno cibo per 2 giorni.</string>
+    <string name="piste_add_starter_bacteria">Aggiungi batteri di avvio.</string>
+    <string name="piste_add_ammonia_detoxifier">Aggiungi un biocondizionatore che neutralizza l'ammoniaca.</string>
+    <string name="piste_check_food_amount">Controlla la quantità di cibo.</string>
+    <string name="piste_add_fast_growing_plants">Aggiungi piante a crescita rapida.</string>
+    <string name="piste_check_kh_low_drops_ph">Controlla il KH: un KH basso fa scendere il pH.</string>
+    <string name="piste_add_kh_buffer">Aggiungi un tampone per alzare il KH.</string>
+    <string name="piste_check_tap_water_and_decor">Controlla l'acqua del rubinetto e gli arredi calcarei.</string>
+    <string name="piste_check_heater_setting">Controlla l'impostazione del riscaldatore.</string>
+    <string name="piste_vent_or_lights_off">Aera la superficie o spegni l'illuminazione per qualche ora.</string>
+    <string name="piste_check_heater_works">Controlla che il riscaldatore funzioni.</string>
+    <string name="piste_adjust_heater_power">Adatta la potenza al volume della vasca.</string>
+    <string name="piste_add_remineralizer">Aggiungi un rimineralizzante.</string>
+    <string name="piste_reduce_food">Riduci il cibo.</string>
+    <string name="piste_add_anti_phosphate">Aggiungi un anti-fosfati.</string>
+    <string name="piste_retest_to_confirm">Rifai un test per conferma.</string>
+    <string name="piste_cycling_normal">Durante la maturazione, ammoniaca e nitriti sono normali. Aspetta che tornino a 0 prima di aggiungere i pesci.</string>
+    <string name="pistes_title">Spunti per %1$s</string>
+    <string name="pistes_card_collapsed">Spunti · %1$s</string>
+    <string name="pistes_card_expand">Mostra gli spunti</string>
+    <string name="pistes_card_collapse">Nascondi gli spunti</string>
+    <string name="pistes_retest">Rifai un test %1$s.</string>
+    <string name="pistes_retest_tomorrow">domani</string>
+    <string name="pistes_disclaimer">Sono spunti, non una diagnosi: nel dubbio, chiedi consiglio in un negozio specializzato.</string>
+    <plurals name="pistes_retest_in_days"><item quantity="one">tra %1$d giorno</item><item quantity="other">tra %1$d giorni</item></plurals>
 </resources>

@@ -85,6 +85,7 @@ import com.maximerollin.aqualog.shared.OnboardingMilestone
 import com.maximerollin.aqualog.shared.VoluntaryFeedback
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.assistance.MeasurementConcern
+import com.maximerollin.aqualog.shared.assistance.PisteAdvice
 import com.maximerollin.aqualog.shared.assistance.checkMeasurement
 import com.maximerollin.aqualog.shared.evaluateMeasurement
 import kotlinx.coroutines.Job
@@ -346,6 +347,8 @@ data class HomeUiState(
     val showParameterValidationError: Boolean = false,
     val rapidSession: RapidSessionUiState? = null,
     val latestSession: RecordedSession? = null,
+    /** Advice for the new out-of-range values of the Session just saved; shown once, then dismissed. */
+    val pistesAfterSave: List<PisteAdvice> = emptyList(),
     val latestReadings: List<LatestReading> = emptyList(),
     val accountInvitationPrompt: AccountInvitationPrompt = AccountInvitationPrompt.NONE,
     val account: AccountUiState = AccountUiState(),
@@ -1697,6 +1700,7 @@ class HomeViewModel(
                         it.copy(accountInvitationPrompt = AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION)
                     }
                 }
+                if (draft.editingSessionId == null) showPistesAfterSave(recorded)
                 runCatching { completeLinkedTasks(recorded, previousTypes) }
                 recordProductEvent(
                     ProductEvent.SessionSaved(
@@ -1710,6 +1714,23 @@ class HomeViewModel(
             }
         }
     }
+
+    private fun showPistesAfterSave(recorded: RecordedSession) {
+        val state = mutableUiState.value
+        val setup = state.setup?.takeIf { it.aquarium.id == recorded.session.aquariumId } ?: return
+        // A water change in this very Session already answers the overdue one.
+        val overdue = recorded.maintenanceActions.none { it.type == MaintenanceActionType.WATER_CHANGE } &&
+            overdueLinkedAction(state.tasks.pendingOccurrences, setup.aquarium.id, MaintenanceActionType.WATER_CHANGE, today())
+        val advices = pistesAdvices(
+            setup.parameters,
+            recorded.measurements.associate { it.parameterDefinitionId to it.value },
+            setup.aquarium.profile,
+            overdue,
+        )
+        mutableUiState.update { it.copy(pistesAfterSave = advices) }
+    }
+
+    fun dismissPistes() = mutableUiState.update { it.copy(pistesAfterSave = emptyList()) }
 
     fun continueAfterSessionConfirmation() {
         val coordinator = accountCoordinator ?: return

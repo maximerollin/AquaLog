@@ -382,4 +382,36 @@
     <string name="check_fix">Korrigieren</string>
     <string name="check_save_anyway">Trotzdem speichern</string>
     <string name="check_back">Zurück</string>
+    <string name="piste_water_change_30">Wechseln Sie 30 % des Wassers.</string>
+    <string name="piste_water_change_30_to_50">Wechseln Sie 30 bis 50 % des Wassers.</string>
+    <string name="piste_water_change_partial">Wechseln Sie einen Teil des Wassers.</string>
+    <string name="piste_water_change_softer_water">Wechseln Sie einen Teil des Wassers gegen weicheres Wasser.</string>
+    <string name="piste_water_change_purer_water">Wechseln Sie einen Teil des Wassers gegen reineres Wasser.</string>
+    <string name="piste_cut_with_osmosis">Verschneiden Sie das Wasser mit Osmosewasser.</string>
+    <string name="piste_water_change_overdue">Ihr Wasserwechsel ist überfällig: Beginnen Sie damit.</string>
+    <string name="piste_feed_less_2_days">Füttern Sie 2 Tage lang weniger.</string>
+    <string name="piste_add_starter_bacteria">Geben Sie Starterbakterien hinzu.</string>
+    <string name="piste_add_ammonia_detoxifier">Geben Sie einen Wasseraufbereiter hinzu, der Ammoniak neutralisiert.</string>
+    <string name="piste_check_food_amount">Prüfen Sie die Futtermenge.</string>
+    <string name="piste_add_fast_growing_plants">Setzen Sie schnell wachsende Pflanzen ein.</string>
+    <string name="piste_check_kh_low_drops_ph">Prüfen Sie die KH: Eine niedrige KH lässt den pH-Wert sinken.</string>
+    <string name="piste_add_kh_buffer">Geben Sie einen Puffer hinzu, um die KH zu erhöhen.</string>
+    <string name="piste_check_tap_water_and_decor">Prüfen Sie das Leitungswasser und kalkhaltige Dekoration.</string>
+    <string name="piste_check_heater_setting">Prüfen Sie die Einstellung der Heizung.</string>
+    <string name="piste_vent_or_lights_off">Belüften Sie die Oberfläche oder schalten Sie die Beleuchtung für einige Stunden aus.</string>
+    <string name="piste_check_heater_works">Prüfen Sie, ob die Heizung funktioniert.</string>
+    <string name="piste_adjust_heater_power">Passen Sie die Leistung an das Beckenvolumen an.</string>
+    <string name="piste_add_remineralizer">Geben Sie einen Remineralisierer hinzu.</string>
+    <string name="piste_reduce_food">Reduzieren Sie das Futter.</string>
+    <string name="piste_add_anti_phosphate">Geben Sie einen Phosphatentferner hinzu.</string>
+    <string name="piste_retest_to_confirm">Testen Sie zur Bestätigung erneut.</string>
+    <string name="piste_cycling_normal">Während der Einlaufphase sind Ammoniak und Nitrit normal. Warten Sie, bis sie wieder auf 0 gesunken sind, bevor Sie Fische einsetzen.</string>
+    <string name="pistes_title">Ideen für %1$s</string>
+    <string name="pistes_card_collapsed">Ideen · %1$s</string>
+    <string name="pistes_card_expand">Ideen anzeigen</string>
+    <string name="pistes_card_collapse">Ideen ausblenden</string>
+    <string name="pistes_retest">Testen Sie %1$s erneut.</string>
+    <string name="pistes_retest_tomorrow">morgen</string>
+    <string name="pistes_disclaimer">Das sind Anregungen, keine Diagnose: Fragen Sie im Zweifel im Fachgeschäft um Rat.</string>
+    <plurals name="pistes_retest_in_days"><item quantity="one">in %1$d Tag</item><item quantity="other">in %1$d Tagen</item></plurals>
 </resources>

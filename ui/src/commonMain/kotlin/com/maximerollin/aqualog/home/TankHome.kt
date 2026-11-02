@@ -65,6 +65,11 @@ import com.maximerollin.aqualog.formattedVolume
 import com.maximerollin.aqualog.AquariumAlert
 import com.maximerollin.aqualog.homeOverview
 import com.maximerollin.aqualog.otherAquariumAlerts
+import com.maximerollin.aqualog.PistesCard
+import com.maximerollin.aqualog.PistesSheet
+import com.maximerollin.aqualog.overdueLinkedAction
+import com.maximerollin.aqualog.pistesAdvices
+import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.label
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.SEPARATOR
@@ -102,6 +107,12 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     val formatter = currentLocalizedFormatters()
     val gutter = Modifier.padding(horizontal = 16.dp)
     val alerts = otherAquariumAlerts(state.aquariums, aquarium.id, state.tasks.pendingOccurrences, today)
+    val pistes = pistesAdvices(
+        setup.parameters,
+        state.latestReadings.associate { it.parameterDefinitionId to it.value },
+        aquarium.profile,
+        overdueLinkedAction(state.tasks.pendingOccurrences, aquarium.id, MaintenanceActionType.WATER_CHANGE, today),
+    )
     var showPicker by remember { mutableStateOf(false) }
     val currentIndex = state.aquariums.indexOfFirst { it.id == aquarium.id }.coerceAtLeast(0)
     val pager = rememberPagerState(initialPage = currentIndex) { state.aquariums.size }
@@ -153,6 +164,9 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             }
             items(alerts, key = { "alert-${it.aquarium.id}" }) { alert ->
                 AlertRow(alert, onClick = { viewModel.selectAquarium(alert.aquarium.id) }, modifier = gutter)
+            }
+            if (pistes.isNotEmpty()) {
+                item(key = "pistes") { PistesCard(pistes, gutter) }
             }
             if (state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION) {
                 item {
@@ -247,6 +261,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             contentColor = MaterialTheme.colorScheme.onPrimary,
         ) { Text(stringResource(Res.string.measure_action), fontWeight = FontWeight.SemiBold) }
     }
+    if (state.pistesAfterSave.isNotEmpty()) PistesSheet(state.pistesAfterSave, viewModel::dismissPistes)
     if (showPicker) {
         AquariumPickerSheet(
             aquariums = state.aquariums,

@@ -382,4 +382,36 @@
     <string name="check_fix">Corriger</string>
     <string name="check_save_anyway">Enregistrer quand même</string>
     <string name="check_back">Revenir</string>
+    <string name="piste_water_change_30">Changez 30 % de l'eau.</string>
+    <string name="piste_water_change_30_to_50">Changez 30 à 50 % de l'eau.</string>
+    <string name="piste_water_change_partial">Changez une partie de l'eau.</string>
+    <string name="piste_water_change_softer_water">Changez une partie de l'eau avec une eau plus douce.</string>
+    <string name="piste_water_change_purer_water">Changez une partie de l'eau avec une eau plus pure.</string>
+    <string name="piste_cut_with_osmosis">Coupez l'eau avec de l'eau osmosée.</string>
+    <string name="piste_water_change_overdue">Votre changement d'eau est en retard : commencez par là.</string>
+    <string name="piste_feed_less_2_days">Nourrissez moins pendant 2 jours.</string>
+    <string name="piste_add_starter_bacteria">Ajoutez des bactéries de démarrage.</string>
+    <string name="piste_add_ammonia_detoxifier">Ajoutez un conditionneur d'eau qui neutralise l'ammoniac.</string>
+    <string name="piste_check_food_amount">Vérifiez la quantité de nourriture.</string>
+    <string name="piste_add_fast_growing_plants">Ajoutez des plantes à croissance rapide.</string>
+    <string name="piste_check_kh_low_drops_ph">Vérifiez le KH : un KH bas fait chuter le pH.</string>
+    <string name="piste_add_kh_buffer">Ajoutez un tampon pour remonter le KH.</string>
+    <string name="piste_check_tap_water_and_decor">Vérifiez l'eau du robinet et les décors calcaires.</string>
+    <string name="piste_check_heater_setting">Vérifiez le réglage du chauffage.</string>
+    <string name="piste_vent_or_lights_off">Aérez la surface ou éteignez l'éclairage quelques heures.</string>
+    <string name="piste_check_heater_works">Vérifiez que le chauffage fonctionne.</string>
+    <string name="piste_adjust_heater_power">Adaptez sa puissance au volume du bac.</string>
+    <string name="piste_add_remineralizer">Ajoutez un reminéralisant.</string>
+    <string name="piste_reduce_food">Réduisez la nourriture.</string>
+    <string name="piste_add_anti_phosphate">Ajoutez un anti-phosphates.</string>
+    <string name="piste_retest_to_confirm">Refaites un test pour confirmer.</string>
+    <string name="piste_cycling_normal">Pendant le cyclage, de l'ammoniac et des nitrites sont normaux. Attendez qu'ils redescendent à 0 avant d'ajouter des poissons.</string>
+    <string name="pistes_title">Pistes pour %1$s</string>
+    <string name="pistes_card_collapsed">Pistes · %1$s</string>
+    <string name="pistes_card_expand">Afficher les pistes</string>
+    <string name="pistes_card_collapse">Masquer les pistes</string>
+    <string name="pistes_retest">Refaites un test %1$s.</string>
+    <string name="pistes_retest_tomorrow">demain</string>
+    <string name="pistes_disclaimer">Ce sont des pistes, pas un diagnostic : en cas de doute, demandez conseil en magasin spécialisé.</string>
+    <plurals name="pistes_retest_in_days"><item quantity="one">dans %1$d jour</item><item quantity="other">dans %1$d jours</item></plurals>
 </resources>

@@ -382,4 +382,36 @@
     <string name="check_fix">Fix</string>
     <string name="check_save_anyway">Save anyway</string>
     <string name="check_back">Go back</string>
+    <string name="piste_water_change_30">Change 30% of the water.</string>
+    <string name="piste_water_change_30_to_50">Change 30 to 50% of the water.</string>
+    <string name="piste_water_change_partial">Change part of the water.</string>
+    <string name="piste_water_change_softer_water">Change part of the water with softer water.</string>
+    <string name="piste_water_change_purer_water">Change part of the water with purer water.</string>
+    <string name="piste_cut_with_osmosis">Dilute the water with reverse-osmosis water.</string>
+    <string name="piste_water_change_overdue">Your water change is overdue: start there.</string>
+    <string name="piste_feed_less_2_days">Feed less for 2 days.</string>
+    <string name="piste_add_starter_bacteria">Add starter bacteria.</string>
+    <string name="piste_add_ammonia_detoxifier">Add a water conditioner that neutralizes ammonia.</string>
+    <string name="piste_check_food_amount">Check the amount of food.</string>
+    <string name="piste_add_fast_growing_plants">Add fast-growing plants.</string>
+    <string name="piste_check_kh_low_drops_ph">Check the KH: a low KH makes the pH drop.</string>
+    <string name="piste_add_kh_buffer">Add a buffer to raise the KH.</string>
+    <string name="piste_check_tap_water_and_decor">Check the tap water and limestone decorations.</string>
+    <string name="piste_check_heater_setting">Check the heater setting.</string>
+    <string name="piste_vent_or_lights_off">Ventilate the surface or switch off the lighting for a few hours.</string>
+    <string name="piste_check_heater_works">Check that the heater is working.</string>
+    <string name="piste_adjust_heater_power">Match its power to the tank volume.</string>
+    <string name="piste_add_remineralizer">Add a remineralizer.</string>
+    <string name="piste_reduce_food">Reduce the food.</string>
+    <string name="piste_add_anti_phosphate">Add a phosphate remover.</string>
+    <string name="piste_retest_to_confirm">Test again to confirm.</string>
+    <string name="piste_cycling_normal">During cycling, ammonia and nitrite are normal. Wait until they drop back to 0 before adding fish.</string>
+    <string name="pistes_title">Ideas for %1$s</string>
+    <string name="pistes_card_collapsed">Ideas · %1$s</string>
+    <string name="pistes_card_expand">Show ideas</string>
+    <string name="pistes_card_collapse">Hide ideas</string>
+    <string name="pistes_retest">Test again %1$s.</string>
+    <string name="pistes_retest_tomorrow">tomorrow</string>
+    <string name="pistes_disclaimer">These are ideas, not a diagnosis: if in doubt, ask for advice at a specialist shop.</string>
+    <plurals name="pistes_retest_in_days"><item quantity="one">in %1$d day</item><item quantity="other">in %1$d days</item></plurals>
 </resources>
