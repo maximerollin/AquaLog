@@ -382,6 +382,7 @@
     <plurals name="home_measured_days_ago"><item quantity="one">mesuré il y a %1$d j</item><item quantity="other">mesuré il y a %1$d j</item></plurals>
     <plurals name="reading_age_days"><item quantity="one">il y a %1$d j</item><item quantity="other">il y a %1$d j</item></plurals>
     <string name="reading_attention_description">hors de votre plage indicative</string>
-    <plurals name="aquarium_age_months"><item quantity="one">%1$d mois</item><item quantity="other">%1$d mois</item></plurals>
-    <plurals name="aquarium_age_days"><item quantity="one">%1$d jour</item><item quantity="other">%1$d jours</item></plurals>
+    <string name="trend_up">en hausse</string>
+    <string name="trend_down">en baisse</string>
+    <string name="trend_flat">stable</string>
 </resources>

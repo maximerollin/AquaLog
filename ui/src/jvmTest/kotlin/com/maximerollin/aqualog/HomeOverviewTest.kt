@@ -5,8 +5,6 @@ import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.ParameterDefinition
-import com.maximerollin.aqualog.shared.RecordedSession
-import com.maximerollin.aqualog.shared.Session
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.VolumeUnit
@@ -38,10 +36,8 @@ class HomeOverviewTest {
 
     private fun setup(vararg definitions: ParameterDefinition) = AquariumSetup(aquarium(), definitions.toList())
 
-    private fun reading(definition: ParameterDefinition, value: Double, at: Long = 1_000 * day) =
-        LatestReading(definition.id, value, at)
-
-    private fun session(at: Long) = RecordedSession(Session("s1", "a1", at, at), emptyList(), emptyList(), emptyList())
+    private fun reading(definition: ParameterDefinition, value: Double, at: Long = 1_000 * day, previous: Double? = null) =
+        LatestReading(definition.id, value, at, previous)
 
     private fun occurrence(id: String, aquariumId: String, due: TaskDate) =
         TaskOccurrence(id, "t-$id", aquariumId, "Task $id", due, null, "UTC", null, null)
@@ -54,7 +50,6 @@ class HomeOverviewTest {
         val overview = homeOverview(
             setup(nitrate, ph, nitrite),
             listOf(reading(ph, 7.2), reading(nitrite, 0.25), reading(nitrate, 20.0)),
-            null,
         )
         assertEquals(listOf(ph, nitrite, nitrate), overview.values.map { it.definition })
         assertEquals(listOf(false, true, false), overview.values.map { it.isOutsideRange })
@@ -64,7 +59,7 @@ class HomeOverviewTest {
     @Test
     fun `never measured parameter shows no value and no attention`() {
         val gh = definition(BuiltInParameter.GH, 0, 4.0, 8.0)
-        val value = homeOverview(setup(gh), emptyList(), null).values.single()
+        val value = homeOverview(setup(gh), emptyList()).values.single()
         assertNull(value.value)
         assertNull(value.occurredAtEpochMillis)
         assertFalse(value.isOutsideRange)
@@ -73,7 +68,7 @@ class HomeOverviewTest {
     @Test
     fun `parameter without range is never out of range`() {
         val tds = definition(BuiltInParameter.TDS, 0)
-        val value = homeOverview(setup(tds), listOf(reading(tds, 900.0)), null).values.single()
+        val value = homeOverview(setup(tds), listOf(reading(tds, 900.0))).values.single()
         assertFalse(value.isOutsideRange)
     }
 
@@ -81,7 +76,7 @@ class HomeOverviewTest {
     fun `inactive parameters are left out`() {
         val ph = definition(BuiltInParameter.PH, 0)
         val gh = definition(BuiltInParameter.GH, 1, active = false)
-        assertEquals(listOf(ph), homeOverview(setup(ph, gh), emptyList(), null).values.map { it.definition })
+        assertEquals(listOf(ph), homeOverview(setup(ph, gh), emptyList()).values.map { it.definition })
     }
 
     @Test
@@ -90,7 +85,7 @@ class HomeOverviewTest {
             definition(parameter, index, 0.0, 10.0)
         }
         val readings = definitions.mapIndexed { index, d -> reading(d, if (index == 7) 50.0 else 5.0) }
-        val overview = homeOverview(setup(*definitions.toTypedArray()), readings, null)
+        val overview = homeOverview(setup(*definitions.toTypedArray()), readings)
         assertEquals(6, overview.values.size)
         assertTrue(definitions[7] in overview.values.map { it.definition })
         assertEquals(overview.values.map { it.definition.position }.sorted(), overview.values.map { it.definition.position })
@@ -103,7 +98,7 @@ class HomeOverviewTest {
             definition(parameter, index, 0.0, 10.0)
         }
         val readings = definitions.mapIndexed { index, d -> reading(d, if (index == 0) 5.0 else 50.0) }
-        val overview = homeOverview(setup(*definitions.toTypedArray()), readings, null)
+        val overview = homeOverview(setup(*definitions.toTypedArray()), readings)
         assertEquals(6, overview.values.size)
         assertEquals(7, overview.outsideRangeCount)
     }
@@ -112,29 +107,75 @@ class HomeOverviewTest {
     fun `never measured parameters are trimmed before measured ones`() {
         val definitions = BuiltInParameter.entries.take(7).mapIndexed { index, parameter -> definition(parameter, index) }
         val readings = definitions.drop(1).map { reading(it, 1.0) }
-        val overview = homeOverview(setup(*definitions.toTypedArray()), readings, null)
+        val overview = homeOverview(setup(*definitions.toTypedArray()), readings)
         assertEquals(listOf(1, 2, 3, 4, 5, 6), overview.values.map { it.definition.position })
     }
 
     @Test
-    fun `older reading is flagged against the latest session`() {
+    fun `older reading is flagged against the newest reading`() {
         val ph = definition(BuiltInParameter.PH, 0)
         val kh = definition(BuiltInParameter.KH, 1)
         val overview = homeOverview(
             setup(ph, kh),
             listOf(reading(ph, 7.0, 1_000 * day), reading(kh, 4.0, 988 * day)),
-            session(1_000 * day),
         )
-        assertEquals(listOf(false, true), overview.values.map { it.isOlderThanLatestSession })
-        assertEquals(1_000 * day, overview.latestSessionAtEpochMillis)
+        assertEquals(listOf(false, true), overview.values.map { it.isOlderThanLatestReading })
+        assertEquals(1_000 * day, overview.latestReadingAtEpochMillis)
     }
 
     @Test
-    fun `no session yet`() {
+    fun `a maintenance only Session does not move the reference time`() {
+        // The latest Session (day 1 005) only changed water: readings are what « measured … » is about.
         val ph = definition(BuiltInParameter.PH, 0)
-        val overview = homeOverview(setup(ph), listOf(reading(ph, 7.0)), null)
-        assertNull(overview.latestSessionAtEpochMillis)
-        assertFalse(overview.values.single().isOlderThanLatestSession)
+        val kh = definition(BuiltInParameter.KH, 1)
+        val overview = homeOverview(setup(ph, kh), listOf(reading(ph, 7.0, 1_000 * day), reading(kh, 4.0, 1_000 * day)))
+        assertEquals(1_000 * day, overview.latestReadingAtEpochMillis)
+        assertEquals(listOf(false, false), overview.values.map { it.isOlderThanLatestReading })
+    }
+
+    @Test
+    fun `inactive parameters do not set the reference time`() {
+        val ph = definition(BuiltInParameter.PH, 0)
+        val gh = definition(BuiltInParameter.GH, 1, active = false)
+        val overview = homeOverview(setup(ph, gh), listOf(reading(ph, 7.0, 990 * day), reading(gh, 6.0, 1_000 * day)))
+        assertEquals(990 * day, overview.latestReadingAtEpochMillis)
+        assertFalse(overview.values.single().isOlderThanLatestReading)
+    }
+
+    @Test
+    fun `no reading yet`() {
+        val ph = definition(BuiltInParameter.PH, 0)
+        val overview = homeOverview(setup(ph), emptyList())
+        assertNull(overview.latestReadingAtEpochMillis)
+        assertFalse(overview.values.single().isOlderThanLatestReading)
+    }
+
+    @Test
+    fun `trend compares with the previous reading at the parameter precision`() {
+        val ph = definition(BuiltInParameter.PH, 0) // precision 1
+        val kh = definition(BuiltInParameter.KH, 1)
+        val gh = definition(BuiltInParameter.GH, 2)
+        val no2 = definition(BuiltInParameter.NITRITE, 3)
+        val no3 = definition(BuiltInParameter.NITRATE, 4)
+        val overview = homeOverview(
+            setup(ph, kh, gh, no2, no3),
+            listOf(
+                reading(ph, 7.2, previous = 7.0),
+                reading(kh, 4.0, previous = 5.0),
+                reading(gh, 6.04, previous = 6.0),
+                reading(no2, 0.1, previous = 0.0),
+                reading(no3, 20.0),
+            ),
+        )
+        assertEquals(listOf(Trend.UP, Trend.DOWN, Trend.FLAT, Trend.UP, null), overview.values.map { it.trend })
+    }
+
+    @Test
+    fun `trend threshold is half a displayed step`() {
+        assertEquals(Trend.FLAT, trend(7.24, 7.2, 1))
+        assertEquals(Trend.UP, trend(7.26, 7.2, 1))
+        assertEquals(Trend.DOWN, trend(24.0, 25.0, 0))
+        assertEquals(Trend.FLAT, trend(24.4, 24.0, 0))
     }
 
     @Test

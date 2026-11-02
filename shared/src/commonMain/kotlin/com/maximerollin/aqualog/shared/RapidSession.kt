@@ -113,6 +113,8 @@ data class LatestReading(
     val parameterDefinitionId: String,
     val value: Double,
     val occurredAtEpochMillis: Long,
+    /** The second-newest value of the same parameter, for the trend; null when there is only one. */
+    val previousValue: Double? = null,
 )
 
 fun parseDecimalInput(input: String): Double? = input.trim().replace(',', '.').toDoubleOrNull()

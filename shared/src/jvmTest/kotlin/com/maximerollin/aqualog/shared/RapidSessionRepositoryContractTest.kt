@@ -262,12 +262,39 @@ class RapidSessionRepositoryContractTest {
 
         assertEquals(
             setOf(
-                LatestReading(ph.id, 7.4, 1_700_000_500_000L),
-                LatestReading(nitrate.id, 10.0, 1_700_000_000_000L),
+                LatestReading(ph.id, 7.4, 1_700_000_500_000L, previousValue = 7.0),
+                LatestReading(nitrate.id, 10.0, 1_700_000_000_000L, previousValue = null),
             ),
             readings.toSet(),
         )
         assertEquals(2, readings.size)
+        fixture.close()
+    }
+
+    @Test
+    fun `latest readings carry the second newest value of the same parameter`() = runTest {
+        val fixture = sessionFixture()
+        val setup = fixture.createConfiguredAquarium()
+        val (ph, nitrate) = setup.parameters.filter(ParameterDefinition::isActive).take(2)
+        listOf(
+            Triple(1_700_000_000_000L, "a", mapOf(ph.id to "6.8")),
+            Triple(1_700_000_300_000L, "b", mapOf(ph.id to "7.0", nitrate.id to "10")),
+            Triple(1_700_000_200_000L, "c", mapOf(ph.id to "6.9")), // entered late, dated in between
+            Triple(1_700_000_500_000L, "d", mapOf(nitrate.id to "20")),
+            Triple(1_700_000_600_000L, "e", mapOf(ph.id to "7.4")),
+        ).forEach { (at, key, inputs) ->
+            fixture.repository.saveRapidSession(
+                RapidSessionInput(aquariumId = setup.aquarium.id, occurredAtEpochMillis = at, idempotencyKey = key, measurementInputs = inputs),
+            )
+        }
+
+        assertEquals(
+            setOf(
+                LatestReading(ph.id, 7.4, 1_700_000_600_000L, previousValue = 7.0),
+                LatestReading(nitrate.id, 20.0, 1_700_000_500_000L, previousValue = 10.0),
+            ),
+            fixture.repository.observeLatestReadings(setup.aquarium.id).first().toSet(),
+        )
         fixture.close()
     }
 
@@ -302,7 +329,7 @@ class RapidSessionRepositoryContractTest {
             ),
         )
         assertEquals(
-            listOf(LatestReading(ph.id, 7.0, 1_700_000_000_000L)),
+            listOf(LatestReading(ph.id, 7.0, 1_700_000_000_000L, previousValue = 7.4)),
             fixture.repository.observeLatestReadings(setup.aquarium.id).first(),
         )
 

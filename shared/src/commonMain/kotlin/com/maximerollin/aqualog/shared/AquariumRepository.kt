@@ -304,7 +304,12 @@ class RoomAquariumRepository(
         sessionDao.observeLatest(aquariumId).map { it?.toDomain() }
 
     override fun observeLatestReadings(aquariumId: String): Flow<List<LatestReading>> =
-        sessionDao.observeReadingsForAquarium(aquariumId).map { it.distinctBy(LatestReading::parameterDefinitionId) }
+        sessionDao.observeReadingsForAquarium(aquariumId).map { rows ->
+            // Rows come newest first, so each group starts with the latest value then the previous one.
+            rows.groupBy(ReadingRow::parameterDefinitionId).map { (id, readings) ->
+                LatestReading(id, readings[0].value, readings[0].occurredAtEpochMillis, readings.getOrNull(1)?.value)
+            }
+        }
 
     override fun observeSession(sessionId: String): Flow<RecordedSession?> =
         sessionDao.observeById(sessionId).map { it?.toDomain() }

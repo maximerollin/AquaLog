@@ -19,8 +19,19 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import com.maximerollin.aqualog.Trend
 import com.maximerollin.aqualog.resources.Res
+import com.maximerollin.aqualog.resources.home_no_measurement_yet
+import com.maximerollin.aqualog.resources.ic_trend_down
+import com.maximerollin.aqualog.resources.ic_trend_flat
+import com.maximerollin.aqualog.resources.ic_trend_up
 import com.maximerollin.aqualog.resources.reading_attention_description
+import com.maximerollin.aqualog.resources.trend_down
+import com.maximerollin.aqualog.resources.trend_flat
+import com.maximerollin.aqualog.resources.trend_up
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -87,38 +98,52 @@ fun CarnetSectionTitle(
     }
 }
 
-/** A measurement: big number, small unit, label below, optional age line. */
+/** A measurement: big number, small unit, optional trend arrow, label below, optional age line. A null value was never measured. */
 @Composable
 fun ReadingValue(
-    value: String,
+    value: String?,
     label: String,
     modifier: Modifier = Modifier,
     unit: String? = null,
     attention: Boolean = false,
     age: String? = null,
+    trend: Trend? = null,
 ) {
-    // Colour alone must not carry the attention state: screen readers hear it as words too.
-    val attentionDescription = if (attention) stringResource(Res.string.reading_attention_description) else null
-    Column(
-        modifier.semantics(mergeDescendants = true) {
-            if (attentionDescription != null) {
-                contentDescription = listOfNotNull(listOfNotNull(value, unit).joinToString(" "), label, age, attentionDescription)
-                    .joinToString(", ")
-            }
-        },
-    ) {
+    val trendIcon = when (trend) {
+        Trend.UP -> Res.drawable.ic_trend_up to Res.string.trend_up
+        Trend.DOWN -> Res.drawable.ic_trend_down to Res.string.trend_down
+        Trend.FLAT -> Res.drawable.ic_trend_flat to Res.string.trend_flat
+        null -> null
+    }
+    // Spoken as words: colour and arrows alone must not carry the attention state or the trend.
+    val description = listOfNotNull(
+        value?.let { listOfNotNull(it, unit).joinToString(" ") } ?: stringResource(Res.string.home_no_measurement_yet),
+        label,
+        age,
+        trendIcon?.let { stringResource(it.second) },
+        if (attention) stringResource(Res.string.reading_attention_description) else null,
+    ).joinToString(", ")
+    Column(modifier.semantics(mergeDescendants = true) { contentDescription = description }) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                value,
+                value ?: "—",
                 style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
                 color = if (attention) attentionTextColor() else MaterialTheme.colorScheme.onSurface,
             )
-            if (unit != null) {
+            if (unit != null && value != null) {
                 Spacer(Modifier.width(2.dp))
                 Text(
                     unit,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (trendIcon != null) {
+                Icon(
+                    painterResource(trendIcon.first),
+                    contentDescription = null,
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

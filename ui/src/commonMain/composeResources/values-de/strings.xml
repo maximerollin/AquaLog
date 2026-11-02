@@ -349,7 +349,7 @@
     <string name="task_monthly">Monatlich</string>
     <string name="task_validation_error">Geben Sie einen Titel, ein gültiges Datum und optional eine gültige Uhrzeit ein.</string>
     <string name="save_task">Aufgabe speichern</string>
-    <string name="pending_tasks">Nächste Ereignisse</string>
+    <string name="pending_tasks">Nächste Aufgaben</string>
     <string name="no_pending_tasks">Keine ausstehende Aufgabe.</string>
     <string name="task_due_value">Fällig %1$s · %2$s</string>
     <string name="task_no_time">keine gewählte Zeit</string>
@@ -382,6 +382,7 @@
     <plurals name="home_measured_days_ago"><item quantity="one">vor %1$d Tag gemessen</item><item quantity="other">vor %1$d Tagen gemessen</item></plurals>
     <plurals name="reading_age_days"><item quantity="one">vor %1$d T.</item><item quantity="other">vor %1$d T.</item></plurals>
     <string name="reading_attention_description">außerhalb Ihres Richtbereichs</string>
-    <plurals name="aquarium_age_months"><item quantity="one">%1$d Monat</item><item quantity="other">%1$d Monate</item></plurals>
-    <plurals name="aquarium_age_days"><item quantity="one">%1$d Tag</item><item quantity="other">%1$d Tage</item></plurals>
+    <string name="trend_up">steigend</string>
+    <string name="trend_down">fallend</string>
+    <string name="trend_flat">stabil</string>
 </resources>

@@ -102,6 +102,9 @@ data class SessionEventEntity(
     val note: String,
 )
 
+/** One Measurement with its Session date, as read for the latest values; not a table. */
+data class ReadingRow(val parameterDefinitionId: String, val value: Double, val occurredAtEpochMillis: Long)
+
 data class RecordedSessionEntity(
     @Embedded val session: SessionEntity,
     @Relation(parentColumns = ["id"], entityColumns = ["sessionId"])
@@ -385,7 +388,7 @@ abstract class SessionDao {
     abstract suspend fun measurementsForAquarium(aquariumId: String): List<MeasurementEntity>
 
     @Query("SELECT m.parameterDefinitionId AS parameterDefinitionId, m.value AS value, s.occurredAtEpochMillis AS occurredAtEpochMillis FROM measurements m INNER JOIN sessions s ON s.id = m.sessionId WHERE s.aquariumId = :aquariumId ORDER BY s.occurredAtEpochMillis DESC, s.createdAtEpochMillis DESC")
-    abstract fun observeReadingsForAquarium(aquariumId: String): Flow<List<LatestReading>>
+    abstract fun observeReadingsForAquarium(aquariumId: String): Flow<List<ReadingRow>>
 
     @Query("SELECT a.* FROM maintenance_actions a INNER JOIN sessions s ON s.id = a.sessionId WHERE s.aquariumId = :aquariumId ORDER BY s.occurredAtEpochMillis DESC, s.createdAtEpochMillis DESC")
     abstract suspend fun maintenanceActionsForAquarium(aquariumId: String): List<MaintenanceActionEntity>

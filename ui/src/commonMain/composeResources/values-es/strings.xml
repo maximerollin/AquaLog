@@ -382,6 +382,7 @@
     <plurals name="home_measured_days_ago"><item quantity="one">medido hace %1$d día</item><item quantity="other">medido hace %1$d días</item></plurals>
     <plurals name="reading_age_days"><item quantity="one">hace %1$d d</item><item quantity="other">hace %1$d d</item></plurals>
     <string name="reading_attention_description">fuera de tu rango indicativo</string>
-    <plurals name="aquarium_age_months"><item quantity="one">%1$d mes</item><item quantity="other">%1$d meses</item></plurals>
-    <plurals name="aquarium_age_days"><item quantity="one">%1$d día</item><item quantity="other">%1$d días</item></plurals>
+    <string name="trend_up">en aumento</string>
+    <string name="trend_down">en descenso</string>
+    <string name="trend_flat">estable</string>
 </resources>

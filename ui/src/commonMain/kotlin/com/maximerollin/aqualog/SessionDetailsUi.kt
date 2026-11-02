@@ -74,10 +74,11 @@ fun SessionDetailsScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     readings.forEach { (measurement, definition) ->
+                        val label = definition.parameter.label()
                         ReadingValue(
-                            value = formatter.number(measurement.value),
-                            label = definition.parameter.label(),
-                            unit = definition.unit,
+                            value = formatter.number(measurement.value, definition.precision),
+                            label = label,
+                            unit = definition.unit.takeIf { it.isNotBlank() && it != label },
                             attention = definition.isOutsideIndicativeRange(measurement.value),
                         )
                     }

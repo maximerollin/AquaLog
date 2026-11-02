@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -24,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,6 +43,8 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
@@ -64,7 +66,9 @@ import com.maximerollin.aqualog.homeOverview
 import com.maximerollin.aqualog.otherAquariumAlerts
 import com.maximerollin.aqualog.label
 import com.maximerollin.aqualog.resources.*
+import com.maximerollin.aqualog.SEPARATOR
 import com.maximerollin.aqualog.shared.Aquarium
+import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.SyncFailureCategory
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.TaskDate
@@ -78,6 +82,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -86,7 +91,7 @@ import org.jetbrains.compose.resources.stringResource
 fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = Modifier) {
     val setup = requireNotNull(state.setup)
     val aquarium = setup.aquarium
-    val overview = homeOverview(setup, state.latestReadings, state.latestSession)
+    val overview = homeOverview(setup, state.latestReadings)
     val today = viewModel.today()
     val todayDate = LocalDate.of(today.year, today.month, today.day)
     val tasks = todayTasks(state.tasks.pendingOccurrences, aquarium.id, today)
@@ -99,10 +104,10 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     val pager = rememberPagerState(initialPage = currentIndex) { state.aquariums.size }
     // Set when a swipe asks for an Aquarium, cleared once it is the current one: independent of the pager's layout.
     var pendingSwipeSelection by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(aquarium.id, state.aquariums) {
-        if (pendingSwipeSelection == aquarium.id || state.aquariums.none { it.id == pendingSwipeSelection }) {
-            pendingSwipeSelection = null
-        }
+    // Any change of the current Aquarium ends the wait, even when it is not the one the swipe asked for.
+    LaunchedEffect(aquarium.id) { pendingSwipeSelection = null }
+    LaunchedEffect(state.aquariums) {
+        if (state.aquariums.none { it.id == pendingSwipeSelection }) pendingSwipeSelection = null
     }
     val listState = rememberLazyListState()
     val shownAquariums by rememberUpdatedState(state.aquariums)
@@ -132,7 +137,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             contentPadding = PaddingValues(bottom = 88.dp),
         ) {
             item {
-                AquariumScene(state.aquariums, aquarium, pager, todayDate) { showPicker = true }
+                AquariumScene(state.aquariums, aquarium, pager) { showPicker = true }
             }
             item {
                 StatusLine(
@@ -168,14 +173,15 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                     row.forEach { value ->
                         val label = value.definition.parameter.label()
                         ReadingValue(
-                            value = value.value?.let { formatter.number(it, value.definition.precision) } ?: "—",
+                            value = value.value?.let { formatter.number(it, value.definition.precision) },
                             label = label,
                             modifier = Modifier.weight(1f),
                             unit = value.definition.unit.takeIf { it.isNotBlank() && it != label }, // pH's unit is pH
                             attention = value.isOutsideRange,
-                            age = value.occurredAtEpochMillis?.takeIf { value.isOlderThanLatestSession }
+                            age = value.occurredAtEpochMillis?.takeIf { value.isOlderThanLatestReading }
                                 ?.let { daysSince(it, todayDate) }?.takeIf { it > 0 }
                                 ?.let { days -> pluralStringResource(Res.plurals.reading_age_days, days, days) },
+                            trend = value.trend,
                         )
                     }
                     repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
@@ -272,16 +278,15 @@ private fun AquariumScene(
     aquariums: List<Aquarium>,
     current: Aquarium,
     pager: PagerState,
-    today: LocalDate,
     onChangeAquarium: () -> Unit,
 ) {
     if (aquariums.size < 2) {
-        SceneHeader(current, today, onChangeAquarium)
+        SceneHeader(current, onChangeAquarium)
         return
     }
     Column {
         HorizontalPager(pager, Modifier.testTag("home-pager")) { page ->
-            SceneHeader(aquariums[page], today, onChangeAquarium)
+            SceneHeader(aquariums[page], onChangeAquarium)
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center) {
             repeat(aquariums.size) { index ->
@@ -296,30 +301,41 @@ private fun AquariumScene(
 @Composable
 private fun AlertRow(alert: AquariumAlert, onClick: () -> Unit, modifier: Modifier) {
     val due = stringResource(if (alert.isOverdue) Res.string.home_task_overdue else Res.string.home_alert_due_today)
-    Text(
-        buildAnnotatedString {
-            append("${alert.aquarium.name} · ${alert.occurrence.title} · ")
-            withStyle(SpanStyle(color = if (alert.isOverdue) attentionTextColor() else MaterialTheme.colorScheme.onSurfaceVariant)) {
-                append(due)
-            }
-            append(" ›")
-        },
-        modifier = Modifier.clickable(onClick = onClick).then(modifier).fillMaxWidth().heightIn(min = 48.dp).wrapContentHeight(Alignment.CenterVertically),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onBackground,
-    )
+    Row(
+        Modifier.clickable(role = Role.Button, onClickLabel = stringResource(Res.string.home_change_aquarium), onClick = onClick)
+            .then(modifier).fillMaxWidth().heightIn(min = 48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            buildAnnotatedString {
+                append(alert.aquarium.name + SEPARATOR + alert.occurrence.title + SEPARATOR)
+                withStyle(SpanStyle(color = if (alert.isOverdue) attentionTextColor() else MaterialTheme.colorScheme.onSurfaceVariant)) {
+                    append(due)
+                }
+            },
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Icon(
+            painterResource(Res.drawable.ic_chevron_right),
+            contentDescription = null,
+            modifier = Modifier.size(20.dp).clearAndSetSemantics { },
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
 @Composable
-private fun SceneHeader(aquarium: Aquarium, today: LocalDate, onChangeAquarium: () -> Unit) {
-    val created = localDate(aquarium.createdAtEpochMillis)
-    val months = ChronoUnit.MONTHS.between(created, today).toInt()
-    val days = ChronoUnit.DAYS.between(created, today).toInt()
-    val age = when {
-        months >= 1 -> pluralStringResource(Res.plurals.aquarium_age_months, months, months)
-        days >= 1 -> pluralStringResource(Res.plurals.aquarium_age_days, days, days)
-        else -> null
-    }
+private fun SceneHeader(aquarium: Aquarium, onChangeAquarium: () -> Unit) {
+    // No age: createdAtEpochMillis is when the Aquarium was added to the app, not when it was set up.
+    val type = stringResource(
+        when (aquarium.profile) {
+            AquariumProfile.ESTABLISHED -> Res.string.profile_established
+            AquariumProfile.CYCLING -> Res.string.profile_cycling
+            AquariumProfile.PLANTED_SHRIMP -> Res.string.profile_planted_shrimp
+        },
+    )
     val shadow = Shadow(Color.Black.copy(alpha = .45f), Offset(0f, 1f), blurRadius = 3f)
     Box(Modifier.fillMaxWidth()) {
         TankScene(aquarium, Modifier.fillMaxWidth())
@@ -335,7 +351,7 @@ private fun SceneHeader(aquarium: Aquarium, today: LocalDate, onChangeAquarium: 
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                listOfNotNull(aquarium.formattedVolume(), age).joinToString(" · "),
+                aquarium.formattedVolume() + SEPARATOR + type,
                 style = MaterialTheme.typography.bodyMedium.copy(shadow = shadow),
                 color = Color.White,
             )
@@ -361,7 +377,7 @@ private fun StatusLine(
         )
         else -> stringResource(Res.string.home_status_all_in_range)
     }
-    val since = overview.latestSessionAtEpochMillis?.takeIf { measured }?.let {
+    val since = overview.latestReadingAtEpochMillis?.let {
         when (val days = daysSince(it, today)) {
             0 -> stringResource(Res.string.home_measured_today)
             1 -> stringResource(Res.string.home_measured_yesterday)
@@ -387,7 +403,7 @@ private fun StatusLine(
         Text(
             buildAnnotatedString {
                 withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(summary) }
-                if (since != null) append(" · $since")
+                if (since != null) append(SEPARATOR + since)
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground,
