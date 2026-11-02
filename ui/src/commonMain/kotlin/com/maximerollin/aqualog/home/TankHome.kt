@@ -96,6 +96,20 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     var showPicker by remember { mutableStateOf(false) }
     val currentIndex = state.aquariums.indexOfFirst { it.id == aquarium.id }.coerceAtLeast(0)
     val pager = rememberPagerState(initialPage = currentIndex) { state.aquariums.size }
+    val shownAquariums by rememberUpdatedState(state.aquariums)
+    val currentId by rememberUpdatedState(aquarium.id)
+    // Both effects live here, not in the scene item: the scene can be scrolled off-screen while the Aquarium changes.
+    LaunchedEffect(currentIndex, state.aquariums.size) {
+        pagerSyncTarget(currentIndex, state.aquariums.size, pager.currentPage)?.let {
+            if (pager.layoutInfo.visiblePagesInfo.isEmpty()) pager.scrollToPage(it) else pager.animateScrollToPage(it)
+        }
+    }
+    LaunchedEffect(pager) {
+        snapshotFlow { pager.settledPage }.collect { page ->
+            shownAquariums.getOrNull(page)?.takeIf { it.id != currentId && shownAquariums.size > 1 }
+                ?.let { viewModel.selectAquarium(it.id) }
+        }
+    }
     val canMeasure = measureTargetsShownAquarium(state.aquariums, pager.settledPage, aquarium.id, pager.isScrollInProgress)
 
     Box(modifier.fillMaxSize()) {
@@ -105,7 +119,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             contentPadding = PaddingValues(bottom = 88.dp),
         ) {
             item {
-                AquariumScene(state.aquariums, aquarium, pager, todayDate, viewModel::selectAquarium) { showPicker = true }
+                AquariumScene(state.aquariums, aquarium, pager, todayDate) { showPicker = true }
             }
             item {
                 StatusLine(
@@ -235,6 +249,10 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
 internal fun measureTargetsShownAquarium(aquariums: List<Aquarium>, settledPage: Int, currentId: String, scrolling: Boolean): Boolean =
     aquariums.size < 2 || (!scrolling && aquariums.getOrNull(settledPage)?.id == currentId)
 
+/** The page the pager must scroll to so it shows the current Aquarium, or null when it already does. */
+internal fun pagerSyncTarget(currentIndex: Int, pageCount: Int, currentPage: Int): Int? =
+    currentIndex.takeIf { pageCount > 1 && it in 0 until pageCount && it != currentPage }
+
 /** One scene, or a pager of scenes with dots when there are several Aquariums; settling on a page selects it. */
 @Composable
 private fun AquariumScene(
@@ -242,24 +260,11 @@ private fun AquariumScene(
     current: Aquarium,
     pager: PagerState,
     today: LocalDate,
-    onSelect: (String) -> Unit,
     onChangeAquarium: () -> Unit,
 ) {
     if (aquariums.size < 2) {
         SceneHeader(current, today, onChangeAquarium)
         return
-    }
-    val currentIndex = aquariums.indexOfFirst { it.id == current.id }.coerceAtLeast(0)
-    val currentId by rememberUpdatedState(current.id)
-    val shown by rememberUpdatedState(aquariums)
-    // The Aquarium changed elsewhere (picker, band, Settings): follow it.
-    LaunchedEffect(currentIndex, aquariums.size) {
-        if (pager.currentPage != currentIndex) pager.animateScrollToPage(currentIndex)
-    }
-    LaunchedEffect(pager) {
-        snapshotFlow { pager.settledPage }.collect { page ->
-            shown.getOrNull(page)?.takeIf { it.id != currentId }?.let { onSelect(it.id) }
-        }
     }
     Column {
         HorizontalPager(pager, Modifier.testTag("home-pager")) { page ->
