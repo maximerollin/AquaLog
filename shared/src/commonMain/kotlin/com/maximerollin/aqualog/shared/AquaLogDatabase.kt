@@ -384,6 +384,9 @@ abstract class SessionDao {
     @Query("SELECT m.* FROM measurements m INNER JOIN sessions s ON s.id = m.sessionId WHERE s.aquariumId = :aquariumId ORDER BY s.occurredAtEpochMillis DESC, s.createdAtEpochMillis DESC")
     abstract suspend fun measurementsForAquarium(aquariumId: String): List<MeasurementEntity>
 
+    @Query("SELECT m.parameterDefinitionId AS parameterDefinitionId, m.value AS value, s.occurredAtEpochMillis AS occurredAtEpochMillis FROM measurements m INNER JOIN sessions s ON s.id = m.sessionId WHERE s.aquariumId = :aquariumId ORDER BY s.occurredAtEpochMillis DESC, s.createdAtEpochMillis DESC")
+    abstract fun observeReadingsForAquarium(aquariumId: String): Flow<List<LatestReading>>
+
     @Query("SELECT a.* FROM maintenance_actions a INNER JOIN sessions s ON s.id = a.sessionId WHERE s.aquariumId = :aquariumId ORDER BY s.occurredAtEpochMillis DESC, s.createdAtEpochMillis DESC")
     abstract suspend fun maintenanceActionsForAquarium(aquariumId: String): List<MaintenanceActionEntity>
 

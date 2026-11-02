@@ -45,6 +45,8 @@ interface AquariumRepository {
 
     fun observeSession(sessionId: String): Flow<RecordedSession?>
 
+    fun observeLatestReadings(aquariumId: String): Flow<List<LatestReading>>
+
     suspend fun updateSession(input: SessionEditInput): RecordedSession
 
     suspend fun deleteSession(sessionId: String)
@@ -300,6 +302,9 @@ class RoomAquariumRepository(
 
     override fun observeLatestSession(aquariumId: String): Flow<RecordedSession?> =
         sessionDao.observeLatest(aquariumId).map { it?.toDomain() }
+
+    override fun observeLatestReadings(aquariumId: String): Flow<List<LatestReading>> =
+        sessionDao.observeReadingsForAquarium(aquariumId).map { it.distinctBy(LatestReading::parameterDefinitionId) }
 
     override fun observeSession(sessionId: String): Flow<RecordedSession?> =
         sessionDao.observeById(sessionId).map { it?.toDomain() }
