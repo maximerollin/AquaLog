@@ -1,6 +1,9 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
@@ -15,6 +18,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -141,6 +145,31 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithText("24.5").assertIsDisplayed()
         composeRule.onNodeWithText("7.2").assertIsDisplayed()
         scenario.close()
+    }
+
+    @Test
+    fun invalidAndUnusualValues_areAnnouncedInWords() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        (context.applicationContext as TestAquaLogApplication).resetRepository()
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            waitForText("Get started")
+            completeMinimalOnboarding()
+            composeRule.onNodeWithText("Measure").performClick()
+            waitForText("Measurements")
+            val ph = composeRule.onNodeWithContentDescription("Measurement for pH")
+            ph.performTextInput("7..2")
+            ph.assert(SemanticsMatcher.expectValue(SemanticsProperties.Error, "Enter a decimal number using a point or comma."))
+            ph.performTextClearance()
+            ph.performTextInput("9")
+            ph.assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Error))
+            ph.assert(SemanticsMatcher("attention is spoken") {
+                it.config.getOrElseNullable(SemanticsProperties.StateDescription) { null }
+                    ?.contains("outside your indicative range") == true
+            })
+        } finally {
+            scenario.close()
+        }
     }
 
     @Test

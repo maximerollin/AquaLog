@@ -60,6 +60,7 @@ import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -206,6 +207,8 @@ fun RapidSessionScreen(
                     val input = state.measurementInputs[definition.id].orEmpty()
                     val feedback = evaluateMeasurement(input, definition)
                     val description = stringResource(Res.string.measurement_for_parameter, definition.parameter.label())
+                    val invalidText = stringResource(Res.string.invalid_measurement)
+                    val attentionText = stringResource(Res.string.reading_attention_description)
                     val muted = MaterialTheme.colorScheme.onSurfaceVariant
                     val name = definition.parameter.label()
                     val unit = definition.unit
@@ -249,7 +252,10 @@ fun RapidSessionScreen(
                                 .then(focusRequester?.let(Modifier::focusRequester) ?: Modifier)
                                 .semantics {
                                     contentDescription = description
-                                    stateDescription = unit
+                                    // The underline colour is not announced: TalkBack hears the error or the attention as words.
+                                    stateDescription = listOf(unit, attentionText.takeIf { feedback.isOutsideIndicativeRange }.orEmpty())
+                                        .filter(String::isNotBlank).joinToString(", ")
+                                    if (!feedback.isValid) error(invalidText)
                                 },
                         )
                     }
@@ -274,7 +280,7 @@ fun RapidSessionScreen(
                             }
                         }
                         val hint = when {
-                            !feedback.isValid -> stringResource(Res.string.invalid_measurement)
+                            !feedback.isValid -> invalidText
                             feedback.isOutsideIndicativeRange -> stringResource(Res.string.unusual_measurement)
                             else -> null
                         }
@@ -509,7 +515,7 @@ internal fun MaintenanceActionType.label(): String = stringResource(
     },
 )
 
-private const val SEPARATOR = " · "
+internal const val SEPARATOR = " · "
 
 // Header, then the Measurements section title, then one item per parameter.
 private const val FIRST_PARAMETER_ITEM_INDEX = 2
