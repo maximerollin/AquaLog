@@ -1,6 +1,9 @@
 package com.maximerollin.aqualog
 
 import android.os.SystemClock
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
@@ -71,7 +74,7 @@ class TrendsFlowTest {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.onNodeWithText("Trends").performClick()
+        trendsTab().performClick()
         composeRule.onNodeWithText("30 days").assertIsSelected()
         composeRule.onNodeWithText("7 days").assertIsDisplayed()
         composeRule.onNodeWithText("90 days").assertIsDisplayed()
@@ -110,7 +113,7 @@ class TrendsFlowTest {
                 ),
             )
         }
-        composeRule.onNodeWithText("Trends").performClick()
+        trendsTab().performClick()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("TDS"))
         composeRule.onNodeWithText("TDS").performClick().assertIsSelected()
         composeRule.onNodeWithTag("trend-list")
@@ -176,7 +179,7 @@ class TrendsFlowTest {
         application.grantPro(ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null))
         var scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.onNodeWithText("Trends").performClick()
+        trendsTab().performClick()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("Show complete history"))
         composeRule.onNodeWithText("Show complete history").performClick()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("Advanced Pro analysis"))
@@ -208,7 +211,7 @@ class TrendsFlowTest {
         application.revokePro()
         scenario.close()
         scenario = ActivityScenario.launch(MainActivity::class.java)
-        composeRule.onNodeWithText("Trends").performClick()
+        trendsTab().performClick()
         composeRule.onNodeWithText("Free trends show up to 90 days. Older data stays saved.").assertIsDisplayed()
         assertTrue(
             runBlocking { application.aquariumRepository.observeTimeline(com.maximerollin.aqualog.shared.TimelineFilter()).first() }
@@ -216,4 +219,9 @@ class TrendsFlowTest {
         )
         scenario.close()
     }
+
+    // The home's "Latest values" section also offers a Trends action; target the navigation item.
+    private fun trendsTab() = composeRule.onNode(
+        hasText("Trends") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab),
+    )
 }

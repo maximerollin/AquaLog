@@ -16,6 +16,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import com.maximerollin.aqualog.resources.Res
+import com.maximerollin.aqualog.resources.reading_attention_description
+import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,6 +38,7 @@ fun CarnetScreenTitle(
         Column(Modifier.weight(1f)) {
             Text(
                 title,
+                modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp),
                 color = MaterialTheme.colorScheme.onBackground,
             )
@@ -58,7 +65,7 @@ fun CarnetSectionTitle(
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             title,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).semantics { heading() },
             style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp),
             color = MaterialTheme.colorScheme.primary,
         )
@@ -90,7 +97,16 @@ fun ReadingValue(
     attention: Boolean = false,
     age: String? = null,
 ) {
-    Column(modifier) {
+    // Colour alone must not carry the attention state: screen readers hear it as words too.
+    val attentionDescription = if (attention) stringResource(Res.string.reading_attention_description) else null
+    Column(
+        modifier.semantics(mergeDescendants = true) {
+            if (attentionDescription != null) {
+                contentDescription = listOfNotNull(listOfNotNull(value, unit).joinToString(" "), label, age, attentionDescription)
+                    .joinToString(", ")
+            }
+        },
+    ) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 value,

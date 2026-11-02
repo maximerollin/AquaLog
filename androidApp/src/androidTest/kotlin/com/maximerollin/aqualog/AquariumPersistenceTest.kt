@@ -74,16 +74,16 @@ class AquariumPersistenceTest {
 
         waitForText("Amazonien")
         composeRule.onNodeWithText("Amazonien").assertIsDisplayed()
-        composeRule.onNodeWithText("120.5 US gal").assertIsDisplayed()
-        composeRule.onNodeWithText("No Session yet").assertIsDisplayed()
-        composeRule.onNodeWithText("New Session").assertIsDisplayed()
+        composeRule.onNodeWithText("120.5 US gal", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("No measurement yet", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("Measure").assertIsDisplayed()
 
         scenario.recreate()
 
         waitForText("Amazonien")
         composeRule.onNodeWithText("Amazonien").assertIsDisplayed()
-        composeRule.onNodeWithText("120.5 US gal").assertIsDisplayed()
-        composeRule.onNodeWithText("No Session yet").assertIsDisplayed()
+        composeRule.onNodeWithText("120.5 US gal", substring = true).assertIsDisplayed()
+        composeRule.onNodeWithText("No measurement yet", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText("More").performClick()
         composeRule.onNodeWithText("View Free and Pro").performClick()
         composeRule.onNodeWithText("Choose Free or Pro").assertIsDisplayed()

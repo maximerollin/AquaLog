@@ -41,9 +41,10 @@ private val DarkColors = darkColorScheme(
     outline = Color(0xFF91AFA2), outlineVariant = Color(0xFF426056),
 )
 
-// Attention = value outside its indicative range. Text is amber-brown (>= 4.5:1 on paper), the mark is the brighter dot/line.
+// Attention = value outside its indicative range. Text is amber-brown (>= 4.5:1 on paper), the mark is the brighter dot/line
+// (>= 3:1 non-text contrast on paper, so a shade darker than the mockup's #C98A1B).
 val AttentionText = Color(0xFF8A5A00)
-val AttentionMark = Color(0xFFC98A1B)
+val AttentionMark = Color(0xFFB87A10)
 val AttentionTextDark = Color(0xFFE4B65A)
 val AttentionMarkDark = Color(0xFFE0A93B)
 

@@ -205,11 +205,11 @@ class LocalizedAccessibilityFlowTest {
             }
             ActivityScenario.launch(MainActivity::class.java).use {
                 val localized = localizedContext(language)
-                val newSession = localized.getString(Res.string.new_session)
-                awaitText(newSession)
+                val measure = localized.getString(Res.string.measure_action)
+                awaitText(measure)
                 assertEssentialActions(
-                    newSession,
-                    localized.getString(Res.string.open_tasks),
+                    measure,
+                    localized.getString(Res.string.home_see_all),
                     localized.getString(Res.string.navigation_history),
                     localized.getString(Res.string.navigation_trends),
                     localized.getString(Res.string.navigation_more),
@@ -217,7 +217,7 @@ class LocalizedAccessibilityFlowTest {
                 assertCriticalText("Aqua 120")
                 captureAndInspect("home-$language-$mode.png")
 
-                compose.onNodeWithText(newSession).performClick()
+                compose.onNodeWithText(measure).performClick()
                 val saveSession = localized.getString(Res.string.save_session)
                 awaitText(saveSession)
                 assertAction(saveSession)
@@ -236,7 +236,7 @@ class LocalizedAccessibilityFlowTest {
                 awaitText(cancel)
                 compose.onNodeWithText(cancel).performClick()
 
-                val tasks = localized.getString(Res.string.open_tasks)
+                val tasks = localized.getString(Res.string.home_see_all)
                 compose.onNodeWithText(tasks).performClick()
                 awaitText(localized.getString(Res.string.tasks_title))
                 assertCriticalText(localized.getString(Res.string.tasks_title))
@@ -359,9 +359,14 @@ class LocalizedAccessibilityFlowTest {
         assertTrue("$label must not be clipped vertically", bounds.top >= viewport.top && bounds.bottom <= viewport.bottom)
     }
 
+    // A label may back several actions (the home's Trends link and the Trends tab): each one is checked.
     private fun assertEssentialActions(vararg labels: String) {
-        val actions = labels.map { label ->
-            val interaction = compose.onNode(hasText(label) and hasClickAction())
+        val actions = labels.flatMap { label ->
+            val matches = compose.onAllNodes(hasText(label) and hasClickAction())
+            val count = matches.fetchSemanticsNodes().size
+            assertTrue("$label must be an action", count > 0)
+            (0 until count).map { index -> label to matches[index] }
+        }.map { (label, interaction) ->
             interaction.assertIsDisplayed()
             val node = interaction.fetchSemanticsNode()
             val accessibleName = buildString {

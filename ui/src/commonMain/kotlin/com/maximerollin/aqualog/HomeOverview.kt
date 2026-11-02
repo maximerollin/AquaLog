@@ -47,7 +47,7 @@ fun homeOverview(
     val values = all.sortedBy { if (it.isOutsideRange) 0 else if (it.value != null) 1 else 2 }
         .take(MAX_HOME_VALUES)
         .sortedBy { it.definition.position }
-    return HomeOverview(values, values.count { it.isOutsideRange }, latestAt)
+    return HomeOverview(values, all.count { it.isOutsideRange }, latestAt)
 }
 
 data class TodayTasks(val due: List<TaskOccurrence>, val next: TaskOccurrence?)

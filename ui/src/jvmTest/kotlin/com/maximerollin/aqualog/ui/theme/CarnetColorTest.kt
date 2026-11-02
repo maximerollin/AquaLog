@@ -30,4 +30,12 @@ class CarnetColorTest {
             assertTrue(contrast(attention, scheme.background) >= 4.5f, "attention dark=$dark")
         }
     }
+
+    @Test
+    fun `attention mark reaches 3 to 1 on paper in both schemes`() {
+        for (dark in listOf(false, true)) {
+            val mark = if (dark) AttentionMarkDark else AttentionMark
+            assertTrue(contrast(mark, aquaLogColorScheme(dark).background) >= 3.0f, "attention mark dark=$dark")
+        }
+    }
 }

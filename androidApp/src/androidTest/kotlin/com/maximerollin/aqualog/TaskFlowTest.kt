@@ -4,6 +4,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -83,7 +84,7 @@ class TaskFlowTest {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
-            composeRule.onNode(hasText("Tasks & reminders") and hasClickAction()).performClick()
+            composeRule.onNode(hasText("See all") and hasClickAction()).performClick()
             composeRule.onNodeWithText("Change filter wool").performScrollTo().assertIsDisplayed()
             composeRule.onNodeWithText("Done").performScrollTo().assertIsDisplayed().performClick()
             composeRule.waitUntil(timeoutMillis = 5_000) {
@@ -131,6 +132,49 @@ class TaskFlowTest {
         }
     }
 
+    @Test
+    fun aDueTask_canBeCompletedFromTheHome() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val application = context.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        val today = java.time.LocalDate.now()
+        runBlocking {
+            val setup = application.aquariumRepository.createConfiguredAquarium(
+                name = "Amazonien",
+                volume = 120.0,
+                volumeUnit = VolumeUnit.LITERS,
+                profile = AquariumProfile.ESTABLISHED,
+                parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+            application.aquariumRepository.createTask(
+                TaskInput(
+                    aquariumId = setup.aquarium.id,
+                    title = "Clean the glass",
+                    recurrence = TaskRecurrence.ONCE,
+                    firstDueDate = TaskDate(today.year, today.monthValue, today.dayOfMonth),
+                    minuteOfDay = null,
+                    timeZoneId = java.time.ZoneId.systemDefault().id,
+                ),
+            )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasText("Clean the glass")).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeRule.onNodeWithContentDescription("Done, Clean the glass").assertIsDisplayed().performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                composeRule.onAllNodes(hasText("Clean the glass")).fetchSemanticsNodes().isEmpty()
+            }
+            composeRule.onNodeWithText("No pending Task.").assertIsDisplayed()
+            composeRule.onNodeWithText("History").performClick()
+            composeRule.onNodeWithText("Task occurrence").assertIsDisplayed()
+            composeRule.onNodeWithText("Clean the glass").assertIsDisplayed()
+        } finally {
+            scenario.close()
+        }
+    }
+
     private fun launchTaskScreen(): ActivityScenario<MainActivity> {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val application = context.applicationContext as TestAquaLogApplication
@@ -145,7 +189,7 @@ class TaskFlowTest {
             )
         }
         return ActivityScenario.launch<MainActivity>(MainActivity::class.java).also {
-            composeRule.onNode(hasText("Tasks & reminders") and hasClickAction()).performClick()
+            composeRule.onNode(hasText("See all") and hasClickAction()).performClick()
         }
     }
 }

@@ -90,9 +90,6 @@
 
     <string name="home_title">Il tuo acquario</string>
     <string name="aquarium_ready">Pronto per la tua prossima routine</string>
-    <string name="no_session_yet">Nessuna sessione ancora</string>
-    <string name="no_session_description">I valori della tua pratica non sono stati salvati. Inizia quando hai misurazioni o manutenzioni reali da registrare.</string>
-    <string name="new_session">Nuova sessione</string>
     <string name="open_tasks">Attività e promemoria</string>
     <string name="volume_liters_format">%1$s L</string>
     <string name="volume_us_gallons_format">%1$s Gal</string>
@@ -127,7 +124,6 @@
     <string name="incident">Incidente</string>
     <string name="save_session">Salva sessione</string>
     <string name="session_save_error">Impossibile salvare la sessione. Le tue voci sono ancora qui; riprova.</string>
-    <string name="session_saved">Sessione salvata</string>
     <string name="session_saved_description">Conferma nella Cronologia · %1$s · %2$s</string>
     <plurals name="session_measurement_count"><item quantity="one">%1$d Misurazione</item><item quantity="other">%1$d Misurazioni</item></plurals>
     <plurals name="session_maintenance_count"><item quantity="one">%1$d Azione di manutenzione</item><item quantity="other">%1$d Azioni di manutenzione</item></plurals>
@@ -366,4 +362,20 @@
     <string name="timeline_filters">Filtri</string>
     <string name="measurement_reading">%1$s · %2$s %3$s</string>
     <string name="last_measurement_compact">Ultima: %1$s %2$s</string>
+    <string name="measure_action">Misura</string>
+    <string name="latest_values_title">Ultimi valori</string>
+    <string name="home_today">Oggi</string>
+    <string name="home_see_all">Vedi tutto</string>
+    <string name="home_task_overdue">in ritardo</string>
+    <string name="home_nothing_due">Niente in scadenza · prossima: %1$s il %2$s</string>
+    <string name="home_no_measurement_yet">Nessuna misurazione</string>
+    <string name="home_status_all_in_range">Tutto nell’intervallo indicativo</string>
+    <plurals name="home_status_outside_range"><item quantity="one">%1$d valore da tenere d’occhio</item><item quantity="other">%1$d valori da tenere d’occhio</item></plurals>
+    <string name="home_measured_today">misurato oggi</string>
+    <string name="home_measured_yesterday">misurato ieri</string>
+    <plurals name="home_measured_days_ago"><item quantity="one">misurato %1$d giorno fa</item><item quantity="other">misurato %1$d giorni fa</item></plurals>
+    <plurals name="reading_age_days"><item quantity="one">%1$d g fa</item><item quantity="other">%1$d g fa</item></plurals>
+    <string name="reading_attention_description">fuori dal tuo intervallo indicativo</string>
+    <plurals name="aquarium_age_months"><item quantity="one">%1$d mese</item><item quantity="other">%1$d mesi</item></plurals>
+    <plurals name="aquarium_age_days"><item quantity="one">%1$d giorno</item><item quantity="other">%1$d giorni</item></plurals>
 </resources>

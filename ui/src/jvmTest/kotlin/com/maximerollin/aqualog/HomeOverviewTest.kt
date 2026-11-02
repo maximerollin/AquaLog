@@ -98,6 +98,17 @@ class HomeOverviewTest {
     }
 
     @Test
+    fun `outside range count covers every active parameter, not only the six shown`() {
+        val definitions = BuiltInParameter.entries.take(8).mapIndexed { index, parameter ->
+            definition(parameter, index, 0.0, 10.0)
+        }
+        val readings = definitions.mapIndexed { index, d -> reading(d, if (index == 0) 5.0 else 50.0) }
+        val overview = homeOverview(setup(*definitions.toTypedArray()), readings, null)
+        assertEquals(6, overview.values.size)
+        assertEquals(7, overview.outsideRangeCount)
+    }
+
+    @Test
     fun `never measured parameters are trimmed before measured ones`() {
         val definitions = BuiltInParameter.entries.take(7).mapIndexed { index, parameter -> definition(parameter, index) }
         val readings = definitions.drop(1).map { reading(it, 1.0) }

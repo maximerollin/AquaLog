@@ -1,7 +1,7 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
-import com.maximerollin.aqualog.home.TankScene
+import com.maximerollin.aqualog.home.TankHome
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +26,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -44,7 +43,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -58,7 +56,6 @@ import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.LocalCopyDecision
 import com.maximerollin.aqualog.shared.PortableImportProblem
-import com.maximerollin.aqualog.shared.SyncFailureCategory
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.VolumeUnit
 
@@ -289,7 +286,7 @@ private fun AquariumShell(
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding)
         when (state.destination) {
-            MainDestination.TANK -> AquariumHome(state, viewModel, contentModifier)
+            MainDestination.TANK -> TankHome(state, viewModel, contentModifier)
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
             MainDestination.TRENDS -> TrendsScreen(state, viewModel, contentModifier)
             MainDestination.MORE -> PortableDataSettings(
@@ -1285,173 +1282,6 @@ private fun PlanCard(title: StringResource, description: StringResource) {
 }
 
 @Composable
-private fun AquariumHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
-    val aquarium = requireNotNull(state.setup).aquarium
-    Column(
-        modifier = modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        LazyColumn(
-            modifier = Modifier.weight(1f).testTag("home-list"),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            item {
-                Card(
-                    Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TankScene(aquarium, Modifier.fillMaxWidth())
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(aquarium.name, style = MaterialTheme.typography.headlineSmall)
-                                Text(aquarium.formattedVolume(), color = MaterialTheme.colorScheme.onPrimaryContainer)
-                            }
-                        }
-                        Text(
-                            stringResource(
-                                when (state.syncState.status) {
-                                    SyncStatus.SYNCED -> Res.string.sync_status_synced
-                                    SyncStatus.PENDING -> Res.string.sync_status_pending
-                                    SyncStatus.FAILED -> Res.string.sync_status_failed
-                                },
-                            ),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (state.syncState.status == SyncStatus.SYNCED) {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            } else {
-                                MaterialTheme.colorScheme.primary
-                            },
-                        )
-                    }
-                }
-            }
-            item {
-                Card(Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            stringResource(
-                                if (state.latestSession == null) Res.string.no_session_yet else Res.string.session_saved,
-                            ),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        Text(
-                            state.latestSession?.let { session ->
-                                sessionSavedDescription(
-                                    measurementCount = session.measurements.size,
-                                    actionCount = session.maintenanceActions.size,
-                                )
-                            } ?: stringResource(Res.string.no_session_description),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        if (state.latestSession != null) {
-                            TextButton(onClick = viewModel::openSessionDetails) {
-                                Text(stringResource(Res.string.view_session_details))
-                            }
-                        }
-                    }
-                }
-            }
-            if (state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION) {
-                item {
-                    PrimaryButton(Res.string.continue_after_session, viewModel::continueAfterSessionConfirmation)
-                }
-            }
-            item { HomeMeasurements(state) }
-            if (state.syncState.status == SyncStatus.FAILED) {
-                item {
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                stringResource(
-                                    when (state.syncState.failure?.category) {
-                                        SyncFailureCategory.NETWORK -> Res.string.sync_failure_network
-                                        SyncFailureCategory.CONFLICT -> Res.string.sync_failure_conflict
-                                        SyncFailureCategory.SERVER -> Res.string.sync_failure_server
-                                        SyncFailureCategory.UNKNOWN, null -> Res.string.sync_failure_unknown
-                                    },
-                                ),
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            state.syncState.failure?.technicalDetail
-                                ?.takeIf(String::isNotBlank)
-                                ?.let { detail ->
-                                    Text(
-                                        detail,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            TextButton(
-                                onClick = viewModel::retrySynchronization,
-                                modifier = Modifier.fillMaxWidth().height(48.dp),
-                            ) {
-                                Text(stringResource(Res.string.sync_retry))
-                            }
-                        }
-                    }
-                }
-            }
-            val pendingTasks = state.tasks.pendingOccurrences.filter { it.aquariumId == aquarium.id }.take(3)
-            if (pendingTasks.isNotEmpty()) {
-                item { Text(stringResource(Res.string.tasks_title), style = MaterialTheme.typography.titleLarge) }
-                itemsIndexed(pendingTasks, key = { _, task -> task.id }) { _, task ->
-                    Card(onClick = viewModel::openTasks, modifier = Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(task.title, style = MaterialTheme.typography.titleMedium)
-                            val formatter = currentLocalizedFormatters()
-                            Text(stringResource(Res.string.task_due_value,
-                                formatter.date(task.dueDate.year, task.dueDate.month, task.dueDate.day),
-                                task.minuteOfDay?.let(formatter::time) ?: stringResource(Res.string.task_no_time)),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-            }
-            if (state.accountInvitationPrompt == AccountInvitationPrompt.REMINDER) {
-                item {
-                    Card(Modifier.fillMaxWidth()) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                stringResource(Res.string.account_invitation_title),
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                            Text(
-                                stringResource(Res.string.account_invitation_description),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            TextButton(
-                                onClick = viewModel::continueAfterSessionConfirmation,
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                            ) {
-                                Text(stringResource(Res.string.review_account_options))
-                            }
-                        }
-                    }
-                }
-            }
-
-        }
-        TextButton(
-            onClick = viewModel::openTasks,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) {
-            Text(stringResource(Res.string.open_tasks))
-        }
-        PrimaryButton(Res.string.new_session, viewModel::openRapidSession)
-    }
-}
-
-@Composable
-private fun sessionSavedDescription(measurementCount: Int, actionCount: Int): String = stringResource(
-    Res.string.session_saved_description,
-    pluralStringResource(Res.plurals.session_measurement_count, measurementCount, measurementCount),
-    pluralStringResource(Res.plurals.session_maintenance_count, actionCount, actionCount),
-)
-
-@Composable
 private fun StandardScreen(
     modifier: Modifier,
     content: @Composable ColumnScope.() -> Unit,
@@ -1505,7 +1335,7 @@ internal fun BuiltInParameter.label(): String = stringResource(
 )
 
 @Composable
-private fun Aquarium.formattedVolume(): String {
+internal fun Aquarium.formattedVolume(): String {
     val formatted = currentLocalizedFormatters().number(volume)
     return when (volumeUnit) {
         VolumeUnit.LITERS -> stringResource(Res.string.volume_liters_format, formatted)

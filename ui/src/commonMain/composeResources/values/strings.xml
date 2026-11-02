@@ -90,9 +90,6 @@
 
     <string name="home_title">Your Aquarium</string>
     <string name="aquarium_ready">Ready for your next routine</string>
-    <string name="no_session_yet">No Session yet</string>
-    <string name="no_session_description">Your practice values were not saved. Start when you have real measurements or maintenance to log.</string>
-    <string name="new_session">New Session</string>
     <string name="open_tasks">Tasks &amp; reminders</string>
     <string name="volume_liters_format">%1$s L</string>
     <string name="volume_us_gallons_format">%1$s US gal</string>
@@ -127,7 +124,6 @@
     <string name="incident">Incident</string>
     <string name="save_session">Save Session</string>
     <string name="session_save_error">The Session could not be saved. Your entries are still here; try again.</string>
-    <string name="session_saved">Session saved</string>
     <string name="session_saved_description">Chronology confirmation · %1$s · %2$s</string>
     <plurals name="session_measurement_count"><item quantity="one">%1$d Measurement</item><item quantity="other">%1$d Measurements</item></plurals>
     <plurals name="session_maintenance_count"><item quantity="one">%1$d maintenance action</item><item quantity="other">%1$d maintenance actions</item></plurals>
@@ -366,4 +362,20 @@
     <string name="timeline_filters">Filters</string>
     <string name="measurement_reading">%1$s · %2$s %3$s</string>
     <string name="last_measurement_compact">Last: %1$s %2$s</string>
+    <string name="measure_action">Measure</string>
+    <string name="latest_values_title">Latest values</string>
+    <string name="home_today">Today</string>
+    <string name="home_see_all">See all</string>
+    <string name="home_task_overdue">overdue</string>
+    <string name="home_nothing_due">Nothing due · next: %1$s on %2$s</string>
+    <string name="home_no_measurement_yet">No measurement yet</string>
+    <string name="home_status_all_in_range">All in range</string>
+    <plurals name="home_status_outside_range"><item quantity="one">%1$d value to watch</item><item quantity="other">%1$d values to watch</item></plurals>
+    <string name="home_measured_today">measured today</string>
+    <string name="home_measured_yesterday">measured yesterday</string>
+    <plurals name="home_measured_days_ago"><item quantity="one">measured %1$d day ago</item><item quantity="other">measured %1$d days ago</item></plurals>
+    <plurals name="reading_age_days"><item quantity="one">%1$d d ago</item><item quantity="other">%1$d d ago</item></plurals>
+    <string name="reading_attention_description">outside your range</string>
+    <plurals name="aquarium_age_months"><item quantity="one">%1$d month</item><item quantity="other">%1$d months</item></plurals>
+    <plurals name="aquarium_age_days"><item quantity="one">%1$d day</item><item quantity="other">%1$d days</item></plurals>
 </resources>

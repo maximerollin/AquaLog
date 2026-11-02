@@ -90,9 +90,6 @@
 
     <string name="home_title">Ihr Aquarium</string>
     <string name="aquarium_ready">Bereit für Ihre nächste Routine</string>
-    <string name="no_session_yet">Noch keine Sitzung</string>
-    <string name="no_session_description">Ihre Übungswerte wurden nicht gespeichert. Beginnen Sie, wenn Sie echte Messungen oder Wartungsarbeiten protokollieren müssen.</string>
-    <string name="new_session">Neue Sitzung</string>
     <string name="open_tasks">Aufgaben und Erinnerungen</string>
     <string name="volume_liters_format">%1$s L</string>
     <string name="volume_us_gallons_format">%1$s US-gal</string>
@@ -127,7 +124,6 @@
     <string name="incident">Vorfall</string>
     <string name="save_session">Sitzung speichern</string>
     <string name="session_save_error">Die Sitzung konnte nicht gespeichert werden. Ihre Einträge sind noch vorhanden; versuchen Sie es erneut.</string>
-    <string name="session_saved">Sitzung gespeichert</string>
     <string name="session_saved_description">Chronologiebestätigung · %1$s · %2$s</string>
     <plurals name="session_measurement_count"><item quantity="one">%1$d Messung</item><item quantity="other">%1$d Messungen</item></plurals>
     <plurals name="session_maintenance_count"><item quantity="one">%1$d Wartungsaktion</item><item quantity="other">%1$d Wartungsaktionen</item></plurals>
@@ -366,4 +362,20 @@
     <string name="timeline_filters">Filter</string>
     <string name="measurement_reading">%1$s · %2$s %3$s</string>
     <string name="last_measurement_compact">Zuletzt: %1$s %2$s</string>
+    <string name="measure_action">Messen</string>
+    <string name="latest_values_title">Letzte Werte</string>
+    <string name="home_today">Heute</string>
+    <string name="home_see_all">Alle ansehen</string>
+    <string name="home_task_overdue">überfällig</string>
+    <string name="home_nothing_due">Nichts fällig · nächste: %1$s am %2$s</string>
+    <string name="home_no_measurement_yet">Noch keine Messung</string>
+    <string name="home_status_all_in_range">Alles im Richtbereich</string>
+    <plurals name="home_status_outside_range"><item quantity="one">%1$d Wert zu beobachten</item><item quantity="other">%1$d Werte zu beobachten</item></plurals>
+    <string name="home_measured_today">heute gemessen</string>
+    <string name="home_measured_yesterday">gestern gemessen</string>
+    <plurals name="home_measured_days_ago"><item quantity="one">vor %1$d Tag gemessen</item><item quantity="other">vor %1$d Tagen gemessen</item></plurals>
+    <plurals name="reading_age_days"><item quantity="one">vor %1$d T.</item><item quantity="other">vor %1$d T.</item></plurals>
+    <string name="reading_attention_description">außerhalb Ihres Richtbereichs</string>
+    <plurals name="aquarium_age_months"><item quantity="one">%1$d Monat</item><item quantity="other">%1$d Monate</item></plurals>
+    <plurals name="aquarium_age_days"><item quantity="one">%1$d Tag</item><item quantity="other">%1$d Tage</item></plurals>
 </resources>

@@ -63,6 +63,7 @@ import com.maximerollin.aqualog.shared.SyncState
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.TimelineFilter
 import com.maximerollin.aqualog.shared.TimelineSession
+import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskInput
 import com.maximerollin.aqualog.shared.TaskUsage
@@ -91,6 +92,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.io.Serializable
 import java.time.LocalDate
@@ -337,6 +339,7 @@ data class HomeUiState(
     val showParameterValidationError: Boolean = false,
     val rapidSession: RapidSessionUiState? = null,
     val latestSession: RecordedSession? = null,
+    val latestReadings: List<LatestReading> = emptyList(),
     val accountInvitationPrompt: AccountInvitationPrompt = AccountInvitationPrompt.NONE,
     val account: AccountUiState = AccountUiState(),
     val sessionDetail: RecordedSession? = null,
@@ -454,20 +457,29 @@ class HomeViewModel(
                         setup = setup,
                         isSaving = false,
                         latestSession = if (setup == null) null else it.latestSession,
+                        latestReadings = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.latestReadings else emptyList(),
                     )
                 }
                 if (setup != null) {
                     restoreRapidSessionContext(setup)
-                    aquariumRepository.observeLatestSession(setup.aquarium.id).collect { latest ->
-                        mutableUiState.update { state ->
-                            state.copy(
-                                latestSession = latest,
-                                sessionDetail = if (state.sessionDetail?.session?.id == latest?.session?.id) {
-                                    latest
-                                } else {
-                                    state.sessionDetail
-                                },
-                            )
+                    // coroutineScope keeps both collectors under collectLatest, so switching Aquarium cancels them.
+                    coroutineScope {
+                        launch {
+                            aquariumRepository.observeLatestReadings(setup.aquarium.id).collect { readings ->
+                                mutableUiState.update { it.copy(latestReadings = readings) }
+                            }
+                        }
+                        aquariumRepository.observeLatestSession(setup.aquarium.id).collect { latest ->
+                            mutableUiState.update { state ->
+                                state.copy(
+                                    latestSession = latest,
+                                    sessionDetail = if (state.sessionDetail?.session?.id == latest?.session?.id) {
+                                        latest
+                                    } else {
+                                        state.sessionDetail
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -1282,6 +1294,10 @@ class HomeViewModel(
             }
         }
     }
+
+    fun completeTask(occurrence: TaskOccurrence) = resolveTask(occurrence, TaskResolution.COMPLETED)
+
+    fun today(): TaskDate = LocalDate.now(ZoneId.of(currentTimeZoneId())).let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
 
     fun closeRapidSession() {
         setRapidSession(null)
