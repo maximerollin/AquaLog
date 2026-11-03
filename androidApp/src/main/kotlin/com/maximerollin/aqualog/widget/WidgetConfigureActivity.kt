@@ -19,12 +19,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
@@ -49,14 +52,22 @@ class WidgetConfigureActivity : ComponentActivity() {
         setContent {
             AquaLogTheme {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    val aquariums by repository.observeAquariums().collectAsState(initial = emptyList())
+                    val loaded by repository.observeAquariums().collectAsState(initial = null)
+                    val aquariums = loaded.orEmpty()
+                    // No Aquarium yet: add the widget unpinned, it shows the invitation to open the app.
+                    LaunchedEffect(loaded) {
+                        if (loaded?.isEmpty() == true) {
+                            setResult(Activity.RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId))
+                            finish()
+                        }
+                    }
                     LazyColumn(Modifier.systemBarsPadding(), contentPadding = PaddingValues(16.dp)) {
                         item {
                             Text(
                                 stringResource(R.string.widget_configure_title),
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = MaterialTheme.colorScheme.onBackground,
-                                modifier = Modifier.padding(bottom = 8.dp),
+                                modifier = Modifier.padding(bottom = 8.dp).semantics { heading() },
                             )
                         }
                         items(aquariums, key = { it.id }) { aquarium ->

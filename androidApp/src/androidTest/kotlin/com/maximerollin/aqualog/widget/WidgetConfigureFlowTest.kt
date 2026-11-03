@@ -124,6 +124,24 @@ class WidgetConfigureFlowTest {
         }
     }
 
+    @Test
+    fun noAquarium_addsTheWidgetWithoutPinning() {
+        (context.applicationContext as TestAquaLogApplication).resetRepository()
+        val scenario = launch()
+        try {
+            composeRule.waitUntil(timeoutMillis = 10_000) { scenario.state == androidx.lifecycle.Lifecycle.State.DESTROYED }
+            val result = scenario.result
+            assertEquals(Activity.RESULT_OK, result.resultCode)
+            assertEquals(widgetId, result.resultData.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1))
+            val pinned = runBlocking {
+                getAppWidgetState(context, PreferencesGlanceStateDefinition, GlanceAppWidgetManager(context).getGlanceIdBy(widgetId))[PINNED_AQUARIUM_ID]
+            }
+            assertEquals(null, pinned)
+        } finally {
+            scenario.close()
+        }
+    }
+
     private fun launch(): ActivityScenario<WidgetConfigureActivity> = ActivityScenario.launchActivityForResult(
         Intent(context, WidgetConfigureActivity::class.java).putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId),
     )
