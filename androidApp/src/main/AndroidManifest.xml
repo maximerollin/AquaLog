@@ -27,6 +27,13 @@
                 <data android:scheme="${authScheme}" android:host="auth" android:path="/callback" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".widget.WidgetConfigureActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
         <receiver
             android:name=".TaskReminderReceiver"
             android:exported="false" />

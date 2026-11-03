@@ -8,6 +8,9 @@ class VisibleTaskRowsTest {
     fun smallestWidget_fitsNoRow() = assertEquals(0, visibleTaskRows(110f, taskCount = 3))
 
     @Test
+    fun smallestMediumWidget_fitsOneRow() = assertEquals(1, visibleTaskRows(130f, taskCount = 3))
+
+    @Test
     fun tallWidget_fitsThree() = assertEquals(3, visibleTaskRows(250f, taskCount = 5))
 
     @Test

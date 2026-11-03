@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- widgetFeatures and configure arrive together with the configuration activity (Task 8). -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.maximerollin.aqualog.widget.WidgetConfigureActivity"
     android:description="@string/widget_small_description"
     android:initialLayout="@layout/glance_default_loading_layout"
     android:minWidth="110dp"
@@ -9,4 +9,5 @@
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="2"
     android:targetCellHeight="2"
-    android:updatePeriodMillis="3600000" />
+    android:updatePeriodMillis="3600000"
+    android:widgetFeatures="reconfigurable|configuration_optional" />
