@@ -18,4 +18,6 @@
     <string name="widget_needs_pro_action">Discover Pro</string>
     <string name="widget_no_aquarium">Open Aquagenda to create your Aquarium</string>
     <string name="widget_configure_title">Choose the Aquarium</string>
+    <string name="widget_measure_action">Measure</string>
+    <string name="widget_task_overdue_label">overdue</string>
 </resources>

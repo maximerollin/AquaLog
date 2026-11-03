@@ -18,4 +18,6 @@
     <string name="widget_needs_pro_action">Découvrir Pro</string>
     <string name="widget_no_aquarium">Ouvrez Aquagenda pour créer votre bac</string>
     <string name="widget_configure_title">Choisir le bac</string>
+    <string name="widget_measure_action">Mesurer</string>
+    <string name="widget_task_overdue_label">en retard</string>
 </resources>

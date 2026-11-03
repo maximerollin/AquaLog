@@ -18,4 +18,6 @@
     <string name="widget_needs_pro_action">Scopri Pro</string>
     <string name="widget_no_aquarium">Apri Aquagenda per creare il tuo Acquario</string>
     <string name="widget_configure_title">Scegli l’Acquario</string>
+    <string name="widget_measure_action">Misura</string>
+    <string name="widget_task_overdue_label">in ritardo</string>
 </resources>

@@ -18,4 +18,6 @@
     <string name="widget_needs_pro_action">Pro entdecken</string>
     <string name="widget_no_aquarium">Öffnen Sie Aquagenda, um Ihr Aquarium anzulegen</string>
     <string name="widget_configure_title">Aquarium wählen</string>
+    <string name="widget_measure_action">Messen</string>
+    <string name="widget_task_overdue_label">überfällig</string>
 </resources>
