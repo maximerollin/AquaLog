@@ -19,10 +19,32 @@ import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.SyncCoordinator
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
+import com.maximerollin.aqualog.widget.updateAllWidgets
 import java.time.ZoneId
 import java.util.UUID
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.launch
 
 open class AquaLogApplication : Application() {
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /** Widgets follow the data while the process lives; otherwise they refresh hourly (updatePeriodMillis). */
+    @OptIn(FlowPreview::class)
+    protected open fun keepWidgetsFresh() {
+        applicationScope.launch {
+            aquariumRepository.observeChanges().debounce(1_000).collect { updateAllWidgets(this@AquaLogApplication) }
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        keepWidgetsFresh()
+    }
+
     protected open val databaseName: String = AQUA_LOG_DATABASE_NAME
 
     private val database by lazy {
@@ -126,7 +148,7 @@ open class AquaLogApplication : Application() {
 
     /** Pro as last answered by the server; the widget reads it without a network. */
     val proEntitlementCache: ProEntitlementCache by lazy {
-        SharedPreferencesProEntitlementCache(this, onChanged = {})
+        SharedPreferencesProEntitlementCache(this, onChanged = { applicationScope.launch { updateAllWidgets(this@AquaLogApplication) } })
     }
 
     private val revenueCatBillingGateway by lazy { RevenueCatBillingGateway(this) }

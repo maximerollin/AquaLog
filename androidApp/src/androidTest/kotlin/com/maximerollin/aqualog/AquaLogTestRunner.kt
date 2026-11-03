@@ -77,6 +77,9 @@ class TestAquaLogApplication : AquaLogApplication() {
         resetRepository()
     }
 
+    // The repository is swapped between tests, so no collector is bound to it.
+    override fun keepWidgetsFresh() = Unit
+
     override val taskReminderScheduler: TaskReminderScheduler
         get() = recordingTaskReminderScheduler
 

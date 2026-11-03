@@ -55,16 +55,28 @@ val PINNED_AQUARIUM_ID = stringPreferencesKey("aquarium-id")
 /** What a one-Aquarium widget shows: [pinnedId] if it still exists, else the Aquarium last viewed in the app. */
 suspend fun tankWidgetContent(context: Context, pinnedId: String?): WidgetContent {
     val application = context.applicationContext as AquaLogApplication
-    val now = application.currentTimeMillis()
-    val zone = application.currentTimeZoneId()
-    val today = Instant.ofEpochMilli(now).atZone(ZoneId.of(zone)).toLocalDate()
-    val state = application.aquariumRepository.loadWidgetAquarium(
-        pinnedId,
-        TaskDate(today.year, today.monthValue, today.dayOfMonth),
-        zone,
-    ) ?: return WidgetContent.NoAquarium
-    if (!application.proEntitlementCache.read().isActiveAt(now)) return WidgetContent.NeedsPro
+    val (today, taskDate) = application.widgetToday()
+    val state = application.aquariumRepository.loadWidgetAquarium(pinnedId, taskDate, application.currentTimeZoneId())
+        ?: return WidgetContent.NoAquarium
+    if (!application.isProCached()) return WidgetContent.NeedsPro
     return WidgetContent.Tank(widgetText(state, today))
+}
+
+/** What « Mes bacs » shows: every non-archived Aquarium, gated like [tankWidgetContent]. */
+suspend fun tanksWidgetContent(context: Context): WidgetContent {
+    val application = context.applicationContext as AquaLogApplication
+    val (today, taskDate) = application.widgetToday()
+    val states = application.aquariumRepository.loadWidgetAquariums(taskDate, application.currentTimeZoneId())
+    if (states.isEmpty()) return WidgetContent.NoAquarium
+    if (!application.isProCached()) return WidgetContent.NeedsPro
+    return WidgetContent.Tanks(states.map { widgetText(it, today) })
+}
+
+private fun AquaLogApplication.isProCached() = proEntitlementCache.read().isActiveAt(currentTimeMillis())
+
+private fun AquaLogApplication.widgetToday(): Pair<java.time.LocalDate, TaskDate> {
+    val today = Instant.ofEpochMilli(currentTimeMillis()).atZone(ZoneId.of(currentTimeZoneId())).toLocalDate()
+    return today to TaskDate(today.year, today.monthValue, today.dayOfMonth)
 }
 
 private val TargetKey = ActionParameters.Key<String>(MainActivity.EXTRA_WIDGET_TARGET)

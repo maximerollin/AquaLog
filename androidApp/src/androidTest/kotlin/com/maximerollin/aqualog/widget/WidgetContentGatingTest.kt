@@ -61,6 +61,15 @@ class WidgetContentGatingTest {
         assertEquals("Salon", (tankWidgetContent(application, null) as WidgetContent.Tank).text.name)
     }
 
+    @Test
+    fun tanks_followTheSameGating() = runBlocking {
+        assertEquals(WidgetContent.NoAquarium, tanksWidgetContent(application))
+        createAquarium()
+        assertEquals(WidgetContent.NeedsPro, tanksWidgetContent(application))
+        application.proEntitlementCache.write(ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null))
+        assertEquals(listOf("Salon"), (tanksWidgetContent(application) as WidgetContent.Tanks).rows.map { it.name })
+    }
+
     private suspend fun createAquarium() {
         val repository = application.aquariumRepository
         val created = repository.createConfiguredAquarium(

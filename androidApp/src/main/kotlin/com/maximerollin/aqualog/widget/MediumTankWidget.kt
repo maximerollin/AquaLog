@@ -18,7 +18,6 @@ import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.getAppWidgetState
-import androidx.glance.appwidget.updateAll
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
 import androidx.glance.Button
@@ -77,9 +76,7 @@ class CompleteTaskAction : ActionCallback {
             } catch (_: Exception) {
             }
         }
-        // Task 7 replaces these two lines with a shared updateAllWidgets.
-        MediumTankWidget().updateAll(context)
-        SmallTankWidget().updateAll(context)
+        updateAllWidgets(context)
     }
 
     private fun taskCompleter(application: AquaLogApplication) = TaskCompleter(
