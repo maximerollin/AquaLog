@@ -441,4 +441,9 @@
     <string name="weekly_summary_falling">falling</string>
     <string name="weekly_summary_next_week">Next week: test %1$s</string>
     <string name="weekly_summary_pro_invite">Value changes and next week's tests with Pro</string>
+    <string name="widget_value_attention">%1$s to watch</string>
+    <string name="widget_value_alert">%1$s far out of range</string>
+    <string name="widget_task_overdue">%1$s overdue</string>
+    <string name="widget_task_today">%1$s today</string>
+    <string name="widget_nothing_to_do">Nothing to do</string>
 </resources>

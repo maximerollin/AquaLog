@@ -11,4 +11,11 @@
         <item quantity="one">Su resumen de la semana está listo · %1$d semana de cuidado regular</item>
         <item quantity="other">Su resumen de la semana está listo · %1$d semanas de cuidado regular</item>
     </plurals>
+    <string name="widget_small_description">El estado de tu acuario y lo próximo que hacer</string>
+    <string name="widget_medium_description">Estado, tareas de hoy y Medir</string>
+    <string name="widget_tanks_description">Todos tus acuarios, una línea cada uno</string>
+    <string name="widget_needs_pro">El widget forma parte de Aquagenda Pro</string>
+    <string name="widget_needs_pro_action">Descubrir Pro</string>
+    <string name="widget_no_aquarium">Abre Aquagenda para crear tu acuario</string>
+    <string name="widget_configure_title">Elegir el acuario</string>
 </resources>

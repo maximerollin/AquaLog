@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.luminance
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import androidx.compose.ui.unit.dp
 
-private val LightColors = lightColorScheme(
+val CarnetLightColors = lightColorScheme(
     primary = Color(0xFF14675E), onPrimary = Color.White,
     primaryContainer = Color(0xFFDEEBE3), onPrimaryContainer = Color(0xFF1E3733),
     secondary = Color(0xFF546A64), onSecondary = Color.White,
@@ -27,7 +27,7 @@ private val LightColors = lightColorScheme(
     surfaceContainerHighest = Color(0xFFFFFEF9),
     outline = Color(0xFF7C9189), outlineVariant = Color(0xFFCCD7CF),
 )
-private val DarkColors = darkColorScheme(
+val CarnetDarkColors = darkColorScheme(
     primary = Color(0xFF9BD8C8), onPrimary = Color(0xFF102D26),
     primaryContainer = Color(0xFF294A3F), onPrimaryContainer = Color(0xFFEDF3E8),
     secondary = Color(0xFFB7C9C0), onSecondary = Color(0xFF102D26),
@@ -98,4 +98,4 @@ fun AquaLogTheme(
 
 // Keep the same palette on every Android version, independently of wallpaper.
 fun aquaLogColorScheme(darkTheme: Boolean): ColorScheme =
-    if (darkTheme) DarkColors else LightColors
+    if (darkTheme) CarnetDarkColors else CarnetLightColors

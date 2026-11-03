@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The small widget's scene: decor only (water, sand, two plants); habitants arrive in lot 5. -->
+<vector xmlns:aapt="http://schemas.android.com/aapt" xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp" android:height="84dp" android:viewportWidth="200" android:viewportHeight="84">
+    <path android:pathData="M0,0 H200 V84 H0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="0" android:endX="0" android:endY="84">
+                <item android:color="#FF3D9184" android:offset="0" />
+                <item android:color="#FF14675E" android:offset="1" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:fillColor="#FF2E7D4F" android:pathData="M38,72 C30,56 28,40 34,22 C38,40 40,56 42,72 Z" />
+    <path android:fillColor="#FF3F9A5E" android:pathData="M42,72 C44,54 50,40 58,30 C54,46 50,60 46,72 Z" />
+    <path android:fillColor="#FF2E7D4F" android:pathData="M150,72 C146,58 140,48 132,40 C142,46 150,56 154,72 Z" />
+    <path android:fillColor="#FF3F9A5E" android:pathData="M154,72 C154,52 158,36 166,18 C166,38 162,56 158,72 Z" />
+    <path android:fillColor="#FFD6C497" android:pathData="M0,70 C50,66 120,74 200,68 V84 H0 Z" />
+</vector>

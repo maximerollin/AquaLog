@@ -441,4 +441,9 @@
     <string name="weekly_summary_falling">en baisse</string>
     <string name="weekly_summary_next_week">Semaine prochaine : tester %1$s</string>
     <string name="weekly_summary_pro_invite">Évolution des valeurs et tests de la semaine prochaine avec Pro</string>
+    <string name="widget_value_attention">%1$s à surveiller</string>
+    <string name="widget_value_alert">%1$s très hors plage</string>
+    <string name="widget_task_overdue">%1$s en retard</string>
+    <string name="widget_task_today">%1$s aujourd’hui</string>
+    <string name="widget_nothing_to_do">Rien à faire</string>
 </resources>

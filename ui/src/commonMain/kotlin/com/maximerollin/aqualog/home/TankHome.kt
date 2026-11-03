@@ -583,5 +583,5 @@ private fun SyncFailure(state: HomeUiState, viewModel: HomeViewModel, modifier: 
 private fun localDate(epochMillis: Long): LocalDate = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate()
 
 // A Session saved a moment "in the future" (clock skew) still reads as today.
-private fun daysSince(epochMillis: Long, today: LocalDate): Int =
+internal fun daysSince(epochMillis: Long, today: LocalDate): Int =
     ChronoUnit.DAYS.between(localDate(epochMillis), today).toInt().coerceAtLeast(0)
