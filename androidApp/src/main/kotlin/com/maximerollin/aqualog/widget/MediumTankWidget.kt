@@ -9,6 +9,8 @@ import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
+import androidx.glance.LocalSize
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.CheckBox
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -45,6 +47,9 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.first
 
 class MediumTankWidget : GlanceAppWidget() {
+    // Exact: the content reads the real height to decide how many Tâche rows fit.
+    override val sizeMode = SizeMode.Exact
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val pinnedId = getAppWidgetState<Preferences>(context, id)[PINNED_AQUARIUM_ID]
         val content = tankWidgetContent(context, pinnedId)
@@ -109,12 +114,13 @@ fun MediumTankContent(content: WidgetContent) {
 private fun MediumTank(text: WidgetTankText) {
     val context = LocalContext.current
     val measure = context.getString(R.string.widget_measure_action)
+    val rows = visibleTaskRows(LocalSize.current.height.value, text.tasks.size)
     Column(
         widgetSurface(openAppAction(text.aquariumId, WidgetTarget.HOME))
             .background(GlanceTheme.colors.surface)
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
-        Row(GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(GlanceModifier.fillMaxWidth().height(ROW_HEIGHT_DP.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text.name,
                 style = TextStyle(
@@ -127,9 +133,14 @@ private fun MediumTank(text: WidgetTankText) {
                 modifier = GlanceModifier.defaultWeight(),
             )
             StatusDot(text)
+            Button(
+                measure,
+                onClick = openAppAction(text.aquariumId, WidgetTarget.MEASURE),
+                modifier = GlanceModifier.height(ROW_HEIGHT_DP.dp).padding(start = 8.dp).semantics { contentDescription = measure },
+            )
         }
         Text(text.status, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp), maxLines = 1)
-        if (text.tasks.isEmpty()) {
+        if (rows == 0) {
             Text(
                 text.next,
                 style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp),
@@ -137,14 +148,7 @@ private fun MediumTank(text: WidgetTankText) {
                 modifier = GlanceModifier.padding(top = 4.dp),
             )
         } else {
-            text.tasks.take(MAX_TASKS).forEach { TaskRow(it) }
-        }
-        Row(GlanceModifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
-            Button(
-                measure,
-                onClick = openAppAction(text.aquariumId, WidgetTarget.MEASURE),
-                modifier = GlanceModifier.height(48.dp).semantics { contentDescription = measure },
-            )
+            text.tasks.take(rows).forEach { TaskRow(it) }
         }
     }
 }
@@ -171,3 +175,11 @@ private fun TaskRow(task: WidgetTaskRow) {
 }
 
 private const val MAX_TASKS = 3
+private const val ROW_HEIGHT_DP = 48
+
+// Card padding (16) + header row (48) + one status line (~18).
+private const val FIXED_HEIGHT_DP = 82
+
+/** How many 48 dp Tâche rows fit under the header in a widget [heightDp] tall: 0 to 3, never more than [taskCount]. */
+fun visibleTaskRows(heightDp: Float, taskCount: Int): Int =
+    ((heightDp - FIXED_HEIGHT_DP) / ROW_HEIGHT_DP).toInt().coerceIn(0, MAX_TASKS).coerceAtMost(taskCount)

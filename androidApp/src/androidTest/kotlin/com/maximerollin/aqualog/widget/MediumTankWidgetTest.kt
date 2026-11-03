@@ -9,7 +9,13 @@ import androidx.glance.appwidget.action.RunCallbackAction
 import androidx.glance.appwidget.AppWidgetId
 import androidx.glance.testing.unit.hasStartActivityClickAction
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
+import androidx.glance.appwidget.EmittableCheckBox
 import androidx.glance.testing.GlanceNodeMatcher
+import androidx.glance.Emittable
+import androidx.glance.layout.EmittableRow
+import androidx.glance.text.EmittableText
 import androidx.glance.testing.unit.MappedNode
 import androidx.glance.testing.unit.assertHasContentDescriptionEqualTo
 import androidx.glance.testing.unit.hasContentDescriptionEqualTo
@@ -47,6 +53,7 @@ class MediumTankWidgetTest {
     @Test
     fun showsStatusTasksAndMeasure() = runGlanceAppWidgetUnitTest {
         setContext(localized("fr"))
+        setAppWidgetSize(DpSize(250.dp, 250.dp))
         provideComposable { MediumTankContent(WidgetContent.Tank(text(tasks))) }
 
         onNode(hasTextEqualTo("Salon")).assertExists()
@@ -54,6 +61,8 @@ class MediumTankWidgetTest {
         onNode(hasTextEqualTo("Changer l’eau")).assertExists()
         onNode(hasTextEqualTo("Nettoyer le filtre")).assertExists()
         onAllNodes(hasTextEqualTo("en retard")).assertCountEquals(1)
+        onNode(rowWithOverdueMarker("o-1")).assertExists()
+        onNode(rowWithOverdueMarker("o-2")).assertDoesNotExist()
         onNode(hasStartActivityClickAction<MainActivity>(extras("salon", WidgetTarget.MEASURE)))
             .assertHasContentDescriptionEqualTo("Mesurer")
     }
@@ -61,6 +70,7 @@ class MediumTankWidgetTest {
     @Test
     fun eachTaskCheckbox_runsCompleteTaskWithItsOccurrence() = runGlanceAppWidgetUnitTest {
         setContext(localized("fr"))
+        setAppWidgetSize(DpSize(250.dp, 250.dp))
         provideComposable { MediumTankContent(WidgetContent.Tank(text(tasks))) }
 
         for (task in tasks) {
@@ -72,10 +82,23 @@ class MediumTankWidgetTest {
     @Test
     fun noTasks_showsNextStepInstead() = runGlanceAppWidgetUnitTest {
         setContext(localized("fr"))
+        setAppWidgetSize(DpSize(250.dp, 250.dp))
         provideComposable { MediumTankContent(WidgetContent.Tank(text(emptyList()))) }
 
         onNode(hasTextEqualTo("Rien à faire")).assertExists()
+        onNode(isACheckBox()).assertDoesNotExist()
         onNode(hasContentDescriptionEqualTo("Mesurer")).assertExists()
+    }
+
+    @Test
+    fun tooShortForRows_showsNextStepAndKeepsMeasureInTheHeader() = runGlanceAppWidgetUnitTest {
+        setContext(localized("fr"))
+        setAppWidgetSize(DpSize(250.dp, 110.dp))
+        provideComposable { MediumTankContent(WidgetContent.Tank(text(tasks))) }
+
+        onNode(isACheckBox()).assertDoesNotExist()
+        onNode(hasTextEqualTo("Rien à faire")).assertExists()
+        onNode(hasStartActivityClickAction<MainActivity>(extras("salon", WidgetTarget.MEASURE))).assertExists()
     }
 
     @Test
@@ -129,13 +152,24 @@ class MediumTankWidgetTest {
     )
 
     // The library's hasRunCallbackClickAction does not unwrap a checkbox's CompoundButtonAction, which is internal: reflection reads its inner action.
-    private fun checksOff(occurrenceId: String) = GlanceNodeMatcher<MappedNode>("checkbox runs CompleteTaskAction for $occurrenceId") { node ->
-        val inner = node.value.emittable.modifier
+    private fun checksOff(occurrenceId: String) = GlanceNodeMatcher<MappedNode>("checkbox runs CompleteTaskAction for $occurrenceId") {
+        it.value.emittable.checksOff(occurrenceId)
+    }
+
+    private fun rowWithOverdueMarker(occurrenceId: String) = GlanceNodeMatcher<MappedNode>("row of $occurrenceId marked en retard") { node ->
+        val children = (node.value.emittable as? EmittableRow)?.children.orEmpty()
+        children.any { it.checksOff(occurrenceId) } && children.any { (it as? EmittableText)?.text == "en retard" }
+    }
+
+    private fun Emittable.checksOff(occurrenceId: String): Boolean {
+        val inner = modifier
             .foldIn<ActionModifier?>(null) { found, element -> (element as? ActionModifier) ?: found }
             ?.action?.let { it.javaClass.takeIf { type -> type.simpleName == "CompoundButtonAction" }?.getMethod("getInnerAction")?.invoke(it) }
             as? RunCallbackAction
-        inner?.callbackClass == CompleteTaskAction::class.java && inner.parameters == occurrence(occurrenceId)
+        return inner?.callbackClass == CompleteTaskAction::class.java && inner.parameters == occurrence(occurrenceId)
     }
+
+    private fun isACheckBox() = GlanceNodeMatcher<MappedNode>("is a checkbox") { it.value.emittable is EmittableCheckBox }
 
     private fun occurrence(id: String) = actionParametersOf(CompleteTaskAction.OCCURRENCE_ID to id)
 
