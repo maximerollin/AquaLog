@@ -98,6 +98,12 @@ class ProPurchaseCoordinator(
 
     val hasProEntitlement: Boolean get() = entitlement != null
 
+    /** Sign-out and account deletion: the device no longer knows Pro until the server says so again. */
+    fun forgetEntitlement() {
+        entitlement = null
+        entitlementCache?.write(null)
+    }
+
     suspend fun loadOffer(): AnnualProOffer = billingGateway.loadAnnualOffer()
 
     suspend fun loadLifetimeOffer(): LifetimeProOffer = billingGateway.loadLifetimeOffer()

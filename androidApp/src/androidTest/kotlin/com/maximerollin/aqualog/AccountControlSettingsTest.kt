@@ -13,6 +13,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.CloudAccountDeletionResult
+import com.maximerollin.aqualog.shared.LIFETIME_PRO_PRODUCT_ID
+import com.maximerollin.aqualog.shared.ProEntitlement
 import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.VolumeUnit
 import kotlinx.coroutines.runBlocking
@@ -42,8 +44,10 @@ class AccountControlSettingsTest {
     @Test
     fun settings_exports_before_explicit_keep_or_remove_sign_out_choice() {
         prepare()
+        application.grantPro(ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null))
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
+            composeRule.waitUntil(5_000) { application.proEntitlementCache.read() != null }
             composeRule.onNodeWithText("More").performClick()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("owner@example.com"))
             composeRule.onNodeWithText("owner@example.com").assertIsDisplayed()
@@ -59,6 +63,25 @@ class AccountControlSettingsTest {
             }
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Local-only"))
             composeRule.onNodeWithText("Local-only").assertIsDisplayed()
+            // Signed out, the widgets no longer know Pro.
+            check(application.proEntitlementCache.read() == null)
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun completed_deletion_clears_the_cached_pro() {
+        prepare()
+        application.grantPro(ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null))
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.waitUntil(5_000) { application.proEntitlementCache.read() != null }
+            composeRule.onNodeWithText("More").performClick()
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Delete account"))
+            composeRule.onNodeWithText("Delete account").performScrollTo().performClick()
+            composeRule.onNodeWithText("Delete account and data").performClick()
+            composeRule.waitUntil(5_000) { application.proEntitlementCache.read() == null }
         } finally {
             scenario.close()
         }

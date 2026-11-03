@@ -296,6 +296,23 @@ class ProPurchaseCoordinatorTest {
     }
 
     @Test
+    fun `forgetting the entitlement clears the cache`() = runTest {
+        val entitlement = ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null)
+        val cache = InMemoryProEntitlementCache()
+        val verifier = DeterministicPurchaseVerifier(
+            result = PurchaseVerificationResult.Rejected("unused"),
+            loadedEntitlement = PurchaseVerificationResult.Verified(entitlement),
+        )
+        val coordinator = ProPurchaseCoordinator(DeterministicBillingGateway(), verifier, cache)
+        coordinator.refreshEntitlement()
+
+        coordinator.forgetEntitlement()
+
+        assertEquals(null, cache.read())
+        assertFalse(coordinator.hasProEntitlement)
+    }
+
+    @Test
     fun `an expired annual entitlement is not active`() {
         val annual = ProEntitlement(ANNUAL_PRO_PRODUCT_ID, 1_000)
 

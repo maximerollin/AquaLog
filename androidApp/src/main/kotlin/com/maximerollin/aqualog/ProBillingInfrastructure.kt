@@ -38,7 +38,7 @@ internal class SharedPreferencesProEntitlementCache(
                 putString(PRODUCT_ID, entitlement.productId)
                 putLong(VALID_UNTIL, entitlement.validUntilEpochMillis ?: LIFETIME)
             }
-        }.commit()
+        }.apply()
         onChanged()
     }
 

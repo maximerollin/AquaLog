@@ -903,6 +903,7 @@ class HomeViewModel(
                             )
                         }
                     } else {
+                        proPurchaseCoordinator?.forgetEntitlement()
                         refreshAccountSettingsState()
                     }
                 }
@@ -939,7 +940,10 @@ class HomeViewModel(
                 return@launch
             }
             when (result) {
-                AccountControlResult.Deleted -> refreshAccountSettingsState()
+                AccountControlResult.Deleted -> {
+                    proPurchaseCoordinator?.forgetEntitlement()
+                    refreshAccountSettingsState()
+                }
                 is AccountControlResult.SignOutIncomplete -> Unit
                 is AccountControlResult.DeletionIncomplete -> {
                     val pending = coordinator.pendingDeletion()
@@ -991,7 +995,10 @@ class HomeViewModel(
     private suspend fun handleDeletionReauthentication(result: AccountDeletionReauthenticationResult) {
         when (result) {
             is AccountDeletionReauthenticationResult.Resumed -> when (val deletion = result.deletionResult) {
-                AccountControlResult.Deleted -> refreshAccountSettingsState()
+                AccountControlResult.Deleted -> {
+                    proPurchaseCoordinator?.forgetEntitlement()
+                    refreshAccountSettingsState()
+                }
                 is AccountControlResult.DeletionIncomplete -> {
                     val coordinator = requireNotNull(accountControlCoordinator)
                     val pending = coordinator.pendingDeletion()

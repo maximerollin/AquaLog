@@ -117,6 +117,7 @@ class TestAquaLogApplication : AquaLogApplication() {
             override suspend fun verify(productId: String, purchaseToken: String) =
                 PurchaseVerificationResult.Rejected("Test purchases require an explicit test")
         },
+        entitlementCache = proEntitlementCache,
     )
 
     override val portableDataService: PortableDataService
@@ -158,6 +159,7 @@ class TestAquaLogApplication : AquaLogApplication() {
         analyticsPayloads.clear()
         recordedFeedback.clear()
         verifiedProEntitlement = null
+        proEntitlementCache.write(null)
     }
 
     private fun bindRepository(newRepository: RoomAquariumRepository, newDatabase: AquaLogDatabase) {
