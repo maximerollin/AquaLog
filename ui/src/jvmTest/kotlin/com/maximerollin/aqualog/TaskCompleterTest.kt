@@ -18,8 +18,12 @@ import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
 import com.maximerollin.aqualog.shared.createJvmDatabaseBuilder
 import java.nio.file.Files
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -57,8 +61,8 @@ class TaskCompleterTest {
             parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
         ).aquarium
 
-        suspend fun task(aquariumId: String, due: TaskDate, type: MaintenanceActionType?) = repository.createTask(
-            TaskInput(aquariumId, "Task", TaskRecurrence.WEEKLY, due, null, "UTC", type),
+        suspend fun task(aquariumId: String, due: TaskDate, type: MaintenanceActionType?, recurrence: TaskRecurrence = TaskRecurrence.WEEKLY) = repository.createTask(
+            TaskInput(aquariumId, "Task", recurrence, due, null, "UTC", type),
         ).occurrence
 
         fun close() = database.close()
@@ -115,6 +119,25 @@ class TaskCompleterTest {
 
         assertEquals(eventsAfterFirst, fixture.events)
         assertEquals(1, fixture.repository.observeTimeline(TimelineFilter()).first().size)
+        fixture.close()
+    }
+
+    @Test
+    fun `two overlapping completions of the same occurrence record one Session`() = runTest {
+        val fixture = Fixture()
+        val aquariumId = fixture.createAquarium().id
+        // Two instances, as the home and the widget each build their own; a real dispatcher and many rounds so the calls truly overlap.
+        val other = TaskCompleter(fixture.repository, fixture.scheduler, { fixture.events += it }, { 1_800_000_000_000L }, { today }, { "other-${System.nanoTime()}" })
+        val rounds = 20
+        repeat(rounds) {
+            val occurrence = fixture.task(aquariumId, today, MaintenanceActionType.WATER_CHANGE, TaskRecurrence.ONCE)
+            withContext(Dispatchers.Default) {
+                listOf(async { fixture.completer.complete(occurrence) }, async { other.complete(occurrence) }).awaitAll()
+            }
+        }
+
+        assertEquals(rounds, fixture.repository.observeTimeline(TimelineFilter()).first().size)
+        assertEquals(rounds, fixture.events.size)
         fixture.close()
     }
 }

@@ -11,6 +11,11 @@ import com.maximerollin.aqualog.shared.TaskResolution
 import com.maximerollin.aqualog.shared.TaskResolutionInput
 import com.maximerollin.aqualog.shared.TaskUsage
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
+// Process-wide: the home and the widget each build their own TaskCompleter, and a double tap overlaps two calls on one occurrence.
+private val completeLock = Mutex()
 
 /** The one path that ticks a Tâche, for the home and the widget. */
 class TaskCompleter(
@@ -26,8 +31,8 @@ class TaskCompleter(
      * a free-text one resolves. Returns the recorded Session, or null (also when [occurrence] is no longer pending).
      * Throws on failure.
      */
-    suspend fun complete(occurrence: TaskOccurrence): RecordedSession? {
-        if (repository.observePendingTaskOccurrences().first().none { it.id == occurrence.id }) return null
+    suspend fun complete(occurrence: TaskOccurrence): RecordedSession? = completeLock.withLock {
+        if (repository.observePendingTaskOccurrences().first().none { it.id == occurrence.id }) return@withLock null
         val type = occurrence.maintenanceActionType
         if (type == null) {
             val result = repository.resolveTaskOccurrence(
@@ -42,7 +47,7 @@ class TaskCompleter(
             scheduler.cancel(occurrence.id)
             result.nextOccurrence?.let(scheduler::schedule)
             recordEvent(ProductEvent.TaskUsed(TaskUsage.COMPLETED))
-            return null
+            return@withLock null
         }
         val last = repository.loadRapidSessionContext(occurrence.aquariumId).lastMaintenanceActions[type]
         val recorded = repository.saveRapidSession(
@@ -54,7 +59,7 @@ class TaskCompleter(
             ),
         )
         completeLinked(recorded, alsoOccurrenceId = occurrence.id)
-        return recorded
+        recorded
     }
 
     /** Resolves the linked Tâches that [recorded]'s actions satisfy. Throws when the resolution fails, so a caller that must know can react. */
