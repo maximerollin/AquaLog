@@ -7,6 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class ProPurchaseCoordinatorTest {
     @Test
@@ -231,6 +232,85 @@ class ProPurchaseCoordinatorTest {
         assertEquals(null, billing.lastRestoredAccountId)
     }
 
+    @Test
+    fun `a verified entitlement is cached`() = runTest {
+        val entitlement = ProEntitlement(ANNUAL_PRO_PRODUCT_ID, 1_800_000_000_000L)
+        val cache = InMemoryProEntitlementCache()
+        val verifier = DeterministicPurchaseVerifier(
+            result = PurchaseVerificationResult.Rejected("unused"),
+            loadedEntitlement = PurchaseVerificationResult.Verified(entitlement),
+        )
+
+        ProPurchaseCoordinator(DeterministicBillingGateway(), verifier, cache).refreshEntitlement()
+
+        assertEquals(entitlement, cache.read())
+    }
+
+    @Test
+    fun `a network failure keeps the cached entitlement`() = runTest {
+        val entitlement = ProEntitlement(ANNUAL_PRO_PRODUCT_ID, 1_800_000_000_000L)
+        val cache = InMemoryProEntitlementCache()
+        val verifier = DeterministicPurchaseVerifier(
+            result = PurchaseVerificationResult.Rejected("unused"),
+            loadedEntitlement = PurchaseVerificationResult.Verified(entitlement),
+        )
+        val coordinator = ProPurchaseCoordinator(DeterministicBillingGateway(), verifier, cache)
+        coordinator.refreshEntitlement()
+
+        verifier.loadedEntitlement = PurchaseVerificationResult.Failed("offline")
+        coordinator.refreshEntitlement()
+        verifier.loadedEntitlement = PurchaseVerificationResult.Rejected("flaky")
+        coordinator.resolve(PlayPurchaseUpdate.CustomerInfoUpdated)
+
+        assertEquals(entitlement, cache.read())
+    }
+
+    @Test
+    fun `not entitled and authentication required clear the cache`() = runTest {
+        val entitlement = ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null)
+        val cache = InMemoryProEntitlementCache()
+        val verifier = DeterministicPurchaseVerifier(
+            result = PurchaseVerificationResult.Rejected("unused"),
+            loadedEntitlement = PurchaseVerificationResult.Verified(entitlement),
+        )
+        val coordinator = ProPurchaseCoordinator(DeterministicBillingGateway(), verifier, cache)
+
+        val verified = PurchaseVerificationResult.Verified(entitlement)
+
+        coordinator.refreshEntitlement()
+        verifier.loadedEntitlement = PurchaseVerificationResult.Rejected("revoked")
+        coordinator.refreshEntitlement()
+        assertEquals(null, cache.read())
+
+        verifier.loadedEntitlement = verified
+        coordinator.refreshEntitlement()
+        verifier.loadedEntitlement = PurchaseVerificationResult.AuthenticationRequired
+        coordinator.refreshEntitlement()
+        assertEquals(null, cache.read())
+
+        verifier.loadedEntitlement = verified
+        coordinator.refreshEntitlement()
+        verifier.accountIdentity = PurchaseAccountIdentityResult.AuthenticationRequired
+        coordinator.restorePurchase()
+        assertEquals(null, cache.read())
+    }
+
+    @Test
+    fun `an expired annual entitlement is not active`() {
+        val annual = ProEntitlement(ANNUAL_PRO_PRODUCT_ID, 1_000)
+
+        assertFalse(annual.isActiveAt(1_000))
+        assertTrue(annual.isActiveAt(999))
+        assertTrue(ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null).isActiveAt(Long.MAX_VALUE))
+        assertFalse(null.isActiveAt(0))
+    }
+
+}
+
+private class InMemoryProEntitlementCache : ProEntitlementCache {
+    private var stored: ProEntitlement? = null
+    override fun read() = stored
+    override fun write(entitlement: ProEntitlement?) { stored = entitlement }
 }
 
 private class DeterministicBillingGateway(

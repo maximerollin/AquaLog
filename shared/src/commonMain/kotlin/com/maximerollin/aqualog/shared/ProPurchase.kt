@@ -54,6 +54,15 @@ data class ProEntitlement(
     val validUntilEpochMillis: Long?,
 )
 
+fun ProEntitlement?.isActiveAt(nowEpochMillis: Long): Boolean =
+    this != null && (validUntilEpochMillis == null || validUntilEpochMillis > nowEpochMillis)
+
+/** The last server answer, kept on the device so Pro is known without a network. */
+interface ProEntitlementCache {
+    fun read(): ProEntitlement?
+    fun write(entitlement: ProEntitlement?)
+}
+
 sealed interface PurchaseVerificationResult {
     data class Verified(val entitlement: ProEntitlement) : PurchaseVerificationResult
     data class Rejected(val reason: String) : PurchaseVerificationResult
@@ -80,6 +89,7 @@ sealed interface ProPurchaseOutcome {
 class ProPurchaseCoordinator(
     private val billingGateway: ProBillingGateway,
     private val purchaseVerifier: ProPurchaseVerifier,
+    private val entitlementCache: ProEntitlementCache? = null,
 ) {
     val purchaseUpdates: Flow<PlayPurchaseUpdate> get() = billingGateway.purchaseUpdates
 
@@ -126,6 +136,7 @@ class ProPurchaseCoordinator(
             is PurchaseAccountIdentityResult.Available -> result.obfuscatedAccountId
             PurchaseAccountIdentityResult.AuthenticationRequired -> {
                 entitlement = null
+                entitlementCache?.write(null)
                 return ProPurchaseOutcome.AuthenticationRequired
             }
             is PurchaseAccountIdentityResult.Failed -> {
@@ -164,6 +175,7 @@ class ProPurchaseCoordinator(
     ): ProPurchaseOutcome = when (result) {
             is PurchaseVerificationResult.Verified -> {
                 entitlement = result.entitlement
+                entitlementCache?.write(result.entitlement)
                 ProPurchaseOutcome.Entitled(result.entitlement)
             }
             is PurchaseVerificationResult.Rejected -> {
@@ -171,11 +183,13 @@ class ProPurchaseCoordinator(
                 if (rejectionIsFailure) {
                     ProPurchaseOutcome.Failed(result.reason)
                 } else {
+                    entitlementCache?.write(null)
                     ProPurchaseOutcome.NotEntitled
                 }
             }
             PurchaseVerificationResult.AuthenticationRequired -> {
                 entitlement = null
+                entitlementCache?.write(null)
                 ProPurchaseOutcome.AuthenticationRequired
             }
             is PurchaseVerificationResult.Failed -> {

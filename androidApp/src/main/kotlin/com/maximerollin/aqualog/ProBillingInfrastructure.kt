@@ -3,15 +3,51 @@ package com.maximerollin.aqualog
 import com.maximerollin.aqualog.shared.ANNUAL_PRO_PRODUCT_ID
 import com.maximerollin.aqualog.shared.LIFETIME_PRO_PRODUCT_ID
 import com.maximerollin.aqualog.shared.ProEntitlement
+import com.maximerollin.aqualog.shared.ProEntitlementCache
 import com.maximerollin.aqualog.shared.ProPurchaseVerifier
 import com.maximerollin.aqualog.shared.PurchaseAccountIdentityResult
 import com.maximerollin.aqualog.shared.PurchaseVerificationResult
 import com.maximerollin.aqualog.shared.SyncSessionProvider
+import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+
+/** Keeps the last server answer so the widget knows Pro offline; [onChanged] fires only when the value changes. */
+internal class SharedPreferencesProEntitlementCache(
+    context: Context,
+    private val onChanged: () -> Unit,
+) : ProEntitlementCache {
+    private val preferences = context.applicationContext.getSharedPreferences("pro-entitlement", Context.MODE_PRIVATE)
+
+    override fun read(): ProEntitlement? {
+        val productId = preferences.getString(PRODUCT_ID, null) ?: return null
+        val validUntil = preferences.getLong(VALID_UNTIL, LIFETIME)
+        return ProEntitlement(productId, validUntil.takeIf { it != LIFETIME })
+    }
+
+    @Synchronized
+    override fun write(entitlement: ProEntitlement?) {
+        if (read() == entitlement) return
+        preferences.edit().apply {
+            if (entitlement == null) {
+                clear()
+            } else {
+                putString(PRODUCT_ID, entitlement.productId)
+                putLong(VALID_UNTIL, entitlement.validUntilEpochMillis ?: LIFETIME)
+            }
+        }.commit()
+        onChanged()
+    }
+
+    private companion object {
+        const val PRODUCT_ID = "productId"
+        const val VALID_UNTIL = "validUntil"
+        const val LIFETIME = -1L
+    }
+}
 
 internal class SupabaseProPurchaseVerifier(
     private val configuration: SupabaseConfiguration,

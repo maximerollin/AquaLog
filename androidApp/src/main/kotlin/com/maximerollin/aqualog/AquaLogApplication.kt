@@ -11,6 +11,7 @@ import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.CrashReporter
 import com.maximerollin.aqualog.shared.FeedbackGateway
 import com.maximerollin.aqualog.shared.ProductTelemetry
+import com.maximerollin.aqualog.shared.ProEntitlementCache
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.PortableDataService
 import com.maximerollin.aqualog.shared.ReviewCoordinator
@@ -123,6 +124,11 @@ open class AquaLogApplication : Application() {
         )
     }
 
+    /** Pro as last answered by the server; the widget reads it without a network. */
+    val proEntitlementCache: ProEntitlementCache by lazy {
+        SharedPreferencesProEntitlementCache(this, onChanged = {})
+    }
+
     private val revenueCatBillingGateway by lazy { RevenueCatBillingGateway(this) }
     private val defaultProPurchaseCoordinator by lazy {
         ProPurchaseCoordinator(
@@ -131,6 +137,7 @@ open class AquaLogApplication : Application() {
                 configuration = SupabaseConfiguration.fromBuildConfig(),
                 sessionProvider = accountSessionProvider,
             ),
+            entitlementCache = proEntitlementCache,
         )
     }
 
