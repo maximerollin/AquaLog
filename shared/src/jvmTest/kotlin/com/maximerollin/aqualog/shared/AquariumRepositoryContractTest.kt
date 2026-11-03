@@ -2,9 +2,11 @@ package com.maximerollin.aqualog.shared
 
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
-import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.test.runTest
 import java.nio.file.Files
@@ -24,12 +26,21 @@ class AquariumRepositoryContractTest {
         val repository = RoomAquariumRepository(database, ids::next, { 1_700_000_000_000L })
         val aquarium = repository.createAquarium("Salon", 120.0, VolumeUnit.LITERS)
 
-        val change = async(start = CoroutineStart.UNDISPATCHED) { repository.observeChanges().first() }
-        repository.saveRapidSession(
-            RapidSessionInput(aquariumId = aquarium.id, occurredAtEpochMillis = 1_700_000_000_001L, idempotencyKey = "k", observation = "Clair"),
-        )
+        val change = async(Dispatchers.Default) { repository.observeChanges().first() }
+        // Real time, not runTest's virtual clock; the tracker may start observing after a first save, so save until it emits.
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) {
+                var attempt = 0
+                while (!change.isCompleted) {
+                    repository.saveRapidSession(
+                        RapidSessionInput(aquariumId = aquarium.id, occurredAtEpochMillis = 1_700_000_000_001L, idempotencyKey = "k${attempt++}", observation = "Clair"),
+                    )
+                    delay(50)
+                }
+            }
+        }
 
-        assertEquals(Unit, withTimeout(5_000) { change.await() })
+        assertEquals(Unit, change.await())
         database.close()
     }
 
