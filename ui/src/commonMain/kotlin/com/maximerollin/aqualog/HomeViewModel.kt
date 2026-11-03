@@ -464,6 +464,9 @@ class HomeViewModel(
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
     private val feedbackCoordinator = FeedbackCoordinator(feedbackGateway)
+    private val taskCompleter = TaskCompleter(
+        aquariumRepository, taskReminderScheduler, ::recordProductEvent, currentTimeMillis, ::today, generateInteractionId,
+    )
     private val mutableUiState = MutableStateFlow(
         HomeUiState(
             rapidSession = savedStateHandle
@@ -1329,6 +1332,10 @@ class HomeViewModel(
 
     fun resolveTask(occurrence: TaskOccurrence, resolution: TaskResolution) {
         viewModelScope.launch {
+            if (resolution == TaskResolution.COMPLETED) {
+                runCatching { taskCompleter.complete(occurrence) }
+                return@launch
+            }
             val postponed = if (resolution == TaskResolution.POSTPONED) {
                 LocalDate.of(
                     occurrence.dueDate.year,
@@ -1372,39 +1379,16 @@ class HomeViewModel(
      * [onFailed] lets the row re-enable its checkbox.
      */
     fun completeTask(occurrence: TaskOccurrence, onFailed: () -> Unit = {}) {
-        val type = occurrence.maintenanceActionType ?: return resolveTask(occurrence, TaskResolution.COMPLETED)
+        if (occurrence.maintenanceActionType == null) return resolveTask(occurrence, TaskResolution.COMPLETED)
         viewModelScope.launch {
             runCatching {
-                val last = aquariumRepository.loadRapidSessionContext(occurrence.aquariumId).lastMaintenanceActions[type]
-                val recorded = aquariumRepository.saveRapidSession(
-                    RapidSessionInput(
-                        aquariumId = occurrence.aquariumId,
-                        occurredAtEpochMillis = currentTimeMillis(),
-                        idempotencyKey = generateInteractionId(),
-                        maintenanceActions = listOf(defaultMaintenanceInput(type, last)),
-                    ),
-                )
+                val recorded = taskCompleter.complete(occurrence)
                 // A Tâche of another Aquarium (from the agenda) must not replace the displayed one's latest Session.
-                mutableUiState.update { if (it.setup?.aquarium?.id == occurrence.aquariumId) it.copy(latestSession = recorded) else it }
-                completeLinkedTasks(recorded, alsoOccurrenceId = occurrence.id)
+                if (recorded != null) {
+                    mutableUiState.update { if (it.setup?.aquarium?.id == occurrence.aquariumId) it.copy(latestSession = recorded) else it }
+                }
             }.onFailure { onFailed() }
         }
-    }
-
-    /** Throws when the resolution fails, so a caller that must know can react; Session saves ignore it. */
-    private suspend fun completeLinkedTasks(
-        recorded: RecordedSession,
-        alreadyRecorded: Set<MaintenanceActionType> = emptySet(),
-        alsoOccurrenceId: String? = null,
-    ) {
-        val types = recorded.maintenanceActions.map { it.type }.toSet() - alreadyRecorded
-        if (types.isEmpty() && alsoOccurrenceId == null) return
-        aquariumRepository.completeLinkedTasks(recorded.session.aquariumId, types, today(), currentTimeMillis(), alsoOccurrenceId)
-            .forEach { result ->
-                taskReminderScheduler.cancel(result.resolved.id)
-                result.nextOccurrence?.let(taskReminderScheduler::schedule)
-                recordProductEvent(ProductEvent.TaskUsed(TaskUsage.COMPLETED))
-            }
     }
 
     /** The profile follows the Aquarium; parameters and ranges stay as they are, the rhythm follows the new profile. */
@@ -1824,7 +1808,7 @@ class HomeViewModel(
                     }
                 }
                 if (draft.editingSessionId == null) showPistesAfterSave(recorded)
-                runCatching { completeLinkedTasks(recorded, previousTypes) }
+                runCatching { taskCompleter.completeLinked(recorded, previousTypes) }
                 recordProductEvent(
                     ProductEvent.SessionSaved(
                         if (draft.editingSessionId == null) SessionUsage.CREATED else SessionUsage.EDITED,
