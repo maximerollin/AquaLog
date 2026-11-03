@@ -16,6 +16,7 @@ import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximerollin.aqualog.shared.AquariumProfile
+import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.RapidSessionInput
 import com.maximerollin.aqualog.shared.TaskDate
@@ -173,6 +174,91 @@ class TaskFlowTest {
             composeRule.onNodeWithText("History").performClick()
             composeRule.onNode(hasText("Completed", substring = true)).assertIsDisplayed()
             composeRule.onNodeWithText("Clean the glass").assertIsDisplayed()
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun linkedWaterChange_tickedOnHome_recordsTheAction() {
+        val application = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        val today = java.time.LocalDate.now()
+        runBlocking {
+            val setup = application.aquariumRepository.createConfiguredAquarium(
+                name = "Amazonien",
+                volume = 120.0,
+                volumeUnit = VolumeUnit.LITERS,
+                profile = AquariumProfile.ESTABLISHED,
+                parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+            application.aquariumRepository.createTask(
+                TaskInput(
+                    aquariumId = setup.aquarium.id,
+                    title = "Weekly water change",
+                    recurrence = TaskRecurrence.WEEKLY,
+                    firstDueDate = TaskDate(today.year, today.monthValue, today.dayOfMonth),
+                    minuteOfDay = null,
+                    timeZoneId = java.time.ZoneId.systemDefault().id,
+                    maintenanceActionType = MaintenanceActionType.WATER_CHANGE,
+                ),
+            )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasText("Weekly water change")).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeRule.onNodeWithContentDescription("Done, Weekly water change").assertIsDisplayed().performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                runBlocking { application.aquariumRepository.observeResolvedTaskOccurrences().first().isNotEmpty() }
+            }
+            composeRule.onNodeWithText("History").performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                composeRule.onAllNodes(hasText("Water change", substring = true)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeRule.onNode(hasText("Water change", substring = true) and hasText("20", substring = true)).assertIsDisplayed()
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun linkedFutureTask_tickedOnTheTaskScreen_isResolved() {
+        val application = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        val inThreeDays = java.time.LocalDate.now().plusDays(3)
+        runBlocking {
+            val setup = application.aquariumRepository.createConfiguredAquarium(
+                name = "Amazonien",
+                volume = 120.0,
+                volumeUnit = VolumeUnit.LITERS,
+                profile = AquariumProfile.ESTABLISHED,
+                parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+            application.aquariumRepository.createTask(
+                TaskInput(
+                    aquariumId = setup.aquarium.id,
+                    title = "Future water change",
+                    recurrence = TaskRecurrence.WEEKLY,
+                    firstDueDate = TaskDate(inThreeDays.year, inThreeDays.monthValue, inThreeDays.dayOfMonth),
+                    minuteOfDay = null,
+                    timeZoneId = java.time.ZoneId.systemDefault().id,
+                    maintenanceActionType = MaintenanceActionType.WATER_CHANGE,
+                ),
+            )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.onNode(hasText("See all") and hasClickAction()).performClick()
+            composeRule.onNodeWithContentDescription("Done, Future water change").performScrollTo().performClick()
+            composeRule.waitUntil(timeoutMillis = 5_000) {
+                runBlocking { application.aquariumRepository.observeResolvedTaskOccurrences().first().isNotEmpty() }
+            }
+            runBlocking {
+                val pending = application.aquariumRepository.observePendingTaskOccurrences().first().single()
+                assertEquals(inThreeDays.plusDays(7).dayOfMonth, pending.dueDate.day)
+            }
         } finally {
             scenario.close()
         }

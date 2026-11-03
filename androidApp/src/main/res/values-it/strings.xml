@@ -2,5 +2,13 @@
 <resources>
     <string name="app_name">Aquagenda</string>
     <string name="task_notification_channel">Promemoria attività</string>
+    <string name="due_tests_notification_channel">Test da fare</string>
+    <string name="weekly_summary_notification_channel">Riepilogo della settimana</string>
     <string name="task_notification_text">Apri Aquagenda per completare, posticipare o ignorare questo evento.</string>
+    <string name="due_tests_notification_text">Test da fare: %1$s</string>
+    <string name="weekly_summary_notification_ready">Il riepilogo della settimana è pronto</string>
+    <plurals name="weekly_summary_notification">
+        <item quantity="one">Il riepilogo della settimana è pronto · %1$d settimana di cura regolare</item>
+        <item quantity="other">Il riepilogo della settimana è pronto · %1$d settimane di cura regolare</item>
+    </plurals>
 </resources>

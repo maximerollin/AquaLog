@@ -34,6 +34,7 @@ import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.FeedbackCoordinator
 import com.maximerollin.aqualog.shared.FeedbackGateway
 import com.maximerollin.aqualog.shared.GraphPeriod
+import com.maximerollin.aqualog.shared.MaintenanceAction
 import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
@@ -83,6 +84,16 @@ import com.maximerollin.aqualog.shared.TechnicalFailureKind
 import com.maximerollin.aqualog.shared.OnboardingMilestone
 import com.maximerollin.aqualog.shared.VoluntaryFeedback
 import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.assistance.DueTest
+import com.maximerollin.aqualog.shared.assistance.MeasurementConcern
+import com.maximerollin.aqualog.shared.assistance.NEVER_INTERVAL_DAYS
+import com.maximerollin.aqualog.shared.assistance.dueTests
+import com.maximerollin.aqualog.shared.assistance.WeeklySummary
+import com.maximerollin.aqualog.shared.assistance.summaryWeekStart
+import com.maximerollin.aqualog.shared.assistance.weeklySeries
+import com.maximerollin.aqualog.shared.assistance.weeklySummary
+import com.maximerollin.aqualog.shared.assistance.ReadingSample
+import com.maximerollin.aqualog.shared.assistance.checkMeasurement
 import com.maximerollin.aqualog.shared.evaluateMeasurement
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -94,7 +105,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlin.math.pow
+import kotlin.math.round
 import java.io.Serializable
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -167,6 +181,7 @@ data class TaskUiState(
     val dueDate: String = "",
     val time: String = "",
     val recurrence: TaskRecurrence = TaskRecurrence.ONCE,
+    val linkedAction: MaintenanceActionType? = null,
     val pendingOccurrences: List<TaskOccurrence> = emptyList(),
     val showValidationError: Boolean = false,
     val isSaving: Boolean = false,
@@ -340,7 +355,22 @@ data class HomeUiState(
     val showParameterValidationError: Boolean = false,
     val rapidSession: RapidSessionUiState? = null,
     val latestSession: RecordedSession? = null,
+    /** Advice for the new out-of-range values of the Session just saved; shown once, then dismissed. */
+    val pistesAfterSave: List<DatedPisteAdvice> = emptyList(),
     val latestReadings: List<LatestReading> = emptyList(),
+    /** Tests of the displayed Aquarium due today or overdue, earliest first. */
+    val dueTests: List<DueTest> = emptyList(),
+    /** The day the date-dependent home was last computed for: a new day recomposes it (see [HomeViewModel.refreshForToday]). */
+    val computedForDay: TaskDate? = null,
+    /** Weeks of regular care for the whole account; 0 hides the line. */
+    val maintenanceSeries: Int = 0,
+    /** The displayed Aquarium's Sunday summary, on Sunday and Monday only. */
+    val weeklySummary: WeeklySummary? = null,
+    val showRhythmSettings: Boolean = false,
+    /** Id of the Session after which the « looks cycled » card was set aside for the displayed Aquarium, if any. */
+    val cycledDismissedSessionId: String? = null,
+    /** False until the dismissals of the displayed Aquarium were read, so a dismissed card never flashes. */
+    val cycledDismissalsLoaded: Boolean = false,
     val accountInvitationPrompt: AccountInvitationPrompt = AccountInvitationPrompt.NONE,
     val account: AccountUiState = AccountUiState(),
     val sessionDetail: RecordedSession? = null,
@@ -381,6 +411,8 @@ data class RapidSessionUiState(
     val incident: String = "",
     val isSaving: Boolean = false,
     val saveError: Boolean = false,
+    /** Suspicious values found by the last save attempt, by parameter definition id; never blocks saving. */
+    val pendingConcerns: Map<String, MeasurementConcern> = emptyMap(),
 ) {
     val hasContent: Boolean
         get() = measurementInputs.values.any(String::isNotBlank) ||
@@ -442,9 +474,11 @@ class HomeViewModel(
     val uiState: StateFlow<HomeUiState> = mutableUiState.asStateFlow()
     private var timelineJob: Job? = null
     private var trendsJob: Job? = null
+    private var weeklyJob: Job? = null
     private var lastObservedSyncState: SyncState? = null
 
     init {
+        taskReminderScheduler.scheduleWeeklySummary()
         viewModelScope.launch {
             aquariumRepository.observeAquariums().collect { aquariums ->
                 mutableUiState.update { it.copy(aquariums = aquariums) }
@@ -459,6 +493,10 @@ class HomeViewModel(
                         isSaving = false,
                         latestSession = if (setup == null) null else it.latestSession,
                         latestReadings = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.latestReadings else emptyList(),
+                        dueTests = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.dueTests else emptyList(),
+                        weeklySummary = it.weeklySummary.takeIf { _ -> setup?.aquarium?.id == it.setup?.aquarium?.id },
+                        cycledDismissedSessionId = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.cycledDismissedSessionId else null,
+                        cycledDismissalsLoaded = setup?.aquarium?.id == it.setup?.aquarium?.id && it.cycledDismissalsLoaded,
                     )
                 }
                 if (setup != null) {
@@ -468,6 +506,24 @@ class HomeViewModel(
                         launch {
                             aquariumRepository.observeLatestReadings(setup.aquarium.id).collect { readings ->
                                 mutableUiState.update { it.copy(latestReadings = readings) }
+                            }
+                        }
+                        launch {
+                            aquariumRepository.observeDismissals(setup.aquarium.id).collect { dismissals ->
+                                mutableUiState.update { it.copy(cycledDismissedSessionId = dismissals[CYCLED_PROPOSAL], cycledDismissalsLoaded = true) }
+                            }
+                        }
+                        launch {
+                            // The setup re-emits when a rhythm changes, so this also follows the rhythm settings.
+                            aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).collect { samples ->
+                                mutableUiState.update { it.copy(dueTests = dueTests(setup, samples, today())) }
+                                refreshWeekly()
+                                // A failing read or alarm must not end this collector: the home keeps following the readings.
+                                runCatching {
+                                    taskReminderScheduler.scheduleDueTests(
+                                        aquariumRepository.dueTestSummary(today(), currentTimeZoneId()).nextDueDate,
+                                    )
+                                }
                             }
                         }
                         aquariumRepository.observeLatestSession(setup.aquarium.id).collect { latest ->
@@ -492,6 +548,7 @@ class HomeViewModel(
                 mutableUiState.update { state ->
                     state.copy(tasks = state.tasks.copy(pendingOccurrences = occurrences))
                 }
+                refreshWeekly()
             }
         }
         viewModelScope.launch {
@@ -581,6 +638,7 @@ class HomeViewModel(
     }
 
     fun selectAquarium(aquariumId: String) {
+        dismissPistes()
         viewModelScope.launch {
             aquariumRepository.selectAquarium(aquariumId)
             activateAquariumContext(aquariumId)
@@ -1169,8 +1227,10 @@ class HomeViewModel(
         viewModelScope.launch { persistOnboardingAquarium(keepPaywallOpen = false) }
     }
 
-    fun openRapidSession() {
+    /** Opens entry for the current Aquarium, [firstParameterIds] (the due tests) listed first. */
+    fun openRapidSession(firstParameterIds: List<String> = emptyList()) {
         val setup = mutableUiState.value.setup ?: return
+        dismissPistes()
         val draft = RapidSessionUiState(
             idempotencyKey = generateInteractionId(),
             aquariumId = setup.aquarium.id,
@@ -1183,7 +1243,8 @@ class HomeViewModel(
                 val current = state.rapidSession
                 if (current?.idempotencyKey != draft.idempotencyKey) state else {
                     val hydrated = current.copy(
-                        context = context,
+                        // A stable sort: requested parameters first, each group keeps its position order.
+                        context = context.copy(activeParameters = context.activeParameters.sortedBy { it.id !in firstParameterIds }),
                         measurementInputs = context.measurementInputs,
                     )
                     savedStateHandle[rapidSessionDraftKey] = hydrated.toSnapshot()
@@ -1194,6 +1255,7 @@ class HomeViewModel(
     }
 
     fun openTasks() {
+        dismissPistes()
         val today = LocalDate.now(ZoneId.of(currentTimeZoneId()))
         mutableUiState.update { state ->
             state.copy(
@@ -1220,6 +1282,14 @@ class HomeViewModel(
         it.copy(recurrence = value, showValidationError = false)
     }
 
+    fun selectTaskLinkedAction(type: MaintenanceActionType?, suggestedTitle: String) = updateTasks {
+        it.copy(
+            linkedAction = type,
+            title = if (type != null && it.title.isBlank()) suggestedTitle else it.title,
+            showValidationError = false,
+        )
+    }
+
     fun createTask() {
         val aquariumId = mutableUiState.value.setup?.aquarium?.id ?: return
         val form = mutableUiState.value.tasks
@@ -1242,13 +1312,14 @@ class HomeViewModel(
                         firstDueDate = TaskDate(date.year, date.monthValue, date.dayOfMonth),
                         minuteOfDay = time?.let { it.hour * 60 + it.minute },
                         timeZoneId = currentTimeZoneId(),
+                        maintenanceActionType = form.linkedAction,
                     ),
                 )
             }.onSuccess { created ->
                 taskReminderScheduler.schedule(created.occurrence)
                 recordProductEvent(ProductEvent.TaskUsed(TaskUsage.CREATED))
                 updateTasks {
-                    it.copy(title = "", time = "", isSaving = false, showValidationError = false, savedCount = it.savedCount + 1)
+                    it.copy(title = "", time = "", linkedAction = null, isSaving = false, showValidationError = false, savedCount = it.savedCount + 1)
                 }
             }.onFailure {
                 updateTasks { it.copy(isSaving = false, showValidationError = true) }
@@ -1296,9 +1367,117 @@ class HomeViewModel(
         }
     }
 
-    fun completeTask(occurrence: TaskOccurrence) = resolveTask(occurrence, TaskResolution.COMPLETED)
+    /**
+     * A linked Tâche records its action (usual quantity) in a Session, then is resolved, even when not due yet.
+     * [onFailed] lets the row re-enable its checkbox.
+     */
+    fun completeTask(occurrence: TaskOccurrence, onFailed: () -> Unit = {}) {
+        val type = occurrence.maintenanceActionType ?: return resolveTask(occurrence, TaskResolution.COMPLETED)
+        viewModelScope.launch {
+            runCatching {
+                val last = aquariumRepository.loadRapidSessionContext(occurrence.aquariumId).lastMaintenanceActions[type]
+                val recorded = aquariumRepository.saveRapidSession(
+                    RapidSessionInput(
+                        aquariumId = occurrence.aquariumId,
+                        occurredAtEpochMillis = currentTimeMillis(),
+                        idempotencyKey = generateInteractionId(),
+                        maintenanceActions = listOf(defaultMaintenanceInput(type, last)),
+                    ),
+                )
+                // A Tâche of another Aquarium (from the agenda) must not replace the displayed one's latest Session.
+                mutableUiState.update { if (it.setup?.aquarium?.id == occurrence.aquariumId) it.copy(latestSession = recorded) else it }
+                completeLinkedTasks(recorded, alsoOccurrenceId = occurrence.id)
+            }.onFailure { onFailed() }
+        }
+    }
 
-    fun today(): TaskDate = LocalDate.now(ZoneId.of(currentTimeZoneId())).let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
+    /** Throws when the resolution fails, so a caller that must know can react; Session saves ignore it. */
+    private suspend fun completeLinkedTasks(
+        recorded: RecordedSession,
+        alreadyRecorded: Set<MaintenanceActionType> = emptySet(),
+        alsoOccurrenceId: String? = null,
+    ) {
+        val types = recorded.maintenanceActions.map { it.type }.toSet() - alreadyRecorded
+        if (types.isEmpty() && alsoOccurrenceId == null) return
+        aquariumRepository.completeLinkedTasks(recorded.session.aquariumId, types, today(), currentTimeMillis(), alsoOccurrenceId)
+            .forEach { result ->
+                taskReminderScheduler.cancel(result.resolved.id)
+                result.nextOccurrence?.let(taskReminderScheduler::schedule)
+                recordProductEvent(ProductEvent.TaskUsed(TaskUsage.COMPLETED))
+            }
+    }
+
+    /** The profile follows the Aquarium; parameters and ranges stay as they are, the rhythm follows the new profile. */
+    fun switchToEstablished() {
+        val aquarium = mutableUiState.value.setup?.aquarium ?: return
+        viewModelScope.launch { aquariumRepository.updateAquarium(aquarium.copy(profile = AquariumProfile.ESTABLISHED)) }
+    }
+
+    /** Hides the « looks cycled » card until a newer Session is recorded. */
+    fun dismissCycledProposal() {
+        val state = mutableUiState.value
+        val aquariumId = state.setup?.aquarium?.id ?: return
+        val sessionId = state.latestSession?.session?.id ?: return
+        viewModelScope.launch { aquariumRepository.dismiss(aquariumId, CYCLED_PROPOSAL, sessionId) }
+    }
+
+    fun openRhythmSettings() = mutableUiState.update { it.copy(showRhythmSettings = true) }
+
+    fun closeRhythmSettings() = mutableUiState.update { it.copy(showRhythmSettings = false) }
+
+    /** null follows the profile default; [NEVER_INTERVAL_DAYS] never reminds. */
+    fun updateAnalysisInterval(parameterDefinitionId: String, days: Int?) {
+        viewModelScope.launch { aquariumRepository.updateAnalysisInterval(parameterDefinitionId, days) }
+    }
+
+    /**
+     * Back in the foreground (after a notification tap, say), the day may have changed since the collectors last ran:
+     * due tests, the series, the Sunday summary and every « today » on the home are computed again.
+     */
+    fun refreshForToday() {
+        val day = today()
+        mutableUiState.update { it.copy(computedForDay = day) }
+        refreshWeekly()
+        val setup = mutableUiState.value.setup ?: return
+        viewModelScope.launch {
+            runCatching {
+                dueTests(setup, aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).first(), day)
+            }.onSuccess { due ->
+                mutableUiState.update { if (it.setup?.aquarium?.id == setup.aquarium.id) it.copy(dueTests = due) else it }
+            }
+        }
+    }
+
+    /**
+     * Series and Sunday summary in their own job, latest call wins: the collectors that call it are never delayed,
+     * and a failure (an invalid imported zone, say) leaves the previous values instead of stopping them.
+     */
+    private fun refreshWeekly() {
+        weeklyJob?.cancel()
+        weeklyJob = viewModelScope.launch {
+            runCatching {
+                val today = today()
+                val zoneId = currentTimeZoneId()
+                val histories = aquariumRepository.aquariumHistories(zoneId)
+                val series = weeklySeries(histories, today, ZoneId.of(zoneId))
+                val shownId = mutableUiState.value.setup?.aquarium?.id
+                val summary = summaryWeekStart(today)?.let { start ->
+                    histories.firstOrNull { it.setup.aquarium.id == shownId }?.let { weeklySummary(it, start, series) }
+                }
+                Triple(series, shownId, summary)
+            }.onSuccess { (series, shownId, summary) ->
+                mutableUiState.update {
+                    it.copy(maintenanceSeries = series, weeklySummary = summary.takeIf { _ -> it.setup?.aquarium?.id == shownId })
+                }
+            }
+        }
+    }
+
+    fun today(): TaskDate = dayOf(currentTimeMillis())
+
+    /** The local day of [epochMillis] in the clock's time zone. */
+    fun dayOf(epochMillis: Long): TaskDate = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.of(currentTimeZoneId())).toLocalDate()
+        .let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
 
     fun closeRapidSession() {
         setRapidSession(null)
@@ -1307,6 +1486,7 @@ class HomeViewModel(
     fun openSessionDetails() {
         mutableUiState.update { state ->
             state.copy(
+                pistesAfterSave = emptyList(),
                 sessionDetail = state.latestSession,
                 sessionDetailReturnsToTimeline = false,
             )
@@ -1382,7 +1562,7 @@ class HomeViewModel(
     }
 
     fun selectDestination(destination: MainDestination) {
-        mutableUiState.update { it.copy(destination = destination) }
+        mutableUiState.update { it.copy(destination = destination, pistesAfterSave = emptyList()) }
         when (destination) {
             MainDestination.HISTORY -> if (timelineJob == null) observeTimeline()
             MainDestination.TRENDS -> {
@@ -1521,23 +1701,8 @@ class HomeViewModel(
         if (type in state.actions) {
             state.copy(actions = state.actions - type, editingAction = null)
         } else {
-            val previous = state.context?.lastMaintenanceActions?.get(type)
-            val default = when (type) {
-                MaintenanceActionType.WATER_CHANGE -> MaintenanceActionInput(type, "20", "%")
-                MaintenanceActionType.FERTILIZATION -> MaintenanceActionInput(type, "1", "mL")
-                else -> MaintenanceActionInput(type)
-            }
             state.copy(
-                actions = state.actions + (
-                    type to previous?.let {
-                        MaintenanceActionInput(
-                            type = type,
-                            quantity = it.quantity.displayInput(),
-                            unit = it.unit.orEmpty(),
-                            product = it.product.orEmpty(),
-                        )
-                    }.orDefault(default)
-                ),
+                actions = state.actions + (type to defaultMaintenanceInput(type, state.context?.lastMaintenanceActions?.get(type))),
                 saveError = false,
             )
         }
@@ -1567,11 +1732,53 @@ class HomeViewModel(
 
     fun updateIncident(value: String) = updateRapidSession { it.copy(incident = value, saveError = false) }
 
-    fun saveRapidSession() {
+    fun applySuggestion(parameterDefinitionId: String) = updateRapidSession { state ->
+        val definition = state.context?.activeParameters?.firstOrNull { it.id == parameterDefinitionId }
+        val suggestion = (state.pendingConcerns[parameterDefinitionId] as? MeasurementConcern.Implausible)?.suggestion
+        if (definition == null || suggestion == null) return@updateRapidSession state
+        val scale = 10.0.pow(definition.precision)
+        state.copy(
+            measurementInputs = state.measurementInputs + (parameterDefinitionId to (round(suggestion * scale) / scale).displayInput()),
+            pendingConcerns = state.pendingConcerns - parameterDefinitionId,
+            saveError = false,
+        )
+    }
+
+    fun dismissConcerns() = updateRapidSession { it.copy(pendingConcerns = emptyMap()) }
+
+    /** Editing skips the big-jump check: the context cannot tell which reading is the edited Session's own. */
+    private fun RapidSessionUiState.concerns(): Map<String, MeasurementConcern> {
+        val context = context ?: return emptyMap()
+        val now = currentTimeMillis()
+        return context.activeParameters.mapNotNull { definition ->
+            val value = evaluateMeasurement(measurementInputs[definition.id].orEmpty(), definition).value
+                ?: return@mapNotNull null
+            val concern = checkMeasurement(
+                definition,
+                value,
+                context.lastMeasurements[definition.id].takeIf { editingSessionId == null },
+                context.lastMeasurementTimes[definition.id],
+                now,
+            )
+            concern?.let { definition.id to it }
+        }.toMap()
+    }
+
+    fun saveRapidSession(confirmed: Boolean = false) {
         val draft = mutableUiState.value.rapidSession ?: return
         if (!draft.canSave) return
+        if (!confirmed) {
+            val concerns = draft.concerns()
+            if (concerns.isNotEmpty()) {
+                updateRapidSession { it.copy(pendingConcerns = concerns) }
+                return
+            }
+        }
+        // An edit only resolves the actions it adds, not the ones the Session already had.
+        val previousTypes = mutableUiState.value.sessionDetail?.takeIf { draft.editingSessionId == it.session.id }
+            ?.maintenanceActions?.map { it.type }?.toSet().orEmpty()
         val isFirstSession = draft.editingSessionId == null && mutableUiState.value.latestSession == null
-        mutableUiState.update { it.copy(rapidSession = draft.copy(isSaving = true, saveError = false)) }
+        mutableUiState.update { it.copy(rapidSession = draft.copy(isSaving = true, saveError = false, pendingConcerns = emptyMap())) }
         viewModelScope.launch {
             runCatching {
                 if (draft.editingSessionId == null) {
@@ -1616,6 +1823,8 @@ class HomeViewModel(
                         it.copy(accountInvitationPrompt = AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION)
                     }
                 }
+                if (draft.editingSessionId == null) showPistesAfterSave(recorded)
+                runCatching { completeLinkedTasks(recorded, previousTypes) }
                 recordProductEvent(
                     ProductEvent.SessionSaved(
                         if (draft.editingSessionId == null) SessionUsage.CREATED else SessionUsage.EDITED,
@@ -1628,6 +1837,23 @@ class HomeViewModel(
             }
         }
     }
+
+    private fun showPistesAfterSave(recorded: RecordedSession) {
+        val state = mutableUiState.value
+        val setup = state.setup?.takeIf { it.aquarium.id == recorded.session.aquariumId } ?: return
+        // A water change in this very Session already answers the overdue one.
+        val overdue = recorded.maintenanceActions.none { it.type == MaintenanceActionType.WATER_CHANGE } &&
+            overdueLinkedAction(state.tasks.pendingOccurrences, setup.aquarium.id, MaintenanceActionType.WATER_CHANGE, today())
+        val advices = pistesAdvices(
+            setup.parameters,
+            recorded.measurements.map { ReadingSample(it.parameterDefinitionId, it.value, dayOf(recorded.session.occurredAtEpochMillis)) },
+            setup.aquarium.profile,
+            overdue,
+        )
+        mutableUiState.update { it.copy(pistesAfterSave = advices) }
+    }
+
+    fun dismissPistes() = mutableUiState.update { it.copy(pistesAfterSave = emptyList()) }
 
     fun continueAfterSessionConfirmation() {
         val coordinator = accountCoordinator ?: return
@@ -2115,6 +2341,8 @@ class HomeViewModel(
             feedbackGateway: FeedbackGateway = DisabledFeedbackGateway,
             reviewCoordinator: ReviewCoordinator? = null,
             onSyncRetryRequested: () -> Unit = {},
+            currentTimeMillis: () -> Long = System::currentTimeMillis,
+            currentTimeZoneId: () -> String = { ZoneId.systemDefault().id },
         ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
@@ -2129,6 +2357,8 @@ class HomeViewModel(
                         feedbackGateway = feedbackGateway,
                         reviewCoordinator = reviewCoordinator,
                         onSyncRetryRequested = onSyncRetryRequested,
+                        currentTimeMillis = currentTimeMillis,
+                        currentTimeZoneId = currentTimeZoneId,
                         savedStateHandle = createSavedStateHandle(),
                     )
                 }
@@ -2142,10 +2372,14 @@ internal fun ProEntitlement.analyticsProductOrNull(): ProProduct? = when (produc
     else -> null
 }
 
+private const val CYCLED_PROPOSAL = "cycled"
+
 private object NoOpTaskReminderScheduler : TaskReminderScheduler {
     override fun schedule(occurrence: TaskOccurrence) = Unit
     override fun cancel(occurrenceId: String) = Unit
     override fun reconcile(occurrences: List<TaskOccurrence>) = Unit
+    override fun scheduleDueTests(at: TaskDate?) = Unit
+    override fun scheduleWeeklySummary() = Unit
     override fun isBatteryOptimizationActive(): Boolean = false
 }
 
@@ -2211,7 +2445,17 @@ private fun Double?.displayInput(): String = when {
     else -> toString()
 }
 
-private fun <T> T?.orDefault(default: T): T = this ?: default
+/** The usual quantity of an action: the last recorded one, else the built-in default. */
+fun defaultMaintenanceInput(type: MaintenanceActionType, last: MaintenanceAction?): MaintenanceActionInput =
+    if (last != null) {
+        MaintenanceActionInput(type, last.quantity.displayInput(), last.unit.orEmpty(), last.product.orEmpty())
+    } else {
+        when (type) {
+            MaintenanceActionType.WATER_CHANGE -> MaintenanceActionInput(type, "20", "%")
+            MaintenanceActionType.FERTILIZATION -> MaintenanceActionInput(type, "1", "mL")
+            else -> MaintenanceActionInput(type)
+        }
+    }
 
 private fun TrendPeriod.toGraphPeriod(): GraphPeriod = when (this) {
     TrendPeriod.SEVEN_DAYS -> GraphPeriod.DAYS_7

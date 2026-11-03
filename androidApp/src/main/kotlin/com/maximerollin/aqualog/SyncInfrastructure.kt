@@ -167,6 +167,7 @@ class SupabaseSyncBackend(
                     precision = value.getInt("precision"),
                     indicativeMinimum = value.nullableDouble("indicative_minimum"),
                     indicativeMaximum = value.nullableDouble("indicative_maximum"),
+                    analysisIntervalDays = value.nullableInt("analysis_interval_days"),
                 )
             },
             sessions = sessions.filterLive().map { value ->
@@ -337,7 +338,7 @@ private fun ParameterDefinition.toRemoteJson(accountId: String) = JSONObject()
     .put("id", id).put("account_id", accountId).put("aquarium_id", aquariumId)
     .put("parameter", parameter.storageValue).put("is_active", isActive).put("position", position)
     .put("unit", unit).put("precision", precision).putNullable("indicative_minimum", indicativeMinimum)
-    .putNullable("indicative_maximum", indicativeMaximum)
+    .putNullable("indicative_maximum", indicativeMaximum).putNullable("analysis_interval_days", analysisIntervalDays)
 
 private fun Session.toRemoteJson(accountId: String) = JSONObject()
     .put("id", id).put("account_id", accountId).put("aquarium_id", aquariumId)
@@ -357,6 +358,8 @@ private fun SessionEvent.toRemoteJson(accountId: String) = JSONObject()
 
 private fun JSONObject.putNullable(name: String, value: Any?): JSONObject = put(name, value ?: JSONObject.NULL)
 private fun JSONObject.nullableDouble(name: String): Double? = if (isNull(name)) null else getDouble(name)
+// isNull is also true for a missing key, so rows from a server without the column read as null.
+private fun JSONObject.nullableInt(name: String): Int? = if (isNull(name)) null else getInt(name)
 private fun JSONObject.nullableString(name: String): String? = if (isNull(name)) null else getString(name)
 
 private fun List<JSONObject>.filterLive() = filter { it.isNull("deleted_at_epoch_millis") }

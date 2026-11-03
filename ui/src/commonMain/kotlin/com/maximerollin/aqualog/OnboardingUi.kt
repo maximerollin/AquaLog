@@ -1,5 +1,7 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.ui.icon.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.home.TankHome
 import com.maximerollin.aqualog.ui.theme.CarnetDivider
@@ -46,9 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import org.jetbrains.compose.resources.painterResource
 import androidx.compose.ui.graphics.Color
-import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -90,6 +90,7 @@ fun AquaLogContent(
             modifier = modifier,
             aquariumName = state.setup.aquarium.name,
         )
+        state.showRhythmSettings && state.setup != null -> RhythmSettingsScreen(state.setup, viewModel, modifier)
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(
             state = state.rapidSession,
             aquarium = state.setup.aquarium,
@@ -276,12 +277,12 @@ private fun AquariumShell(
                         onClick = { viewModel.selectDestination(destination) },
                         icon = {
                             Icon(
-                                painterResource(when (destination) {
-                                    MainDestination.TANK -> Res.drawable.ic_tank
-                                    MainDestination.HISTORY -> Res.drawable.ic_history
-                                    MainDestination.TRENDS -> Res.drawable.ic_trends
-                                    MainDestination.MORE -> Res.drawable.ic_more
-                                }),
+                                when (destination) {
+                                    MainDestination.TANK -> AquagendaIcons.Fish
+                                    MainDestination.HISTORY -> AquagendaIcons.RotateCcwClock
+                                    MainDestination.TRENDS -> AquagendaIcons.TrendingUp
+                                    MainDestination.MORE -> AquagendaIcons.Menu
+                                },
                                 contentDescription = null,
                             )
                         },
@@ -374,7 +375,7 @@ private fun PortableDataSettings(
                 MoreRow(
                     stringResource(Res.string.open_tasks),
                     onClick = viewModel::openTasks,
-                    trailingIcon = Res.drawable.ic_chevron_right,
+                    trailingIcon = AquagendaIcons.ChevronRight,
                 )
             }
         }
@@ -386,12 +387,19 @@ private fun PortableDataSettings(
                         aquarium.name,
                         onClick = { viewModel.selectAquarium(aquarium.id) },
                         selected = current,
-                        trailingIcon = if (current) Res.drawable.ic_check else null,
+                        trailingIcon = if (current) AquagendaIcons.Check else null,
                     )
                 }
             }
             moreItem { MoreRow(stringResource(Res.string.add_aquarium), onClick = viewModel::openCreateAquarium) }
             moreItem { MoreRow(stringResource(Res.string.edit_aquarium), onClick = viewModel::openEditAquarium) }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.rhythm_title),
+                    onClick = viewModel::openRhythmSettings,
+                    trailingIcon = AquagendaIcons.ChevronRight,
+                )
+            }
             moreItem {
                 MoreRow(
                     stringResource(Res.string.archive_aquarium),
@@ -412,7 +420,7 @@ private fun PortableDataSettings(
                 MoreRow(
                     stringResource(Res.string.view_free_and_pro),
                     onClick = viewModel::openProPaywall,
-                    trailingIcon = Res.drawable.ic_chevron_right,
+                    trailingIcon = AquagendaIcons.ChevronRight,
                 )
             }
         }
@@ -544,7 +552,7 @@ private fun LazyListScope.moreItem(content: @Composable () -> Unit) {
 
 /** One list row: 56 dp minimum, a single accessible unit; no [onClick] makes it a plain read-only line. */
 @Composable
-private fun MoreRow(
+internal fun MoreRow(
     label: String,
     modifier: Modifier = Modifier,
     supporting: String? = null,
@@ -552,7 +560,7 @@ private fun MoreRow(
     enabled: Boolean = true,
     selected: Boolean? = null,
     color: Color = MaterialTheme.colorScheme.onSurface,
-    trailingIcon: DrawableResource? = null,
+    trailingIcon: ImageVector? = null,
 ) {
     val interaction = when {
         onClick == null -> Modifier
@@ -579,7 +587,7 @@ private fun MoreRow(
         }
         if (trailingIcon != null) {
             Spacer(Modifier.width(12.dp))
-            Icon(painterResource(trailingIcon), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(trailingIcon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -1340,20 +1348,29 @@ private fun ErrorText(message: StringResource) {
 }
 
 @Composable
-internal fun BuiltInParameter.label(): String = stringResource(
-    when (this) {
-        BuiltInParameter.TEMPERATURE -> Res.string.parameter_temperature
-        BuiltInParameter.PH -> Res.string.parameter_ph
-        BuiltInParameter.AMMONIA -> Res.string.parameter_ammonia
-        BuiltInParameter.NITRITE -> Res.string.parameter_nitrite
-        BuiltInParameter.NITRATE -> Res.string.parameter_nitrate
-        BuiltInParameter.GH -> Res.string.parameter_gh
-        BuiltInParameter.KH -> Res.string.parameter_kh
-        BuiltInParameter.TDS -> Res.string.parameter_tds
-        BuiltInParameter.PHOSPHATE -> Res.string.parameter_phosphate
-        BuiltInParameter.SALINITY -> Res.string.parameter_salinity
-    },
-)
+internal fun BuiltInParameter.label(): String = stringResource(labelResource())
+
+internal fun BuiltInParameter.labelResource(): StringResource = when (this) {
+    BuiltInParameter.TEMPERATURE -> Res.string.parameter_temperature
+    BuiltInParameter.PH -> Res.string.parameter_ph
+    BuiltInParameter.AMMONIA -> Res.string.parameter_ammonia
+    BuiltInParameter.NITRITE -> Res.string.parameter_nitrite
+    BuiltInParameter.NITRATE -> Res.string.parameter_nitrate
+    BuiltInParameter.GH -> Res.string.parameter_gh
+    BuiltInParameter.KH -> Res.string.parameter_kh
+    BuiltInParameter.TDS -> Res.string.parameter_tds
+    BuiltInParameter.PHOSPHATE -> Res.string.parameter_phosphate
+    BuiltInParameter.SALINITY -> Res.string.parameter_salinity
+}
+
+/** The chemical symbol where there is one (« NO₃ »), otherwise the usual label. */
+internal fun BuiltInParameter.shortLabelResource(): StringResource = when (this) {
+    BuiltInParameter.AMMONIA -> Res.string.parameter_short_ammonia
+    BuiltInParameter.NITRITE -> Res.string.parameter_short_nitrite
+    BuiltInParameter.NITRATE -> Res.string.parameter_short_nitrate
+    BuiltInParameter.PHOSPHATE -> Res.string.parameter_short_phosphate
+    else -> labelResource()
+}
 
 @Composable
 internal fun Aquarium.formattedVolume(): String {

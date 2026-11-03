@@ -21,6 +21,7 @@ import androidx.room3.migration.Migration
 import androidx.sqlite.execSQL
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 @Entity(tableName = "aquariums")
 data class AquariumEntity(
@@ -50,6 +51,7 @@ data class ParameterDefinitionEntity(
     val precision: Int,
     val indicativeMinimum: Double?,
     val indicativeMaximum: Double?,
+    val analysisIntervalDays: Int? = null,
 )
 
 data class AquariumSetupEntity(
@@ -122,6 +124,7 @@ data class TaskEntity(
     val title: String,
     val recurrence: String,
     val monthlyAnchorDay: Int,
+    val maintenanceActionType: String? = null,
 )
 
 @Entity(
@@ -142,7 +145,31 @@ data class TaskOccurrenceEntity(
     val timeZoneId: String,
     val resolution: String?,
     val resolvedAtEpochMillis: Long?,
+    val maintenanceActionType: String? = null,
 )
+
+/** Local-only: which Session last dismissed an assistant card of [kind] for an Aquarium. */
+@Entity(tableName = "assistant_dismissals", primaryKeys = ["aquariumId", "kind"])
+data class AssistantDismissalEntity(
+    val aquariumId: String,
+    val kind: String,
+    val sessionId: String,
+)
+
+@Dao
+abstract class AssistantDao {
+    @Upsert
+    protected abstract suspend fun upsert(dismissal: AssistantDismissalEntity)
+
+    @Query("SELECT * FROM assistant_dismissals WHERE aquariumId = :aquariumId")
+    protected abstract fun observeRows(aquariumId: String): Flow<List<AssistantDismissalEntity>>
+
+    suspend fun dismiss(aquariumId: String, kind: String, sessionId: String) =
+        upsert(AssistantDismissalEntity(aquariumId, kind, sessionId))
+
+    fun observeDismissals(aquariumId: String): Flow<Map<String, String>> =
+        observeRows(aquariumId).map { rows -> rows.associate { it.kind to it.sessionId } }
+}
 
 @Entity(tableName = "account_state")
 data class AccountStateEntity(
@@ -249,6 +276,9 @@ abstract class AquariumDao {
 
     @Query("SELECT * FROM parameter_definitions ORDER BY aquariumId, position ASC")
     abstract suspend fun allParameterDefinitions(): List<ParameterDefinitionEntity>
+
+    @Query("SELECT * FROM parameter_definitions WHERE id = :id")
+    abstract suspend fun getParameter(id: String): ParameterDefinitionEntity?
 
     @Insert
     protected abstract suspend fun insert(aquarium: AquariumEntity)
@@ -386,6 +416,9 @@ abstract class SessionDao {
 
     @Query("SELECT m.* FROM measurements m INNER JOIN sessions s ON s.id = m.sessionId WHERE s.aquariumId = :aquariumId ORDER BY s.occurredAtEpochMillis DESC, s.createdAtEpochMillis DESC")
     abstract suspend fun measurementsForAquarium(aquariumId: String): List<MeasurementEntity>
+
+    @Query("SELECT m.parameterDefinitionId AS parameterDefinitionId, m.value AS value, s.occurredAtEpochMillis AS occurredAtEpochMillis FROM measurements m INNER JOIN sessions s ON s.id = m.sessionId WHERE s.aquariumId = :aquariumId ORDER BY s.occurredAtEpochMillis DESC, s.createdAtEpochMillis DESC")
+    abstract suspend fun readingsForAquarium(aquariumId: String): List<ReadingRow>
 
     @Query("SELECT m.parameterDefinitionId AS parameterDefinitionId, m.value AS value, s.occurredAtEpochMillis AS occurredAtEpochMillis FROM measurements m INNER JOIN sessions s ON s.id = m.sessionId WHERE s.aquariumId = :aquariumId ORDER BY s.occurredAtEpochMillis DESC, s.createdAtEpochMillis DESC")
     abstract fun observeReadingsForAquarium(aquariumId: String): Flow<List<ReadingRow>>
@@ -617,6 +650,9 @@ abstract class AccountControlDao {
     @Query("DELETE FROM aquariums")
     protected abstract suspend fun deleteAquariums()
 
+    @Query("DELETE FROM assistant_dismissals")
+    protected abstract suspend fun deleteAssistantDismissals()
+
     suspend fun markCloudDeletionComplete() {
         check(updateDeletionPhase(AccountDeletionPhase.CLOUD_DELETED.name) == 1) {
             "No account deletion is pending"
@@ -645,6 +681,7 @@ abstract class AccountControlDao {
         deleteTasks()
         deleteParameterDefinitions()
         deleteAquariums()
+        deleteAssistantDismissals()
         detachAccountKeepingLocalCopy()
     }
 }
@@ -737,6 +774,9 @@ abstract class PortableDataDao {
     @Query("DELETE FROM sync_operations")
     protected abstract suspend fun deleteSyncOperations()
 
+    @Query("DELETE FROM assistant_dismissals")
+    protected abstract suspend fun deleteAssistantDismissals()
+
     @Query("SELECT COUNT(*) FROM account_state")
     protected abstract suspend fun accountStateCount(): Int
 
@@ -764,6 +804,7 @@ abstract class PortableDataDao {
         deleteTasks()
         deleteParameterDefinitions()
         deleteAquariums()
+        deleteAssistantDismissals()
 
         if (snapshot.aquariums.isNotEmpty()) insertAquariums(snapshot.aquariums)
         if (snapshot.parameterDefinitions.isNotEmpty()) insertParameterDefinitions(snapshot.parameterDefinitions)
@@ -1051,8 +1092,9 @@ abstract class SyncDao {
         SyncEntityVersionEntity::class,
         SyncRuntimeStateEntity::class,
         SyncScheduleStateEntity::class,
+        AssistantDismissalEntity::class,
     ],
-    version = 14,
+    version = 15,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -1064,6 +1106,7 @@ abstract class AquaLogDatabase : RoomDatabase() {
     abstract fun accountControlDao(): AccountControlDao
     abstract fun syncDao(): SyncDao
     abstract fun portableDataDao(): PortableDataDao
+    abstract fun assistantDao(): AssistantDao
 }
 
 @Suppress("NO_ACTUAL_FOR_EXPECT")
@@ -1090,6 +1133,7 @@ fun createAquaLogDatabase(
         MIGRATION_11_12,
         MIGRATION_12_13,
         MIGRATION_13_14,
+        MIGRATION_14_15,
     )
     .build()
 
@@ -1241,5 +1285,14 @@ private val MIGRATION_13_14 = Migration(13, 14) { connection ->
     connection.execSQL("ALTER TABLE aquariums ADD COLUMN isArchived INTEGER NOT NULL DEFAULT 0")
     connection.execSQL(
         "CREATE TABLE IF NOT EXISTS selected_aquarium (singletonId INTEGER NOT NULL PRIMARY KEY, aquariumId TEXT NOT NULL)",
+    )
+}
+
+private val MIGRATION_14_15 = Migration(14, 15) { connection ->
+    connection.execSQL("ALTER TABLE parameter_definitions ADD COLUMN analysisIntervalDays INTEGER")
+    connection.execSQL("ALTER TABLE tasks ADD COLUMN maintenanceActionType TEXT")
+    connection.execSQL("ALTER TABLE task_occurrences ADD COLUMN maintenanceActionType TEXT")
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS assistant_dismissals (aquariumId TEXT NOT NULL, kind TEXT NOT NULL, sessionId TEXT NOT NULL, PRIMARY KEY(aquariumId, kind))",
     )
 }

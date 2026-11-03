@@ -108,6 +108,7 @@
     <string name="last_measurement">Last: %1$s %2$s · new value stays empty</string>
     <string name="invalid_measurement">Enter a decimal number using a point or comma.</string>
     <string name="unusual_measurement">Outside your indicative range. Check the value; saving remains available.</string>
+    <string name="alert_measurement">Far outside your indicative range. Check the value; saving remains available.</string>
     <string name="maintenance_heading">Maintenance actions</string>
     <string name="action_water_change">Water change</string>
     <string name="action_fertilization">Fertilization</string>
@@ -341,6 +342,8 @@
     <string name="no_pending_tasks">No pending Task.</string>
     <string name="task_due_value">Due %1$s · %2$s</string>
     <string name="task_no_time">no chosen time</string>
+    <string name="task_link_action_label">Link to an action</string>
+    <string name="task_link_action_none">None</string>
     <string name="task_complete">Done</string>
     <string name="task_postpone">+1 day</string>
     <string name="task_ignore">Ignore</string>
@@ -362,13 +365,80 @@
     <string name="home_nothing_due">Nothing due · next: %1$s on %2$s</string>
     <string name="home_no_measurement_yet">No measurement yet</string>
     <string name="home_status_all_in_range">All in range</string>
+    <plurals name="series_weeks"><item quantity="one">%1$d week of regular care</item><item quantity="other">%1$d weeks of regular care</item></plurals>
     <plurals name="home_status_outside_range"><item quantity="one">%1$d value to watch</item><item quantity="other">%1$d values to watch</item></plurals>
+    <plurals name="home_status_with_alert"><item quantity="one">%1$s, %2$d far out of range</item><item quantity="other">%1$s, %2$d far out of range</item></plurals>
     <string name="home_measured_today">measured today</string>
     <string name="home_measured_yesterday">measured yesterday</string>
     <plurals name="home_measured_days_ago"><item quantity="one">measured %1$d day ago</item><item quantity="other">measured %1$d days ago</item></plurals>
     <plurals name="reading_age_days"><item quantity="one">%1$d d ago</item><item quantity="other">%1$d d ago</item></plurals>
     <string name="reading_attention_description">outside your indicative range</string>
+    <string name="reading_alert_description">far outside your indicative range</string>
     <string name="trend_up">rising</string>
     <string name="trend_down">falling</string>
     <string name="trend_flat">stable</string>
+    <string name="check_title">Check before saving</string>
+    <string name="check_implausible">%1$s %2$s?</string>
+    <string name="check_implausible_suggestion">Did you mean %1$s?</string>
+    <plurals name="check_big_jump"><item quantity="one">%1$s at %2$s while you were at %3$s %4$d day ago, is that right?</item><item quantity="other">%1$s at %2$s while you were at %3$s %4$d days ago, is that right?</item></plurals>
+    <string name="check_big_jump_today">%1$s at %2$s while you were at %3$s today, is that right?</string>
+    <string name="check_fix">Fix</string>
+    <string name="check_save_anyway">Save anyway</string>
+    <string name="check_back">Go back</string>
+    <string name="piste_water_change_30">Change 30% of the water.</string>
+    <string name="piste_water_change_30_to_50">Change 30 to 50% of the water.</string>
+    <string name="piste_water_change_partial">Change part of the water.</string>
+    <string name="piste_water_change_softer_water">Change part of the water with softer water.</string>
+    <string name="piste_water_change_purer_water">Change part of the water with purer water.</string>
+    <string name="piste_cut_with_osmosis">Dilute the water with reverse-osmosis water.</string>
+    <string name="piste_water_change_overdue">Your water change is overdue: start there.</string>
+    <string name="piste_feed_less_2_days">Feed less for 2 days.</string>
+    <string name="piste_add_starter_bacteria">Add starter bacteria.</string>
+    <string name="piste_add_ammonia_detoxifier">Add a water conditioner that neutralizes ammonia.</string>
+    <string name="piste_check_food_amount">Check the amount of food.</string>
+    <string name="piste_add_fast_growing_plants">Add fast-growing plants.</string>
+    <string name="piste_check_kh_low_drops_ph">Check the KH: a low KH makes the pH drop.</string>
+    <string name="piste_add_kh_buffer">Add a buffer to raise the KH.</string>
+    <string name="piste_check_tap_water_and_decor">Check the tap water and limestone decorations.</string>
+    <string name="piste_check_heater_setting">Check the heater setting.</string>
+    <string name="piste_vent_or_lights_off">Ventilate the surface or switch off the lighting for a few hours.</string>
+    <string name="piste_check_heater_works">Check that the heater is working.</string>
+    <string name="piste_adjust_heater_power">Match its power to the tank volume.</string>
+    <string name="piste_add_remineralizer">Add a remineralizer.</string>
+    <string name="piste_reduce_food">Reduce the food.</string>
+    <string name="piste_add_anti_phosphate">Add a phosphate remover.</string>
+    <string name="piste_retest_to_confirm">Test again to confirm.</string>
+    <string name="piste_cycling_normal">During cycling, ammonia and nitrite are normal. Wait until they drop back to 0 before adding fish.</string>
+    <string name="pistes_title">Ideas for %1$s</string>
+    <string name="pistes_card_collapsed">Ideas · %1$s</string>
+    <string name="pistes_card_expand">Show ideas</string>
+    <string name="pistes_card_collapse">Hide ideas</string>
+    <string name="pistes_retest">Test again %1$s.</string>
+    <string name="pistes_retest_tomorrow">tomorrow</string>
+    <string name="pistes_retest_today">today</string>
+    <string name="pistes_retest_on_date">on %1$s</string>
+    <string name="pistes_retest_asap">as soon as possible</string>
+    <string name="pistes_disclaimer">These are ideas, not a diagnosis: if in doubt, ask for advice at a specialist shop.</string>
+    <string name="parameter_short_ammonia">NH₃/NH₄</string>
+    <string name="parameter_short_nitrite">NO₂</string>
+    <string name="parameter_short_nitrate">NO₃</string>
+    <string name="parameter_short_phosphate">PO₄</string>
+    <string name="due_tests_row">Test %1$s</string>
+    <string name="list_pair">%1$s and %2$s</string>
+    <string name="rhythm_title">Analysis rhythm</string>
+    <string name="rhythm_never">Never</string>
+    <string name="rhythm_auto_never">Auto (never)</string>
+    <plurals name="rhythm_auto_days"><item quantity="one">Auto (%1$d day)</item><item quantity="other">Auto (%1$d days)</item></plurals>
+    <plurals name="rhythm_days"><item quantity="one">%1$d day</item><item quantity="other">%1$d days</item></plurals>
+    <string name="cycled_proposal_text">Your tank looks cycled. Switch to the rhythm of an established tank?</string>
+    <string name="cycled_proposal_switch">Switch to established</string>
+    <string name="cycled_proposal_later">Later</string>
+    <string name="weekly_summary_title">Weekly summary</string>
+    <plurals name="weekly_summary_tests"><item quantity="one">%1$d test done</item><item quantity="other">%1$d tests done</item></plurals>
+    <plurals name="weekly_summary_tasks"><item quantity="one">%1$d task completed</item><item quantity="other">%1$d tasks completed</item></plurals>
+    <string name="weekly_summary_change">%1$s %2$s → %3$s, %4$s</string>
+    <string name="weekly_summary_rising">rising</string>
+    <string name="weekly_summary_falling">falling</string>
+    <string name="weekly_summary_next_week">Next week: test %1$s</string>
+    <string name="weekly_summary_pro_invite">Value changes and next week's tests with Pro</string>
 </resources>

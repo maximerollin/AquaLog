@@ -49,6 +49,7 @@ data class ParameterDefinition(
     val precision: Int,
     val indicativeMinimum: Double?,
     val indicativeMaximum: Double?,
+    val analysisIntervalDays: Int? = null,
 )
 
 object OnboardingPresets {
@@ -87,6 +88,9 @@ object OnboardingPresets {
             )
         }
     }
+
+    /** The unit the built-in rules are written in. */
+    fun presetUnit(parameter: BuiltInParameter): String = defaults(parameter).unit
 
     private fun defaults(parameter: BuiltInParameter): ParameterDefinitionDraft =
         when (parameter) {

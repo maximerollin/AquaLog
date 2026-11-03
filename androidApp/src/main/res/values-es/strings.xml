@@ -2,5 +2,13 @@
 <resources>
     <string name="app_name">Aquagenda</string>
     <string name="task_notification_channel">Recordatorios de tareas</string>
+    <string name="due_tests_notification_channel">Pruebas pendientes</string>
+    <string name="weekly_summary_notification_channel">Resumen de la semana</string>
     <string name="task_notification_text">Abra Aquagenda para completar, posponer o ignorar este suceso.</string>
+    <string name="due_tests_notification_text">Pruebas pendientes: %1$s</string>
+    <string name="weekly_summary_notification_ready">Su resumen de la semana está listo</string>
+    <plurals name="weekly_summary_notification">
+        <item quantity="one">Su resumen de la semana está listo · %1$d semana de cuidado regular</item>
+        <item quantity="other">Su resumen de la semana está listo · %1$d semanas de cuidado regular</item>
+    </plurals>
 </resources>

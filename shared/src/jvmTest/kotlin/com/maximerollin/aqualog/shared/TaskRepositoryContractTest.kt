@@ -87,6 +87,99 @@ class TaskRepositoryContractTest {
         fixture.close()
     }
 
+    private suspend fun TaskFixture.linkedTask(
+        aquariumId: String,
+        due: TaskDate,
+        recurrence: TaskRecurrence = TaskRecurrence.DAILY,
+        type: MaintenanceActionType = MaintenanceActionType.WATER_CHANGE,
+    ) = repository.createTask(
+        TaskInput(aquariumId, "Water change", recurrence, due, null, "Europe/Paris", type),
+    )
+
+    @Test
+    fun `saving a water change completes the due linked water-change task once`() = runTest {
+        val fixture = taskFixture()
+        val aquariumId = fixture.createAquarium().aquarium.id
+        val today = TaskDate(2027, 3, 10)
+        val created = fixture.linkedTask(aquariumId, today)
+        val other = fixture.linkedTask(aquariumId, today, type = MaintenanceActionType.VACUUM)
+
+        val first = fixture.repository.completeLinkedTasks(aquariumId, setOf(MaintenanceActionType.WATER_CHANGE), today, 1_800_000_000_000L)
+        val second = fixture.repository.completeLinkedTasks(aquariumId, setOf(MaintenanceActionType.WATER_CHANGE), today, 1_800_000_000_001L)
+
+        assertEquals(listOf(created.occurrence.id), first.map { it.resolved.id })
+        assertEquals(TaskResolution.COMPLETED, first.single().resolved.resolution)
+        assertEquals(TaskDate(2027, 3, 11), first.single().nextOccurrence?.dueDate)
+        assertTrue(second.isEmpty())
+        assertTrue(fixture.repository.observePendingTaskOccurrences().first().any { it.id == other.occurrence.id })
+        fixture.close()
+    }
+
+    @Test
+    fun `a future linked occurrence is untouched`() = runTest {
+        val fixture = taskFixture()
+        val aquariumId = fixture.createAquarium().aquarium.id
+        val created = fixture.linkedTask(aquariumId, TaskDate(2027, 3, 12))
+
+        val results = fixture.repository.completeLinkedTasks(
+            aquariumId, setOf(MaintenanceActionType.WATER_CHANGE), TaskDate(2027, 3, 10), 1_800_000_000_000L,
+        )
+
+        assertTrue(results.isEmpty())
+        assertEquals(listOf(created.occurrence.id), fixture.repository.observePendingTaskOccurrences().first().map { it.id })
+        fixture.close()
+    }
+
+    @Test
+    fun `ticking then saving the same action the same day does not complete the next occurrence`() = runTest {
+        val fixture = taskFixture()
+        val aquariumId = fixture.createAquarium().aquarium.id
+        val today = TaskDate(2027, 3, 10)
+        fixture.linkedTask(aquariumId, today)
+        val types = setOf(MaintenanceActionType.WATER_CHANGE)
+
+        val ticked = fixture.repository.completeLinkedTasks(aquariumId, types, today, 1_800_000_000_000L)
+        val saved = fixture.repository.completeLinkedTasks(aquariumId, types, today, 1_800_000_000_500L)
+
+        assertEquals(1, ticked.size)
+        assertTrue(saved.isEmpty())
+        assertEquals(listOf(ticked.single().nextOccurrence?.id), fixture.repository.observePendingTaskOccurrences().first().map { it.id })
+        fixture.close()
+    }
+
+    @Test
+    fun `an overdue weekly linked task is completed once and its next occurrence falls after today`() = runTest {
+        val fixture = taskFixture()
+        val aquariumId = fixture.createAquarium().aquarium.id
+        val today = TaskDate(2027, 3, 24)
+        fixture.linkedTask(aquariumId, TaskDate(2027, 3, 10), TaskRecurrence.WEEKLY)
+        val types = setOf(MaintenanceActionType.WATER_CHANGE)
+
+        val first = fixture.repository.completeLinkedTasks(aquariumId, types, today, 1_800_000_000_000L)
+        val second = fixture.repository.completeLinkedTasks(aquariumId, types, today, 1_800_000_000_500L)
+
+        assertEquals(1, first.size)
+        assertEquals(TaskDate(2027, 3, 31), first.single().nextOccurrence?.dueDate)
+        assertTrue(second.isEmpty())
+        fixture.close()
+    }
+
+    @Test
+    fun `ticking a future linked occurrence resolves exactly that occurrence`() = runTest {
+        val fixture = taskFixture()
+        val aquariumId = fixture.createAquarium().aquarium.id
+        val today = TaskDate(2027, 3, 10)
+        val future = fixture.linkedTask(aquariumId, TaskDate(2027, 3, 12), TaskRecurrence.WEEKLY)
+        val types = setOf(MaintenanceActionType.WATER_CHANGE)
+
+        val results = fixture.repository.completeLinkedTasks(aquariumId, types, today, 1_800_000_000_000L, alsoOccurrenceId = future.occurrence.id)
+
+        assertEquals(listOf(future.occurrence.id), results.map { it.resolved.id })
+        assertEquals(TaskDate(2027, 3, 19), results.single().nextOccurrence?.dueDate)
+        assertEquals(listOf(results.single().nextOccurrence?.id), fixture.repository.observePendingTaskOccurrences().first().map { it.id })
+        fixture.close()
+    }
+
     private fun taskFixture(): TaskFixture {
         val path = Files.createTempDirectory("aqualog-tasks").resolve("aqualog.db").toString()
         val database = createAquaLogDatabase(createJvmDatabaseBuilder(path))

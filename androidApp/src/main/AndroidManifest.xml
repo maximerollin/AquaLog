@@ -31,6 +31,12 @@
             android:name=".TaskReminderReceiver"
             android:exported="false" />
         <receiver
+            android:name=".DueTestReminderReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".WeeklySummaryReceiver"
+            android:exported="false" />
+        <receiver
             android:name=".TaskRescheduleReceiver"
             android:exported="true">
             <intent-filter>

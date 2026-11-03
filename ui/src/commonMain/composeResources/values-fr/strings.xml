@@ -108,6 +108,7 @@
     <string name="last_measurement">Dernière mesure : %1$s %2$s · la nouvelle valeur reste vide</string>
     <string name="invalid_measurement">Entrez un nombre décimal en utilisant un point ou une virgule.</string>
     <string name="unusual_measurement">Hors de votre plage indicative. Vérifiez la valeur ; l’enregistrement reste disponible.</string>
+    <string name="alert_measurement">Très en dehors de votre plage indicative. Vérifiez la valeur ; l’enregistrement reste possible.</string>
     <string name="maintenance_heading">Actions d'entretien</string>
     <string name="action_water_change">Changement d'eau</string>
     <string name="action_fertilization">Fertilisation</string>
@@ -341,6 +342,8 @@
     <string name="no_pending_tasks">Aucune tâche en attente.</string>
     <string name="task_due_value">Échéance %1$s · %2$s</string>
     <string name="task_no_time">pas d'heure choisie</string>
+    <string name="task_link_action_label">Lier à une action</string>
+    <string name="task_link_action_none">Aucune</string>
     <string name="task_complete">Fait</string>
     <string name="task_postpone">+1 jour</string>
     <string name="task_ignore">Ignorer</string>
@@ -362,13 +365,80 @@
     <string name="home_nothing_due">Rien à faire · prochaine : %1$s le %2$s</string>
     <string name="home_no_measurement_yet">Pas encore de mesure</string>
     <string name="home_status_all_in_range">Tout est dans la plage</string>
+    <plurals name="series_weeks"><item quantity="one">%1$d semaine d’entretien régulier</item><item quantity="other">%1$d semaines d’entretien régulier</item></plurals>
     <plurals name="home_status_outside_range"><item quantity="one">%1$d valeur à surveiller</item><item quantity="other">%1$d valeurs à surveiller</item></plurals>
+    <plurals name="home_status_with_alert"><item quantity="one">%1$s, dont %2$d très hors plage</item><item quantity="other">%1$s, dont %2$d très hors plage</item></plurals>
     <string name="home_measured_today">mesuré aujourd’hui</string>
     <string name="home_measured_yesterday">mesuré hier</string>
     <plurals name="home_measured_days_ago"><item quantity="one">mesuré il y a %1$d j</item><item quantity="other">mesuré il y a %1$d j</item></plurals>
     <plurals name="reading_age_days"><item quantity="one">il y a %1$d j</item><item quantity="other">il y a %1$d j</item></plurals>
     <string name="reading_attention_description">hors de votre plage indicative</string>
+    <string name="reading_alert_description">très en dehors de votre plage indicative</string>
     <string name="trend_up">en hausse</string>
     <string name="trend_down">en baisse</string>
     <string name="trend_flat">stable</string>
+    <string name="check_title">Vérifions avant d’enregistrer</string>
+    <string name="check_implausible">%1$s %2$s ?</string>
+    <string name="check_implausible_suggestion">Vous vouliez dire %1$s ?</string>
+    <plurals name="check_big_jump"><item quantity="one">%1$s à %2$s alors que vous étiez à %3$s il y a %4$d jour, c’est bien ça ?</item><item quantity="other">%1$s à %2$s alors que vous étiez à %3$s il y a %4$d jours, c’est bien ça ?</item></plurals>
+    <string name="check_big_jump_today">%1$s à %2$s alors que vous étiez à %3$s aujourd’hui, c’est bien ça ?</string>
+    <string name="check_fix">Corriger</string>
+    <string name="check_save_anyway">Enregistrer quand même</string>
+    <string name="check_back">Revenir</string>
+    <string name="piste_water_change_30">Changez 30 % de l'eau.</string>
+    <string name="piste_water_change_30_to_50">Changez 30 à 50 % de l'eau.</string>
+    <string name="piste_water_change_partial">Changez une partie de l'eau.</string>
+    <string name="piste_water_change_softer_water">Changez une partie de l'eau avec une eau plus douce.</string>
+    <string name="piste_water_change_purer_water">Changez une partie de l'eau avec une eau plus pure.</string>
+    <string name="piste_cut_with_osmosis">Coupez l'eau avec de l'eau osmosée.</string>
+    <string name="piste_water_change_overdue">Votre changement d'eau est en retard : commencez par là.</string>
+    <string name="piste_feed_less_2_days">Nourrissez moins pendant 2 jours.</string>
+    <string name="piste_add_starter_bacteria">Ajoutez des bactéries de démarrage.</string>
+    <string name="piste_add_ammonia_detoxifier">Ajoutez un conditionneur d'eau qui neutralise l'ammoniac.</string>
+    <string name="piste_check_food_amount">Vérifiez la quantité de nourriture.</string>
+    <string name="piste_add_fast_growing_plants">Ajoutez des plantes à croissance rapide.</string>
+    <string name="piste_check_kh_low_drops_ph">Vérifiez le KH : un KH bas fait chuter le pH.</string>
+    <string name="piste_add_kh_buffer">Ajoutez un tampon pour remonter le KH.</string>
+    <string name="piste_check_tap_water_and_decor">Vérifiez l'eau du robinet et les décors calcaires.</string>
+    <string name="piste_check_heater_setting">Vérifiez le réglage du chauffage.</string>
+    <string name="piste_vent_or_lights_off">Aérez la surface ou éteignez l'éclairage quelques heures.</string>
+    <string name="piste_check_heater_works">Vérifiez que le chauffage fonctionne.</string>
+    <string name="piste_adjust_heater_power">Adaptez sa puissance au volume du bac.</string>
+    <string name="piste_add_remineralizer">Ajoutez un reminéralisant.</string>
+    <string name="piste_reduce_food">Réduisez la nourriture.</string>
+    <string name="piste_add_anti_phosphate">Ajoutez un anti-phosphates.</string>
+    <string name="piste_retest_to_confirm">Refaites un test pour confirmer.</string>
+    <string name="piste_cycling_normal">Pendant le cyclage, de l'ammoniac et des nitrites sont normaux. Attendez qu'ils redescendent à 0 avant d'ajouter des poissons.</string>
+    <string name="pistes_title">Pistes pour %1$s</string>
+    <string name="pistes_card_collapsed">Pistes · %1$s</string>
+    <string name="pistes_card_expand">Afficher les pistes</string>
+    <string name="pistes_card_collapse">Masquer les pistes</string>
+    <string name="pistes_retest">Refaites un test %1$s.</string>
+    <string name="pistes_retest_tomorrow">demain</string>
+    <string name="pistes_retest_today">aujourd’hui</string>
+    <string name="pistes_retest_on_date">le %1$s</string>
+    <string name="pistes_retest_asap">dès que possible</string>
+    <string name="pistes_disclaimer">Ce sont des pistes, pas un diagnostic : en cas de doute, demandez conseil en magasin spécialisé.</string>
+    <string name="parameter_short_ammonia">NH₃/NH₄</string>
+    <string name="parameter_short_nitrite">NO₂</string>
+    <string name="parameter_short_nitrate">NO₃</string>
+    <string name="parameter_short_phosphate">PO₄</string>
+    <string name="due_tests_row">Tester %1$s</string>
+    <string name="list_pair">%1$s et %2$s</string>
+    <string name="rhythm_title">Rythme d’analyse</string>
+    <string name="rhythm_never">Jamais</string>
+    <string name="rhythm_auto_never">Auto (jamais)</string>
+    <plurals name="rhythm_auto_days"><item quantity="one">Auto (%1$d jour)</item><item quantity="other">Auto (%1$d jours)</item></plurals>
+    <plurals name="rhythm_days"><item quantity="one">%1$d jour</item><item quantity="other">%1$d jours</item></plurals>
+    <string name="cycled_proposal_text">Votre bac a l'air cyclé. Passer au rythme d'un bac établi ?</string>
+    <string name="cycled_proposal_switch">Passer en établi</string>
+    <string name="cycled_proposal_later">Plus tard</string>
+    <string name="weekly_summary_title">Bilan de la semaine</string>
+    <plurals name="weekly_summary_tests"><item quantity="one">%1$d test fait</item><item quantity="other">%1$d tests faits</item></plurals>
+    <plurals name="weekly_summary_tasks"><item quantity="one">%1$d tâche cochée</item><item quantity="other">%1$d tâches cochées</item></plurals>
+    <string name="weekly_summary_change">%1$s %2$s → %3$s, %4$s</string>
+    <string name="weekly_summary_rising">en hausse</string>
+    <string name="weekly_summary_falling">en baisse</string>
+    <string name="weekly_summary_next_week">Semaine prochaine : tester %1$s</string>
+    <string name="weekly_summary_pro_invite">Évolution des valeurs et tests de la semaine prochaine avec Pro</string>
 </resources>

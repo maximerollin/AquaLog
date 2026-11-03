@@ -1,5 +1,8 @@
 package com.maximerollin.aqualog.shared
 
+import com.maximerollin.aqualog.shared.assistance.ReadingSample
+import java.time.Instant
+import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -37,6 +40,9 @@ interface AquariumRepository {
 
     suspend fun updateParameterDefinition(parameter: ParameterDefinition): ParameterDefinition
 
+    /** Sets the per-Aquarium analysis rhythm of one Parameter; null means the profile default. */
+    suspend fun updateAnalysisInterval(parameterDefinitionId: String, days: Int?): ParameterDefinition
+
     suspend fun loadRapidSessionContext(aquariumId: String): RapidSessionContext
 
     suspend fun saveRapidSession(input: RapidSessionInput): RecordedSession
@@ -46,6 +52,17 @@ interface AquariumRepository {
     fun observeSession(sessionId: String): Flow<RecordedSession?>
 
     fun observeLatestReadings(aquariumId: String): Flow<List<LatestReading>>
+
+    /** Every reading of the Aquarium, dated by its day in [timeZoneId], newest first. */
+    fun observeReadingSamples(aquariumId: String, timeZoneId: String): Flow<List<ReadingSample>>
+
+    /** One Aquarium with its Parameters, read once; null when it does not exist. */
+    suspend fun loadSetup(aquariumId: String): AquariumSetup?
+
+    /** Local-only: assistant card kind to the id of the Session that last dismissed it. */
+    fun observeDismissals(aquariumId: String): Flow<Map<String, String>>
+
+    suspend fun dismiss(aquariumId: String, kind: String, sessionId: String)
 
     suspend fun updateSession(input: SessionEditInput): RecordedSession
 
@@ -64,6 +81,18 @@ interface AquariumRepository {
 
     suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult
 
+    /**
+     * Resolves as COMPLETED every pending linked Occurrence of the Aquarium due on or before [today], plus
+     * [alsoOccurrenceId] whatever its date. Each next Occurrence falls strictly after [today].
+     */
+    suspend fun completeLinkedTasks(
+        aquariumId: String,
+        actionTypes: Set<MaintenanceActionType>,
+        today: TaskDate,
+        resolvedAtEpochMillis: Long,
+        alsoOccurrenceId: String? = null,
+    ): List<TaskResolutionResult>
+
     fun observePendingTaskOccurrences(): Flow<List<TaskOccurrence>>
 
     fun observeResolvedTaskOccurrences(): Flow<List<TaskOccurrence>>
@@ -79,6 +108,7 @@ class RoomAquariumRepository(
     private val aquariumDao = database.aquariumDao()
     private val sessionDao = database.sessionDao()
     private val taskDao = database.taskDao()
+    private val assistantDao = database.assistantDao()
     private val accountDao = database.accountDao()
     private val accountControlDao = database.accountControlDao()
     private val syncDao = database.syncDao()
@@ -224,13 +254,18 @@ class RoomAquariumRepository(
         return normalized
     }
 
+    override suspend fun updateAnalysisInterval(parameterDefinitionId: String, days: Int?): ParameterDefinition {
+        require(days == null || days > 0) { "Analysis interval must be positive" }
+        val existing = requireNotNull(aquariumDao.getParameter(parameterDefinitionId)) { "Parameter does not exist" }
+        return updateParameterDefinition(existing.toDomain().copy(analysisIntervalDays = days))
+    }
+
     override suspend fun loadRapidSessionContext(aquariumId: String): RapidSessionContext {
         val setup = requireNotNull(aquariumDao.getSetup(aquariumId)) { "Aquarium does not exist" }.toDomain()
         val activeParameters = setup.parameters.filter(ParameterDefinition::isActive)
             .sortedBy(ParameterDefinition::position)
-        val lastMeasurements = sessionDao.measurementsForAquarium(aquariumId)
-            .distinctBy(MeasurementEntity::parameterDefinitionId)
-            .associate { it.parameterDefinitionId to it.value }
+        val newestReadings = sessionDao.readingsForAquarium(aquariumId).distinctBy(ReadingRow::parameterDefinitionId)
+        val lastMeasurements = newestReadings.associate { it.parameterDefinitionId to it.value }
         val lastActions = sessionDao.maintenanceActionsForAquarium(aquariumId)
             .map(MaintenanceActionEntity::toDomain)
             .distinctBy(MaintenanceAction::type)
@@ -239,6 +274,7 @@ class RoomAquariumRepository(
             activeParameters = activeParameters,
             measurementInputs = activeParameters.associate { it.id to "" },
             lastMeasurements = lastMeasurements,
+            lastMeasurementTimes = newestReadings.associate { it.parameterDefinitionId to it.occurredAtEpochMillis },
             lastMaintenanceActions = lastActions,
         )
     }
@@ -310,6 +346,22 @@ class RoomAquariumRepository(
                 LatestReading(id, readings[0].value, readings[0].occurredAtEpochMillis, readings.getOrNull(1)?.value)
             }
         }
+
+    override fun observeReadingSamples(aquariumId: String, timeZoneId: String): Flow<List<ReadingSample>> =
+        sessionDao.observeReadingsForAquarium(aquariumId).map { rows ->
+            val zone = ZoneId.of(timeZoneId)
+            rows.map { row ->
+                val day = Instant.ofEpochMilli(row.occurredAtEpochMillis).atZone(zone).toLocalDate()
+                ReadingSample(row.parameterDefinitionId, row.value, TaskDate(day.year, day.monthValue, day.dayOfMonth))
+            }
+        }
+
+    override suspend fun loadSetup(aquariumId: String): AquariumSetup? = aquariumDao.getSetup(aquariumId)?.toDomain()
+
+    override fun observeDismissals(aquariumId: String): Flow<Map<String, String>> = assistantDao.observeDismissals(aquariumId)
+
+    override suspend fun dismiss(aquariumId: String, kind: String, sessionId: String) =
+        assistantDao.dismiss(aquariumId, kind, sessionId)
 
     override fun observeSession(sessionId: String): Flow<RecordedSession?> =
         sessionDao.observeById(sessionId).map { it?.toDomain() }
@@ -508,6 +560,7 @@ class RoomAquariumRepository(
             title = input.title.trim(),
             recurrence = input.recurrence,
             monthlyAnchorDay = input.firstDueDate.day,
+            maintenanceActionType = input.maintenanceActionType,
         )
         val occurrence = TaskOccurrence(
             id = generateId(),
@@ -519,12 +572,17 @@ class RoomAquariumRepository(
             timeZoneId = input.timeZoneId,
             resolution = null,
             resolvedAtEpochMillis = null,
+            maintenanceActionType = input.maintenanceActionType,
         )
         taskDao.create(task.toEntity(), occurrence.toEntity())
         return CreatedTask(task, occurrence)
     }
 
-    override suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult {
+    override suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult =
+        resolve(input, catchUpAfter = null)
+
+    /** [catchUpAfter] skips the recurrence dates up to that day, so a late Occurrence is not completed again at once. */
+    private suspend fun resolve(input: TaskResolutionInput, catchUpAfter: TaskDate?): TaskResolutionResult {
         require(input.resolvedAtEpochMillis > 0)
         val task = taskDao.taskForOccurrence(input.occurrenceId).toDomain()
         val pending = observePendingTaskOccurrences().first().firstOrNull { it.id == input.occurrenceId }
@@ -541,7 +599,12 @@ class RoomAquariumRepository(
             } else {
                 pending.next(
                     id = generateId(),
-                    date = nextTaskDate(pending.dueDate, task.recurrence, task.monthlyAnchorDay),
+                    date = generateSequence(nextTaskDate(pending.dueDate, task.recurrence, task.monthlyAnchorDay)) {
+                        nextTaskDate(it, task.recurrence, task.monthlyAnchorDay)
+                    }.first {
+                        catchUpAfter == null ||
+                            compareValuesBy(it, catchUpAfter, TaskDate::year, TaskDate::month, TaskDate::day) > 0
+                    },
                     minute = pending.minuteOfDay,
                     zone = pending.timeZoneId,
                 )
@@ -554,6 +617,26 @@ class RoomAquariumRepository(
             nextOccurrence = next?.toEntity(),
         )
         return TaskResolutionResult(resolvedEntity.toDomain(), nextEntity?.toDomain())
+    }
+
+    override suspend fun completeLinkedTasks(
+        aquariumId: String,
+        actionTypes: Set<MaintenanceActionType>,
+        today: TaskDate,
+        resolvedAtEpochMillis: Long,
+        alsoOccurrenceId: String?,
+    ): List<TaskResolutionResult> {
+        val due = observePendingTaskOccurrences().first().filter {
+            it.aquariumId == aquariumId && (
+                it.id == alsoOccurrenceId || (
+                    it.maintenanceActionType in actionTypes &&
+                        compareValuesBy(it.dueDate, today, TaskDate::year, TaskDate::month, TaskDate::day) <= 0
+                    )
+                )
+        }
+        return due.map {
+            resolve(TaskResolutionInput(it.id, TaskResolution.COMPLETED, resolvedAtEpochMillis), catchUpAfter = today)
+        }
     }
 
     override fun observePendingTaskOccurrences(): Flow<List<TaskOccurrence>> =
@@ -779,7 +862,14 @@ private fun randomSyncOperationKey(): String = Random.nextBytes(16).joinToString
     byte.toUByte().toString(radix = 16).padStart(2, '0')
 }
 
-private fun AquariumTask.toEntity() = TaskEntity(id, aquariumId, title, recurrence.storageValue, monthlyAnchorDay)
+private fun AquariumTask.toEntity() = TaskEntity(
+    id,
+    aquariumId,
+    title,
+    recurrence.storageValue,
+    monthlyAnchorDay,
+    maintenanceActionType?.storageValue,
+)
 
 private fun TaskEntity.toDomain() = AquariumTask(
     id,
@@ -787,6 +877,7 @@ private fun TaskEntity.toDomain() = AquariumTask(
     title,
     TaskRecurrence.fromStorageValue(recurrence),
     monthlyAnchorDay,
+    maintenanceActionType?.let(MaintenanceActionType::fromStorageValue),
 )
 
 private fun TaskOccurrence.toEntity() = TaskOccurrenceEntity(
@@ -801,6 +892,7 @@ private fun TaskOccurrence.toEntity() = TaskOccurrenceEntity(
     timeZoneId = timeZoneId,
     resolution = resolution?.storageValue,
     resolvedAtEpochMillis = resolvedAtEpochMillis,
+    maintenanceActionType = maintenanceActionType?.storageValue,
 )
 
 private fun TaskOccurrenceEntity.toDomain() = TaskOccurrence(
@@ -813,6 +905,7 @@ private fun TaskOccurrenceEntity.toDomain() = TaskOccurrence(
     timeZoneId = timeZoneId,
     resolution = resolution?.let(TaskResolution::fromStorageValue),
     resolvedAtEpochMillis = resolvedAtEpochMillis,
+    maintenanceActionType = maintenanceActionType?.let(MaintenanceActionType::fromStorageValue),
 )
 
 private fun TaskOccurrence.next(id: String, date: TaskDate, minute: Int?, zone: String) = copy(
@@ -859,6 +952,7 @@ private fun ParameterDefinitionEntity.toDomain() = ParameterDefinition(
     precision = precision,
     indicativeMinimum = indicativeMinimum,
     indicativeMaximum = indicativeMaximum,
+    analysisIntervalDays = analysisIntervalDays,
 )
 
 private fun ParameterDefinition.toEntity() = ParameterDefinitionEntity(
@@ -871,6 +965,7 @@ private fun ParameterDefinition.toEntity() = ParameterDefinitionEntity(
     precision = precision,
     indicativeMinimum = indicativeMinimum,
     indicativeMaximum = indicativeMaximum,
+    analysisIntervalDays = analysisIntervalDays,
 )
 
 private fun Session.toEntity(idempotencyKey: String) = SessionEntity(

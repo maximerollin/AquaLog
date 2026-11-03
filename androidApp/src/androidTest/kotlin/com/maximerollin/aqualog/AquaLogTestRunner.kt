@@ -32,6 +32,7 @@ import com.maximerollin.aqualog.shared.PurchaseAccountIdentityResult
 import com.maximerollin.aqualog.shared.PurchaseVerificationResult
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.SecureTokenStorage
+import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.VoluntaryFeedback
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
@@ -78,6 +79,10 @@ class TestAquaLogApplication : AquaLogApplication() {
 
     override val taskReminderScheduler: TaskReminderScheduler
         get() = recordingTaskReminderScheduler
+
+    /** A fixed home clock for the next launched activity; null follows the system time. */
+    var clockMillis: Long? = null
+    override val currentTimeMillis: () -> Long = { clockMillis ?: System.currentTimeMillis() }
 
     override val aquariumRepository: AquariumRepository
         get() = requireNotNull(repository) { "resetRepository() must run before launching MainActivity" }
@@ -146,6 +151,7 @@ class TestAquaLogApplication : AquaLogApplication() {
         bindRepository(newRepository, newDatabase)
         deletionResult = CloudAccountDeletionResult.Completed
         recordingTaskReminderScheduler.reset()
+        clockMillis = null
         analyticsPayloads.clear()
         recordedFeedback.clear()
         verifiedProEntitlement = null
@@ -203,6 +209,8 @@ private class TestTokenStorage(private var tokens: AuthTokens?) : SecureTokenSto
 class RecordingTaskReminderScheduler : TaskReminderScheduler {
     val scheduledOccurrenceIds = CopyOnWriteArrayList<String>()
     val canceledOccurrenceIds = CopyOnWriteArrayList<String>()
+    /** Every due-test reminder date asked for, null when it was cancelled. */
+    val scheduledDueTestDates: MutableList<TaskDate?> = java.util.Collections.synchronizedList(mutableListOf())
 
     override fun schedule(occurrence: TaskOccurrence) {
         scheduledOccurrenceIds += occurrence.id
@@ -216,10 +224,17 @@ class RecordingTaskReminderScheduler : TaskReminderScheduler {
         occurrences.forEach(::schedule)
     }
 
+    override fun scheduleDueTests(at: TaskDate?) {
+        scheduledDueTestDates += at
+    }
+
+    override fun scheduleWeeklySummary() = Unit
+
     override fun isBatteryOptimizationActive(): Boolean = false
 
     fun reset() {
         scheduledOccurrenceIds.clear()
         canceledOccurrenceIds.clear()
+        scheduledDueTestDates.clear()
     }
 }

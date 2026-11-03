@@ -104,6 +104,7 @@ data class PortableParameterDefinition(
     val precision: Int,
     val indicativeMinimum: Double?,
     val indicativeMaximum: Double?,
+    val analysisIntervalDays: Int? = null,
 )
 
 @Serializable
@@ -148,6 +149,7 @@ data class PortableTask(
     val title: String,
     val recurrence: String,
     val monthlyAnchorDay: Int,
+    val maintenanceActionType: String? = null,
 )
 
 @Serializable
@@ -163,6 +165,7 @@ data class PortableTaskOccurrence(
     val timeZoneId: String,
     val resolution: String?,
     val resolvedAtEpochMillis: Long?,
+    val maintenanceActionType: String? = null,
 )
 
 class PortableDataService(
@@ -288,6 +291,7 @@ private fun PortableDataDocument.validationProblem(): PortableImportProblem? {
                 it.indicativeMinimum?.isFinite() == false || it.indicativeMaximum?.isFinite() == false ||
                 it.indicativeMinimum != null && it.indicativeMaximum != null &&
                 it.indicativeMinimum > it.indicativeMaximum ||
+                it.analysisIntervalDays?.let { days -> days <= 0 } == true ||
                 runCatching { BuiltInParameter.fromStorageValue(it.parameter) }.isFailure
         }
     ) {
@@ -349,7 +353,8 @@ private fun PortableDataDocument.validationProblem(): PortableImportProblem? {
     }
     if (tasks.any {
             it.aquariumId !in aquariumsById || it.title.isBlank() || it.monthlyAnchorDay !in 1..31 ||
-                runCatching { TaskRecurrence.fromStorageValue(it.recurrence) }.isFailure
+                runCatching { TaskRecurrence.fromStorageValue(it.recurrence) }.isFailure ||
+                !it.maintenanceActionType.isKnownActionType()
         }
     ) {
         return PortableImportProblem.INVALID_TASKS
@@ -361,7 +366,8 @@ private fun PortableDataDocument.validationProblem(): PortableImportProblem? {
                 occurrence.dueMinuteOfDay !in -1 until 24 * 60 || occurrence.timeZoneId.isBlank() ||
                 runCatching { TaskDate(occurrence.dueYear, occurrence.dueMonth, occurrence.dueDay) }.isFailure ||
                 occurrence.resolution?.let { runCatching { TaskResolution.fromStorageValue(it) }.isFailure } == true ||
-                (occurrence.resolution == null) != (occurrence.resolvedAtEpochMillis == null)
+                (occurrence.resolution == null) != (occurrence.resolvedAtEpochMillis == null) ||
+                !occurrence.maintenanceActionType.isKnownActionType()
         }
     ) {
         return PortableImportProblem.INVALID_OCCURRENCES
@@ -374,6 +380,9 @@ private fun PortableDataDocument.validationProblem(): PortableImportProblem? {
     }
     return null
 }
+
+private fun String?.isKnownActionType() =
+    this == null || runCatching { MaintenanceActionType.fromStorageValue(this) }.isSuccess
 
 private fun <T, K> List<T>.hasDuplicateBy(selector: (T) -> K): Boolean {
     val values = map(selector)
@@ -432,6 +441,7 @@ private fun ParameterDefinitionEntity.toPortable() = PortableParameterDefinition
     precision,
     indicativeMinimum,
     indicativeMaximum,
+    analysisIntervalDays,
 )
 
 private fun PortableParameterDefinition.toEntity() = ParameterDefinitionEntity(
@@ -444,6 +454,7 @@ private fun PortableParameterDefinition.toEntity() = ParameterDefinitionEntity(
     precision,
     indicativeMinimum,
     indicativeMaximum,
+    analysisIntervalDays,
 )
 
 private fun SessionEntity.toPortable() = PortableSession(
@@ -488,9 +499,11 @@ private fun SessionEventEntity.toPortable() = PortableEvent(id, sessionId, type,
 
 private fun PortableEvent.toEntity() = SessionEventEntity(id, sessionId, type, note)
 
-private fun TaskEntity.toPortable() = PortableTask(id, aquariumId, title, recurrence, monthlyAnchorDay)
+private fun TaskEntity.toPortable() =
+    PortableTask(id, aquariumId, title, recurrence, monthlyAnchorDay, maintenanceActionType)
 
-private fun PortableTask.toEntity() = TaskEntity(id, aquariumId, title, recurrence, monthlyAnchorDay)
+private fun PortableTask.toEntity() =
+    TaskEntity(id, aquariumId, title, recurrence, monthlyAnchorDay, maintenanceActionType)
 
 private fun TaskOccurrenceEntity.toPortable() = PortableTaskOccurrence(
     id,
@@ -504,6 +517,7 @@ private fun TaskOccurrenceEntity.toPortable() = PortableTaskOccurrence(
     timeZoneId,
     resolution,
     resolvedAtEpochMillis,
+    maintenanceActionType,
 )
 
 private fun PortableTaskOccurrence.toEntity() = TaskOccurrenceEntity(
@@ -518,4 +532,5 @@ private fun PortableTaskOccurrence.toEntity() = TaskOccurrenceEntity(
     timeZoneId,
     resolution,
     resolvedAtEpochMillis,
+    maintenanceActionType,
 )

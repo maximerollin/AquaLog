@@ -15,6 +15,7 @@ import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 /** Historical schemas are inputs, rather than a current database relabelled as an older version. */
 @RunWith(Parameterized::class)
@@ -25,7 +26,7 @@ class HistoricalMigrationQualificationTest(private val version: Int) {
         val path = directory.resolve("historical.db").toString()
         try {
             createHistoricalCopy(path)
-            repeat(2) {
+            repeat(2) { reopen ->
                 val database = createAquaLogDatabase(createJvmDatabaseBuilder(path))
                 try {
                     val repository = RoomAquariumRepository(
@@ -44,11 +45,21 @@ class HistoricalMigrationQualificationTest(private val version: Int) {
                     assertEquals(20.0, session.maintenanceActions.single().quantity)
                     assertEquals("Historical observation", session.events.single().note)
                     assertEquals("session-19", repository.observeTimeline(TimelineFilter()).first().single().session.id)
+                    val parameter = assertNotNull(repository.observeCurrentSetup().first()).parameters.single()
+                    assertNull(parameter.analysisIntervalDays)
+                    val dismissals = database.assistantDao()
+                    if (reopen == 0) {
+                        assertEquals(emptyMap(), dismissals.observeDismissals(aquarium.id).first())
+                        dismissals.dismiss(aquarium.id, "cycled", "session-19")
+                    } else {
+                        assertEquals(mapOf("cycled" to "session-19"), dismissals.observeDismissals(aquarium.id).first())
+                    }
                     if (version >= 5) {
                         assertEquals("account-19", repository.accountMigrationState()?.accountId)
                     }
                     if (version >= 6) {
                         assertEquals("Clean filter", repository.observePendingTaskOccurrences().first().single().title)
+                        assertNull(repository.observePendingTaskOccurrences().first().single().maintenanceActionType)
                         assertEquals(
                             TaskResolution.COMPLETED,
                             repository.observeResolvedTaskOccurrences().first().single().resolution,
@@ -152,6 +163,6 @@ class HistoricalMigrationQualificationTest(private val version: Int) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "Room {0} to current")
-        fun versions() = (3..13).map { arrayOf(it) }
+        fun versions() = (3..14).map { arrayOf(it) }
     }
 }

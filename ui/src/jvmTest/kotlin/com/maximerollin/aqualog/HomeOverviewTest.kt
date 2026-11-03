@@ -1,13 +1,19 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.shared.Aquarium
+import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.ParameterDefinition
+import com.maximerollin.aqualog.shared.MaintenanceAction
+import com.maximerollin.aqualog.shared.MaintenanceActionInput
+import com.maximerollin.aqualog.shared.MaintenanceActionType
+import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -31,7 +37,8 @@ class HomeOverviewTest {
         active: Boolean = true,
     ) = ParameterDefinition(
         id = "d-${parameter.storageValue}", aquariumId = "a1", parameter = parameter, isActive = active,
-        position = position, unit = "", precision = 1, indicativeMinimum = min, indicativeMaximum = max,
+        position = position, unit = OnboardingPresets.presetUnit(parameter), precision = 1,
+        indicativeMinimum = min, indicativeMaximum = max,
     )
 
     private fun setup(vararg definitions: ParameterDefinition) = AquariumSetup(aquarium(), definitions.toList())
@@ -52,7 +59,15 @@ class HomeOverviewTest {
             listOf(reading(ph, 7.2), reading(nitrite, 0.25), reading(nitrate, 20.0)),
         )
         assertEquals(listOf(ph, nitrite, nitrate), overview.values.map { it.definition })
-        assertEquals(listOf(false, true, false), overview.values.map { it.isOutsideRange })
+        assertEquals(listOf(ReadingLevel.OK, ReadingLevel.ATTENTION, ReadingLevel.OK), overview.values.map { it.level })
+        assertEquals(1, overview.outsideRangeCount)
+    }
+
+    @Test
+    fun `nitrite 0_6 is ALERT and counts as out of range`() {
+        val nitrite = definition(BuiltInParameter.NITRITE, 0, 0.0, 0.0)
+        val overview = homeOverview(setup(nitrite), listOf(reading(nitrite, 0.6)))
+        assertEquals(ReadingLevel.ALERT, overview.values.single().level)
         assertEquals(1, overview.outsideRangeCount)
     }
 
@@ -62,14 +77,14 @@ class HomeOverviewTest {
         val value = homeOverview(setup(gh), emptyList()).values.single()
         assertNull(value.value)
         assertNull(value.occurredAtEpochMillis)
-        assertFalse(value.isOutsideRange)
+        assertEquals(ReadingLevel.OK, value.level)
     }
 
     @Test
     fun `parameter without range is never out of range`() {
         val tds = definition(BuiltInParameter.TDS, 0)
-        val value = homeOverview(setup(tds), listOf(reading(tds, 900.0))).values.single()
-        assertFalse(value.isOutsideRange)
+        val value = homeOverview(setup(tds), listOf(reading(tds, 500.0))).values.single()
+        assertEquals(ReadingLevel.OK, value.level)
     }
 
     @Test
@@ -82,7 +97,7 @@ class HomeOverviewTest {
     @Test
     fun `more than six active parameters keep the out of range ones`() {
         val definitions = BuiltInParameter.entries.take(8).mapIndexed { index, parameter ->
-            definition(parameter, index, 0.0, 10.0)
+            definition(parameter, index, 0.0, 30.0)
         }
         val readings = definitions.mapIndexed { index, d -> reading(d, if (index == 7) 50.0 else 5.0) }
         val overview = homeOverview(setup(*definitions.toTypedArray()), readings)
@@ -95,9 +110,9 @@ class HomeOverviewTest {
     @Test
     fun `outside range count covers every active parameter, not only the six shown`() {
         val definitions = BuiltInParameter.entries.take(8).mapIndexed { index, parameter ->
-            definition(parameter, index, 0.0, 10.0)
+            definition(parameter, index, 0.0, 30.0)
         }
-        val readings = definitions.mapIndexed { index, d -> reading(d, if (index == 0) 5.0 else 50.0) }
+        val readings = definitions.mapIndexed { index, d -> reading(d, if (index == 0) 20.0 else 50.0) }
         val overview = homeOverview(setup(*definitions.toTypedArray()), readings)
         assertEquals(6, overview.values.size)
         assertEquals(7, overview.outsideRangeCount)
@@ -192,6 +207,27 @@ class HomeOverviewTest {
     }
 
     @Test
+    fun `overdue linked action only counts an overdue Occurrence of that action and Aquarium`() {
+        val wc = MaintenanceActionType.WATER_CHANGE
+        val pending = listOf(
+            occurrence("1", "a1", yesterday).copy(maintenanceActionType = wc),
+            occurrence("2", "a2", yesterday).copy(maintenanceActionType = wc),
+            occurrence("3", "a1", today).copy(maintenanceActionType = MaintenanceActionType.VACUUM),
+        )
+        assertTrue(overdueLinkedAction(pending, "a1", wc, today))
+        assertFalse(overdueLinkedAction(pending, "a1", MaintenanceActionType.VACUUM, today))
+        assertFalse(overdueLinkedAction(pending.drop(1), "a1", wc, today))
+    }
+
+    @Test
+    fun `default maintenance input reuses the last quantity else the built-in default`() {
+        assertEquals(MaintenanceActionInput(MaintenanceActionType.WATER_CHANGE, "20", "%"), defaultMaintenanceInput(MaintenanceActionType.WATER_CHANGE, null))
+        assertEquals(MaintenanceActionInput(MaintenanceActionType.VACUUM), defaultMaintenanceInput(MaintenanceActionType.VACUUM, null))
+        val last = MaintenanceAction("m", "s", MaintenanceActionType.WATER_CHANGE, 35.0, "%", null)
+        assertEquals(MaintenanceActionInput(MaintenanceActionType.WATER_CHANGE, "35", "%"), defaultMaintenanceInput(MaintenanceActionType.WATER_CHANGE, last))
+    }
+
+    @Test
     fun `today tasks keep at most three`() {
         val pending = (1..5).map { occurrence("$it", "a1", today) }
         assertEquals(listOf("1", "2", "3"), todayTasks(pending, "a1", today).due.map { it.id })
@@ -224,5 +260,18 @@ class HomeOverviewTest {
         assertEquals(listOf("a2", "a4"), alerts.map { it.aquarium.id })
         assertEquals(listOf("2", "5"), alerts.map { it.occurrence.id })
         assertEquals(listOf(true, false), alerts.map { it.isOverdue })
+    }
+
+    @Test
+    fun `alerts are counted, and capped at ATTENTION for ammonia and nitrite while cycling`() {
+        val ph = definition(BuiltInParameter.PH, 0, 6.5, 7.5)
+        val nitrite = definition(BuiltInParameter.NITRITE, 1, 0.0, 0.0)
+        val readings = listOf(reading(ph, 8.6), reading(nitrite, 1.0))
+        val established = homeOverview(setup(ph, nitrite), readings)
+        assertEquals(2, established.alertCount)
+        val cycling = homeOverview(AquariumSetup(aquarium().copy(profile = AquariumProfile.CYCLING), listOf(ph, nitrite)), readings)
+        assertEquals(listOf(ReadingLevel.ALERT, ReadingLevel.ATTENTION), cycling.values.map { it.level })
+        assertEquals(1, cycling.alertCount)
+        assertEquals(2, cycling.outsideRangeCount)
     }
 }

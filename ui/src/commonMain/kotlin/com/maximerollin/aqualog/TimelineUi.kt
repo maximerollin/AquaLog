@@ -1,5 +1,7 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.ui.icon.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -52,11 +54,11 @@ import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.TaskResolution
 import com.maximerollin.aqualog.shared.TimelineSession
-import com.maximerollin.aqualog.shared.isOutsideIndicativeRange
+import com.maximerollin.aqualog.shared.assistance.readingLevel
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.ReadingValue
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 private sealed interface TimelineListItem {
@@ -99,7 +101,7 @@ fun TimelineScreen(
             Modifier.padding(start = 24.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
             action = {
                 IconButton(onClick = viewModel::toggleTimelineFilters, modifier = Modifier.size(48.dp)) {
-                    Icon(painterResource(Res.drawable.ic_filter), contentDescription = stringResource(Res.string.timeline_filters))
+                    Icon(AquagendaIcons.Funnel, contentDescription = stringResource(Res.string.timeline_filters))
                 }
             },
         )
@@ -219,7 +221,7 @@ private fun TimelineTaskRow(occurrence: TaskOccurrence, isLast: Boolean) {
     val resolution = "$resolutionLabel · ${formatter.clock(requireNotNull(occurrence.resolvedAtEpochMillis))}"
     RailEntry(MaterialTheme.colorScheme.outlineVariant, isLast) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(painterResource(Res.drawable.ic_check), null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(AquagendaIcons.Check, null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
             Text(occurrence.title, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
             Text(
                 resolution,
@@ -235,6 +237,7 @@ private fun TimelineTaskRow(occurrence: TaskOccurrence, isLast: Boolean) {
 private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAquarium: Boolean, onClick: () -> Unit) {
     val formatter = currentLocalizedFormatters()
     val description = stringResource(Res.string.open_session_details)
+    val alertCue = stringResource(Res.string.reading_alert_description)
     val attentionCue = stringResource(Res.string.reading_attention_description)
     val readings = entry.measurements.sortedBy { it.definition.position }.map { item ->
         val label = item.definition.parameter.label()
@@ -242,13 +245,17 @@ private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAqua
             value = formatter.number(item.measurement.value, item.definition.precision),
             unit = item.definition.unit.takeIf { it.isNotBlank() && it != label },
             label = label,
-            attention = item.definition.isOutsideIndicativeRange(item.measurement.value),
+            level = readingLevel(item.definition, item.measurement.value, entry.aquarium.profile),
         )
     }
     // Each ReadingValue is its own merged node; the row announces them as one unit with its click action.
     val readingsSummary = readings.joinToString(", ") { reading ->
         listOfNotNull(reading.value, reading.unit, reading.label).joinToString(" ") +
-            if (reading.attention) ", $attentionCue" else ""
+            when (reading.level) {
+                ReadingLevel.OK -> ""
+                ReadingLevel.ATTENTION -> ", $attentionCue"
+                ReadingLevel.ALERT -> ", $alertCue"
+            }
     }
     RailEntry(
         MaterialTheme.colorScheme.primary,
@@ -288,13 +295,13 @@ private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAqua
                             value = reading.value,
                             label = reading.label,
                             unit = reading.unit,
-                            attention = reading.attention,
+                            level = reading.level,
                         )
                     }
                 }
             }
             entry.maintenanceActions.forEach { action ->
-                TimelineNoteLine(Res.drawable.ic_drop, action.summary(formatter))
+                TimelineNoteLine(AquagendaIcons.Droplet, action.summary(formatter))
             }
             entry.events.forEach { event ->
                 val note = if (event.type == EventType.INCIDENT) {
@@ -302,13 +309,13 @@ private fun TimelineSessionRow(entry: TimelineSession, isLast: Boolean, showAqua
                 } else {
                     event.note
                 }
-                TimelineNoteLine(Res.drawable.ic_note, note)
+                TimelineNoteLine(AquagendaIcons.NotepadText, note)
             }
         }
     }
 }
 
-private data class TimelineReading(val value: String, val unit: String?, val label: String, val attention: Boolean)
+private data class TimelineReading(val value: String, val unit: String?, val label: String, val level: ReadingLevel)
 
 @Composable
 private fun MaintenanceAction.summary(formatter: LocalizedFormatters): String {
@@ -317,9 +324,9 @@ private fun MaintenanceAction.summary(formatter: LocalizedFormatters): String {
 }
 
 @Composable
-internal fun TimelineNoteLine(icon: org.jetbrains.compose.resources.DrawableResource, text: String) {
+internal fun TimelineNoteLine(icon: ImageVector, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Icon(painterResource(icon), null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(icon, null, Modifier.size(16.dp), MaterialTheme.colorScheme.onSurfaceVariant)
         Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

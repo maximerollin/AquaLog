@@ -5,6 +5,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -126,6 +129,117 @@ class PortableDataServiceTest {
 
         source.close()
         restored.close()
+    }
+
+    @Test
+    fun `round trip keeps the analysis interval and the linked maintenance action`() = runTest {
+        val source = portableFixture()
+        val setup = source.repository.createConfiguredAquarium(
+            name = "Amazonien",
+            volume = 120.0,
+            volumeUnit = VolumeUnit.LITERS,
+            profile = AquariumProfile.ESTABLISHED,
+            parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+        )
+        val interval = source.repository.updateAnalysisInterval(setup.parameters.first().id, 7)
+        val task = source.repository.createTask(
+            TaskInput(
+                aquariumId = setup.aquarium.id,
+                title = "Water change",
+                recurrence = TaskRecurrence.WEEKLY,
+                firstDueDate = TaskDate(2027, 1, 10),
+                minuteOfDay = null,
+                timeZoneId = "Europe/Paris",
+                maintenanceActionType = MaintenanceActionType.WATER_CHANGE,
+            ),
+        )
+        assertEquals(MaintenanceActionType.WATER_CHANGE, task.task.maintenanceActionType)
+        assertEquals(MaintenanceActionType.WATER_CHANGE, task.occurrence.maintenanceActionType)
+        val exported = source.service.export()
+
+        val restored = portableFixture()
+        restored.database.assistantDao().dismiss("stale-aquarium", "cycled", "stale-session")
+        assertIs<PortableImportResult.Imported>(restored.service.importData(exported))
+
+        assertEquals(exported, restored.service.export())
+        assertEquals(
+            interval,
+            restored.repository.observeCurrentSetup().first()!!.parameters.single { it.id == interval.id },
+        )
+        assertEquals(task.occurrence, restored.repository.observePendingTaskOccurrences().first().single())
+        assertEquals(emptyMap(), restored.database.assistantDao().observeDismissals("stale-aquarium").first())
+
+        source.close()
+        restored.close()
+    }
+
+    @Test
+    fun `v1 file without the new fields still imports`() = runTest {
+        val source = portableFixture()
+        val setup = source.repository.createConfiguredAquarium(
+            name = "Amazonien",
+            volume = 120.0,
+            volumeUnit = VolumeUnit.LITERS,
+            profile = AquariumProfile.ESTABLISHED,
+            parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+        )
+        source.repository.createTask(
+            TaskInput(setup.aquarium.id, "Clean filter", TaskRecurrence.WEEKLY, TaskDate(2027, 1, 10), null, "Europe/Paris"),
+        )
+        val exported = source.service.export()
+        val newKeys = setOf("analysisIntervalDays", "maintenanceActionType")
+        fun JsonElement.withoutNewKeys(): JsonElement = when (this) {
+            is JsonObject -> JsonObject(filterKeys { it !in newKeys }.mapValues { it.value.withoutNewKeys() })
+            is JsonArray -> JsonArray(map { it.withoutNewKeys() })
+            else -> this
+        }
+        val legacy = Json.parseToJsonElement(exported).withoutNewKeys().toString()
+        newKeys.forEach { assertFalse(legacy.contains(it)) }
+
+        val target = portableFixture()
+        assertIs<PortableImportResult.Imported>(target.service.importData(legacy))
+        assertEquals(exported, target.service.export())
+
+        source.close()
+        target.close()
+    }
+
+    @Test
+    fun `import rejects unknown linked maintenance actions and non positive intervals`() = runTest {
+        val source = portableFixture()
+        val setup = source.repository.createConfiguredAquarium(
+            name = "Amazonien",
+            volume = 120.0,
+            volumeUnit = VolumeUnit.LITERS,
+            profile = AquariumProfile.ESTABLISHED,
+            parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+        )
+        source.repository.createTask(
+            TaskInput(setup.aquarium.id, "Clean filter", TaskRecurrence.WEEKLY, TaskDate(2027, 1, 10), null, "Europe/Paris"),
+        )
+        val document = TEST_JSON.decodeFromString<PortableDataDocument>(source.service.export())
+        val target = portableFixture()
+        val invalidDocuments = listOf(
+            document.copy(tasks = document.tasks.map { it.copy(maintenanceActionType = "bleach") }) to
+                PortableImportProblem.INVALID_TASKS,
+            document.copy(
+                taskOccurrences = document.taskOccurrences.map { it.copy(maintenanceActionType = "bleach") },
+            ) to PortableImportProblem.INVALID_OCCURRENCES,
+            document.copy(
+                parameterDefinitions = document.parameterDefinitions.map { it.copy(analysisIntervalDays = 0) },
+            ) to PortableImportProblem.INVALID_PARAMETERS,
+        )
+
+        invalidDocuments.forEach { (invalid, expectedProblem) ->
+            val result = assertIs<PortableImportResult.Rejected>(
+                target.service.importData(TEST_JSON.encodeToString(invalid)),
+            )
+            assertEquals(PortableImportRejection.INVALID_DATA, result.reason)
+            assertEquals(expectedProblem, result.problem)
+        }
+
+        source.close()
+        target.close()
     }
 
     @Test
@@ -417,7 +531,7 @@ class PortableDataServiceTest {
     }
 
     private class PortableFixture(
-        private val database: AquaLogDatabase,
+        val database: AquaLogDatabase,
         val repository: RoomAquariumRepository,
         val service: PortableDataService,
     ) {

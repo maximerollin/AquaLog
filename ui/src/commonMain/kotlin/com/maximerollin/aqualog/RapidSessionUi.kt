@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.ui.icon.*
 import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Row
@@ -55,7 +58,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -83,8 +85,11 @@ import com.maximerollin.aqualog.shared.evaluateMeasurement
 import com.maximerollin.aqualog.ui.theme.CarnetDivider
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
-import com.maximerollin.aqualog.ui.theme.attentionMarkColor
-import com.maximerollin.aqualog.ui.theme.attentionTextColor
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
+import com.maximerollin.aqualog.shared.assistance.readingLevel
+import com.maximerollin.aqualog.ui.theme.levelDescription
+import com.maximerollin.aqualog.ui.theme.levelMarkColor
+import com.maximerollin.aqualog.ui.theme.levelTextColor
 
 @Composable
 fun RapidSessionScreen(
@@ -94,12 +99,13 @@ fun RapidSessionScreen(
     modifier: Modifier = Modifier,
 ) {
     val formatter = currentLocalizedFormatters()
+    SaveCheckDialog(state, viewModel)
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
             Surface(color = MaterialTheme.colorScheme.background) {
                 Button(
-                    onClick = viewModel::saveRapidSession,
+                    onClick = { viewModel.saveRapidSession() },
                     shape = MaterialTheme.shapes.medium,
                     enabled = state.canSave,
                     modifier = Modifier
@@ -165,14 +171,14 @@ fun RapidSessionScreen(
                     val timeControls: @Composable () -> Unit = {
                         IconButton(onClick = { viewModel.shiftSessionTimeByMinutes(-15) }) {
                             Icon(
-                                painterResource(Res.drawable.ic_chevron_left),
+                                AquagendaIcons.ChevronLeft,
                                 stringResource(Res.string.earlier_time),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                         }
                         IconButton(onClick = { viewModel.shiftSessionTimeByMinutes(15) }) {
                             Icon(
-                                painterResource(Res.drawable.ic_chevron_right),
+                                AquagendaIcons.ChevronRight,
                                 stringResource(Res.string.later_time),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
@@ -208,18 +214,19 @@ fun RapidSessionScreen(
                     val feedback = evaluateMeasurement(input, definition)
                     val description = stringResource(Res.string.measurement_for_parameter, definition.parameter.label())
                     val invalidText = stringResource(Res.string.invalid_measurement)
-                    val attentionText = stringResource(Res.string.reading_attention_description)
+                    val level = feedback.value?.takeIf { feedback.isValid }?.let { readingLevel(definition, it, aquarium.profile) } ?: ReadingLevel.OK
+                    val levelText = levelDescription(level)
                     val muted = MaterialTheme.colorScheme.onSurfaceVariant
                     val name = definition.parameter.label()
                     val unit = definition.unit
                     val flag = when {
                         !feedback.isValid -> MaterialTheme.colorScheme.error
-                        feedback.isOutsideIndicativeRange -> attentionMarkColor()
+                        level != ReadingLevel.OK -> levelMarkColor(level)
                         else -> null
                     }
                     val valueColor = when {
                         !feedback.isValid -> MaterialTheme.colorScheme.error
-                        feedback.isOutsideIndicativeRange -> attentionTextColor()
+                        level != ReadingLevel.OK -> levelTextColor(level)!!
                         else -> MaterialTheme.colorScheme.onSurface
                     }
                     val label: @Composable () -> Unit = {
@@ -253,7 +260,7 @@ fun RapidSessionScreen(
                                 .semantics {
                                     contentDescription = description
                                     // The underline colour is not announced: TalkBack hears the error or the attention as words.
-                                    stateDescription = listOf(unit, attentionText.takeIf { feedback.isOutsideIndicativeRange }.orEmpty())
+                                    stateDescription = listOf(unit, levelText.orEmpty())
                                         .filter(String::isNotBlank).joinToString(", ")
                                     if (!feedback.isValid) error(invalidText)
                                 },
@@ -281,7 +288,8 @@ fun RapidSessionScreen(
                         }
                         val hint = when {
                             !feedback.isValid -> invalidText
-                            feedback.isOutsideIndicativeRange -> stringResource(Res.string.unusual_measurement)
+                            level == ReadingLevel.ALERT -> stringResource(Res.string.alert_measurement)
+                            level != ReadingLevel.OK -> stringResource(Res.string.unusual_measurement)
                             else -> null
                         }
                         if (hint != null) {
@@ -289,7 +297,7 @@ fun RapidSessionScreen(
                                 hint,
                                 modifier = Modifier.padding(bottom = 6.dp),
                                 style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
-                                color = if (!feedback.isValid) MaterialTheme.colorScheme.error else attentionTextColor(),
+                                color = if (!feedback.isValid) MaterialTheme.colorScheme.error else levelTextColor(level)!!,
                             )
                         }
                         // Stacked, the value's own line already closes the row: a second line would double it.
@@ -464,7 +472,7 @@ private fun MaintenanceChip(type: MaintenanceActionType, action: MaintenanceActi
                         .semantics { contentDescription = remove },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(painterResource(Res.drawable.ic_close), contentDescription = null)
+                    Icon(AquagendaIcons.X, contentDescription = null)
                 }
             }
         } else {
@@ -514,6 +522,21 @@ internal fun MaintenanceActionType.label(): String = stringResource(
         MaintenanceActionType.PRUNING -> Res.string.action_pruning
     },
 )
+
+/** Stroke icon of an action where one exists; the others show the label alone. */
+internal fun MaintenanceActionType.icon(): ImageVector? = when (this) {
+    MaintenanceActionType.WATER_CHANGE -> AquagendaIcons.Droplet
+    MaintenanceActionType.FILTER_MAINTENANCE -> AquagendaIcons.Funnel
+    else -> null
+}
+
+@Composable
+internal fun LinkedTaskTitle(title: String, type: MaintenanceActionType?) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        type?.icon()?.let { Icon(it, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+        Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+    }
+}
 
 internal const val SEPARATOR = " · "
 

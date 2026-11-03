@@ -1,10 +1,13 @@
 package com.maximerollin.aqualog.home
 
+import com.maximerollin.aqualog.ui.icon.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -64,6 +67,16 @@ import com.maximerollin.aqualog.formattedVolume
 import com.maximerollin.aqualog.AquariumAlert
 import com.maximerollin.aqualog.homeOverview
 import com.maximerollin.aqualog.otherAquariumAlerts
+import com.maximerollin.aqualog.PistesCard
+import com.maximerollin.aqualog.joinLabels
+import com.maximerollin.aqualog.ProPurchaseStatus
+import com.maximerollin.aqualog.shortLabelResource
+import com.maximerollin.aqualog.shared.assistance.DueTest
+import com.maximerollin.aqualog.shared.assistance.looksCycled
+import com.maximerollin.aqualog.PistesSheet
+import com.maximerollin.aqualog.overdueLinkedAction
+import com.maximerollin.aqualog.pistesAdvices
+import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.label
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.SEPARATOR
@@ -73,16 +86,19 @@ import com.maximerollin.aqualog.shared.SyncFailureCategory
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
+import com.maximerollin.aqualog.LinkedTaskTitle
 import com.maximerollin.aqualog.todayTasks
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.ReadingValue
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.ui.theme.attentionMarkColor
+import com.maximerollin.aqualog.ui.theme.levelMarkColor
 import com.maximerollin.aqualog.ui.theme.attentionTextColor
+import com.maximerollin.aqualog.shared.assistance.ReadingSample
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -99,6 +115,12 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     val formatter = currentLocalizedFormatters()
     val gutter = Modifier.padding(horizontal = 16.dp)
     val alerts = otherAquariumAlerts(state.aquariums, aquarium.id, state.tasks.pendingOccurrences, today)
+    val pistes = pistesAdvices(
+        setup.parameters,
+        state.latestReadings.map { ReadingSample(it.parameterDefinitionId, it.value, viewModel.dayOf(it.occurredAtEpochMillis)) },
+        aquarium.profile,
+        overdueLinkedAction(state.tasks.pendingOccurrences, aquarium.id, MaintenanceActionType.WATER_CHANGE, today),
+    )
     var showPicker by remember { mutableStateOf(false) }
     val currentIndex = state.aquariums.indexOfFirst { it.id == aquarium.id }.coerceAtLeast(0)
     val pager = rememberPagerState(initialPage = currentIndex) { state.aquariums.size }
@@ -148,6 +170,21 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                     modifier = gutter,
                 )
             }
+            if (state.maintenanceSeries >= 1) {
+                item(key = "maintenance-series") {
+                    Text(
+                        pluralStringResource(Res.plurals.series_weeks, state.maintenanceSeries, state.maintenanceSeries),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = gutter.padding(bottom = 8.dp),
+                    )
+                }
+            }
+            state.weeklySummary?.let { summary ->
+                item(key = "weekly-summary") {
+                    WeeklySummaryCard(summary, state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE, viewModel::openProPaywall, gutter)
+                }
+            }
             items(alerts, key = { "alert-${it.aquarium.id}" }) { alert ->
                 AlertRow(alert, onClick = { viewModel.selectAquarium(alert.aquarium.id) }, modifier = gutter)
             }
@@ -159,6 +196,14 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                         modifier = gutter.fillMaxWidth().heightIn(min = 48.dp),
                     ) { Text(stringResource(Res.string.continue_after_session)) }
                 }
+            }
+            if (state.cycledDismissalsLoaded && looksCycled(setup, state.latestReadings) && state.latestSession?.session?.id != state.cycledDismissedSessionId) {
+                item(key = "cycled-proposal") {
+                    CycledProposalCard(viewModel::switchToEstablished, viewModel::dismissCycledProposal, gutter)
+                }
+            }
+            if (pistes.isNotEmpty()) {
+                item(key = "pistes") { PistesCard(pistes, aquarium.id, today, gutter) }
             }
             item {
                 CarnetSectionTitle(
@@ -177,7 +222,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                             label = label,
                             modifier = Modifier.weight(1f),
                             unit = value.definition.unit.takeIf { it.isNotBlank() && it != label }, // pH's unit is pH
-                            attention = value.isOutsideRange,
+                            level = value.level,
                             age = value.occurredAtEpochMillis?.takeIf { value.isOlderThanLatestReading }
                                 ?.let { daysSince(it, todayDate) }?.takeIf { it > 0 }
                                 ?.let { days -> pluralStringResource(Res.plurals.reading_age_days, days, days) },
@@ -198,6 +243,16 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                     onAction = viewModel::openTasks,
                 )
             }
+            if (state.dueTests.isNotEmpty()) {
+                item(key = "due-tests") {
+                    DueTestsRow(
+                        state.dueTests,
+                        enabled = canMeasure,
+                        onClick = { viewModel.openRapidSession(state.dueTests.map { it.definition.id }) },
+                        modifier = gutter,
+                    )
+                }
+            }
             if (tasks.due.isEmpty()) {
                 item {
                     Text(
@@ -215,7 +270,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                 }
             } else {
                 items(tasks.due, key = { it.id }) { task ->
-                    TaskRow(task, today, onComplete = { viewModel.completeTask(task) })
+                    TaskRow(task, today, onComplete = { onFailed -> viewModel.completeTask(task, onFailed) })
                 }
             }
             if (state.accountInvitationPrompt == AccountInvitationPrompt.REMINDER) {
@@ -244,6 +299,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             contentColor = MaterialTheme.colorScheme.onPrimary,
         ) { Text(stringResource(Res.string.measure_action), fontWeight = FontWeight.SemiBold) }
     }
+    if (state.pistesAfterSave.isNotEmpty()) PistesSheet(state.pistesAfterSave, viewModel.today(), viewModel::dismissPistes)
     if (showPicker) {
         AquariumPickerSheet(
             aquariums = state.aquariums,
@@ -318,9 +374,58 @@ private fun AlertRow(alert: AquariumAlert, onClick: () -> Unit, modifier: Modifi
             color = MaterialTheme.colorScheme.onBackground,
         )
         Icon(
-            painterResource(Res.drawable.ic_chevron_right),
+            AquagendaIcons.ChevronRight,
             contentDescription = null,
             modifier = Modifier.size(20.dp).clearAndSetSemantics { },
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** A one-time proposal: a Cycling Aquarium whose ammonia and nitrite read 0 may move to the established rhythm. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CycledProposalCard(onSwitch: () -> Unit, onLater: () -> Unit, modifier: Modifier) {
+    Column(modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            stringResource(Res.string.cycled_proposal_text),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.Center) {
+            Button(onClick = onSwitch, shape = MaterialTheme.shapes.medium, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(Res.string.cycled_proposal_switch))
+            }
+            TextButton(onClick = onLater, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text(stringResource(Res.string.cycled_proposal_later))
+            }
+        }
+    }
+}
+
+/** « Tester NO₃ et pH ›»: one row for every due test of the Aquarium, opening entry with those parameters first. */
+@Composable
+private fun DueTestsRow(tests: List<DueTest>, enabled: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    val labels = joinLabels(tests.map { stringResource(it.definition.parameter.shortLabelResource()) }) { first, last ->
+        stringResource(Res.string.list_pair, first, last)
+    }
+    Row(
+        Modifier.clickable(enabled = enabled, role = Role.Button, onClickLabel = stringResource(Res.string.measure_action), onClick = onClick)
+            .then(modifier).fillMaxWidth().heightIn(min = 48.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(AquagendaIcons.Droplet, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+        Text(
+            stringResource(Res.string.due_tests_row, labels),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Icon(
+            AquagendaIcons.ChevronRight,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -374,7 +479,13 @@ private fun StatusLine(
             Res.plurals.home_status_outside_range,
             overview.outsideRangeCount,
             overview.outsideRangeCount,
-        )
+        ).let { outside ->
+            if (overview.hasAlert) {
+                pluralStringResource(Res.plurals.home_status_with_alert, overview.alertCount, outside, overview.alertCount)
+            } else {
+                outside
+            }
+        }
         else -> stringResource(Res.string.home_status_all_in_range)
     }
     val since = overview.latestReadingAtEpochMillis?.let {
@@ -385,6 +496,7 @@ private fun StatusLine(
         }
     }
     val dot = when {
+        overview.hasAlert -> levelMarkColor(ReadingLevel.ALERT)!!
         overview.outsideRangeCount > 0 -> attentionMarkColor()
         measured -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.outline
@@ -412,7 +524,7 @@ private fun StatusLine(
 }
 
 @Composable
-private fun TaskRow(task: TaskOccurrence, today: TaskDate, onComplete: () -> Unit) {
+private fun TaskRow(task: TaskOccurrence, today: TaskDate, onComplete: (onFailed: () -> Unit) -> Unit) {
     // Guards against a double tap resolving the occurrence twice before the list refreshes.
     var completed by remember(task.id) { mutableStateOf(false) }
     val formatter = currentLocalizedFormatters()
@@ -421,11 +533,11 @@ private fun TaskRow(task: TaskOccurrence, today: TaskDate, onComplete: () -> Uni
     Row(Modifier.fillMaxWidth().padding(end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
         Checkbox(
             checked = completed,
-            onCheckedChange = if (completed) null else { _ -> completed = true; onComplete() },
+            onCheckedChange = if (completed) null else { _ -> completed = true; onComplete { completed = false } },
             modifier = Modifier.padding(start = 4.dp).semantics { contentDescription = description },
         )
         Column(Modifier.weight(1f)) {
-            Text(task.title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+            LinkedTaskTitle(task.title, task.maintenanceActionType)
             Text(
                 if (overdue) {
                     stringResource(Res.string.home_task_overdue)
