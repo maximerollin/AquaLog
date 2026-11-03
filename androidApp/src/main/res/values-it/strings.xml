@@ -11,6 +11,9 @@
         <item quantity="one">Il riepilogo della settimana è pronto · %1$d settimana di cura regolare</item>
         <item quantity="other">Il riepilogo della settimana è pronto · %1$d settimane di cura regolare</item>
     </plurals>
+    <string name="widget_small_label">Il mio Acquario</string>
+    <string name="widget_medium_label">Il mio Acquario in dettaglio</string>
+    <string name="widget_tanks_label">I miei Acquari</string>
     <string name="widget_small_description">Lo stato del tuo Acquario e la prossima cosa da fare</string>
     <string name="widget_medium_description">Stato, attività di oggi e Misura</string>
     <string name="widget_tanks_description">Tutti i tuoi Acquari, una riga ciascuno</string>

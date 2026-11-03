@@ -11,6 +11,9 @@
         <item quantity="one">Your weekly summary is ready · %1$d week of regular care</item>
         <item quantity="other">Your weekly summary is ready · %1$d weeks of regular care</item>
     </plurals>
+    <string name="widget_small_label">My Aquarium</string>
+    <string name="widget_medium_label">My Aquarium in detail</string>
+    <string name="widget_tanks_label">My Aquariums</string>
     <string name="widget_small_description">Your Aquarium’s status and the next thing to do</string>
     <string name="widget_medium_description">Status, today’s Tasks and Measure</string>
     <string name="widget_tanks_description">All your Aquariums, one line each</string>

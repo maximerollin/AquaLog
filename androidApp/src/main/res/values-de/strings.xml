@@ -11,6 +11,9 @@
         <item quantity="one">Ihre Wochenbilanz ist bereit · %1$d Woche regelmäßiger Pflege</item>
         <item quantity="other">Ihre Wochenbilanz ist bereit · %1$d Wochen regelmäßiger Pflege</item>
     </plurals>
+    <string name="widget_small_label">Mein Aquarium</string>
+    <string name="widget_medium_label">Mein Aquarium im Detail</string>
+    <string name="widget_tanks_label">Meine Aquarien</string>
     <string name="widget_small_description">Der Zustand Ihres Aquariums und der nächste Schritt</string>
     <string name="widget_medium_description">Zustand, heutige Aufgaben und Messen</string>
     <string name="widget_tanks_description">Alle Ihre Aquarien, eine Zeile pro Aquarium</string>
