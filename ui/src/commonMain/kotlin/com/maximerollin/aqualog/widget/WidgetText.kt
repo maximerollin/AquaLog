@@ -29,6 +29,8 @@ data class WidgetTankText(
     val aquariumId: String,
     val name: String,
     val light: WidgetLight,
+    /** False for an Aquarium never measured: its dot is the home's outline, not « all in range ». */
+    val isMeasured: Boolean = true,
     /** What TalkBack reads for the status dot. */
     val lightDescription: String,
     /** What TalkBack reads for the whole widget: name, state, next. */
@@ -64,6 +66,7 @@ suspend fun widgetText(state: WidgetAquarium, today: LocalDate): WidgetTankText 
         aquariumId = state.aquarium.id,
         name = state.aquarium.name,
         light = state.light,
+        isMeasured = state.overview.isMeasured,
         lightDescription = lightDescription,
         contentDescription = getString(Res.string.widget_tank_content_description, state.aquarium.name, lightDescription, next),
         next = next,

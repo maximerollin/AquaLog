@@ -50,9 +50,11 @@ class MediumTankWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val pinnedId = getAppWidgetState<Preferences>(context, id)[PINNED_AQUARIUM_ID]
-        val content = tankWidgetContent(context, pinnedId)
-        provideContent { WidgetTheme { MediumTankContent(content) } }
+        val initial = tankWidgetContent(context, getAppWidgetState<Preferences>(context, id)[PINNED_AQUARIUM_ID])
+        provideContent {
+            val content = liveWidgetContent(initial) { tankWidgetContent(context, it[PINNED_AQUARIUM_ID]) }
+            WidgetTheme { MediumTankContent(content) }
+        }
     }
 }
 

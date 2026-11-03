@@ -17,11 +17,15 @@ import com.maximerollin.aqualog.shared.PortableDataService
 import com.maximerollin.aqualog.shared.ReviewCoordinator
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.SyncCoordinator
+import com.maximerollin.aqualog.shared.TechnicalComponent
+import com.maximerollin.aqualog.shared.TechnicalFailure
+import com.maximerollin.aqualog.shared.TechnicalFailureKind
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
 import com.maximerollin.aqualog.widget.updateAllWidgets
 import java.time.ZoneId
 import java.util.UUID
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -30,7 +34,12 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 
 open class AquaLogApplication : Application() {
-    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    // A background failure (widget refresh, data observation) is reported, never fatal.
+    private val applicationScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, _ ->
+            runCatching { crashReporter.record(TechnicalFailure(TechnicalFailureKind.NON_FATAL, TechnicalComponent.DATABASE)) }
+        },
+    )
 
     /** Widgets follow the data while the process lives; otherwise they refresh hourly (updatePeriodMillis). */
     @OptIn(FlowPreview::class)

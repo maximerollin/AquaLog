@@ -31,8 +31,11 @@ import com.maximerollin.aqualog.WidgetTarget
 
 class TanksWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val content = tanksWidgetContent(context)
-        provideContent { WidgetTheme { TanksContent(content) } }
+        val initial = tanksWidgetContent(context)
+        provideContent {
+            val content = liveWidgetContent(initial) { tanksWidgetContent(context) }
+            WidgetTheme { TanksContent(content) }
+        }
     }
 }
 

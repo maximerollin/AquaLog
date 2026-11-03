@@ -2,7 +2,10 @@ package com.maximerollin.aqualog.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -15,6 +18,7 @@ import androidx.glance.action.clickable
 import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
+import androidx.glance.currentState
 import androidx.glance.color.ColorProvider
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -52,6 +56,9 @@ sealed interface WidgetContent {
 /** Glance state of the small and medium widgets: the Aquarium pinned by reconfiguring, absent to follow the app. */
 val PINNED_AQUARIUM_ID = stringPreferencesKey("aquarium-id")
 
+/** Glance state bumped by [updateAllWidgets] so a live session reloads its content. */
+val REFRESH_COUNT = longPreferencesKey("refresh-count")
+
 /** What a one-Aquarium widget shows: [pinnedId] if it still exists, else the Aquarium last viewed in the app. */
 suspend fun tankWidgetContent(context: Context, pinnedId: String?): WidgetContent {
     val application = context.applicationContext as AquaLogApplication
@@ -70,6 +77,16 @@ suspend fun tanksWidgetContent(context: Context): WidgetContent {
     if (states.isEmpty()) return WidgetContent.NoAquarium
     if (!application.isProCached()) return WidgetContent.NeedsPro
     return WidgetContent.Tanks(states.map { widgetText(it, today) })
+}
+
+/**
+ * [initial], then [load] again each time the widget's Glance state changes. A live Glance session (about 45 s after
+ * a composition) only recomposes from that state on update(), so [updateAllWidgets] bumps it to bring new data.
+ */
+@Composable
+fun liveWidgetContent(initial: WidgetContent, load: suspend (Preferences) -> WidgetContent): WidgetContent {
+    val state = currentState<Preferences>()
+    return produceState(initial, state) { value = load(state) }.value
 }
 
 private fun AquaLogApplication.isProCached() = proEntitlementCache.read().isActiveAt(currentTimeMillis())
@@ -105,7 +122,7 @@ fun StatusDot(text: WidgetTankText) {
     val color = when (text.light) {
         WidgetLight.ALERT -> ColorProvider(AlertMark, AlertMarkDark)
         WidgetLight.ATTENTION -> ColorProvider(AttentionMark, AttentionMarkDark)
-        WidgetLight.OK -> GlanceTheme.colors.primary
+        WidgetLight.OK -> if (text.isMeasured) GlanceTheme.colors.primary else GlanceTheme.colors.outline
     }
     // shortcut: cornerRadius is ignored below API 31, so the dot is a square there; use a shape drawable if that matters.
     Box(

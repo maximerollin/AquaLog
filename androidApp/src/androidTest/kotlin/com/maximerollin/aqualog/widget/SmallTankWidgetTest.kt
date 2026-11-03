@@ -2,9 +2,13 @@ package com.maximerollin.aqualog.widget
 
 import android.content.Context
 import android.content.res.Configuration
+import androidx.datastore.preferences.core.preferencesOf
+import androidx.glance.BackgroundModifier
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
+import androidx.glance.color.ColorProvider
+import androidx.glance.unit.ColorProvider as GlanceColorProvider
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
 import androidx.glance.testing.unit.assertHasContentDescriptionEqualTo
@@ -23,6 +27,8 @@ import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
+import com.maximerollin.aqualog.ui.theme.CarnetDarkColors
+import com.maximerollin.aqualog.ui.theme.CarnetLightColors
 import java.time.LocalDate
 import java.util.Locale
 import kotlinx.coroutines.runBlocking
@@ -84,6 +90,39 @@ class SmallTankWidgetTest {
     }
 
     @Test
+    fun neverMeasured_dotIsTheOutlineColour_measuredOkIsTeal() = runGlanceAppWidgetUnitTest {
+        val never = text("fr", BuiltInParameter.NITRITE, measured = false)
+        setContext(localized("fr"))
+        provideComposable {
+            WidgetTheme {
+                SmallTankContent(WidgetContent.Tank(never))
+                StatusDot(never.copy(light = WidgetLight.OK, isMeasured = true, lightDescription = "measured"))
+            }
+        }
+
+        onNode(dotColoured(never.lightDescription, ColorProvider(CarnetLightColors.outline, CarnetDarkColors.outline))).assertExists()
+        onNode(dotColoured("measured", ColorProvider(CarnetLightColors.primary, CarnetDarkColors.primary))).assertExists()
+    }
+
+    @Test
+    fun liveContent_reloadsFromTheGlanceState() = runGlanceAppWidgetUnitTest {
+        val salon = text("fr", BuiltInParameter.NITRITE)
+        setContext(localized("fr"))
+        setState(preferencesOf(PINNED_AQUARIUM_ID to "salon", REFRESH_COUNT to 1L))
+        // Starts from the pre-loaded content, then follows what the Glance state asks for.
+        provideComposable {
+            val content = liveWidgetContent(WidgetContent.NoAquarium) { state ->
+                if (state[PINNED_AQUARIUM_ID] == "salon") WidgetContent.Tank(salon) else WidgetContent.NoAquarium
+            }
+            SmallTankContent(content)
+        }
+        awaitIdle()
+
+        onNode(hasTextEqualTo("Salon")).assertExists()
+        onNode(hasTextEqualTo("Ouvrez Aquagenda pour créer votre bac")).assertDoesNotExist()
+    }
+
+    @Test
     fun germanLargeFont_nextStepIsEllipsizedNotCut() = runGlanceAppWidgetUnitTest {
         val text = text("de", BuiltInParameter.PHOSPHATE)
         setContext(localized("de"))
@@ -135,6 +174,11 @@ class SmallTankWidgetTest {
         return if (aquariumId == null) actionParametersOf(targetPair)
         else actionParametersOf(targetPair, ActionParameters.Key<String>(MainActivity.EXTRA_WIDGET_AQUARIUM_ID) to aquariumId)
     }
+
+    private fun dotColoured(description: String, color: GlanceColorProvider) = hasContentDescriptionEqualTo(description)
+        .and(GlanceNodeMatcher<MappedNode>("background $color") { node ->
+            node.value.emittable.modifier.any { it is BackgroundModifier.Color && it.colorProvider == color }
+        })
 
     private fun hasMaxLines(lines: Int) = GlanceNodeMatcher<MappedNode>("maxLines == $lines") { node ->
         (node.value.emittable as? EmittableText)?.maxLines == lines

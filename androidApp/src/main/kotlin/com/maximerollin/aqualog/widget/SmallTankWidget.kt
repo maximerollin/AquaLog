@@ -33,9 +33,11 @@ import com.maximerollin.aqualog.WidgetTarget
 
 class SmallTankWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val pinnedId = getAppWidgetState<Preferences>(context, id)[PINNED_AQUARIUM_ID]
-        val content = tankWidgetContent(context, pinnedId)
-        provideContent { WidgetTheme { SmallTankContent(content) } }
+        val initial = tankWidgetContent(context, getAppWidgetState<Preferences>(context, id)[PINNED_AQUARIUM_ID])
+        provideContent {
+            val content = liveWidgetContent(initial) { tankWidgetContent(context, it[PINNED_AQUARIUM_ID]) }
+            WidgetTheme { SmallTankContent(content) }
+        }
     }
 }
 
