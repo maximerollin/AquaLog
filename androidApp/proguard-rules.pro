@@ -25,3 +25,11 @@
 -keepclasseswithmembers class com.maximerollin.aqualog.shared.** {
     kotlinx.serialization.KSerializer serializer(...);
 }
+
+# --- Jetpack Glance ------------------------------------------------------------
+# Glance instantiates each ActionCallback by reflection through its no-arg
+# constructor. Glance's own rule keeps the class, not the constructor, so
+# without this the widget's Tâche checkbox does nothing in release.
+-keepclassmembers class * implements androidx.glance.appwidget.action.ActionCallback {
+    <init>();
+}
