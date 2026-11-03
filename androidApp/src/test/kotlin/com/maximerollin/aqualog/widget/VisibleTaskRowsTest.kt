@@ -21,4 +21,8 @@ class VisibleTaskRowsTest {
 
     @Test
     fun midHeight_fitsAsManyAsRoomAllows() = assertEquals(2, visibleTaskRows(180f, taskCount = 3))
+
+    // A 4×2 on the Pixel 9a launcher: two 104 dp rows and a 16 dp gap.
+    @Test
+    fun pixelLauncherDefault4x2_fitsTwoRows() = assertEquals(2, visibleTaskRows(224f, taskCount = 3))
 }

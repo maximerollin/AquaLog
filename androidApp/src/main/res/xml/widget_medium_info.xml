@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Below API 31 the size comes from minWidth/minHeight (130 dp: header, status, one Tâche row). From API 31 the
+     launcher keeps targetCell* only if they cover the spans of minResize* in every orientation; 130 dp took three rows
+     in the Pixel launcher's landscape grid (a 3×3), so minResizeHeight is 110 dp, like the small widget. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:configure="com.maximerollin.aqualog.widget.WidgetConfigureActivity"
     android:description="@string/widget_medium_description"
     android:initialLayout="@layout/glance_default_loading_layout"
     android:minWidth="250dp"
     android:minHeight="130dp"
+    android:minResizeWidth="250dp"
+    android:minResizeHeight="110dp"
     android:previewImage="@drawable/widget_scene"
     android:resizeMode="horizontal|vertical"
     android:targetCellWidth="4"

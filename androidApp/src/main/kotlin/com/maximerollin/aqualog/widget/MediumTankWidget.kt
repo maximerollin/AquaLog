@@ -25,9 +25,11 @@ import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.layout.width
 import androidx.glance.semantics.contentDescription
 import androidx.glance.semantics.semantics
 import androidx.glance.text.FontFamily
@@ -132,10 +134,13 @@ private fun MediumTank(text: WidgetTankText) {
                 modifier = GlanceModifier.defaultWeight(),
             )
             StatusDot(text)
+            Spacer(GlanceModifier.width(8.dp))
+            // No padding modifier here: it would replace Glance's own 16 dp side padding and clip the label.
             Button(
                 measure,
                 onClick = openAppAction(text.aquariumId, WidgetTarget.MEASURE),
-                modifier = GlanceModifier.height(ROW_HEIGHT_DP.dp).padding(start = 8.dp).semantics { contentDescription = measure },
+                modifier = GlanceModifier.height(ROW_HEIGHT_DP.dp).semantics { contentDescription = measure },
+                maxLines = 1,
             )
         }
         Text(text.status, style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 13.sp), maxLines = 1)

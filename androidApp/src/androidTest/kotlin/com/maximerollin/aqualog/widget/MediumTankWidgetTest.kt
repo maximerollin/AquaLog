@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.EmittableCheckBox
 import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.Emittable
+import androidx.glance.EmittableButton
+import androidx.glance.layout.PaddingModifier
 import androidx.glance.layout.EmittableRow
 import androidx.glance.text.EmittableText
 import androidx.glance.testing.unit.MappedNode
@@ -65,6 +67,22 @@ class MediumTankWidgetTest {
         onNode(rowWithOverdueMarker("o-2")).assertDoesNotExist()
         onNode(hasStartActivityClickAction<MainActivity>(extras("salon", WidgetTarget.MEASURE)))
             .assertHasContentDescriptionEqualTo("Mesurer")
+    }
+
+    @Test
+    fun measureButton_keepsGlanceSidePadding_andOneLine() = runGlanceAppWidgetUnitTest {
+        setContext(localized("de"))
+        setAppWidgetSize(DpSize(250.dp, 250.dp))
+        provideComposable { MediumTankContent(WidgetContent.Tank(text(tasks))) }
+
+        // A padding modifier on a Glance Button replaces its default 16 dp side padding: the label then touches the edge.
+        onNode(
+            GlanceNodeMatcher<MappedNode>("Messen button, no padding modifier, one line") { node ->
+                val button = node.value.emittable as? EmittableButton
+                button != null && button.text == "Messen" && button.maxLines == 1 &&
+                    !button.modifier.any { it is PaddingModifier }
+            },
+        ).assertExists()
     }
 
     @Test
