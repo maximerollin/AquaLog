@@ -105,6 +105,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.pow
 import kotlin.math.round
 import java.io.Serializable
@@ -113,6 +114,11 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.util.UUID
+
+/** Where a home-screen widget sends the app. */
+enum class WidgetTarget { HOME, MEASURE, PRO }
+
+private const val WIDGET_WAIT_MILLIS = 5_000L
 
 enum class OnboardingStep {
     WELCOME,
@@ -648,6 +654,33 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * Brings the app to [aquariumId] (when it is a live Aquarium), then opens entry for MEASURE or the paywall for PRO.
+     * Never while an entry draft is open, and MEASURE never opens on another Aquarium than the one asked for.
+     */
+    fun openFromWidget(aquariumId: String?, target: WidgetTarget) {
+        viewModelScope.launch {
+            val loaded = withTimeoutOrNull(WIDGET_WAIT_MILLIS) {
+                uiState.first { !it.isLoading && (it.setup == null || it.aquariums.isNotEmpty()) }
+            } ?: return@launch
+            // No Aquarium yet: onboarding is not complete.
+            val current = loaded.setup ?: return@launch
+            if (loaded.rapidSession != null) return@launch
+            val known = aquariumId != null && loaded.aquariums.any { it.id == aquariumId }
+            if (target == WidgetTarget.MEASURE && aquariumId != null && !known) return@launch
+            if (known && aquariumId != current.aquarium.id) {
+                selectAquarium(aquariumId!!)
+                withTimeoutOrNull(WIDGET_WAIT_MILLIS) { uiState.first { it.setup?.aquarium?.id == aquariumId } } ?: return@launch
+                if (uiState.value.rapidSession != null) return@launch
+            }
+            when (target) {
+                WidgetTarget.HOME -> Unit
+                WidgetTarget.MEASURE -> openRapidSession()
+                WidgetTarget.PRO -> showProPaywall(PaywallSource.PRO_FEATURE)
+            }
+        }
+    }
+
     fun openCreateAquarium() {
         val state = mutableUiState.value
         if (state.aquariums.isNotEmpty() && state.pro.purchaseStatus != ProPurchaseStatus.ACTIVE) {
@@ -1115,8 +1148,10 @@ class HomeViewModel(
         loadProOffer()
     }
 
-    fun openProPaywall() {
-        recordProductEvent(ProductEvent.PaywallViewed(PaywallSource.SETTINGS))
+    fun openProPaywall() = showProPaywall(PaywallSource.SETTINGS)
+
+    private fun showProPaywall(source: PaywallSource) {
+        recordProductEvent(ProductEvent.PaywallViewed(source))
         mutableUiState.update {
             it.copy(pro = it.pro.copy(showPaywall = true, openedFromOnboarding = false))
         }
