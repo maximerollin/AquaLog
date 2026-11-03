@@ -2,19 +2,16 @@ package com.maximerollin.aqualog.widget
 
 import com.maximerollin.aqualog.SEPARATOR
 import com.maximerollin.aqualog.dueTestsLabels
-import com.maximerollin.aqualog.home.daysSince
+import com.maximerollin.aqualog.home.load
+import com.maximerollin.aqualog.home.statusText
 import com.maximerollin.aqualog.resources.Res
 import com.maximerollin.aqualog.resources.due_tests_row
-import com.maximerollin.aqualog.resources.home_measured_days_ago
-import com.maximerollin.aqualog.resources.home_measured_today
-import com.maximerollin.aqualog.resources.home_measured_yesterday
 import com.maximerollin.aqualog.resources.home_no_measurement_yet
 import com.maximerollin.aqualog.resources.home_status_all_in_range
-import com.maximerollin.aqualog.resources.home_status_outside_range
-import com.maximerollin.aqualog.resources.home_status_with_alert
 import com.maximerollin.aqualog.resources.reading_alert_description
 import com.maximerollin.aqualog.resources.reading_attention_description
 import com.maximerollin.aqualog.resources.widget_nothing_to_do
+import com.maximerollin.aqualog.resources.widget_tank_content_description
 import com.maximerollin.aqualog.resources.widget_task_overdue
 import com.maximerollin.aqualog.resources.widget_task_today
 import com.maximerollin.aqualog.resources.widget_value_alert
@@ -23,7 +20,6 @@ import com.maximerollin.aqualog.shortLabelResource
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.shared.toEpochDay
 import java.time.LocalDate
-import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 
 data class WidgetTaskRow(val occurrenceId: String, val title: String, val isOverdue: Boolean)
@@ -35,6 +31,8 @@ data class WidgetTankText(
     val light: WidgetLight,
     /** What TalkBack reads for the status dot. */
     val lightDescription: String,
+    /** What TalkBack reads for the whole widget: name, state, next. */
+    val contentDescription: String,
     val next: String,
     val status: String,
     val tasks: List<WidgetTaskRow>,
@@ -53,49 +51,27 @@ suspend fun widgetText(state: WidgetAquarium, today: LocalDate): WidgetTankText 
         is NextStep.Tests -> getString(Res.string.due_tests_row, dueTestsLabels(step.tests))
         NextStep.Nothing -> getString(Res.string.widget_nothing_to_do)
     }
+    val lightDescription = getString(
+        when {
+            // The light is OK for an Aquarium never measured: « Tout est dans la plage » would be false.
+            !state.overview.isMeasured -> Res.string.home_no_measurement_yet
+            state.light == WidgetLight.ALERT -> Res.string.reading_alert_description
+            state.light == WidgetLight.ATTENTION -> Res.string.reading_attention_description
+            else -> Res.string.home_status_all_in_range
+        },
+    )
     return WidgetTankText(
         aquariumId = state.aquarium.id,
         name = state.aquarium.name,
         light = state.light,
-        lightDescription = getString(
-            when (state.light) {
-                WidgetLight.OK -> Res.string.home_status_all_in_range
-                WidgetLight.ATTENTION -> Res.string.reading_attention_description
-                WidgetLight.ALERT -> Res.string.reading_alert_description
-            },
-        ),
+        lightDescription = lightDescription,
+        contentDescription = getString(Res.string.widget_tank_content_description, state.aquarium.name, lightDescription, next),
         next = next,
-        status = statusLine(state, today),
+        status = statusText(state.overview, today).let { status ->
+            status.since?.let { status.summary.load() + SEPARATOR + it.load() } ?: status.summary.load()
+        },
         tasks = state.dueTasks.map {
             WidgetTaskRow(it.id, it.title, isOverdue = it.dueDate.toEpochDay() < today.toEpochDay())
         },
     )
-}
-
-/** The home's StatusLine sentence, with the same keys. */
-private suspend fun statusLine(state: WidgetAquarium, today: LocalDate): String {
-    val overview = state.overview
-    val summary = when {
-        overview.values.none { it.value != null } -> getString(Res.string.home_no_measurement_yet)
-        overview.outsideRangeCount > 0 -> getPluralString(
-            Res.plurals.home_status_outside_range,
-            overview.outsideRangeCount,
-            overview.outsideRangeCount,
-        ).let { outside ->
-            if (overview.hasAlert) {
-                getPluralString(Res.plurals.home_status_with_alert, overview.alertCount, outside, overview.alertCount)
-            } else {
-                outside
-            }
-        }
-        else -> getString(Res.string.home_status_all_in_range)
-    }
-    val since = overview.latestReadingAtEpochMillis?.let {
-        when (val days = daysSince(it, today)) {
-            0 -> getString(Res.string.home_measured_today)
-            1 -> getString(Res.string.home_measured_yesterday)
-            else -> getPluralString(Res.plurals.home_measured_days_ago, days, days)
-        }
-    }
-    return if (since == null) summary else summary + SEPARATOR + since
 }

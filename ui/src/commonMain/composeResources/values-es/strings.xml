@@ -446,4 +446,5 @@
     <string name="widget_task_overdue">%1$s (atrasada)</string>
     <string name="widget_task_today">%1$s hoy</string>
     <string name="widget_nothing_to_do">Nada que hacer</string>
+    <string name="widget_tank_content_description">%1$s, %2$s, %3$s</string>
 </resources>

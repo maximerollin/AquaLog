@@ -59,7 +59,7 @@ private fun SmallTank(text: WidgetTankText) {
     Column(
         widgetSurface(openAppAction(text.aquariumId, WidgetTarget.HOME))
             .background(GlanceTheme.colors.surface)
-            .semantics { contentDescription = text.name + ", " + text.next },
+            .semantics { contentDescription = text.contentDescription },
     ) {
         Image(
             ImageProvider(R.drawable.widget_scene),

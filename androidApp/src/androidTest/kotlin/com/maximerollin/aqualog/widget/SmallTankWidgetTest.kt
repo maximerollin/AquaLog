@@ -15,6 +15,7 @@ import androidx.glance.text.EmittableText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximerollin.aqualog.HomeOverview
+import com.maximerollin.aqualog.HomeValue
 import com.maximerollin.aqualog.MainActivity
 import com.maximerollin.aqualog.WidgetTarget
 import com.maximerollin.aqualog.shared.Aquarium
@@ -68,7 +69,18 @@ class SmallTankWidgetTest {
         provideComposable { SmallTankContent(WidgetContent.Tank(text)) }
 
         onNode(hasStartActivityClickAction<MainActivity>(extras("salon", WidgetTarget.HOME)))
-            .assertHasContentDescriptionEqualTo("Salon, NO₂ très hors plage")
+            .assertHasContentDescriptionEqualTo("Salon, très en dehors de votre plage indicative, NO₂ très hors plage")
+    }
+
+    @Test
+    fun neverMeasured_saysSoInsteadOfAllInRange() = runGlanceAppWidgetUnitTest {
+        val text = text("fr", BuiltInParameter.NITRITE, measured = false)
+        setContext(localized("fr"))
+        provideComposable { SmallTankContent(WidgetContent.Tank(text)) }
+
+        onNode(hasContentDescriptionEqualTo("Pas encore de mesure")).assertExists()
+        onNode(hasStartActivityClickAction<MainActivity>(extras("salon", WidgetTarget.HOME)))
+            .assertHasContentDescriptionEqualTo("Salon, Pas encore de mesure, Rien à faire")
     }
 
     @Test
@@ -81,15 +93,31 @@ class SmallTankWidgetTest {
         onNode(hasTextEqualTo("Salon").and(hasMaxLines(1))).assertExists()
     }
 
-    private fun text(language: String, parameter: BuiltInParameter): WidgetTankText {
+    private fun text(language: String, parameter: BuiltInParameter, measured: Boolean = true): WidgetTankText {
         val definition = ParameterDefinition("nitrite", "salon", parameter, true, 0, "mg/L", 2, 0.0, 0.1)
-        val state = WidgetAquarium(
-            aquarium = Aquarium("salon", "Salon", 120.0, VolumeUnit.LITERS, 0L),
-            overview = HomeOverview(emptyList(), outsideRangeCount = 1, latestReadingAtEpochMillis = null, alertCount = 1),
-            light = WidgetLight.ALERT,
-            next = NextStep.Value(definition, ReadingLevel.ALERT),
-            dueTasks = emptyList(),
-        )
+        val measuredAt = System.currentTimeMillis()
+        val state = if (measured) {
+            WidgetAquarium(
+                aquarium = Aquarium("salon", "Salon", 120.0, VolumeUnit.LITERS, 0L),
+                overview = HomeOverview(
+                    listOf(HomeValue(definition, 2.0, measuredAt, ReadingLevel.ALERT, false)),
+                    outsideRangeCount = 1,
+                    latestReadingAtEpochMillis = measuredAt,
+                    alertCount = 1,
+                ),
+                light = WidgetLight.ALERT,
+                next = NextStep.Value(definition, ReadingLevel.ALERT),
+                dueTasks = emptyList(),
+            )
+        } else {
+            WidgetAquarium(
+                aquarium = Aquarium("salon", "Salon", 120.0, VolumeUnit.LITERS, 0L),
+                overview = HomeOverview(listOf(HomeValue(definition, null, null, ReadingLevel.OK, false)), 0, null),
+                light = WidgetLight.OK,
+                next = NextStep.Nothing,
+                dueTasks = emptyList(),
+            )
+        }
         // Compose resources read their language from the default locale.
         val previous = Locale.getDefault()
         Locale.setDefault(Locale.forLanguageTag(language))
