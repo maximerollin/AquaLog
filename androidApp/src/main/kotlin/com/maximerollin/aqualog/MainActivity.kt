@@ -108,7 +108,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleAuthenticationIntent(intent: Intent?) {
-        val callbackUrl = intent?.dataString ?: return
+        val callback = intent?.data ?: return
+        // Glance's widget taps carry their own data (glance-action:/CALLBACK?appWidgetId=…): only the auth redirect is a callback.
+        val expected = Uri.parse(BuildConfig.AUTH_REDIRECT_URL)
+        if (callback.scheme != expected.scheme || callback.host != expected.host || callback.path != expected.path) return
+        val callbackUrl = callback.toString()
         setIntent(Intent(this, MainActivity::class.java))
         homeViewModel.completeAccountCallback(callbackUrl)
     }

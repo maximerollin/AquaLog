@@ -655,8 +655,9 @@ class HomeViewModel(
     }
 
     /**
-     * Brings the app to [aquariumId] (when it is a live Aquarium), then opens entry for MEASURE or the paywall for PRO.
-     * Never while an entry draft is open, and MEASURE never opens on another Aquarium than the one asked for.
+     * Brings the app to [aquariumId] (when it is a live Aquarium) on its home, then opens entry for MEASURE or the
+     * paywall for PRO (unless Pro is already active). Never while a view that may hold input is open (entry draft,
+     * account, rhythm settings, Aquarium editor), and MEASURE never opens on another Aquarium than the one asked for.
      */
     fun openFromWidget(aquariumId: String?, target: WidgetTarget) {
         viewModelScope.launch {
@@ -665,21 +666,31 @@ class HomeViewModel(
             } ?: return@launch
             // No Aquarium yet: onboarding is not complete.
             val current = loaded.setup ?: return@launch
-            if (loaded.rapidSession != null) return@launch
+            if (loaded.holdsInput()) return@launch
             val known = aquariumId != null && loaded.aquariums.any { it.id == aquariumId }
             if (target == WidgetTarget.MEASURE && aquariumId != null && !known) return@launch
             if (known && aquariumId != current.aquarium.id) {
                 selectAquarium(aquariumId!!)
                 withTimeoutOrNull(WIDGET_WAIT_MILLIS) { uiState.first { it.setup?.aquarium?.id == aquariumId } } ?: return@launch
-                if (uiState.value.rapidSession != null) return@launch
+                if (uiState.value.holdsInput()) return@launch
             }
+            // A stale invitation tapped by a Pro user just brings the app forward.
+            val proActive = uiState.value.pro.purchaseStatus == ProPurchaseStatus.ACTIVE
+            // Read-only views lose nothing: close them so the Aquarium home, entry or paywall is what shows.
+            closeTasks()
+            closeSessionDetails()
+            if (target != WidgetTarget.PRO || proActive) selectDestination(MainDestination.TANK)
             when (target) {
                 WidgetTarget.HOME -> Unit
                 WidgetTarget.MEASURE -> openRapidSession()
-                WidgetTarget.PRO -> showProPaywall(PaywallSource.PRO_FEATURE)
+                WidgetTarget.PRO -> if (!proActive) showProPaywall(PaywallSource.PRO_FEATURE)
             }
         }
     }
+
+    /** An open view that may hold typed input: a widget tap only brings the app forward. */
+    private fun HomeUiState.holdsInput() =
+        rapidSession != null || account.step != AccountStep.HIDDEN || showRhythmSettings || aquariumEditor != null
 
     fun openCreateAquarium() {
         val state = mutableUiState.value

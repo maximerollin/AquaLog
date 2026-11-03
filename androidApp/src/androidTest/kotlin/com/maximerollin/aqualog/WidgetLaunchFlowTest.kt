@@ -1,10 +1,13 @@
 package com.maximerollin.aqualog
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -15,6 +18,8 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import com.maximerollin.aqualog.shared.AquariumCreationAccess
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.LIFETIME_PRO_PRODUCT_ID
@@ -74,16 +79,92 @@ class WidgetLaunchFlowTest {
             composeRule.onNodeWithContentDescription("Measurement for Temperature").assertTextContains("24,5")
             waitForText("Aqua 120 · ", substring = true)
         } finally {
-            // The handled intent was cleared with setIntent, so the scenario no longer recognises the activity: finish it by hand.
-            var activity: MainActivity? = null
-            scenario.onActivity { activity = it; it.finish() }
-            composeRule.waitUntil(timeoutMillis = 10_000) { activity?.isDestroyed == true }
+            finishByHand(scenario)
+        }
+    }
+
+    @Test
+    fun widgetMeasure_withGlanceActionData_opensEntryAndNoAuthError() {
+        val application = twoAquariums()
+        val nanoId = aquariumId(application, "Nano 30")
+        // Glance's actionStartActivity sets a data URI of its own on the intent.
+        val intent = widgetIntent(nanoId, WidgetTarget.MEASURE)
+            .setData(Uri.parse("glance-action:/CALLBACK?appWidgetId=38&viewId=1&extraData=-1"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        // A cold start, as from the home screen; ActivityScenario cannot track an intent with data that the activity replaces.
+        context.startActivity(intent)
+        try {
+            waitForText("New Session")
+            waitForText("Nano 30 · ", substring = true)
+            composeRule.onAllNodes(hasText("Authentication did not complete", substring = true)).assertCountEquals(0)
+        } finally {
+            var activity: Activity? = null
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                activity = ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)
+                    .firstOrNull { it is MainActivity }
+                activity?.finish()
+            }
+            composeRule.waitUntil(timeoutMillis = 10_000) { activity?.isDestroyed != false }
+        }
+    }
+
+    @Test
+    fun widgetHome_fromHistory_landsOnTheAquariumHome() {
+        val application = twoAquariums()
+        val nanoId = aquariumId(application, "Nano 30")
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            waitForText("Aqua 120")
+            composeRule.onNodeWithText("History").performClick()
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasText("See all")).fetchSemanticsNodes().isEmpty()
+            }
+            scenario.onActivity { it.startActivity(widgetIntent(nanoId, WidgetTarget.HOME)) }
+            waitForText("See all")
+            waitForText("Nano 30")
+        } finally {
+            finishByHand(scenario)
+        }
+    }
+
+    @Test
+    fun widgetMeasure_withTheTasksListOpen_opensEntryVisibly() {
+        val application = twoAquariums()
+        val aquaId = aquariumId(application, "Aqua 120")
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            waitForText("Aqua 120")
+            composeRule.onNode(hasText("See all") and hasClickAction()).performClick()
+            waitForText("Tasks & reminders")
+            scenario.onActivity { it.startActivity(widgetIntent(aquaId, WidgetTarget.MEASURE)) }
+            waitForText("New Session")
+            composeRule.onNodeWithContentDescription("Measurement for Temperature").assertIsDisplayed()
+        } finally {
+            finishByHand(scenario)
+        }
+    }
+
+    @Test
+    fun widgetPro_forAProUser_doesNotOpenThePaywall() {
+        twoAquariums()
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            waitForText("Aqua 120")
+            // shortcut: a fixed pause for the in-memory entitlement check to turn Pro ACTIVE; there is no UI signal on the home.
+            Thread.sleep(1_000)
+            scenario.onActivity { it.startActivity(widgetIntent(null, WidgetTarget.PRO)) }
+            Thread.sleep(1_000)
+            composeRule.waitForIdle()
+            composeRule.onAllNodes(hasText("Choose Free or Pro")).assertCountEquals(0)
+            composeRule.onNodeWithText("Aqua 120").assertIsDisplayed()
+        } finally {
+            finishByHand(scenario)
         }
     }
 
     @Test
     fun widgetPro_opensThePaywall() {
-        twoAquariums()
+        twoAquariums(pro = false)
         val scenario = ActivityScenario.launch<MainActivity>(widgetIntent(null, WidgetTarget.PRO))
         try {
             waitForText("Choose Free or Pro")
@@ -110,6 +191,13 @@ class WidgetLaunchFlowTest {
         }
     }
 
+    // The handled intent was cleared with setIntent, so the scenario no longer recognises the activity: finish it by hand.
+    private fun finishByHand(scenario: ActivityScenario<MainActivity>) {
+        var activity: MainActivity? = null
+        scenario.onActivity { activity = it; it.finish() }
+        composeRule.waitUntil(timeoutMillis = 10_000) { activity?.isDestroyed == true }
+    }
+
     private fun widgetIntent(aquariumId: String?, target: WidgetTarget) =
         Intent(context, MainActivity::class.java)
             .putExtra(MainActivity.EXTRA_WIDGET_AQUARIUM_ID, aquariumId)
@@ -119,7 +207,7 @@ class WidgetLaunchFlowTest {
         application.aquariumRepository.observeAquariums(includeArchived = true).first().first { it.name == name }.id
     }
 
-    private fun twoAquariums(): TestAquaLogApplication {
+    private fun twoAquariums(pro: Boolean = true): TestAquaLogApplication {
         val application = context.applicationContext as TestAquaLogApplication
         application.resetRepository()
         runBlocking {
@@ -135,7 +223,7 @@ class WidgetLaunchFlowTest {
             )
             repository.selectAquarium(aqua.aquarium.id)
         }
-        application.grantPro(ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null))
+        if (pro) application.grantPro(ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null))
         return application
     }
 
