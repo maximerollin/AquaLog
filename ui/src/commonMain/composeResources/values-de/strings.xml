@@ -217,6 +217,7 @@
     <string name="portable_problem_events">Dieser Export enthält eine ungültige Ereignis- oder Sitzungsbeziehung. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_tasks">Dieser Export enthält eine ungültige Aufgaben- oder Aquarium-Beziehung. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_occurrences">Dieser Export enthält ein ungültiges Aufgabenauftreten oder eine fehlerhafte Beziehung. Ihre lokalen Daten wurden nicht geändert.</string>
+    <string name="portable_problem_inhabitants">Dieser Export enthält einen ungültigen Bewohner oder einen, der auf ein fehlendes Aquarium verweist. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_account_linked">Trennen Sie Ihr verknüpftes Konto, bevor Sie eine tragbare lokale Kopie wiederherstellen. Ihre lokalen Daten und Ihr Konto wurden nicht geändert.</string>
     <string name="portable_problem_database">Die Wiederherstellung ist beim Ersetzen der lokalen Kopie fehlgeschlagen. Es wurden keine importierten Daten gespeichert.</string>
     <string name="portable_storage_error">Android konnte dieses Dokument nicht lesen oder schreiben. Versuchen Sie es an einem anderen Ort.</string>
@@ -268,6 +269,14 @@
     <string name="open_session_details">Sitzungsdetails öffnen</string>
     <string name="back_to_timeline">Zurück zur Chronologie</string>
     <string name="timeline_events">Ereignisse</string>
+    <plurals name="timeline_inhabitants_added">
+        <item quantity="one">%1$d %2$s hinzugefügt</item>
+        <item quantity="other">%1$d %2$s hinzugefügt</item>
+    </plurals>
+    <plurals name="timeline_inhabitants_removed">
+        <item quantity="one">%1$d %2$s entfernt</item>
+        <item quantity="other">%1$d %2$s entfernt</item>
+    </plurals>
     <plurals name="timeline_action_count">
         <item quantity="one">%1$d Wartungsaktion</item>
         <item quantity="other">%1$d Wartungsaktionen</item>

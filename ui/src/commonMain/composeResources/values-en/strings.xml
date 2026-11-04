@@ -217,6 +217,7 @@
     <string name="portable_problem_events">This export contains an invalid Event or Session relation. Your local data was not changed.</string>
     <string name="portable_problem_tasks">This export contains an invalid Task or Aquarium relation. Your local data was not changed.</string>
     <string name="portable_problem_occurrences">This export contains an invalid Task Occurrence or broken relation. Your local data was not changed.</string>
+    <string name="portable_problem_inhabitants">This export contains an invalid inhabitant or one that references a missing Aquarium. Your local data was not changed.</string>
     <string name="portable_problem_account_linked">Disconnect your linked account before restoring a portable local copy. Your local data and account were not changed.</string>
     <string name="portable_problem_database">Restore failed while replacing the local copy. No imported data was kept.</string>
     <string name="portable_storage_error">Android could not read or write this document. Try another location.</string>
@@ -268,6 +269,14 @@
     <string name="open_session_details">Open Session details</string>
     <string name="back_to_timeline">Back to Chronology</string>
     <string name="timeline_events">Events</string>
+    <plurals name="timeline_inhabitants_added">
+        <item quantity="one">%1$d %2$s added</item>
+        <item quantity="other">%1$d %2$s added</item>
+    </plurals>
+    <plurals name="timeline_inhabitants_removed">
+        <item quantity="one">%1$d %2$s removed</item>
+        <item quantity="other">%1$d %2$s removed</item>
+    </plurals>
     <plurals name="timeline_action_count">
         <item quantity="one">%1$d maintenance action</item>
         <item quantity="other">%1$d maintenance actions</item>

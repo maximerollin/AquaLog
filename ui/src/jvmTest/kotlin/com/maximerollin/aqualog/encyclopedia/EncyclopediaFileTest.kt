@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.encyclopedia
 
+import com.maximerollin.aqualog.shared.Inhabitant
 import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
 import com.maximerollin.aqualog.shared.encyclopedia.speciesProblems
 import java.io.File
@@ -31,5 +32,15 @@ class EncyclopediaFileTest {
         assertEquals(s.names.getValue("fr"), s.localName("xx"))
         assertEquals(s.names.getValue("en"), s.localName("en"))
         assertEquals(s.scientificName, s.copy(names = emptyMap()).localName("en"))
+    }
+
+    @Test fun inhabitantNameFallsBackWithoutCrashing() {
+        val s = species.first()
+        fun inhabitant(speciesId: String?, customName: String?) =
+            Inhabitant("i", "a", speciesId, customName, s.family, 1, 0L)
+        assertEquals(s.names.getValue("en"), inhabitant(s.id, null).displayName(species, "en"))
+        assertEquals("Mon poisson", inhabitant(null, "Mon poisson").displayName(species, "en"))
+        assertEquals(s.id, inhabitant(s.id, null).displayName(null, "en"))
+        assertEquals("gone", inhabitant("gone", null).displayName(species, "en"))
     }
 }

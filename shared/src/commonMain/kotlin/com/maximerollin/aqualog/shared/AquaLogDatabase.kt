@@ -45,6 +45,20 @@ data class AquariumPhotoSyncEntity(
     @ColumnInfo(defaultValue = "0") val uploaded: Boolean = false,
 )
 
+/** Like the other child tables, no foreign key: an Aquarium's rows are removed explicitly. */
+@Entity(tableName = "inhabitants", indices = [Index(value = ["aquariumId"])])
+data class InhabitantEntity(
+    @PrimaryKey val id: String,
+    val aquariumId: String,
+    val speciesId: String?,
+    val customName: String?,
+    /** DrawingFamily enum name. */
+    val family: String,
+    val count: Int,
+    val addedAtEpochMillis: Long,
+    val removedAtEpochMillis: Long?,
+)
+
 @Entity(tableName = "selected_aquarium")
 data class SelectedAquariumEntity(
     @PrimaryKey val singletonId: Int = 1,
@@ -180,6 +194,46 @@ abstract class AssistantDao {
 
     fun observeDismissals(aquariumId: String): Flow<Map<String, String>> =
         observeRows(aquariumId).map { rows -> rows.associate { it.kind to it.sessionId } }
+}
+
+@Dao
+abstract class InhabitantDao {
+    @Query(
+        "SELECT * FROM inhabitants WHERE aquariumId = :aquariumId AND removedAtEpochMillis IS NULL " +
+            "ORDER BY addedAtEpochMillis, id",
+    )
+    abstract fun observePresent(aquariumId: String): Flow<List<InhabitantEntity>>
+
+    @Query(
+        "SELECT * FROM inhabitants WHERE (:aquariumId IS NULL OR aquariumId = :aquariumId) " +
+            "ORDER BY addedAtEpochMillis, id",
+    )
+    abstract fun observeHistory(aquariumId: String?): Flow<List<InhabitantEntity>>
+
+    @Query("SELECT * FROM inhabitants WHERE id = :id")
+    protected abstract suspend fun get(id: String): InhabitantEntity?
+
+    @Insert
+    abstract suspend fun insert(inhabitant: InhabitantEntity)
+
+    @Query("UPDATE inhabitants SET count = :count WHERE id = :id")
+    protected abstract suspend fun setCount(id: String, count: Int)
+
+    @Query("UPDATE inhabitants SET removedAtEpochMillis = :removedAt WHERE id = :id")
+    protected abstract suspend fun markRemoved(id: String, removedAt: Long)
+
+    /** Removes [count] from a present group: the whole group is dated, a part is split into a new dated row. */
+    @Transaction
+    open suspend fun remove(id: String, count: Int, removedAt: Long, splitId: String) {
+        val row = requireNotNull(get(id)?.takeIf { it.removedAtEpochMillis == null }) { "Inhabitant is not present" }
+        require(count in 1..row.count) { "Cannot remove $count of ${row.count}" }
+        if (count == row.count) {
+            markRemoved(id, removedAt)
+        } else {
+            setCount(id, row.count - count)
+            insert(row.copy(id = splitId, count = count, removedAtEpochMillis = removedAt))
+        }
+    }
 }
 
 @Entity(tableName = "account_state")
@@ -738,6 +792,9 @@ abstract class AccountControlDao {
     @Query("DELETE FROM aquarium_photo_syncs")
     protected abstract suspend fun deleteAquariumPhotoSyncs()
 
+    @Query("DELETE FROM inhabitants")
+    protected abstract suspend fun deleteInhabitants()
+
     suspend fun markCloudDeletionComplete() {
         check(updateDeletionPhase(AccountDeletionPhase.CLOUD_DELETED.name) == 1) {
             "No account deletion is pending"
@@ -768,6 +825,7 @@ abstract class AccountControlDao {
         deleteAquariums()
         deleteAssistantDismissals()
         deleteAquariumPhotoSyncs()
+        deleteInhabitants()
         detachAccountKeepingLocalCopy()
     }
 }
@@ -781,6 +839,7 @@ data class PortableDatabaseSnapshot(
     val events: List<SessionEventEntity>,
     val tasks: List<TaskEntity>,
     val taskOccurrences: List<TaskOccurrenceEntity>,
+    val inhabitants: List<InhabitantEntity> = emptyList(),
 )
 
 @Dao
@@ -808,6 +867,15 @@ abstract class PortableDataDao {
 
     @Query("SELECT * FROM task_occurrences")
     protected abstract suspend fun allTaskOccurrences(): List<TaskOccurrenceEntity>
+
+    @Query("SELECT * FROM inhabitants")
+    protected abstract suspend fun allInhabitants(): List<InhabitantEntity>
+
+    @Insert
+    protected abstract suspend fun insertInhabitants(values: List<InhabitantEntity>)
+
+    @Query("DELETE FROM inhabitants")
+    protected abstract suspend fun deleteInhabitants()
 
     @Insert
     protected abstract suspend fun insertAquariums(values: List<AquariumEntity>)
@@ -882,6 +950,7 @@ abstract class PortableDataDao {
         events = allEvents(),
         tasks = allTasks(),
         taskOccurrences = allTaskOccurrences(),
+        inhabitants = allInhabitants(),
     )
 
     @Transaction
@@ -898,6 +967,7 @@ abstract class PortableDataDao {
         deleteAquariums()
         deleteAssistantDismissals()
         deletePhotoSyncs()
+        deleteInhabitants()
 
         if (snapshot.aquariums.isNotEmpty()) insertAquariums(snapshot.aquariums)
         snapshot.aquariums.filter { it.photoId != null }.map { AquariumPhotoSyncEntity(it.id) }
@@ -909,6 +979,7 @@ abstract class PortableDataDao {
         if (snapshot.events.isNotEmpty()) insertEvents(snapshot.events)
         if (snapshot.tasks.isNotEmpty()) insertTasks(snapshot.tasks)
         if (snapshot.taskOccurrences.isNotEmpty()) insertTaskOccurrences(snapshot.taskOccurrences)
+        if (snapshot.inhabitants.isNotEmpty()) insertInhabitants(snapshot.inhabitants)
         return true
     }
 }
@@ -1198,8 +1269,9 @@ abstract class SyncDao {
         SyncScheduleStateEntity::class,
         AssistantDismissalEntity::class,
         AquariumPhotoSyncEntity::class,
+        InhabitantEntity::class,
     ],
-    version = 16,
+    version = 17,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -1212,6 +1284,7 @@ abstract class AquaLogDatabase : RoomDatabase() {
     abstract fun syncDao(): SyncDao
     abstract fun portableDataDao(): PortableDataDao
     abstract fun assistantDao(): AssistantDao
+    abstract fun inhabitantDao(): InhabitantDao
 }
 
 @Suppress("NO_ACTUAL_FOR_EXPECT")
@@ -1240,6 +1313,7 @@ fun createAquaLogDatabase(
         MIGRATION_13_14,
         MIGRATION_14_15,
         MIGRATION_15_16,
+        MIGRATION_16_17,
     )
     .build()
 
@@ -1409,4 +1483,13 @@ private val MIGRATION_15_16 = Migration(15, 16) { connection ->
         "CREATE TABLE IF NOT EXISTS aquarium_photo_syncs " +
             "(aquariumId TEXT NOT NULL, uploaded INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(aquariumId))",
     )
+}
+
+private val MIGRATION_16_17 = Migration(16, 17) { connection ->
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS inhabitants (id TEXT NOT NULL, aquariumId TEXT NOT NULL, speciesId TEXT, " +
+            "customName TEXT, family TEXT NOT NULL, count INTEGER NOT NULL, addedAtEpochMillis INTEGER NOT NULL, " +
+            "removedAtEpochMillis INTEGER, PRIMARY KEY(id))",
+    )
+    connection.execSQL("CREATE INDEX IF NOT EXISTS index_inhabitants_aquariumId ON inhabitants (aquariumId)")
 }

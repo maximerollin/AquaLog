@@ -217,6 +217,7 @@
     <string name="portable_problem_events">Cette exportation contient une relation d'événement ou de session non valide. Vos données locales n'ont pas été modifiées.</string>
     <string name="portable_problem_tasks">Cette exportation contient une relation Tâche ou Aquarium non valide. Vos données locales n'ont pas été modifiées.</string>
     <string name="portable_problem_occurrences">Cette exportation contient une occurrence de tâche non valide ou une relation rompue. Vos données locales n'ont pas été modifiées.</string>
+    <string name="portable_problem_inhabitants">Cette exportation contient un habitant non valide ou lié à un aquarium manquant. Vos données locales n'ont pas été modifiées.</string>
     <string name="portable_problem_account_linked">Déconnectez votre compte lié avant de restaurer une copie locale portable. Vos données locales et votre compte n'ont pas été modifiés.</string>
     <string name="portable_problem_database">La restauration a échoué lors du remplacement de la copie locale. Aucune donnée importée n'a été conservée.</string>
     <string name="portable_storage_error">Android n'a pas pu lire ou écrire ce document. Essayez un autre emplacement.</string>
@@ -268,6 +269,14 @@
     <string name="open_session_details">Détails de la session ouverte</string>
     <string name="back_to_timeline">Retour à la Chronologie</string>
     <string name="timeline_events">Événements</string>
+    <plurals name="timeline_inhabitants_added">
+        <item quantity="one">%1$d %2$s ajouté</item>
+        <item quantity="other">%1$d %2$s ajoutés</item>
+    </plurals>
+    <plurals name="timeline_inhabitants_removed">
+        <item quantity="one">%1$d %2$s retiré</item>
+        <item quantity="other">%1$d %2$s retirés</item>
+    </plurals>
     <plurals name="timeline_action_count">
         <item quantity="one">%1$d action d’entretien</item>
         <item quantity="other">%1$d actions d’entretien</item>

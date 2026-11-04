@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.shared
 
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import java.util.UUID
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -47,6 +48,7 @@ enum class PortableImportProblem(val safeExplanation: String) {
     INVALID_EVENTS("An Event is invalid or references a missing Session."),
     INVALID_TASKS("A Task is invalid or references a missing Aquarium."),
     INVALID_OCCURRENCES("A Task Occurrence is invalid, duplicated, or has broken relations."),
+    INVALID_INHABITANTS("An inhabitant is invalid or references a missing Aquarium."),
     ACCOUNT_LINKED("Disconnect the linked account before restoring a portable local copy."),
     DATABASE_WRITE_FAILED("The local copy could not be replaced; no imported data was kept."),
 }
@@ -86,6 +88,20 @@ data class PortableDataDocument(
     val tasks: List<PortableTask> = emptyList(),
     @Required
     val taskOccurrences: List<PortableTaskOccurrence> = emptyList(),
+    // Not @Required: files exported before inhabitants existed import with none.
+    val inhabitants: List<PortableInhabitant> = emptyList(),
+)
+
+@Serializable
+data class PortableInhabitant(
+    val id: String,
+    val aquariumId: String,
+    val speciesId: String?,
+    val customName: String?,
+    val family: String,
+    val count: Int,
+    val addedAtEpochMillis: Long,
+    val removedAtEpochMillis: Long?,
 )
 
 @Serializable
@@ -313,6 +329,7 @@ private fun PortableDataDocument.validationProblem(): PortableImportProblem? {
         "Event" to events.map(PortableEvent::id),
         "Task" to tasks.map(PortableTask::id),
         "Occurrence" to taskOccurrences.map(PortableTaskOccurrence::id),
+        "Inhabitant" to inhabitants.map(PortableInhabitant::id),
     )
     idLists.firstOrNull { (_, ids) -> ids.any(String::isBlank) || ids.distinct().size != ids.size }
         ?.let { return PortableImportProblem.DUPLICATE_IDENTIFIERS }
@@ -419,6 +436,15 @@ private fun PortableDataDocument.validationProblem(): PortableImportProblem? {
     ) {
         return PortableImportProblem.INVALID_OCCURRENCES
     }
+    if (inhabitants.any {
+            it.aquariumId !in aquariumsById || it.count < 1 ||
+                runCatching { DrawingFamily.valueOf(it.family) }.isFailure ||
+                it.speciesId?.isBlank() == true || it.speciesId == null && it.customName.isNullOrBlank() ||
+                it.removedAtEpochMillis?.let { removed -> removed < it.addedAtEpochMillis } == true
+        }
+    ) {
+        return PortableImportProblem.INVALID_INHABITANTS
+    }
     return null
 }
 
@@ -450,6 +476,7 @@ private fun PortableDatabaseSnapshot.toDocument() = PortableDataDocument(
     events = events.map { it.toPortable() }.sortedBy(PortableEvent::id),
     tasks = tasks.map { it.toPortable() }.sortedBy(PortableTask::id),
     taskOccurrences = taskOccurrences.map { it.toPortable() }.sortedBy(PortableTaskOccurrence::id),
+    inhabitants = inhabitants.map { it.toPortable() }.sortedBy(PortableInhabitant::id),
 )
 
 private fun PortableDataDocument.toSnapshot(photoIds: Map<String, String>) = PortableDatabaseSnapshot(
@@ -461,6 +488,7 @@ private fun PortableDataDocument.toSnapshot(photoIds: Map<String, String>) = Por
     events = events.map(PortableEvent::toEntity),
     tasks = tasks.map(PortableTask::toEntity),
     taskOccurrences = taskOccurrences.map(PortableTaskOccurrence::toEntity),
+    inhabitants = inhabitants.map(PortableInhabitant::toEntity),
 )
 
 private fun AquariumEntity.toPortable() = PortableAquarium(
@@ -586,4 +614,12 @@ private fun PortableTaskOccurrence.toEntity() = TaskOccurrenceEntity(
     resolution,
     resolvedAtEpochMillis,
     maintenanceActionType,
+)
+
+private fun InhabitantEntity.toPortable() = PortableInhabitant(
+    id, aquariumId, speciesId, customName, family, count, addedAtEpochMillis, removedAtEpochMillis,
+)
+
+private fun PortableInhabitant.toEntity() = InhabitantEntity(
+    id, aquariumId, speciesId, customName, family, count, addedAtEpochMillis, removedAtEpochMillis,
 )

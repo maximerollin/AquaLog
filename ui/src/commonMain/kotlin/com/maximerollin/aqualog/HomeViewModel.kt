@@ -63,6 +63,7 @@ import com.maximerollin.aqualog.shared.SyncOutcome
 import com.maximerollin.aqualog.shared.SyncState
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.TimelineFilter
+import com.maximerollin.aqualog.shared.TimelineInhabitantChange
 import com.maximerollin.aqualog.shared.TimelineSession
 import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.TaskDate
@@ -182,6 +183,7 @@ data class TimelineUiState(
     val isOffline: Boolean = true,
     val entries: List<TimelineSession> = emptyList(),
     val resolvedTaskOccurrences: List<TaskOccurrence> = emptyList(),
+    val inhabitantChanges: List<TimelineInhabitantChange> = emptyList(),
     val period: TimelinePeriod = TimelinePeriod.ALL,
     val aquariumId: String? = null,
     val parameterDefinitionId: String? = null,
@@ -2336,6 +2338,16 @@ class HomeViewModel(
             )
         }
         timelineJob = viewModelScope.launch {
+            launch {
+                // Inhabitant lines are extra: a failing read must not turn the Chronologie into an error.
+                aquariumRepository.observeInhabitantTimeline(
+                    TimelineFilter(sinceEpochMillisInclusive = since, aquariumId = timeline.aquariumId),
+                ).catch { }.collect { changes ->
+                    mutableUiState.update { state ->
+                        state.copy(timeline = state.timeline.copy(inhabitantChanges = changes))
+                    }
+                }
+            }
             aquariumRepository.observeTimeline(
                 TimelineFilter(
                     sinceEpochMillisInclusive = since,

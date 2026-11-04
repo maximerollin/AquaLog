@@ -744,6 +744,7 @@ private fun PortableDataMessage(state: PortableDataUiState) {
         PortableImportProblem.INVALID_EVENTS -> Res.string.portable_problem_events
         PortableImportProblem.INVALID_TASKS -> Res.string.portable_problem_tasks
         PortableImportProblem.INVALID_OCCURRENCES -> Res.string.portable_problem_occurrences
+        PortableImportProblem.INVALID_INHABITANTS -> Res.string.portable_problem_inhabitants
         PortableImportProblem.ACCOUNT_LINKED -> Res.string.portable_problem_account_linked
         PortableImportProblem.DATABASE_WRITE_FAILED -> Res.string.portable_problem_database
         null -> when (state.message) {
