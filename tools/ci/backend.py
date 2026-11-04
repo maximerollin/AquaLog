@@ -58,7 +58,8 @@ elif args.mode == "verify":
         "SUPABASE_URL": keys["API_URL"], "SUPABASE_ANON_KEY": keys["ANON_KEY"],
         "SUPABASE_SERVICE_ROLE_KEY": keys["SERVICE_ROLE_KEY"],
     }
-    run(*deno, "test", "--allow-env", "--allow-net", "supabase/tests/integration/entity_sync_test.ts", env=environment)
+    run(*deno, "test", "--allow-env", "--allow-net", "supabase/tests/integration/entity_sync_test.ts",
+        "supabase/tests/integration/aquarium_photo_test.ts", env=environment)
 else:
     if config.exists():
         owned()

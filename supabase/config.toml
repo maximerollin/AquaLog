@@ -32,7 +32,7 @@ enabled = false
 port = 55324
 
 [storage]
-enabled = false
+enabled = true
 
 [auth]
 enabled = true
