@@ -448,4 +448,6 @@
     <string name="widget_task_today">%1$s oggi</string>
     <string name="widget_nothing_to_do">Niente da fare</string>
     <string name="widget_tank_content_description">%1$s, %2$s, %3$s</string>
+    <string name="photo_crop_title">Ritaglia la foto</string>
+    <string name="photo_crop_confirm">Usa questa foto</string>
 </resources>

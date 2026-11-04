@@ -40,7 +40,7 @@ android {
 
     defaultConfig {
         applicationId = "com.maximerollin.aqualog"
-        minSdk = 23
+        minSdk = 24
         targetSdk = 37
         versionCode = aqualogVersionCode.get()
         versionName = aqualogVersionName.get()
@@ -138,6 +138,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.intents)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.services.storage)
+    androidTestImplementation(libs.androidx.exifinterface)
     androidTestImplementation(libs.glance.appwidget.testing)
     androidTestUtil(libs.androidx.test.services)
     androidTestUtil(libs.androidx.test.orchestrator)
