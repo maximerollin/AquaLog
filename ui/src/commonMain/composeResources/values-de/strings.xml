@@ -209,6 +209,7 @@
     <string name="portable_problem_duplicate_strategy">Dieser Export verwendet eine nicht unterstützte Duplikatstrategie. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_duplicate_ids">Dieser Export enthält leere oder doppelte stabile IDs. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_aquariums">Dieser Export enthält ein ungültiges Aquarium. Ihre lokalen Daten wurden nicht geändert.</string>
+    <string name="portable_problem_photo">Dieser Export enthält ein Aquarium-Foto, das kein lesbares JPEG ist. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_parameters">Der Export muss alle integrierten Parameter in der richtigen Reihenfolge enthalten, wobei mindestens einer aktiv sein muss. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_sessions">Dieser Export enthält eine leere Sitzung oder eine ungültige Aquarium-Beziehung. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_measurements">Dieser Export enthält eine ungültige Messung oder fehlerhafte Sitzungs- und Parameterbeziehungen. Ihre lokalen Daten wurden nicht geändert.</string>

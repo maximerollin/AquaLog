@@ -726,6 +726,7 @@ private fun PortableDataMessage(state: PortableDataUiState) {
         }
         PortableImportProblem.DUPLICATE_IDENTIFIERS -> Res.string.portable_problem_duplicate_ids
         PortableImportProblem.INVALID_AQUARIUMS -> Res.string.portable_problem_aquariums
+        PortableImportProblem.INVALID_PHOTO -> Res.string.portable_problem_photo
         PortableImportProblem.INVALID_PARAMETERS -> Res.string.portable_problem_parameters
         PortableImportProblem.INVALID_SESSIONS -> Res.string.portable_problem_sessions
         PortableImportProblem.INVALID_MEASUREMENTS -> Res.string.portable_problem_measurements

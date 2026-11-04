@@ -209,6 +209,7 @@
     <string name="portable_problem_duplicate_strategy">Esta exportación utiliza una estrategia duplicada no admitida. Sus datos locales no fueron cambiados.</string>
     <string name="portable_problem_duplicate_ids">Esta exportación contiene ID estables vacíos o duplicados. Sus datos locales no fueron cambiados.</string>
     <string name="portable_problem_aquariums">Esta exportación contiene un acuario no válido. Sus datos locales no fueron cambiados.</string>
+    <string name="portable_problem_photo">Esta exportación contiene la foto de un acuario que no es un JPEG legible. Sus datos locales no fueron cambiados.</string>
     <string name="portable_problem_parameters">La exportación debe contener todos los parámetros integrados en orden, con al menos uno activo. Sus datos locales no fueron cambiados.</string>
     <string name="portable_problem_sessions">Esta exportación contiene una sesión vacía o una relación de acuario no válida. Sus datos locales no fueron cambiados.</string>
     <string name="portable_problem_measurements">Esta exportación contiene una medida no válida o relaciones de sesión y parámetro rotas. Sus datos locales no fueron cambiados.</string>

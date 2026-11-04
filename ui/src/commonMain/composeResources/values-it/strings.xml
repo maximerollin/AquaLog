@@ -209,6 +209,7 @@
     <string name="portable_problem_duplicate_strategy">Questa esportazione utilizza una strategia di duplicazione non supportata. I tuoi dati locali non sono stati modificati.</string>
     <string name="portable_problem_duplicate_ids">Questa esportazione contiene ID stabili vuoti o duplicati. I tuoi dati locali non sono stati modificati.</string>
     <string name="portable_problem_aquariums">Questa esportazione contiene un acquario non valido. I tuoi dati locali non sono stati modificati.</string>
+    <string name="portable_problem_photo">Questa esportazione contiene la foto di un acquario che non è un JPEG leggibile. I tuoi dati locali non sono stati modificati.</string>
     <string name="portable_problem_parameters">L'esportazione deve contenere tutti i parametri incorporati in ordine, con almeno uno attivo. I tuoi dati locali non sono stati modificati.</string>
     <string name="portable_problem_sessions">Questa esportazione contiene una sessione vuota o una relazione Aquarium non valida. I tuoi dati locali non sono stati modificati.</string>
     <string name="portable_problem_measurements">Questa esportazione contiene una misurazione non valida o relazioni tra sessione e parametro interrotte. I tuoi dati locali non sono stati modificati.</string>

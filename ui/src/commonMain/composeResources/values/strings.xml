@@ -209,6 +209,7 @@
     <string name="portable_problem_duplicate_strategy">This export uses an unsupported duplicate strategy. Your local data was not changed.</string>
     <string name="portable_problem_duplicate_ids">This export contains empty or duplicate stable IDs. Your local data was not changed.</string>
     <string name="portable_problem_aquariums">This export contains an invalid Aquarium. Your local data was not changed.</string>
+    <string name="portable_problem_photo">This export contains an Aquarium photo that is not a readable JPEG. Your local data was not changed.</string>
     <string name="portable_problem_parameters">The export must contain every built-in Parameter in order, with at least one active. Your local data was not changed.</string>
     <string name="portable_problem_sessions">This export contains an empty Session or an invalid Aquarium relation. Your local data was not changed.</string>
     <string name="portable_problem_measurements">This export contains an invalid Measurement or broken Session and Parameter relations. Your local data was not changed.</string>

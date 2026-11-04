@@ -772,6 +772,12 @@ abstract class PortableDataDao {
     protected abstract suspend fun insertAquariums(values: List<AquariumEntity>)
 
     @Insert
+    protected abstract suspend fun insertPhotoSyncs(values: List<AquariumPhotoSyncEntity>)
+
+    @Query("DELETE FROM aquarium_photo_syncs")
+    protected abstract suspend fun deletePhotoSyncs()
+
+    @Insert
     protected abstract suspend fun insertParameterDefinitions(values: List<ParameterDefinitionEntity>)
 
     @Insert
@@ -850,8 +856,11 @@ abstract class PortableDataDao {
         deleteParameterDefinitions()
         deleteAquariums()
         deleteAssistantDismissals()
+        deletePhotoSyncs()
 
         if (snapshot.aquariums.isNotEmpty()) insertAquariums(snapshot.aquariums)
+        snapshot.aquariums.filter { it.photoId != null }.map { AquariumPhotoSyncEntity(it.id) }
+            .takeIf(List<*>::isNotEmpty)?.let { insertPhotoSyncs(it) }
         if (snapshot.parameterDefinitions.isNotEmpty()) insertParameterDefinitions(snapshot.parameterDefinitions)
         if (snapshot.sessions.isNotEmpty()) insertSessions(snapshot.sessions)
         if (snapshot.measurements.isNotEmpty()) insertMeasurements(snapshot.measurements)

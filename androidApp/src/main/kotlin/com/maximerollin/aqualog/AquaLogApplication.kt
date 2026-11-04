@@ -112,7 +112,7 @@ open class AquaLogApplication : Application() {
     }
 
     open val portableDataService: PortableDataService by lazy {
-        PortableDataService(database)
+        PortableDataService(database, aquariumPhotoStore)
     }
 
     open val taskReminderScheduler: TaskReminderScheduler by lazy {
