@@ -25,8 +25,8 @@ fun AquariumThumbnail(
     cachedPhoto: (String) -> ImageBitmap? = { null },
 ) {
     val photoId = aquarium.photoId
-    // A photo already decoded shows on the first frame, without the mini-scene flashing first.
-    val photo by produceState(photoId?.let(cachedPhoto), photoId) { if (value == null) value = photoId?.let { loadPhoto(it) } }
+    // The seed only applies on the first frame (no mini-scene flash); later photo ids are always assigned, even null.
+    val photo by produceState(photoId?.let(cachedPhoto), photoId) { value = photoId?.let { cachedPhoto(it) ?: loadPhoto(it) } }
     val clipped = modifier.size(size).clip(RoundedCornerShape(12.dp))
     photo?.let { Image(it, contentDescription = null, modifier = clipped, contentScale = ContentScale.Crop) }
         ?: TankScene(aquarium, clipped, animate = false)

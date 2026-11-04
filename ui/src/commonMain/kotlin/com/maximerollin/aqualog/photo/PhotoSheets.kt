@@ -129,7 +129,8 @@ private fun PhotoViewer(
     onRemove: () -> Unit,
     onClose: () -> Unit,
 ) {
-    val image by produceState(cachedPhoto(photoId), photoId) { if (value == null) value = loadPhoto(photoId) }
+    // Always assigned: the seed only applies on the first frame, a new photo id must not keep the old bitmap.
+    val image by produceState(cachedPhoto(photoId), photoId) { value = cachedPhoto(photoId) ?: loadPhoto(photoId) }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

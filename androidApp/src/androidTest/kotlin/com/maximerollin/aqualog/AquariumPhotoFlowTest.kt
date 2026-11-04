@@ -9,6 +9,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.test.captureToImage
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -62,8 +64,53 @@ class AquariumPhotoFlowTest {
         }
     }
 
-    private fun jpeg(): ByteArray {
-        val bitmap = Bitmap.createBitmap(300, 300, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.rgb(20, 103, 94)) }
+    @Test
+    fun vignette_followsAReplacedThenRemovedPhoto() {
+        configure("fr", darkLarge = false)
+        application.resetRepository()
+        val repository = application.aquariumRepository
+        val salon = runBlocking {
+            repository.createConfiguredAquarium(
+                "Salon", 120.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            ).aquarium.also { repository.setAquariumPhoto(it.id, jpeg(Color.RED)) }
+        }
+        try {
+            ActivityScenario.launch(MainActivity::class.java).use {
+                waitFor(hasContentDescription("Voir la photo de Salon"))
+                waitForCentre("Voir la photo de Salon") { it == Color.RED }
+
+                runBlocking { repository.setAquariumPhoto(salon.id, jpeg(Color.BLUE)) }
+                waitForCentre("Voir la photo de Salon") { it == Color.BLUE }
+
+                runBlocking { repository.setAquariumPhoto(salon.id, null) }
+                waitFor(hasContentDescription("Ajouter une photo de Salon"))
+                // The mini-scene again, not the last photo.
+                waitForCentre("Ajouter une photo de Salon") { it == null }
+            }
+        } finally {
+            restoreDisplay()
+        }
+    }
+
+    /** Waits until the centre of the vignette labelled [label] is pure red, pure blue, or (null) neither. */
+    private fun waitForCentre(label: String, expected: (Int?) -> Boolean) {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            val image = composeRule.onNodeWithContentDescription(label).captureToImage().asAndroidBitmap()
+            val pixel = image.getPixel(image.width / 2, image.height / 2)
+            val (r, g, b) = Triple(Color.red(pixel), Color.green(pixel), Color.blue(pixel))
+            expected(
+                when {
+                    r > 200 && g < 60 && b < 60 -> Color.RED
+                    b > 200 && r < 60 && g < 60 -> Color.BLUE
+                    else -> null
+                },
+            )
+        }
+    }
+
+    private fun jpeg(color: Int = Color.rgb(20, 103, 94)): ByteArray {
+        val bitmap = Bitmap.createBitmap(300, 300, Bitmap.Config.ARGB_8888).apply { eraseColor(color) }
         return ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }.toByteArray()
     }
 
