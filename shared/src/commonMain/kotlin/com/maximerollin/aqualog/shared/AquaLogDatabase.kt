@@ -32,7 +32,12 @@ data class AquariumEntity(
     val createdAtEpochMillis: Long,
     @ColumnInfo(defaultValue = "'established'") val profile: String,
     @ColumnInfo(defaultValue = "0") val isArchived: Boolean = false,
+    val photoId: String? = null,
 )
+
+/** One row per Aquarium whose photo must be pushed (or whose remote photo must be deleted); kept after the photo is removed. */
+@Entity(tableName = "aquarium_photo_syncs")
+data class AquariumPhotoSyncEntity(@PrimaryKey val aquariumId: String)
 
 @Entity(tableName = "selected_aquarium")
 data class SelectedAquariumEntity(
@@ -296,6 +301,9 @@ abstract class AquariumDao {
     protected abstract suspend fun upsertParameter(parameter: ParameterDefinitionEntity)
 
     @Upsert
+    protected abstract suspend fun upsertPhotoSync(sync: AquariumPhotoSyncEntity)
+
+    @Upsert
     protected abstract suspend fun upsertSelection(selection: SelectedAquariumEntity)
 
     @Query("SELECT COUNT(*) FROM aquariums")
@@ -333,9 +341,20 @@ abstract class AquariumDao {
     }
 
     @Transaction
-    open suspend fun updateAquarium(aquarium: AquariumEntity, syncOperation: SyncOperationEntity) {
+    open suspend fun updateAquarium(aquarium: AquariumEntity, syncOperation: SyncOperationEntity): AquariumEntity {
+        val existing = requireNotNull(getSetup(aquarium.id)) { "Aquarium does not exist" }.aquarium
+        // The photo only changes through updateAquariumPhoto, so a stale Aquarium cannot wipe it.
+        val stored = aquarium.copy(photoId = existing.photoId)
+        upsertAquarium(stored)
+        insertSyncOperations(listOf(syncOperation))
+        return stored
+    }
+
+    @Transaction
+    open suspend fun updateAquariumPhoto(aquarium: AquariumEntity, syncOperation: SyncOperationEntity) {
         requireNotNull(getSetup(aquarium.id)) { "Aquarium does not exist" }
         upsertAquarium(aquarium)
+        upsertPhotoSync(AquariumPhotoSyncEntity(aquarium.id))
         insertSyncOperations(listOf(syncOperation))
     }
 
@@ -653,6 +672,9 @@ abstract class AccountControlDao {
     @Query("DELETE FROM assistant_dismissals")
     protected abstract suspend fun deleteAssistantDismissals()
 
+    @Query("DELETE FROM aquarium_photo_syncs")
+    protected abstract suspend fun deleteAquariumPhotoSyncs()
+
     suspend fun markCloudDeletionComplete() {
         check(updateDeletionPhase(AccountDeletionPhase.CLOUD_DELETED.name) == 1) {
             "No account deletion is pending"
@@ -682,6 +704,7 @@ abstract class AccountControlDao {
         deleteParameterDefinitions()
         deleteAquariums()
         deleteAssistantDismissals()
+        deleteAquariumPhotoSyncs()
         detachAccountKeepingLocalCopy()
     }
 }
@@ -1093,8 +1116,9 @@ abstract class SyncDao {
         SyncRuntimeStateEntity::class,
         SyncScheduleStateEntity::class,
         AssistantDismissalEntity::class,
+        AquariumPhotoSyncEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -1134,6 +1158,7 @@ fun createAquaLogDatabase(
         MIGRATION_12_13,
         MIGRATION_13_14,
         MIGRATION_14_15,
+        MIGRATION_15_16,
     )
     .build()
 
@@ -1294,5 +1319,12 @@ private val MIGRATION_14_15 = Migration(14, 15) { connection ->
     connection.execSQL("ALTER TABLE task_occurrences ADD COLUMN maintenanceActionType TEXT")
     connection.execSQL(
         "CREATE TABLE IF NOT EXISTS assistant_dismissals (aquariumId TEXT NOT NULL, kind TEXT NOT NULL, sessionId TEXT NOT NULL, PRIMARY KEY(aquariumId, kind))",
+    )
+}
+
+private val MIGRATION_15_16 = Migration(15, 16) { connection ->
+    connection.execSQL("ALTER TABLE aquariums ADD COLUMN photoId TEXT")
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS aquarium_photo_syncs (aquariumId TEXT NOT NULL, PRIMARY KEY(aquariumId))",
     )
 }

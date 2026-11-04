@@ -39,6 +39,11 @@ interface AquariumRepository {
 
     suspend fun updateAquarium(aquarium: Aquarium): Aquarium
 
+    /** Replaces the Aquarium's single photo with [jpeg], or removes it when null. */
+    suspend fun setAquariumPhoto(aquariumId: String, jpeg: ByteArray?): Aquarium = error("unsupported")
+
+    suspend fun readAquariumPhoto(photoId: String): ByteArray? = null
+
     suspend fun updateParameterDefinition(parameter: ParameterDefinition): ParameterDefinition
 
     /** Sets the per-Aquarium analysis rhythm of one Parameter; null means the profile default. */
@@ -108,6 +113,7 @@ class RoomAquariumRepository(
     private val currentTimeMillis: () -> Long,
     private val onSyncNeeded: () -> Unit = {},
     private val generateOperationKey: () -> String = ::randomSyncOperationKey,
+    private val photoStore: AquariumPhotoStore? = null,
 ) : AquariumRepository, AccountLocalDataSource, AccountControlLocalData, AccountAccessMarkerStore, SyncLocalDataSource {
     private val aquariumDao = database.aquariumDao()
     private val sessionDao = database.sessionDao()
@@ -239,13 +245,31 @@ class RoomAquariumRepository(
         require(aquarium.name.isNotBlank()) { "Aquarium name must not be blank" }
         require(aquarium.volume > 0.0 && aquarium.volume.isFinite()) { "Aquarium volume must be positive" }
         val normalized = aquarium.copy(name = aquarium.name.trim())
-        aquariumDao.updateAquarium(
+        val stored = aquariumDao.updateAquarium(
             normalized.toEntity(),
             newSyncOperation(SyncEntityType.AQUARIUM, normalized.id),
         )
         onSyncNeeded()
-        return normalized
+        return stored.toDomain()
     }
+
+    override suspend fun setAquariumPhoto(aquariumId: String, jpeg: ByteArray?): Aquarium {
+        val store = checkNotNull(photoStore) { "No photo store" }
+        val existing = requireNotNull(aquariumDao.getSetup(aquariumId)) { "Aquarium does not exist" }.aquarium
+        val newPhotoId = jpeg?.let { generateId().also { id -> store.write(id, jpeg) } }
+        val updated = existing.copy(photoId = newPhotoId)
+        try {
+            aquariumDao.updateAquariumPhoto(updated, newSyncOperation(SyncEntityType.AQUARIUM, aquariumId))
+        } catch (failure: Throwable) {
+            newPhotoId?.let { store.delete(it) }
+            throw failure
+        }
+        existing.photoId?.let { store.delete(it) }
+        onSyncNeeded()
+        return updated.toDomain()
+    }
+
+    override suspend fun readAquariumPhoto(photoId: String): ByteArray? = photoStore?.read(photoId)
 
     override suspend fun updateParameterDefinition(parameter: ParameterDefinition): ParameterDefinition {
         require(parameter.unit.isNotBlank()) { "Parameter unit must not be blank" }
@@ -726,7 +750,10 @@ class RoomAquariumRepository(
 
     override suspend fun detachAccountKeepingLocalCopy() = accountControlDao.detachAccountKeepingLocalCopy()
 
-    override suspend fun removeAccountAndLocalCopy() = accountControlDao.removeAccountAndLocalCopy()
+    override suspend fun removeAccountAndLocalCopy() {
+        accountControlDao.removeAccountAndLocalCopy()
+        photoStore?.clear()
+    }
 
     override fun observeSyncState(): Flow<SyncState> = combine(
         syncDao.observePending(),
@@ -934,6 +961,7 @@ private fun AquariumEntity.toDomain() = Aquarium(
     createdAtEpochMillis = createdAtEpochMillis,
     profile = AquariumProfile.fromStorageValue(profile),
     isArchived = isArchived,
+    photoId = photoId,
 )
 
 private fun Aquarium.toEntity() = AquariumEntity(
@@ -944,6 +972,7 @@ private fun Aquarium.toEntity() = AquariumEntity(
     createdAtEpochMillis = createdAtEpochMillis,
     profile = profile.storageValue,
     isArchived = isArchived,
+    photoId = photoId,
 )
 
 private fun AquariumSetupEntity.toDomain() = AquariumSetup(

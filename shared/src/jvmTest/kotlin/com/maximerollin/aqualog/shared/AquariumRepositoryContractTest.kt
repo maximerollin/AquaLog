@@ -62,6 +62,8 @@ class AquariumRepositoryContractTest {
             connection.execSQL("DROP TABLE selected_aquarium")
             connection.execSQL("ALTER TABLE aquariums DROP COLUMN isArchived")
             connection.execSQL("DROP TABLE assistant_dismissals")
+            connection.execSQL("DROP TABLE aquarium_photo_syncs")
+            connection.execSQL("ALTER TABLE aquariums DROP COLUMN photoId")
             connection.execSQL("ALTER TABLE parameter_definitions DROP COLUMN analysisIntervalDays")
             connection.execSQL("ALTER TABLE tasks DROP COLUMN maintenanceActionType")
             connection.execSQL("ALTER TABLE task_occurrences DROP COLUMN maintenanceActionType")

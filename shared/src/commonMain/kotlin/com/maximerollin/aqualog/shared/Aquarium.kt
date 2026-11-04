@@ -8,6 +8,7 @@ data class Aquarium(
     val createdAtEpochMillis: Long,
     val profile: AquariumProfile = AquariumProfile.ESTABLISHED,
     val isArchived: Boolean = false,
+    val photoId: String? = null,
 )
 
 enum class AquariumCreationAccess {
