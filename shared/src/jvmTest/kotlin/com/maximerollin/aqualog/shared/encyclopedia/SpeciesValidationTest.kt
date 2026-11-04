@@ -15,10 +15,13 @@ class SpeciesValidationTest {
         ph: String = """{"min":5.0,"max":7.0}""",
         minVolume: String = "54",
         minGroup: Int = 6,
-    ) = """{"id":"$id","wikidata":"$wikidata","scientificName":"Paracheirodon innesi","names":$names,
+        scientificName: String = "Paracheirodon innesi",
+        adultSize: Double = 3.5,
+        lifespan: Int = 4,
+    ) = """{"id":"$id","wikidata":"$wikidata","scientificName":"$scientificName","names":$names,
         "kind":"FISH","family":"$family","motion":"SCHOOL","ph":$ph,"temperatureC":null,"gh":null,"kh":null,
-        "minVolumeLiters":$minVolume,"adultSizeCm":3.5,"minGroup":$minGroup,"tags":["PEACEFUL"],"diet":"OMNIVORE",
-        "lifespanYears":4,"zone":"MIDDLE","color":4278190335,"drawing":null}"""
+        "minVolumeLiters":$minVolume,"adultSizeCm":$adultSize,"minGroup":$minGroup,"tags":["PEACEFUL"],"diet":"OMNIVORE",
+        "lifespanYears":$lifespan,"zone":"MIDDLE","color":4278190335,"drawing":null}"""
 
     private fun problems(vararg entries: String) = speciesProblems(decodeSpecies("[${entries.joinToString(",")}]"))
 
@@ -39,7 +42,28 @@ class SpeciesValidationTest {
         assertFailsWith<SerializationException> { decodeSpecies("[${entry(family = "WHALE")}]") }
     }
 
-    @Test fun duplicateId() = assertOneProblemNaming("neon", problems(entry(), entry()))
+    @Test fun duplicateId() = assertOneProblemNaming("neon", problems(entry(), entry(wikidata = "Q1")))
+
+    @Test fun duplicateWikidata() = assertOneProblemNaming("neon-2", problems(entry(), entry(id = "neon-2")))
+
+    @Test fun idNotKebabCase() {
+        for (id in listOf("Neon", "neon_tetra", "neon--tetra", "-neon", "néon")) assertOneProblemNaming(id, problems(entry(id = id)))
+    }
+
+    @Test fun kebabCaseIdWithDigitsIsValid() = assertEquals(emptyList(), problems(entry(id = "neon-2")))
+
+    @Test fun unknownLanguageKey() = assertOneProblemNaming(
+        "neon",
+        problems(entry(names = """{"fr":"Néon","en":"Neon","de":"Neon","it":"Neon","es":"Neon","pt":"Néon"}""")),
+    )
+
+    @Test fun blankScientificName() = assertOneProblemNaming("neon", problems(entry(scientificName = " ")))
+
+    @Test fun nonPositiveAdultSize() = assertOneProblemNaming("neon", problems(entry(adultSize = 0.0)))
+
+    @Test fun nonPositiveLifespan() = assertOneProblemNaming("neon", problems(entry(lifespan = 0)))
+
+    @Test fun negativeRange() = assertOneProblemNaming("neon", problems(entry(ph = """{"min":-1.0,"max":7.0}""")))
 
     @Test fun minGroupBelowOne() = assertOneProblemNaming("neon", problems(entry(minGroup = 0)))
 

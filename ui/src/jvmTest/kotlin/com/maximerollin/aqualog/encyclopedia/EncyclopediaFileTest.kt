@@ -31,6 +31,8 @@ class EncyclopediaFileTest {
         val s = species.first()
         assertEquals(s.names.getValue("fr"), s.localName("xx"))
         assertEquals(s.names.getValue("en"), s.localName("en"))
+        assertEquals(s.names.getValue("fr"), s.localName("fr-FR"))
+        assertEquals(s.names.getValue("de"), s.localName("DE-at"))
         assertEquals(s.scientificName, s.copy(names = emptyMap()).localName("en"))
     }
 

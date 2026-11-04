@@ -47,6 +47,7 @@ data class Species(
 val SPECIES_LANGUAGES = listOf("fr", "en", "de", "it", "es")
 
 private val wikidataId = Regex("^Q\\d+$")
+private val kebabCase = Regex("^[a-z0-9]+(-[a-z0-9]+)*$")
 
 // Strict on purpose: a typo in the shipped file (unknown key or enum name) must fail CI.
 private val speciesJson = Json { ignoreUnknownKeys = false }
@@ -56,12 +57,22 @@ fun decodeSpecies(json: String): List<Species> = speciesJson.decodeFromString(js
 fun speciesProblems(species: List<Species>): List<String> {
     val problems = mutableListOf<String>()
     species.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { problems += "$it: duplicate id" }
+    species.groupBy { it.wikidata }.filterValues { it.size > 1 }.forEach { (qid, same) ->
+        problems += "${same.joinToString { it.id }}: duplicate wikidata $qid"
+    }
     for (s in species) {
+        if (!kebabCase.matches(s.id)) problems += "${s.id}: id is not kebab-case"
         val missing = SPECIES_LANGUAGES.filter { s.names[it].isNullOrBlank() }
         if (missing.isNotEmpty()) problems += "${s.id}: missing names $missing"
+        val unknown = s.names.keys - SPECIES_LANGUAGES.toSet()
+        if (unknown.isNotEmpty()) problems += "${s.id}: unknown name languages $unknown"
         if (!wikidataId.matches(s.wikidata)) problems += "${s.id}: invalid wikidata '${s.wikidata}'"
+        if (s.scientificName.isBlank()) problems += "${s.id}: blank scientificName"
+        if (s.adultSizeCm <= 0) problems += "${s.id}: adultSizeCm <= 0"
+        if (s.lifespanYears <= 0) problems += "${s.id}: lifespanYears <= 0"
         mapOf("ph" to s.ph, "temperatureC" to s.temperatureC, "gh" to s.gh, "kh" to s.kh).forEach { (name, r) ->
             if (r != null && r.min > r.max) problems += "${s.id}: $name min > max"
+            if (r != null && r.min < 0) problems += "${s.id}: $name negative"
         }
         if (s.minGroup < 1) problems += "${s.id}: minGroup < 1"
         if (s.kind == SpeciesKind.FISH && s.minVolumeLiters == null) problems += "${s.id}: fish without minVolumeLiters"

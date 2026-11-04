@@ -7,18 +7,18 @@
       "fr": "Néon bleu",
       "en": "Neon tetra",
       "de": "Neonsalmler",
-      "it": "Paracheirodon innesi",
-      "es": "Paracheirodon innesi"
+      "it": "Neon",
+      "es": "Tetra neón"
     },
     "kind": "FISH",
     "family": "TETRA",
     "motion": "SCHOOL",
     "ph": {
-      "min": 5.0,
-      "max": 7.0
+      "min": 6.0,
+      "max": 7.5
     },
     "temperatureC": {
-      "min": 20.0,
+      "min": 21.0,
       "max": 26.0
     },
     "gh": {
@@ -27,18 +27,229 @@
     },
     "kh": {
       "min": 1.0,
-      "max": 8.0
+      "max": 4.0
     },
-    "minVolumeLiters": 54,
+    "minVolumeLiters": 60,
     "adultSizeCm": 3.5,
-    "minGroup": 8,
+    "minGroup": 10,
     "tags": [
       "PEACEFUL"
     ],
     "diet": "OMNIVORE",
     "lifespanYears": 5,
     "zone": "MIDDLE",
-    "color": 4281239262,
+    "color": 4280191205,
+    "drawing": null
+  },
+  {
+    "id": "cardinalis",
+    "wikidata": "Q590731",
+    "scientificName": "Paracheirodon axelrodi",
+    "names": {
+      "fr": "Cardinalis",
+      "en": "Cardinal tetra",
+      "de": "Roter Neon",
+      "it": "Neon cardinale",
+      "es": "Tetra cardenal"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 5.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 29.0
+    },
+    "gh": {
+      "min": 1.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 0.0,
+      "max": 4.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 3.5,
+    "minGroup": 10,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4292030255,
+    "drawing": null
+  },
+  {
+    "id": "guppy",
+    "wikidata": "Q178202",
+    "scientificName": "Poecilia reticulata",
+    "names": {
+      "fr": "Guppy",
+      "en": "Guppy",
+      "de": "Guppy",
+      "it": "Guppy",
+      "es": "Guppy"
+    },
+    "kind": "FISH",
+    "family": "LIVEBEARER",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 7.0,
+      "max": 8.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 9.0,
+      "max": 25.0
+    },
+    "kh": {
+      "min": 4.0,
+      "max": 15.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 5.0,
+    "minGroup": 3,
+    "tags": [
+      "LONG_FINS"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 3,
+    "zone": "SURFACE",
+    "color": 4294938368,
+    "drawing": null
+  },
+  {
+    "id": "platy",
+    "wikidata": "Q1162971",
+    "scientificName": "Xiphophorus maculatus",
+    "names": {
+      "fr": "Platy",
+      "en": "Platy",
+      "de": "Platy",
+      "it": "Platy",
+      "es": "Platy"
+    },
+    "kind": "FISH",
+    "family": "LIVEBEARER",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 7.0,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 20.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 9.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 6.0,
+    "minGroup": 3,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4294201630,
+    "drawing": null
+  },
+  {
+    "id": "molly",
+    "wikidata": "Q177832",
+    "scientificName": "Poecilia sphenops",
+    "names": {
+      "fr": "Molly",
+      "en": "Molly",
+      "de": "Spitzmaulkärpfling",
+      "it": "Molly",
+      "es": "Molly"
+    },
+    "kind": "FISH",
+    "family": "LIVEBEARER",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 7.0,
+      "max": 8.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 15.0,
+      "max": 30.0
+    },
+    "kh": {
+      "min": 8.0,
+      "max": 20.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 8.0,
+    "minGroup": 3,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4280693304,
+    "drawing": null
+  },
+  {
+    "id": "betta",
+    "wikidata": "Q549",
+    "scientificName": "Betta splendens",
+    "names": {
+      "fr": "Combattant",
+      "en": "Siamese fighting fish",
+      "de": "Siamesischer Kampffisch",
+      "it": "Pesce combattente",
+      "es": "Luchador de Siam"
+    },
+    "kind": "FISH",
+    "family": "LABYRINTH",
+    "motion": "SLOW",
+    "ph": {
+      "min": 6.0,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 20,
+    "adultSizeCm": 6.5,
+    "minGroup": 1,
+    "tags": [
+      "TERRITORIAL",
+      "LONG_FINS"
+    ],
+    "diet": "CARNIVORE",
+    "lifespanYears": 3,
+    "zone": "SURFACE",
+    "color": 4290910299,
     "drawing": null
   },
   {
@@ -50,7 +261,7 @@
       "en": "Panda corydoras",
       "de": "Panda-Panzerwels",
       "it": "Corydoras panda",
-      "es": "Corydoras panda"
+      "es": "Corydora panda"
     },
     "kind": "FISH",
     "family": "CATFISH",
@@ -60,19 +271,19 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 20.0,
+      "min": 21.0,
       "max": 25.0
     },
     "gh": {
       "min": 2.0,
-      "max": 12.0
+      "max": 15.0
     },
     "kh": {
-      "min": 1.0,
+      "min": 2.0,
       "max": 10.0
     },
-    "minVolumeLiters": 54,
-    "adultSizeCm": 5.0,
+    "minVolumeLiters": 60,
+    "adultSizeCm": 4.5,
     "minGroup": 6,
     "tags": [
       "PEACEFUL"
@@ -80,7 +291,220 @@
     "diet": "OMNIVORE",
     "lifespanYears": 10,
     "zone": "BOTTOM",
-    "color": 4291344282,
+    "color": 4293451984,
+    "drawing": null
+  },
+  {
+    "id": "ancistrus",
+    "wikidata": "Q135004",
+    "scientificName": "Ancistrus cirrhosus",
+    "names": {
+      "fr": "Ancistrus",
+      "en": "Bristlenose pleco",
+      "de": "Antennenwels",
+      "it": "Ancistrus",
+      "es": "Ancistrus"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "CRAWL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 12.0,
+    "minGroup": 1,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "ALGAE",
+    "lifespanYears": 10,
+    "zone": "BOTTOM",
+    "color": 4284306248,
+    "drawing": null
+  },
+  {
+    "id": "scalaire",
+    "wikidata": "Q827441",
+    "scientificName": "Pterophyllum scalare",
+    "names": {
+      "fr": "Scalaire",
+      "en": "Freshwater angelfish",
+      "de": "Skalar",
+      "it": "Scalare",
+      "es": "Pez escalar"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 30.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 200,
+    "adultSizeCm": 15.0,
+    "minGroup": 2,
+    "tags": [
+      "EATS_SMALL_FISH",
+      "EATS_SHRIMP",
+      "LONG_FINS",
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "MIDDLE",
+    "color": 4291415766,
+    "drawing": null
+  },
+  {
+    "id": "gourami-nain",
+    "wikidata": "Q244123",
+    "scientificName": "Trichogaster lalius",
+    "names": {
+      "fr": "Gourami nain",
+      "en": "Dwarf gourami",
+      "de": "Zwergfadenfisch",
+      "it": "Gourami nano",
+      "es": "Gurami enano"
+    },
+    "kind": "FISH",
+    "family": "LABYRINTH",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 4.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 7.0,
+    "minGroup": 1,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "SURFACE",
+    "color": 4292892970,
+    "drawing": null
+  },
+  {
+    "id": "danio-zebre",
+    "wikidata": "Q169444",
+    "scientificName": "Danio rerio",
+    "names": {
+      "fr": "Danio zébré",
+      "en": "Zebra danio",
+      "de": "Zebrabärbling",
+      "it": "Danio zebrato",
+      "es": "Pez cebra"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.5,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 20.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 5.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 3,
+    "zone": "SURFACE",
+    "color": 4287604936,
+    "drawing": null
+  },
+  {
+    "id": "rasbora-arlequin",
+    "wikidata": "Q28599939",
+    "scientificName": "Trigonostigma heteromorpha",
+    "names": {
+      "fr": "Rasbora arlequin",
+      "en": "Harlequin rasbora",
+      "de": "Keilfleckbärbling",
+      "it": "Rasbora arlecchino",
+      "es": "Rasbora arlequín"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 6.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 4.5,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4293432426,
     "drawing": null
   },
   {
@@ -88,11 +512,11 @@
     "wikidata": "Q119167133",
     "scientificName": "Neocaridina davidi",
     "names": {
-      "fr": "Neocaridina davidi",
-      "en": "Red cherry shrimp",
-      "de": "Neocaridina davidi",
-      "it": "Neocaridina davidi",
-      "es": "Neocaridina davidi"
+      "fr": "Crevette red cherry",
+      "en": "Cherry shrimp",
+      "de": "Red-Cherry-Garnele",
+      "it": "Gamberetto red cherry",
+      "es": "Gamba red cherry"
     },
     "kind": "SHRIMP",
     "family": "SHRIMP",
@@ -102,18 +526,18 @@
       "max": 8.0
     },
     "temperatureC": {
-      "min": 18.0,
+      "min": 20.0,
       "max": 26.0
     },
     "gh": {
-      "min": 4.0,
-      "max": 14.0
+      "min": 6.0,
+      "max": 15.0
     },
     "kh": {
       "min": 2.0,
-      "max": 8.0
+      "max": 10.0
     },
-    "minVolumeLiters": 10,
+    "minVolumeLiters": 20,
     "adultSizeCm": 3.0,
     "minGroup": 10,
     "tags": [
@@ -122,7 +546,91 @@
     "diet": "OMNIVORE",
     "lifespanYears": 2,
     "zone": "BOTTOM",
-    "color": 4292227121,
+    "color": 4292352816,
+    "drawing": null
+  },
+  {
+    "id": "amano",
+    "wikidata": "Q609311",
+    "scientificName": "Caridina multidentata",
+    "names": {
+      "fr": "Crevette d'Amano",
+      "en": "Amano shrimp",
+      "de": "Amanogarnele",
+      "it": "Gamberetto Amano",
+      "es": "Gamba Amano"
+    },
+    "kind": "SHRIMP",
+    "family": "SHRIMP",
+    "motion": "CRAWL",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 20.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 4.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 30,
+    "adultSizeCm": 5.0,
+    "minGroup": 3,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "ALGAE",
+    "lifespanYears": 3,
+    "zone": "BOTTOM",
+    "color": 4290294952,
+    "drawing": null
+  },
+  {
+    "id": "otocinclus",
+    "wikidata": "Q1879261",
+    "scientificName": "Otocinclus vittatus",
+    "names": {
+      "fr": "Otocinclus",
+      "en": "Otocinclus",
+      "de": "Längsstreifen-Ohrgitterharnischwels",
+      "it": "Otocinclus",
+      "es": "Otocinclus"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "CRAWL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 21.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 4.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "ALGAE",
+    "lifespanYears": 5,
+    "zone": "BOTTOM",
+    "color": 4290091885,
     "drawing": null
   }
 ]
