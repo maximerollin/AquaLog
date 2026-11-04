@@ -215,4 +215,41 @@ class RhythmTest {
         assertEquals(TaskDate(2027, 1, 1), TaskDate(2026, 12, 31).plusDays(1))
         assertEquals(TaskDate(2026, 12, 31), TaskDate(2027, 1, 1).plusDays(-1))
     }
+
+    private val ammonia = definition(BuiltInParameter.AMMONIA, min = 0.0, max = 0.0)
+    private val nitriteAt0 = definition(BuiltInParameter.NITRITE, min = 0.0, max = 0.0)
+
+    @Test
+    fun `adding an inhabitant schedules ammonia and nitrite at D+1 and D+3`() {
+        val established = setup(AquariumProfile.ESTABLISHED, ammonia, nitriteAt0)
+        val added = listOf(today)
+        val tested = listOf(sample(BuiltInParameter.AMMONIA, 0.0, 0), sample(BuiltInParameter.NITRITE, 0.0, 0))
+        assertTrue(dueTests(established, tested, today, added).isEmpty())
+        val tomorrow = dueTests(established, tested, today.plusDays(1), added)
+        assertEquals(listOf(ammonia, nitriteAt0).toSet(), tomorrow.map { it.definition }.toSet())
+        assertTrue(tomorrow.all { it.reason == DueReason.FOLLOW_UP && it.dueDate == today.plusDays(1) })
+        // Tested on D+2 (today): D+1 is cleared, D+3 is next.
+        assertTrue(dueTests(established, tested, today, listOf(today.plusDays(-2))).isEmpty())
+        val third = dueTests(established, tested, today.plusDays(1), listOf(today.plusDays(-2)))
+        assertEquals(2, third.size)
+        assertTrue(third.all { it.reason == DueReason.FOLLOW_UP && it.dueDate == today.plusDays(1) })
+    }
+
+    @Test
+    fun `no follow-up while cycling`() {
+        val cycling = setup(AquariumProfile.CYCLING, ammonia, nitriteAt0)
+        val samples = listOf(sample(BuiltInParameter.AMMONIA, 0.0, 0), sample(BuiltInParameter.NITRITE, 0.0, 0))
+        assertTrue((0..1).none { day ->
+            dueTests(cycling, samples, today.plusDays(day), listOf(today)).any { it.reason == DueReason.FOLLOW_UP }
+        })
+    }
+
+    @Test
+    fun `a measurement after D+1 clears that follow-up`() {
+        val established = setup(AquariumProfile.ESTABLISHED, ammonia, nitriteAt0)
+        val added = listOf(today.plusDays(-1))
+        assertEquals(2, dueTests(established, emptyList(), today, added).size)
+        val tested = listOf(sample(BuiltInParameter.AMMONIA, 0.0, 0), sample(BuiltInParameter.NITRITE, 0.0, 0))
+        assertTrue(dueTests(established, tested, today, added).isEmpty())
+    }
 }

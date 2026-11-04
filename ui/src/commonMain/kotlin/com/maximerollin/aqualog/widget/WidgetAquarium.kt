@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog.widget
 
 import com.maximerollin.aqualog.HomeOverview
+import com.maximerollin.aqualog.addedDays
 import com.maximerollin.aqualog.homeOverview
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumRepository
@@ -72,7 +73,7 @@ private suspend fun AquariumRepository.widgetAquarium(
     widgetAquarium(
         setup,
         observeLatestReadings(aquariumId).first(),
-        dueTests(setup, observeReadingSamples(aquariumId, timeZoneId).first(), today),
+        dueTests(setup, observeReadingSamples(aquariumId, timeZoneId).first(), today, addedDays(aquariumId, timeZoneId)),
         pending,
         today,
     )

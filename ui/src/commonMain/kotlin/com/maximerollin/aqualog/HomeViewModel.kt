@@ -110,6 +110,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -562,8 +563,14 @@ class HomeViewModel(
                         }
                         launch {
                             // The setup re-emits when a rhythm changes, so this also follows the rhythm settings.
-                            aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).collect { samples ->
-                                mutableUiState.update { it.copy(dueTests = dueTests(setup, samples, today())) }
+                            // An added inhabitant also schedules follow-up tests, so its history is followed too.
+                            combine(
+                                aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()),
+                                aquariumRepository.observeInhabitantHistory(setup.aquarium.id),
+                            ) { samples, _ -> samples }.collect { samples ->
+                                val added = runCatching { aquariumRepository.addedDays(setup.aquarium.id, currentTimeZoneId()) }
+                                    .getOrDefault(emptyList())
+                                mutableUiState.update { it.copy(dueTests = dueTests(setup, samples, today(), added)) }
                                 refreshWeekly()
                                 // A failing read or alarm must not end this collector: the home keeps following the readings.
                                 runCatching {
@@ -1595,7 +1602,12 @@ class HomeViewModel(
         val setup = mutableUiState.value.setup ?: return
         viewModelScope.launch {
             runCatching {
-                dueTests(setup, aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).first(), day)
+                dueTests(
+                    setup,
+                    aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).first(),
+                    day,
+                    aquariumRepository.addedDays(setup.aquarium.id, currentTimeZoneId()),
+                )
             }.onSuccess { due ->
                 mutableUiState.update { if (it.setup?.aquarium?.id == setup.aquarium.id) it.copy(dueTests = due) else it }
             }

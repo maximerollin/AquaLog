@@ -40,7 +40,7 @@ fun weeklySummary(history: AquariumHistory, weekStart: TaskDate, series: Int): W
         tasksCompleted = history.occurrences.count { it.resolution == TaskResolution.COMPLETED && it.resolvedDay() in week },
         series = series,
         changes = changes,
-        nextWeek = dueTests(history.setup, history.samples, TaskDate.fromEpochDay(start + 13)),
+        nextWeek = dueTests(history.setup, history.samples, TaskDate.fromEpochDay(start + 13), history.inhabitantAddedDays),
     )
 }
 

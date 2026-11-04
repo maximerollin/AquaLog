@@ -13,6 +13,8 @@ data class AquariumHistory(
     val setup: AquariumSetup,
     val samples: List<ReadingSample>,
     val occurrences: List<TaskOccurrence>,
+    /** See [inhabitantAddedDays]; they feed the follow-up tests of the Sunday summary. */
+    val inhabitantAddedDays: List<TaskDate> = emptyList(),
 )
 
 private enum class Outcome { MET, OPEN, MISSED }
