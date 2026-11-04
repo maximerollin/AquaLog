@@ -1,0 +1,128 @@
+[
+  {
+    "id": "neon",
+    "wikidata": "Q131431",
+    "scientificName": "Paracheirodon innesi",
+    "names": {
+      "fr": "Néon bleu",
+      "en": "Neon tetra",
+      "de": "Neonsalmler",
+      "it": "Paracheirodon innesi",
+      "es": "Paracheirodon innesi"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 5.0,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 20.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 1.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 54,
+    "adultSizeCm": 3.5,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4281239262,
+    "drawing": null
+  },
+  {
+    "id": "corydoras-panda",
+    "wikidata": "Q387817",
+    "scientificName": "Corydoras panda",
+    "names": {
+      "fr": "Corydoras panda",
+      "en": "Panda corydoras",
+      "de": "Panda-Panzerwels",
+      "it": "Corydoras panda",
+      "es": "Corydoras panda"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "BOTTOM",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 20.0,
+      "max": 25.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 54,
+    "adultSizeCm": 5.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "BOTTOM",
+    "color": 4291344282,
+    "drawing": null
+  },
+  {
+    "id": "red-cherry",
+    "wikidata": "Q119167133",
+    "scientificName": "Neocaridina davidi",
+    "names": {
+      "fr": "Neocaridina davidi",
+      "en": "Red cherry shrimp",
+      "de": "Neocaridina davidi",
+      "it": "Neocaridina davidi",
+      "es": "Neocaridina davidi"
+    },
+    "kind": "SHRIMP",
+    "family": "SHRIMP",
+    "motion": "CRAWL",
+    "ph": {
+      "min": 6.5,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 18.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 4.0,
+      "max": 14.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 10,
+    "adultSizeCm": 3.0,
+    "minGroup": 10,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 2,
+    "zone": "BOTTOM",
+    "color": 4292227121,
+    "drawing": null
+  }
+]
