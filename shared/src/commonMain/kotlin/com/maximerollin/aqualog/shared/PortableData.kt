@@ -422,7 +422,8 @@ private fun PortableDataDocument.validationProblem(): PortableImportProblem? {
     return null
 }
 
-private const val MAX_PHOTO_BYTES = 2_000_000
+// The aquarium-photos bucket limit: a bigger photo would be rejected by Storage on every sync.
+private const val MAX_PHOTO_BYTES = 1_048_576
 
 @OptIn(ExperimentalEncodingApi::class)
 private fun String.isReadableJpeg(): Boolean {

@@ -605,7 +605,7 @@ class PortableDataServiceTest {
         val broken = listOf(
             "not base64 !!",
             Base64.Default.encode(byteArrayOf(1, 2, 3, 4)),
-            Base64.Default.encode(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte()) + ByteArray(2_000_000)),
+            Base64.Default.encode(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte()) + ByteArray(1_048_574)),
         )
 
         broken.forEach { photo ->
