@@ -236,26 +236,116 @@ class SyncRecoveryTest {
     }
 
     @Test
-    fun `markPhotoSynced clears the mark and enqueues an Aquarium upsert`() = runTest {
+    fun `markPhotoSynced marks the upload and enqueues the Aquarium upsert carrying photo_id`() = runTest {
         val local = photoFixture()
         val aquarium = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
         val first = local.repository.setAquariumPhoto(aquarium.id, byteArrayOf(1)).photoId
+        assertEquals(emptySet(), local.repository.pendingSyncBatch().photoAquariumIds)
         local.repository.acknowledgeSyncOperations(local.repository.pendingSyncBatch().operations.map(SyncOperation::id))
 
         local.repository.markPhotoSynced(aquarium.id, first)
 
         assertEquals(emptyList(), local.repository.pendingPhotoSyncs())
-        val operation = local.repository.pendingSyncBatch().operations.single()
+        val batch = local.repository.pendingSyncBatch()
+        val operation = batch.operations.single()
         assertEquals(SyncEntityType.AQUARIUM to SyncOperationKind.UPSERT, operation.entityType to operation.kind)
         assertEquals(aquarium.id, operation.entityId)
+        assertEquals(setOf(aquarium.id), batch.photoAquariumIds)
 
         val second = local.repository.setAquariumPhoto(aquarium.id, byteArrayOf(2)).photoId
+        // The newer photo is not uploaded yet: its row is back to pending and photo_id is not pushed.
+        assertEquals(listOf(PendingPhotoSync(aquarium.id, second)), local.repository.pendingPhotoSyncs())
+        assertEquals(emptySet(), local.repository.pendingSyncBatch().photoAquariumIds)
         local.repository.acknowledgeSyncOperations(local.repository.pendingSyncBatch().operations.map(SyncOperation::id))
 
         local.repository.markPhotoSynced(aquarium.id, first)
 
         assertEquals(listOf(PendingPhotoSync(aquarium.id, second)), local.repository.pendingPhotoSyncs())
         assertEquals(emptyList(), local.repository.pendingSyncBatch().operations)
+        local.database.close()
+    }
+
+    @Test
+    fun `photoIdsPushed drops only the rows still marked uploaded`() = runTest {
+        val local = photoFixture()
+        val pushed = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
+        val changed = local.repository.createAquarium("Cuisine", 40.0, VolumeUnit.LITERS, access = AquariumCreationAccess.PRO)
+        val pushedPhoto = local.repository.setAquariumPhoto(pushed.id, byteArrayOf(1)).photoId
+        val changedPhoto = local.repository.setAquariumPhoto(changed.id, byteArrayOf(2)).photoId
+        local.repository.markPhotoSynced(pushed.id, pushedPhoto)
+        local.repository.markPhotoSynced(changed.id, changedPhoto)
+        val newer = local.repository.setAquariumPhoto(changed.id, byteArrayOf(3)).photoId
+
+        local.repository.photoIdsPushed(setOf(pushed.id, changed.id))
+
+        assertEquals(listOf(PendingPhotoSync(changed.id, newer)), local.repository.pendingPhotoSyncs())
+        assertEquals(emptySet(), local.repository.pendingSyncBatch().photoAquariumIds)
+        // The pushed photo is no longer protected: the server value now applies.
+        local.repository.commitRemoteCopy(
+            InitialAccountCopy(
+                listOf(pushed.copy(photoId = null)),
+                emptyList(), emptyList(), emptyList(), emptyList(), emptyList(),
+            ),
+            local.repository.pendingSyncBatch().operations.map(SyncOperation::id),
+        )
+        assertEquals(null, local.repository.loadSetup(pushed.id)?.aquarium?.photoId)
+        local.database.close()
+    }
+
+    @Test
+    fun `an uploaded photo is still protected from a remote copy until its upsert is pushed`() = runTest {
+        val local = photoFixture()
+        val aquarium = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
+        val photoId = local.repository.setAquariumPhoto(aquarium.id, byteArrayOf(1)).photoId
+        local.repository.markPhotoSynced(aquarium.id, photoId)
+
+        local.repository.commitRemoteCopy(
+            InitialAccountCopy(
+                listOf(aquarium.copy(photoId = null)),
+                emptyList(), emptyList(), emptyList(), emptyList(), emptyList(),
+            ),
+            local.repository.pendingSyncBatch().operations.map(SyncOperation::id),
+        )
+
+        assertEquals(photoId, local.repository.loadSetup(aquarium.id)?.aquarium?.photoId)
+        local.database.close()
+    }
+
+    @Test
+    fun `a synced photo survives the initial copy into another account`() = runTest {
+        val local = photoFixture()
+        val aquarium = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
+        val synced = local.repository.createAquarium("Cuisine", 40.0, VolumeUnit.LITERS, access = AquariumCreationAccess.PRO)
+        val photoId = assertNotNull(local.repository.setAquariumPhoto(aquarium.id, byteArrayOf(1)).photoId)
+        val uploadedId = assertNotNull(local.repository.setAquariumPhoto(synced.id, byteArrayOf(2)).photoId)
+        local.repository.markPhotoSynced(aquarium.id, photoId)
+        local.repository.photoIdsPushed(setOf(aquarium.id))
+        // Signed out between the upload and the push of its photo_id.
+        local.repository.markPhotoSynced(synced.id, uploadedId)
+        local.repository.detachAccountKeepingLocalCopy()
+
+        local.repository.beginAccountMigration("account-2", null)
+        local.repository.completeAccountMigration("account-2")
+        local.repository.commitRemoteSnapshot(
+            RemoteSyncSnapshot(
+                InitialAccountCopy(
+                    listOf(aquarium.copy(photoId = null), synced.copy(photoId = null)),
+                    emptyList(), emptyList(), emptyList(), emptyList(), emptyList(),
+                ),
+                listOf(
+                    RemoteEntityVersion(SyncEntityType.AQUARIUM, aquarium.id, 1L, 1L, null),
+                    RemoteEntityVersion(SyncEntityType.AQUARIUM, synced.id, 1L, 1L, null),
+                ),
+            ),
+            emptyList(),
+        )
+
+        assertEquals(photoId, local.repository.loadSetup(aquarium.id)?.aquarium?.photoId)
+        assertEquals(setOf(photoId, uploadedId), local.repository.aquariumPhotoIds())
+        assertEquals(
+            setOf(PendingPhotoSync(aquarium.id, photoId), PendingPhotoSync(synced.id, uploadedId)),
+            local.repository.pendingPhotoSyncs().toSet(),
+        )
         local.database.close()
     }
 

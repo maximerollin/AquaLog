@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 16,
-    "identityHash": "d3fd6bb2453f75f852430825bc47284e",
+    "identityHash": "0ba87eedd09af0e45819eada0a0891e5",
     "entities": [
       {
         "tableName": "aquariums",
@@ -812,13 +812,20 @@
       },
       {
         "tableName": "aquarium_photo_syncs",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`aquariumId` TEXT NOT NULL, PRIMARY KEY(`aquariumId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`aquariumId` TEXT NOT NULL, `uploaded` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`aquariumId`))",
         "fields": [
           {
             "fieldPath": "aquariumId",
             "columnName": "aquariumId",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "uploaded",
+            "columnName": "uploaded",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
           }
         ],
         "primaryKey": {
@@ -831,7 +838,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd3fd6bb2453f75f852430825bc47284e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0ba87eedd09af0e45819eada0a0891e5')"
     ]
   }
 }

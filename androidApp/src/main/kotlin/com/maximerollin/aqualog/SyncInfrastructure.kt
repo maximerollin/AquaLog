@@ -99,7 +99,7 @@ class SupabaseSyncBackend(
             .forEach { operation ->
                 val payload = when (operation.entityType) {
                     SyncEntityType.AQUARIUM -> batch.aquariums.firstOrNull { it.id == operation.entityId }
-                        ?.toRemoteJson(session.accountId)
+                        ?.toRemoteJson(session.accountId, withPhotoId = operation.entityId in batch.photoAquariumIds)
                     SyncEntityType.PARAMETER_DEFINITION -> batch.parameterDefinitions
                         .firstOrNull { it.id == operation.entityId }?.toRemoteJson(session.accountId)
                     SyncEntityType.SESSION -> batch.sessions.firstOrNull { it.id == operation.entityId }
@@ -427,11 +427,12 @@ object AndroidSyncScheduler {
     }
 }
 
-private fun Aquarium.toRemoteJson(accountId: String) = JSONObject()
+/** Without [withPhotoId] the key is absent and the server keeps its photo_id: a stale one never overrides it. */
+internal fun Aquarium.toRemoteJson(accountId: String, withPhotoId: Boolean) = JSONObject()
     .put("id", id).put("account_id", accountId).put("name", name).put("volume", volume)
     .put("volume_unit", volumeUnit.storageValue).put("created_at_epoch_millis", createdAtEpochMillis)
     .put("profile", profile.storageValue).put("is_archived", isArchived)
-    .putNullable("photo_id", photoId)
+    .apply { if (withPhotoId) putNullable("photo_id", photoId) }
 
 private fun ParameterDefinition.toRemoteJson(accountId: String) = JSONObject()
     .put("id", id).put("account_id", accountId).put("aquarium_id", aquariumId)

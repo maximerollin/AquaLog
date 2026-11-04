@@ -1,10 +1,15 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.SyncEntityType
 import com.maximerollin.aqualog.shared.SyncOperation
 import com.maximerollin.aqualog.shared.SyncOperationKind
+import com.maximerollin.aqualog.shared.VolumeUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import org.json.JSONObject
 
 // Bodies below were observed on the local Supabase stack (storage-api answers HTTP 400 to these).
 class SupabaseStorageTest {
@@ -61,5 +66,16 @@ class SupabaseStorageTest {
             operation(3, SyncEntityType.SESSION, "s"),
         )
         assertEquals(listOf(3L, 2L), operations.inPushOrder().map { it.id })
+    }
+
+    @Test
+    fun `only the upsert that follows a photo upload carries photo_id`() {
+        val aquarium = Aquarium("a", "Bac", 60.0, VolumeUnit.LITERS, 0L, photoId = "p1")
+
+        assertFalse(aquarium.toRemoteJson("account", withPhotoId = false).has("photo_id"))
+        assertEquals("p1", aquarium.toRemoteJson("account", withPhotoId = true).getString("photo_id"))
+        val removed = aquarium.copy(photoId = null).toRemoteJson("account", withPhotoId = true)
+        assertTrue(removed.has("photo_id"))
+        assertEquals(JSONObject.NULL, removed.get("photo_id"))
     }
 }

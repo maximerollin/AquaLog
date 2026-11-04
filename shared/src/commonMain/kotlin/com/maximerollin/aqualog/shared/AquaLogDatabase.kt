@@ -35,9 +35,15 @@ data class AquariumEntity(
     val photoId: String? = null,
 )
 
-/** One row per Aquarium whose photo must be pushed (or whose remote photo must be deleted); kept after the photo is removed. */
+/**
+ * One row per Aquarium whose photo must be pushed (or whose remote photo must be deleted); kept after the photo is removed.
+ * [uploaded]: the file is done, only the Aquarium upsert carrying photo_id remains to be pushed.
+ */
 @Entity(tableName = "aquarium_photo_syncs")
-data class AquariumPhotoSyncEntity(@PrimaryKey val aquariumId: String)
+data class AquariumPhotoSyncEntity(
+    @PrimaryKey val aquariumId: String,
+    @ColumnInfo(defaultValue = "0") val uploaded: Boolean = false,
+)
 
 @Entity(tableName = "selected_aquarium")
 data class SelectedAquariumEntity(
@@ -306,12 +312,38 @@ abstract class AquariumDao {
     @Query("DELETE FROM aquarium_photo_syncs WHERE aquariumId = :aquariumId")
     protected abstract suspend fun deletePhotoSync(aquariumId: String)
 
+    @Query("UPDATE aquarium_photo_syncs SET uploaded = 1 WHERE aquariumId = :aquariumId")
+    protected abstract suspend fun markPhotoUploaded(aquariumId: String)
+
     // LEFT JOIN: a mark whose Aquarium is gone still deletes the remote photo.
     @Query(
         "SELECT s.aquariumId AS aquariumId, a.photoId AS photoId FROM aquarium_photo_syncs s " +
-            "LEFT JOIN aquariums a ON a.id = s.aquariumId",
+            "LEFT JOIN aquariums a ON a.id = s.aquariumId WHERE s.uploaded = 0",
     )
     abstract suspend fun pendingPhotoSyncs(): List<PendingPhotoSync>
+
+    @Query("SELECT aquariumId FROM aquarium_photo_syncs WHERE uploaded = 1")
+    abstract suspend fun uploadedPhotoAquariumIds(): List<String>
+
+    /** A row reset to uploaded = 0 by a newer photo change stays: that photo is not uploaded yet. */
+    @Query("DELETE FROM aquarium_photo_syncs WHERE uploaded = 1 AND aquariumId IN (:aquariumIds)")
+    abstract suspend fun deleteUploadedPhotoSyncs(aquariumIds: List<String>)
+
+    @Query("UPDATE aquarium_photo_syncs SET uploaded = 0")
+    protected abstract suspend fun resetPhotoUploads()
+
+    @Query(
+        "INSERT OR IGNORE INTO aquarium_photo_syncs (aquariumId, uploaded) " +
+            "SELECT id, 0 FROM aquariums WHERE photoId IS NOT NULL",
+    )
+    protected abstract suspend fun insertPendingPhotoSyncs()
+
+    /** Every local photo must reach the account it is about to be copied to, even one uploaded to an earlier account. */
+    @Transaction
+    open suspend fun markAllPhotosPending() {
+        resetPhotoUploads()
+        insertPendingPhotoSyncs()
+    }
 
     @Query("SELECT photoId FROM aquariums WHERE photoId IS NOT NULL")
     abstract suspend fun photoIds(): List<String>
@@ -376,8 +408,13 @@ abstract class AquariumDao {
     open suspend fun markPhotoSynced(aquariumId: String, photoId: String?, syncOperation: SyncOperationEntity) {
         val aquarium = getSetup(aquariumId)?.aquarium
         if (aquarium?.photoId != photoId) return
-        deletePhotoSync(aquariumId)
-        if (aquarium != null) insertSyncOperations(listOf(syncOperation))
+        if (aquarium == null) {
+            deletePhotoSync(aquariumId)
+            return
+        }
+        // The row stays until the upsert below is pushed: only that upsert carries photo_id.
+        markPhotoUploaded(aquariumId)
+        insertSyncOperations(listOf(syncOperation))
     }
 
     @Transaction
@@ -1365,6 +1402,7 @@ private val MIGRATION_14_15 = Migration(14, 15) { connection ->
 private val MIGRATION_15_16 = Migration(15, 16) { connection ->
     connection.execSQL("ALTER TABLE aquariums ADD COLUMN photoId TEXT")
     connection.execSQL(
-        "CREATE TABLE IF NOT EXISTS aquarium_photo_syncs (aquariumId TEXT NOT NULL, PRIMARY KEY(aquariumId))",
+        "CREATE TABLE IF NOT EXISTS aquarium_photo_syncs " +
+            "(aquariumId TEXT NOT NULL, uploaded INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(aquariumId))",
     )
 }

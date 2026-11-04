@@ -450,6 +450,32 @@ class SyncCoordinatorTest {
     }
 
     @Test
+    fun `photo_id is pushed only after the upload, then the row is dropped`() = runTest {
+        val photos = PhotoFixture(pending = listOf(PendingPhotoSync("aq", "p1")))
+        photos.store.write("p1", byteArrayOf(1))
+
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        assertEquals(
+            listOf("upload(aq,[1])", "push", "commit", "retainOnly([])", "push(photo [aq])", "commit", "retainOnly([])"),
+            photos.calls,
+        )
+        assertEquals(listOf(setOf("aq")), photos.local.pushedPhotoIds.filter(Set<String>::isNotEmpty))
+        assertEquals(emptySet(), photos.local.uploaded)
+    }
+
+    @Test
+    fun `a failed push keeps the uploaded row for the retry`() = runTest {
+        val photos = PhotoFixture()
+        photos.local.uploaded += "aq"
+        photos.backend.pushFailure = SyncNetworkException("offline")
+
+        assertIs<SyncRunResult.Retry>(photos.coordinator().runOnce())
+
+        assertEquals(setOf("aq"), photos.local.uploaded)
+    }
+
+    @Test
     fun `removed photo deletes the remote object`() = runTest {
         val photos = PhotoFixture(pending = listOf(PendingPhotoSync("aq", null)))
 
@@ -513,7 +539,11 @@ class SyncCoordinatorTest {
         assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
 
         assertEquals(
-            listOf("push", "commit", "retainOnly([p3])", "upload(aq,[3])", "push", "commit", "retainOnly([p3])"),
+            listOf(
+                "push", "commit", "retainOnly([p3])",
+                "upload(aq,[3])", "push", "commit", "retainOnly([p3])",
+                "push(photo [aq])", "commit", "retainOnly([p3])",
+            ),
             photos.calls,
         )
     }
@@ -554,7 +584,7 @@ class SyncCoordinatorTest {
         val calls = mutableListOf<String>()
         val local = PhotoLocalData(calls, pending, localPhotoIds)
         val store = MemoryPhotoStore(calls)
-        private val backend = PhotoBackend(calls, remote, uploadFailure, downloadFailure)
+        val backend = PhotoBackend(calls, remote, uploadFailure, downloadFailure)
 
         fun coordinator() = SyncCoordinator(
             local,
@@ -570,13 +600,17 @@ class SyncCoordinatorTest {
         private val photoIds: Set<String>,
     ) : SyncLocalDataSource {
         val marked = mutableListOf<Pair<String, String?>>()
+        val uploaded = mutableSetOf<String>()
+        val pushedPhotoIds = mutableListOf<Set<String>>()
         var onCommit: suspend () -> Unit = {}
         // One pending operation, so a push happens on the first iteration.
         var operations = listOf(aquariumOperation(1))
 
         override fun observeSyncState() = flowOf(SyncState(SyncStatus.SYNCED, 0))
-        override suspend fun pendingSyncBatch(limit: Int, eligibleAtEpochMillis: Long) =
-            PendingSyncBatch(operations, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        override suspend fun pendingSyncBatch(limit: Int, eligibleAtEpochMillis: Long) = PendingSyncBatch(
+            operations, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(),
+            photoAquariumIds = uploaded.toSet(),
+        )
         override suspend fun nextRetryAtEpochMillis(): Long? = null
         override suspend fun syncAttemptCount() = 0
         override suspend fun syncGeneration() = 0L
@@ -589,7 +623,7 @@ class SyncCoordinatorTest {
         ) = true
         override suspend fun retrySyncNow() = Unit
         override suspend fun commitRemoteCopy(copy: InitialAccountCopy, acknowledgedOperationIds: List<Long>) {
-            operations = emptyList()
+            operations = operations.filterNot { it.id in acknowledgedOperationIds }
             onCommit()
             calls += "commit"
         }
@@ -597,6 +631,12 @@ class SyncCoordinatorTest {
         override suspend fun markPhotoSynced(aquariumId: String, photoId: String?) {
             marked += aquariumId to photoId
             pendingPhotos = pendingPhotos.filterNot { it.aquariumId == aquariumId }
+            uploaded += aquariumId
+            operations = operations + aquariumOperation(100L + marked.size)
+        }
+        override suspend fun photoIdsPushed(aquariumIds: Set<String>) {
+            pushedPhotoIds += aquariumIds
+            uploaded -= aquariumIds
         }
         override suspend fun aquariumPhotoIds() = photoIds
     }
@@ -625,8 +665,10 @@ class SyncCoordinatorTest {
         private val uploadFailure: Exception?,
         private val downloadFailure: Exception?,
     ) : SyncBackend {
+        var pushFailure: Exception? = null
         override suspend fun push(session: SyncSession, batch: PendingSyncBatch) {
-            calls += "push"
+            pushFailure?.let { throw it }
+            calls += if (batch.photoAquariumIds.isEmpty()) "push" else "push(photo ${batch.photoAquariumIds})"
         }
         override suspend fun pull(session: SyncSession) =
             InitialAccountCopy(remote, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())

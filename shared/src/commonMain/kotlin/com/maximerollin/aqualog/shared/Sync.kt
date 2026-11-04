@@ -70,6 +70,8 @@ data class PendingSyncBatch(
     val measurements: List<Measurement>,
     val maintenanceActions: List<MaintenanceAction>,
     val events: List<SessionEvent>,
+    /** Aquariums whose photo is uploaded: only their upserts carry photo_id, so a stale one never wins remotely. */
+    val photoAquariumIds: Set<String> = emptySet(),
 )
 
 data class RemoteEntityVersion(
@@ -108,6 +110,8 @@ interface SyncLocalDataSource {
     }
     suspend fun pendingPhotoSyncs(): List<PendingPhotoSync> = emptyList()
     suspend fun markPhotoSynced(aquariumId: String, photoId: String?) {}
+    /** The upserts carrying photo_id of [aquariumIds] reached the server. */
+    suspend fun photoIdsPushed(aquariumIds: Set<String>) {}
     suspend fun aquariumPhotoIds(): Set<String> = emptySet()
 }
 
@@ -191,7 +195,12 @@ class SyncCoordinator(
                     return SyncRunResult.SignedOut
                 }
                 if (batch.operations.isNotEmpty()) {
-                    if (runGuarded(lease) { backend.push(session, batch) } is AccountLeaseResult.Revoked) {
+                    if (
+                        runGuarded(lease) {
+                            backend.push(session, batch)
+                            localData.photoIdsPushed(batch.photoAquariumIds)
+                        } is AccountLeaseResult.Revoked
+                    ) {
                         return SyncRunResult.SignedOut
                     }
                 }

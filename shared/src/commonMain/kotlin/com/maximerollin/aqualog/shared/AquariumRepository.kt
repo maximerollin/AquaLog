@@ -716,6 +716,8 @@ class RoomAquariumRepository(
     }
 
     override suspend fun completeAccountMigration(accountId: String) {
+        // The account may lack photos synced to an earlier one (sign-out keeping the copy): the next sync uploads them.
+        aquariumDao.markAllPhotosPending()
         accountDao.upsert(
             AccountStateEntity(
                 accountId = accountId,
@@ -782,10 +784,13 @@ class RoomAquariumRepository(
         val operations = syncDao.pendingEligible(limit, eligibleAtEpochMillis).map(SyncOperationEntity::toDomain)
         val idsByType = operations.groupBy(SyncOperation::entityType)
             .mapValues { (_, values) -> values.map(SyncOperation::entityId).toSet() }
+        val aquariums = aquariumDao.allAquariums().filter { it.id in idsByType[SyncEntityType.AQUARIUM].orEmpty() }
+            .map(AquariumEntity::toDomain)
+        // Read after the Aquariums: a photo changed in between has its row back at uploaded = 0, so it is left out.
+        val photoAquariumIds = aquariumDao.uploadedPhotoAquariumIds().toSet()
         return PendingSyncBatch(
             operations = operations,
-            aquariums = aquariumDao.allAquariums().filter { it.id in idsByType[SyncEntityType.AQUARIUM].orEmpty() }
-                .map(AquariumEntity::toDomain),
+            aquariums = aquariums,
             parameterDefinitions = aquariumDao.allParameterDefinitions()
                 .filter { it.id in idsByType[SyncEntityType.PARAMETER_DEFINITION].orEmpty() }
                 .map(ParameterDefinitionEntity::toDomain),
@@ -798,6 +803,7 @@ class RoomAquariumRepository(
                 .map(MaintenanceActionEntity::toDomain),
             events = sessionDao.allEvents().filter { it.id in idsByType[SyncEntityType.EVENT].orEmpty() }
                 .map(SessionEventEntity::toDomain),
+            photoAquariumIds = aquariums.map(Aquarium::id).filter { it in photoAquariumIds }.toSet(),
         )
     }
 
@@ -873,6 +879,10 @@ class RoomAquariumRepository(
 
     override suspend fun markPhotoSynced(aquariumId: String, photoId: String?) =
         aquariumDao.markPhotoSynced(aquariumId, photoId, newSyncOperation(SyncEntityType.AQUARIUM, aquariumId))
+
+    override suspend fun photoIdsPushed(aquariumIds: Set<String>) {
+        if (aquariumIds.isNotEmpty()) aquariumDao.deleteUploadedPhotoSyncs(aquariumIds.toList())
+    }
 
     override suspend fun aquariumPhotoIds(): Set<String> = aquariumDao.photoIds().toSet()
 
