@@ -463,4 +463,5 @@
     <string name="photo_remove_confirm">Rimuovi</string>
     <string name="photo_unreadable">Questa immagine non può essere letta.</string>
     <string name="photo_save_failed">Impossibile salvare la foto. Riprova.</string>
+    <string name="photo_processing">Preparazione della foto…</string>
 </resources>

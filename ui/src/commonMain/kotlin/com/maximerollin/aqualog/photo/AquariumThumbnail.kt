@@ -17,9 +17,16 @@ import com.maximerollin.aqualog.shared.Aquarium
 
 /** The Aquarium's photo, or its still mini-scene when it has none (or the photo cannot be read). */
 @Composable
-fun AquariumThumbnail(aquarium: Aquarium, size: Dp, loadPhoto: suspend (String) -> ImageBitmap?, modifier: Modifier = Modifier) {
+fun AquariumThumbnail(
+    aquarium: Aquarium,
+    size: Dp,
+    loadPhoto: suspend (String) -> ImageBitmap?,
+    modifier: Modifier = Modifier,
+    cachedPhoto: (String) -> ImageBitmap? = { null },
+) {
     val photoId = aquarium.photoId
-    val photo by produceState<ImageBitmap?>(null, photoId) { value = photoId?.let { loadPhoto(it) } }
+    // A photo already decoded shows on the first frame, without the mini-scene flashing first.
+    val photo by produceState(photoId?.let(cachedPhoto), photoId) { if (value == null) value = photoId?.let { loadPhoto(it) } }
     val clipped = modifier.size(size).clip(RoundedCornerShape(12.dp))
     photo?.let { Image(it, contentDescription = null, modifier = clipped, contentScale = ContentScale.Crop) }
         ?: TankScene(aquarium, clipped, animate = false)

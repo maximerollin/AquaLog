@@ -48,6 +48,14 @@ import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.maximerollin.aqualog.home.TankScene
+import com.maximerollin.aqualog.shared.Aquarium
 import org.jetbrains.compose.resources.stringResource
 
 /** Every step of the photo flow started from the home vignette; problems show in [snackbar]. */
@@ -56,20 +64,23 @@ fun PhotoSheets(state: HomeUiState, viewModel: HomeViewModel, snackbar: Snackbar
     // Launchers stay composed whatever the step, so a result coming back from the picker always has a receiver.
     val scope = rememberCoroutineScope()
     val gallery = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
-        scope.launch(Dispatchers.IO) { viewModel.onPhotoPicked(file?.photoBytes()) }
+        scope.launch { viewModel.onPhotoPicked(withContext(Dispatchers.IO) { file?.photoBytes() }) }
     }
     val camera = rememberCameraLauncher(viewModel::onPhotoPicked)
     val photo = state.photo
-    val name = (photo as? PhotoUiState.Targeted)?.let { target -> state.aquariums.firstOrNull { it.id == target.aquariumId }?.name }.orEmpty()
+    val aquarium = (photo as? PhotoUiState.Targeted)?.let { target -> state.aquariums.firstOrNull { it.id == target.aquariumId } }
     when (photo) {
         PhotoUiState.None -> Unit
         is PhotoUiState.SourceSheet -> SourceSheet(camera, gallery::launch, viewModel::cancelPhoto)
         is PhotoUiState.Processing -> Dialog(onDismissRequest = {}, DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)) {
-            CircularProgressIndicator()
+            val label = stringResource(Res.string.photo_processing)
+            CircularProgressIndicator(Modifier.semantics { contentDescription = label })
         }
         is PhotoUiState.Crop -> PhotoCropScreen(photo.image, viewModel::confirmCrop, viewModel::cancelPhoto)
-        is PhotoUiState.Viewer -> PhotoViewer(
-            name, photo.photoId, viewModel::aquariumPhoto, viewModel::choosePhotoSource, viewModel::askRemovePhoto, viewModel::cancelPhoto,
+        // The view model ends the flow when its Aquarium is gone; until that lands there is nothing to show.
+        is PhotoUiState.Viewer -> if (aquarium != null) PhotoViewer(
+            aquarium, photo.photoId, viewModel::cachedAquariumPhoto, viewModel::aquariumPhoto,
+            viewModel::choosePhotoSource, viewModel::askRemovePhoto, viewModel::cancelPhoto,
         )
         is PhotoUiState.ConfirmRemove -> AlertDialog(
             onDismissRequest = viewModel::cancelPhoto,
@@ -81,8 +92,9 @@ fun PhotoSheets(state: HomeUiState, viewModel: HomeViewModel, snackbar: Snackbar
         is PhotoUiState.Unreadable, is PhotoUiState.SaveFailed -> {
             val message = stringResource(if (photo is PhotoUiState.Unreadable) Res.string.photo_unreadable else Res.string.photo_save_failed)
             LaunchedEffect(photo) {
-                snackbar.showSnackbar(message)
+                // Back to None first, so the message is not shown again when the home comes back.
                 viewModel.cancelPhoto()
+                scope.launch { snackbar.showSnackbar(message) }
             }
         }
     }
@@ -109,14 +121,15 @@ private fun SheetRow(label: String, onClick: () -> Unit) {
 
 @Composable
 private fun PhotoViewer(
-    aquariumName: String,
+    aquarium: Aquarium,
     photoId: String,
+    cachedPhoto: (String) -> ImageBitmap?,
     loadPhoto: suspend (String) -> ImageBitmap?,
     onChange: () -> Unit,
     onRemove: () -> Unit,
     onClose: () -> Unit,
 ) {
-    val image by produceState<ImageBitmap?>(null, photoId) { value = loadPhoto(photoId) }
+    val image by produceState(cachedPhoto(photoId), photoId) { if (value == null) value = loadPhoto(photoId) }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().safeDrawingPadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -127,11 +140,11 @@ private fun PhotoViewer(
                     image?.let {
                         Image(
                             it,
-                            contentDescription = stringResource(Res.string.photo_of, aquariumName),
+                            contentDescription = stringResource(Res.string.photo_of, aquarium.name),
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Fit,
                         )
-                    }
+                    } ?: TankScene(aquarium, Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)), animate = false)
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(onClick = onRemove, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {

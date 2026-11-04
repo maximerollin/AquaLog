@@ -169,7 +169,9 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             contentPadding = PaddingValues(bottom = 88.dp),
         ) {
             item {
-                AquariumScene(state.aquariums, aquarium, pager, viewModel::openPhoto, viewModel::aquariumPhoto) { showPicker = true }
+                AquariumScene(state.aquariums, aquarium, pager, viewModel::openPhoto, viewModel::aquariumPhoto, viewModel::cachedAquariumPhoto) {
+                    showPicker = true
+                }
             }
             item {
                 StatusLine(
@@ -348,16 +350,17 @@ private fun AquariumScene(
     pager: PagerState,
     onOpenPhoto: () -> Unit,
     loadPhoto: suspend (String) -> ImageBitmap?,
+    cachedPhoto: (String) -> ImageBitmap?,
     onChangeAquarium: () -> Unit,
 ) {
     if (aquariums.size < 2) {
-        SceneHeader(current, onChangeAquarium, onOpenPhoto, loadPhoto)
+        SceneHeader(current, onChangeAquarium, onOpenPhoto, loadPhoto, cachedPhoto)
         return
     }
     Column {
         HorizontalPager(pager, Modifier.testTag("home-pager")) { page ->
             // The photo flow acts on the current Aquarium: a page still sliding in has no live vignette.
-            SceneHeader(aquariums[page], onChangeAquarium, onOpenPhoto.takeIf { aquariums[page].id == current.id }, loadPhoto)
+            SceneHeader(aquariums[page], onChangeAquarium, onOpenPhoto.takeIf { aquariums[page].id == current.id }, loadPhoto, cachedPhoto)
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center) {
             repeat(aquariums.size) { index ->
@@ -452,6 +455,7 @@ private fun SceneHeader(
     onChangeAquarium: () -> Unit,
     onOpenPhoto: (() -> Unit)?,
     loadPhoto: suspend (String) -> ImageBitmap?,
+    cachedPhoto: (String) -> ImageBitmap?,
 ) {
     // No age: createdAtEpochMillis is when the Aquarium was added to the app, not when it was set up.
     val type = stringResource(
@@ -485,12 +489,13 @@ private fun SceneHeader(
         val photoLabel = stringResource(if (aquarium.photoId != null) Res.string.photo_open else Res.string.photo_add, aquarium.name)
         Box(
             Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 12.dp).size(48.dp)
-                .clickable(enabled = onOpenPhoto != null, onClickLabel = photoLabel, role = Role.Button) { onOpenPhoto?.invoke() }
+                // The label is the node's name only, so TalkBack reads it once.
+                .clickable(enabled = onOpenPhoto != null, role = Role.Button) { onOpenPhoto?.invoke() }
                 .semantics { contentDescription = photoLabel },
             contentAlignment = Alignment.Center,
         ) {
             Box {
-                AquariumThumbnail(aquarium, 44.dp, loadPhoto, Modifier.border(1.5.dp, Color.White, RoundedCornerShape(12.dp)))
+                AquariumThumbnail(aquarium, 44.dp, loadPhoto, Modifier.border(1.5.dp, Color.White, RoundedCornerShape(12.dp)), cachedPhoto)
                 if (aquarium.photoId == null) {
                     Box(
                         Modifier.align(Alignment.BottomEnd).offset(4.dp, 4.dp).size(22.dp)

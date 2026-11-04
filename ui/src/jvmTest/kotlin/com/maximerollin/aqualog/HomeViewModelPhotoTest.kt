@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.maximerollin.aqualog.photo.centredCrop
 import com.maximerollin.aqualog.shared.Aquarium
@@ -41,14 +42,14 @@ class HomeViewModelPhotoTest {
     @AfterTest
     fun resetMain() = Dispatchers.resetMain()
 
-    private class Fixture {
+    private class Fixture(withPhotoStore: Boolean = true) {
         private val directory = Files.createTempDirectory("aqualog-photo-vm")
         private val database = createAquaLogDatabase(createJvmDatabaseBuilder(directory.resolve("aqualog.db").toString()))
         val repository = RoomAquariumRepository(
             database,
             { UUID.randomUUID().toString() },
             { 1_700_000_000_000L },
-            photoStore = DirectoryAquariumPhotoStore(directory.resolve("photos").toFile()),
+            photoStore = DirectoryAquariumPhotoStore(directory.resolve("photos").toFile()).takeIf { withPhotoStore },
         )
         lateinit var viewModel: HomeViewModel
 
@@ -58,8 +59,8 @@ class HomeViewModelPhotoTest {
         ).aquarium
 
         /** Starts the view model and waits until it shows [shown]. */
-        suspend fun start(shown: Aquarium): HomeViewModel {
-            viewModel = HomeViewModel(repository)
+        suspend fun start(shown: Aquarium, savedState: SavedStateHandle = SavedStateHandle()): HomeViewModel {
+            viewModel = HomeViewModel(repository, savedStateHandle = savedState)
             awaitShown(shown.id)
             return viewModel
         }
@@ -187,6 +188,69 @@ class HomeViewModelPhotoTest {
         assertEquals(400 to 300, image.width to image.height)
         assertTrue(viewModel.aquariumPhoto(photoId) === image, "decoded once, then cached")
         assertNull(viewModel.aquariumPhoto("missing"))
+        fixture.close()
+    }
+
+    @Test
+    fun `a picker result after cancelPhoto is ignored`() = runTest {
+        val fixture = Fixture()
+        val salon = fixture.aquarium("Salon")
+        val viewModel = fixture.start(salon)
+        viewModel.openPhoto()
+        viewModel.cancelPhoto()
+
+        viewModel.onPhotoPicked(jpeg())
+
+        assertEquals(PhotoUiState.None, viewModel.uiState.value.photo)
+        fixture.close()
+    }
+
+    @Test
+    fun `a save failure ends in SaveFailed`() = runTest {
+        val fixture = Fixture(withPhotoStore = false)
+        val salon = fixture.aquarium("Salon")
+        val viewModel = fixture.start(salon)
+        viewModel.openPhoto()
+        viewModel.onPhotoPicked(jpeg())
+        val crop = assertIs<PhotoUiState.Crop>(fixture.awaitPhoto { it !is PhotoUiState.Processing })
+
+        viewModel.confirmCrop(centredCrop(crop.image.width, crop.image.height))
+
+        assertEquals(PhotoUiState.SaveFailed(salon.id), fixture.awaitPhoto { it is PhotoUiState.SaveFailed })
+        fixture.close()
+    }
+
+    @Test
+    fun `a picker result reaches the crop after the process was recreated`() = runTest {
+        val fixture = Fixture()
+        val salon = fixture.aquarium("Salon")
+        val savedState = SavedStateHandle()
+        fixture.start(salon, savedState).openPhoto()
+        assertEquals(salon.id, savedState.get<String>(HomeViewModel.photoTargetKey))
+        fixture.viewModel.viewModelScope.cancel()
+
+        val restoredState = SavedStateHandle(mapOf(HomeViewModel.photoTargetKey to salon.id))
+        val restored = fixture.start(salon, restoredState)
+        restored.onPhotoPicked(jpeg())
+
+        val crop = assertIs<PhotoUiState.Crop>(fixture.awaitPhoto { it !is PhotoUiState.Processing && it !is PhotoUiState.SourceSheet })
+        assertEquals(salon.id, crop.aquariumId)
+        assertNull(restoredState.get<String>(HomeViewModel.photoTargetKey), "only the source sheet is kept")
+        fixture.close()
+    }
+
+    @Test
+    fun `an Aquarium that leaves the list ends its photo flow`() = runTest {
+        val fixture = Fixture()
+        val salon = fixture.aquarium("Salon")
+        fixture.aquarium("Bureau")
+        fixture.repository.selectAquarium(salon.id)
+        val viewModel = fixture.start(salon)
+        viewModel.openPhoto()
+
+        fixture.repository.archiveAquarium(salon.id)
+
+        assertEquals(PhotoUiState.None, fixture.awaitPhoto { it == PhotoUiState.None })
         fixture.close()
     }
 }

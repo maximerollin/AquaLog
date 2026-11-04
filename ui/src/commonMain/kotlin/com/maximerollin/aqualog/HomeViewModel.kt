@@ -503,6 +503,8 @@ class HomeViewModel(
             rapidSession = savedStateHandle
                 .get<RapidSessionDraftSnapshot>(rapidSessionDraftKey)
                 ?.toUiState(),
+            // The picker or camera may outlive the process: its result then lands in a new view model.
+            photo = savedStateHandle.get<String>(photoTargetKey)?.let(PhotoUiState::SourceSheet) ?: PhotoUiState.None,
         ),
     )
     val uiState: StateFlow<HomeUiState> = mutableUiState.asStateFlow()
@@ -510,13 +512,20 @@ class HomeViewModel(
     private var trendsJob: Job? = null
     private var weeklyJob: Job? = null
     private var lastObservedSyncState: SyncState? = null
+    // shortcut: thumbnails keep the full-size (≤ 1200 px) bitmap, fine for a few Aquariums; add a downscaled copy if lists grow.
     private val photoCache = ConcurrentHashMap<String, ImageBitmap>()
 
     init {
         taskReminderScheduler.scheduleWeeklySummary()
         viewModelScope.launch {
             aquariumRepository.observeAquariums().collect { aquariums ->
-                mutableUiState.update { it.copy(aquariums = aquariums) }
+                mutableUiState.update { state ->
+                    // An Aquarium that is gone (archived, removed by a sync) ends its photo flow.
+                    val target = (state.photo as? PhotoUiState.Targeted)?.aquariumId
+                    val photo = if (target != null && aquariums.none { it.id == target }) PhotoUiState.None else state.photo
+                    state.copy(aquariums = aquariums, photo = photo)
+                }
+                savePhotoTarget()
                 photoCache.keys.retainAll(aquariums.mapNotNull { it.photoId }.toSet())
             }
         }
@@ -1529,7 +1538,7 @@ class HomeViewModel(
     /** Decoded once per photo id; only the photos of current Aquariums stay in memory. */
     @OptIn(ExperimentalResourceApi::class)
     suspend fun aquariumPhoto(photoId: String): ImageBitmap? {
-        photoCache[photoId]?.let { return it }
+        cachedAquariumPhoto(photoId)?.let { return it }
         val bytes = aquariumRepository.readAquariumPhoto(photoId) ?: return null
         val image = withContext(Dispatchers.Default) { runCatching { bytes.decodeToImageBitmap() }.getOrNull() } ?: return null
         if (mutableUiState.value.aquariums.any { it.photoId == photoId }) photoCache[photoId] = image
@@ -1545,11 +1554,24 @@ class HomeViewModel(
         }
     }
 
-    private fun setPhoto(photo: PhotoUiState) = mutableUiState.update { it.copy(photo = photo) }
+    /** The photo already decoded, without waiting: lets a thumbnail show it on its first frame. */
+    fun cachedAquariumPhoto(photoId: String): ImageBitmap? = photoCache[photoId]
+
+    private fun setPhoto(photo: PhotoUiState) {
+        mutableUiState.update { it.copy(photo = photo) }
+        savePhotoTarget()
+    }
 
     // Leaves the state alone when the user moved on (cancelled, or started over) while the work ran.
-    private fun replacePhoto(expected: PhotoUiState, next: PhotoUiState) =
+    private fun replacePhoto(expected: PhotoUiState, next: PhotoUiState) {
         mutableUiState.update { if (it.photo == expected) it.copy(photo = next) else it }
+        savePhotoTarget()
+    }
+
+    /** Only the source sheet waits on another app (picker, camera); every other step is dropped with the process. */
+    private fun savePhotoTarget() {
+        savedStateHandle[photoTargetKey] = (mutableUiState.value.photo as? PhotoUiState.SourceSheet)?.aquariumId
+    }
 
     fun openRhythmSettings() = mutableUiState.update { it.copy(showRhythmSettings = true) }
 
@@ -2459,6 +2481,7 @@ class HomeViewModel(
 
     companion object {
         private const val rapidSessionDraftKey = "rapid-session-draft"
+        internal const val photoTargetKey = "photo-target"
 
         fun factory(
             repository: AquariumRepository,
