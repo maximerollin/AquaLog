@@ -226,6 +226,7 @@ class PortableDataService(
                 photoStore?.retainOnly(writtenIds.values.toSet())
                 PortableImportResult.Imported(PortableDuplicateStrategy.REPLACE_LOCAL_PORTABLE_DATA)
             } else {
+                deleteWritten(writtenIds.values)
                 PortableImportResult.Rejected(
                     reason = PortableImportRejection.ACCOUNT_LINKED,
                     problem = PortableImportProblem.ACCOUNT_LINKED,
@@ -425,6 +426,7 @@ private const val MAX_PHOTO_BYTES = 2_000_000
 
 @OptIn(ExperimentalEncodingApi::class)
 private fun String.isReadableJpeg(): Boolean {
+    if (length > MAX_PHOTO_BYTES * 4 / 3 + 4) return false
     val bytes = runCatching { Base64.Default.decode(this) }.getOrNull() ?: return false
     return bytes.size <= MAX_PHOTO_BYTES && bytes.size >= 3 &&
         bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() && bytes[2] == 0xFF.toByte()

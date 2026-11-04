@@ -540,6 +540,45 @@ class PortableDataServiceTest {
     }
 
     @Test
+    fun `a failed database write deletes the photo files just written`() = runTest {
+        val source = portableFixture()
+        val incoming = source.repository.createPortableAquarium("Incoming", 80.0)
+        source.repository.setAquariumPhoto(incoming.id, JPEG)
+        val payload = source.service.export()
+        val existing = portableFixture()
+        val local = existing.repository.createPortableAquarium("Local", 45.0)
+        existing.repository.setAquariumPhoto(local.id, JPEG)
+        val filesBefore = existing.photoFiles()
+        existing.rejectAquariumInserts()
+
+        val rejected = assertIs<PortableImportResult.Rejected>(existing.service.importData(payload))
+
+        assertEquals(PortableImportProblem.DATABASE_WRITE_FAILED, rejected.problem)
+        assertEquals(1, filesBefore.size)
+        assertEquals(filesBefore, existing.photoFiles())
+        source.close()
+        existing.close()
+    }
+
+    @Test
+    fun `a linked account rejects the import and deletes the photo files just written`() = runTest {
+        val source = portableFixture()
+        val incoming = source.repository.createPortableAquarium("Incoming", 80.0)
+        source.repository.setAquariumPhoto(incoming.id, JPEG)
+        val payload = source.service.export()
+        val existing = portableFixture()
+        existing.repository.beginAccountMigration("account-1", "owner@example.com")
+        val filesBefore = existing.photoFiles()
+
+        val rejected = assertIs<PortableImportResult.Rejected>(existing.service.importData(payload))
+
+        assertEquals(PortableImportRejection.ACCOUNT_LINKED, rejected.reason)
+        assertEquals(filesBefore, existing.photoFiles())
+        source.close()
+        existing.close()
+    }
+
+    @Test
     fun `a file without photoJpegBase64 imports without a photo`() = runTest {
         val source = portableFixture()
         source.repository.createPortableAquarium("Salon", 120.0)
@@ -591,8 +630,10 @@ class PortableDataServiceTest {
             .toString()
         val database = createAquaLogDatabase(createJvmDatabaseBuilder(path))
         val ids = generateSequence(1) { it + 1 }.map { "portable-id-$it" }.iterator()
-        val store = DirectoryAquariumPhotoStore(Files.createTempDirectory("aqualog-portable-photos").toFile())
+        val photoDirectory = Files.createTempDirectory("aqualog-portable-photos").toFile()
+        val store = DirectoryAquariumPhotoStore(photoDirectory)
         return PortableFixture(
+            photoDirectory = photoDirectory,
             database = database,
             repository = RoomAquariumRepository(database, ids::next, { 1_800_000_000_000L }, photoStore = store),
             service = PortableDataService(database, store),
@@ -609,6 +650,7 @@ class PortableDataServiceTest {
         ).aquarium
 
     private class PortableFixture(
+        val photoDirectory: java.io.File,
         val database: AquaLogDatabase,
         val repository: RoomAquariumRepository,
         val service: PortableDataService,
@@ -628,6 +670,8 @@ class PortableDataServiceTest {
                 }
             }
         }
+
+        fun photoFiles(): Set<String> = photoDirectory.list().orEmpty().toSet()
 
         suspend fun photoSyncRows(): List<String> = database.useConnection(false) { connection ->
             connection.usePrepared("SELECT aquariumId FROM aquarium_photo_syncs") { statement ->
