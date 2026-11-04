@@ -95,7 +95,16 @@ import com.maximerollin.aqualog.shared.assistance.weeklySummary
 import com.maximerollin.aqualog.shared.assistance.ReadingSample
 import com.maximerollin.aqualog.shared.assistance.checkMeasurement
 import com.maximerollin.aqualog.shared.evaluateMeasurement
+import androidx.compose.ui.graphics.ImageBitmap
+import com.maximerollin.aqualog.photo.SquareCrop
+import com.maximerollin.aqualog.photo.encodeAquariumPhoto
+import com.maximerollin.aqualog.photo.normalizePhoto
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.decodeToImageBitmap
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -391,7 +400,23 @@ data class HomeUiState(
     val portableData: PortableDataUiState = PortableDataUiState(),
     val feedback: FeedbackUiState = FeedbackUiState(),
     val accountSettings: AccountSettingsUiState = AccountSettingsUiState(),
+    val photo: PhotoUiState = PhotoUiState.None,
 )
+
+/** The photo flow of one Aquarium: the one shown when [HomeViewModel.openPhoto] was called, even if the home moves on. */
+sealed interface PhotoUiState {
+    data object None : PhotoUiState
+
+    sealed interface Targeted : PhotoUiState { val aquariumId: String }
+
+    data class SourceSheet(override val aquariumId: String) : Targeted
+    data class Processing(override val aquariumId: String) : Targeted
+    data class Crop(override val aquariumId: String, val image: ImageBitmap) : Targeted
+    data class Viewer(override val aquariumId: String, val photoId: String) : Targeted
+    data class ConfirmRemove(override val aquariumId: String) : Targeted
+    data class Unreadable(override val aquariumId: String) : Targeted
+    data class SaveFailed(override val aquariumId: String) : Targeted
+}
 
 data class AquariumEditorUiState(
     val aquariumId: String? = null,
@@ -485,12 +510,14 @@ class HomeViewModel(
     private var trendsJob: Job? = null
     private var weeklyJob: Job? = null
     private var lastObservedSyncState: SyncState? = null
+    private val photoCache = ConcurrentHashMap<String, ImageBitmap>()
 
     init {
         taskReminderScheduler.scheduleWeeklySummary()
         viewModelScope.launch {
             aquariumRepository.observeAquariums().collect { aquariums ->
                 mutableUiState.update { it.copy(aquariums = aquariums) }
+                photoCache.keys.retainAll(aquariums.mapNotNull { it.photoId }.toSet())
             }
         }
         viewModelScope.launch {
@@ -1457,6 +1484,72 @@ class HomeViewModel(
         val sessionId = state.latestSession?.session?.id ?: return
         viewModelScope.launch { aquariumRepository.dismiss(aquariumId, CYCLED_PROPOSAL, sessionId) }
     }
+
+    /** The vignette: the viewer when the shown Aquarium has a photo, otherwise the choice of a source. */
+    fun openPhoto() {
+        val aquarium = mutableUiState.value.setup?.aquarium ?: return
+        val photoId = aquarium.photoId
+        setPhoto(if (photoId != null) PhotoUiState.Viewer(aquarium.id, photoId) else PhotoUiState.SourceSheet(aquarium.id))
+    }
+
+    fun choosePhotoSource() {
+        val target = (mutableUiState.value.photo as? PhotoUiState.Targeted)?.aquariumId ?: return
+        setPhoto(PhotoUiState.SourceSheet(target))
+    }
+
+    /** null when the picker or the camera was cancelled. */
+    fun onPhotoPicked(bytes: ByteArray?) {
+        val target = (mutableUiState.value.photo as? PhotoUiState.SourceSheet)?.aquariumId ?: return
+        if (bytes == null) return setPhoto(PhotoUiState.None)
+        val processing = PhotoUiState.Processing(target)
+        setPhoto(processing)
+        viewModelScope.launch {
+            val image = normalizePhoto(bytes)
+            replacePhoto(processing, image?.let { PhotoUiState.Crop(target, it) } ?: PhotoUiState.Unreadable(target))
+        }
+    }
+
+    fun confirmCrop(crop: SquareCrop) {
+        val current = mutableUiState.value.photo as? PhotoUiState.Crop ?: return
+        saveAquariumPhoto(current.aquariumId) { encodeAquariumPhoto(current.image, crop) }
+    }
+
+    fun cancelPhoto() = setPhoto(PhotoUiState.None)
+
+    fun askRemovePhoto() {
+        val viewer = mutableUiState.value.photo as? PhotoUiState.Viewer ?: return
+        setPhoto(PhotoUiState.ConfirmRemove(viewer.aquariumId))
+    }
+
+    fun removePhoto() {
+        val confirm = mutableUiState.value.photo as? PhotoUiState.ConfirmRemove ?: return
+        saveAquariumPhoto(confirm.aquariumId) { null }
+    }
+
+    /** Decoded once per photo id; only the photos of current Aquariums stay in memory. */
+    @OptIn(ExperimentalResourceApi::class)
+    suspend fun aquariumPhoto(photoId: String): ImageBitmap? {
+        photoCache[photoId]?.let { return it }
+        val bytes = aquariumRepository.readAquariumPhoto(photoId) ?: return null
+        val image = withContext(Dispatchers.Default) { runCatching { bytes.decodeToImageBitmap() }.getOrNull() } ?: return null
+        if (mutableUiState.value.aquariums.any { it.photoId == photoId }) photoCache[photoId] = image
+        return image
+    }
+
+    private fun saveAquariumPhoto(aquariumId: String, jpeg: suspend () -> ByteArray?) {
+        val processing = PhotoUiState.Processing(aquariumId)
+        setPhoto(processing)
+        viewModelScope.launch {
+            val saved = runCatching { aquariumRepository.setAquariumPhoto(aquariumId, jpeg()) }
+            replacePhoto(processing, if (saved.isSuccess) PhotoUiState.None else PhotoUiState.SaveFailed(aquariumId))
+        }
+    }
+
+    private fun setPhoto(photo: PhotoUiState) = mutableUiState.update { it.copy(photo = photo) }
+
+    // Leaves the state alone when the user moved on (cancelled, or started over) while the work ran.
+    private fun replacePhoto(expected: PhotoUiState, next: PhotoUiState) =
+        mutableUiState.update { if (it.photo == expected) it.copy(photo = next) else it }
 
     fun openRhythmSettings() = mutableUiState.update { it.copy(showRhythmSettings = true) }
 

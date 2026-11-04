@@ -451,4 +451,16 @@
     <string name="photo_crop_title">Recadrer la photo</string>
     <string name="photo_crop_confirm">Utiliser cette photo</string>
     <string name="photo_crop_preview">Aperçu du recadrage</string>
+    <string name="photo_open">Voir la photo de %1$s</string>
+    <string name="photo_add">Ajouter une photo de %1$s</string>
+    <string name="photo_take">Prendre une photo</string>
+    <string name="photo_choose">Choisir dans la galerie</string>
+    <string name="photo_of">Photo de %1$s</string>
+    <string name="photo_change">Changer la photo</string>
+    <string name="photo_remove">Retirer la photo</string>
+    <string name="photo_remove_title">Retirer la photo ?</string>
+    <string name="photo_remove_text">La photo sera supprimée de cet appareil et de votre compte.</string>
+    <string name="photo_remove_confirm">Retirer</string>
+    <string name="photo_unreadable">Cette image ne peut pas être lue.</string>
+    <string name="photo_save_failed">La photo n'a pas pu être enregistrée. Réessayez.</string>
 </resources>

@@ -451,4 +451,16 @@
     <string name="photo_crop_title">Foto zuschneiden</string>
     <string name="photo_crop_confirm">Dieses Foto verwenden</string>
     <string name="photo_crop_preview">Vorschau des Zuschnitts</string>
+    <string name="photo_open">Foto von %1$s ansehen</string>
+    <string name="photo_add">Foto von %1$s hinzufügen</string>
+    <string name="photo_take">Foto aufnehmen</string>
+    <string name="photo_choose">Aus der Galerie wählen</string>
+    <string name="photo_of">Foto von %1$s</string>
+    <string name="photo_change">Foto ändern</string>
+    <string name="photo_remove">Foto entfernen</string>
+    <string name="photo_remove_title">Foto entfernen?</string>
+    <string name="photo_remove_text">Das Foto wird von diesem Gerät und aus Ihrem Konto gelöscht.</string>
+    <string name="photo_remove_confirm">Entfernen</string>
+    <string name="photo_unreadable">Dieses Bild kann nicht gelesen werden.</string>
+    <string name="photo_save_failed">Das Foto konnte nicht gespeichert werden. Versuchen Sie es erneut.</string>
 </resources>

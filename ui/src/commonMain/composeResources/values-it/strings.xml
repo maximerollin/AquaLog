@@ -451,4 +451,16 @@
     <string name="photo_crop_title">Ritaglia la foto</string>
     <string name="photo_crop_confirm">Usa questa foto</string>
     <string name="photo_crop_preview">Anteprima del ritaglio</string>
+    <string name="photo_open">Vedi la foto di %1$s</string>
+    <string name="photo_add">Aggiungi una foto di %1$s</string>
+    <string name="photo_take">Scatta una foto</string>
+    <string name="photo_choose">Scegli dalla galleria</string>
+    <string name="photo_of">Foto di %1$s</string>
+    <string name="photo_change">Cambia la foto</string>
+    <string name="photo_remove">Rimuovi la foto</string>
+    <string name="photo_remove_title">Rimuovere la foto?</string>
+    <string name="photo_remove_text">La foto verrà eliminata da questo dispositivo e dal tuo account.</string>
+    <string name="photo_remove_confirm">Rimuovi</string>
+    <string name="photo_unreadable">Questa immagine non può essere letta.</string>
+    <string name="photo_save_failed">Impossibile salvare la foto. Riprova.</string>
 </resources>

@@ -451,4 +451,16 @@
     <string name="photo_crop_title">Crop the photo</string>
     <string name="photo_crop_confirm">Use this photo</string>
     <string name="photo_crop_preview">Crop preview</string>
+    <string name="photo_open">View the photo of %1$s</string>
+    <string name="photo_add">Add a photo of %1$s</string>
+    <string name="photo_take">Take a photo</string>
+    <string name="photo_choose">Choose from the gallery</string>
+    <string name="photo_of">Photo of %1$s</string>
+    <string name="photo_change">Change the photo</string>
+    <string name="photo_remove">Remove the photo</string>
+    <string name="photo_remove_title">Remove the photo?</string>
+    <string name="photo_remove_text">The photo will be deleted from this device and from your account.</string>
+    <string name="photo_remove_confirm">Remove</string>
+    <string name="photo_unreadable">This image cannot be read.</string>
+    <string name="photo_save_failed">The photo could not be saved. Try again.</string>
 </resources>
