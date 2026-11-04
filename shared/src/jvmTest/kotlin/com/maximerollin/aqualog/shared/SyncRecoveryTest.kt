@@ -6,6 +6,7 @@ import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 
 class SyncRecoveryTest {
     @Test
@@ -189,6 +190,102 @@ class SyncRecoveryTest {
         assertEquals(null, local.repository.observeCurrentAquarium().first())
         assertEquals(SyncStatus.SYNCED, local.repository.observeSyncState().first().status)
         local.database.close()
+    }
+
+    @Test
+    fun `a pending local photo survives a remote copy`() = runTest {
+        val local = photoFixture()
+        val aquarium = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
+        val photoId = local.repository.setAquariumPhoto(aquarium.id, byteArrayOf(1)).photoId
+
+        local.repository.commitRemoteCopy(
+            InitialAccountCopy(
+                listOf(aquarium.copy(name = "Remote", photoId = null)),
+                emptyList(), emptyList(), emptyList(), emptyList(), emptyList(),
+            ),
+            local.repository.pendingSyncBatch().operations.map(SyncOperation::id),
+        )
+
+        val stored = local.repository.loadSetup(aquarium.id)?.aquarium
+        assertEquals("Remote", stored?.name)
+        assertEquals(photoId, stored?.photoId)
+        local.database.close()
+    }
+
+    @Test
+    fun `a pending local photo survives a remote snapshot`() = runTest {
+        val local = photoFixture()
+        val aquarium = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
+        val photoId = local.repository.setAquariumPhoto(aquarium.id, byteArrayOf(1)).photoId
+
+        local.repository.commitRemoteSnapshot(
+            RemoteSyncSnapshot(
+                InitialAccountCopy(
+                    listOf(aquarium.copy(name = "Remote", photoId = null)),
+                    emptyList(), emptyList(), emptyList(), emptyList(), emptyList(),
+                ),
+                listOf(RemoteEntityVersion(SyncEntityType.AQUARIUM, aquarium.id, 5L, 1L, null)),
+            ),
+            local.repository.pendingSyncBatch().operations.map(SyncOperation::id),
+        )
+
+        val stored = local.repository.loadSetup(aquarium.id)?.aquarium
+        assertEquals("Remote", stored?.name)
+        assertEquals(photoId, stored?.photoId)
+        local.database.close()
+    }
+
+    @Test
+    fun `markPhotoSynced clears the mark and enqueues an Aquarium upsert`() = runTest {
+        val local = photoFixture()
+        val aquarium = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
+        val first = local.repository.setAquariumPhoto(aquarium.id, byteArrayOf(1)).photoId
+        local.repository.acknowledgeSyncOperations(local.repository.pendingSyncBatch().operations.map(SyncOperation::id))
+
+        local.repository.markPhotoSynced(aquarium.id, first)
+
+        assertEquals(emptyList(), local.repository.pendingPhotoSyncs())
+        val operation = local.repository.pendingSyncBatch().operations.single()
+        assertEquals(SyncEntityType.AQUARIUM to SyncOperationKind.UPSERT, operation.entityType to operation.kind)
+        assertEquals(aquarium.id, operation.entityId)
+
+        val second = local.repository.setAquariumPhoto(aquarium.id, byteArrayOf(2)).photoId
+        local.repository.acknowledgeSyncOperations(local.repository.pendingSyncBatch().operations.map(SyncOperation::id))
+
+        local.repository.markPhotoSynced(aquarium.id, first)
+
+        assertEquals(listOf(PendingPhotoSync(aquarium.id, second)), local.repository.pendingPhotoSyncs())
+        assertEquals(emptyList(), local.repository.pendingSyncBatch().operations)
+        local.database.close()
+    }
+
+    @Test
+    fun `pendingPhotoSyncs lists the Aquarium with its current photoId`() = runTest {
+        val local = photoFixture()
+        val aquarium = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
+        val photoId = assertNotNull(local.repository.setAquariumPhoto(aquarium.id, byteArrayOf(1)).photoId)
+
+        assertEquals(listOf(PendingPhotoSync(aquarium.id, photoId)), local.repository.pendingPhotoSyncs())
+        assertEquals(setOf(photoId), local.repository.aquariumPhotoIds())
+
+        local.repository.setAquariumPhoto(aquarium.id, null)
+
+        assertEquals(listOf(PendingPhotoSync(aquarium.id, null)), local.repository.pendingPhotoSyncs())
+        assertEquals(emptySet(), local.repository.aquariumPhotoIds())
+        local.database.close()
+    }
+
+    private fun photoFixture(): Fixture {
+        val directory = Files.createTempDirectory("aqualog-sync-photos")
+        val database = createAquaLogDatabase(createJvmDatabaseBuilder(directory.resolve("aqualog.db").toString()))
+        val ids = generateSequence(1) { it + 1 }.map { "photo-id-$it" }.iterator()
+        return Fixture(
+            database,
+            RoomAquariumRepository(
+                database, ids::next, { 100L },
+                photoStore = DirectoryAquariumPhotoStore(directory.resolve("photos").toFile()),
+            ),
+        )
     }
 
     private fun fixture(path: String, now: () -> Long): Fixture {

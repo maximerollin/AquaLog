@@ -303,6 +303,19 @@ abstract class AquariumDao {
     @Upsert
     protected abstract suspend fun upsertPhotoSync(sync: AquariumPhotoSyncEntity)
 
+    @Query("DELETE FROM aquarium_photo_syncs WHERE aquariumId = :aquariumId")
+    protected abstract suspend fun deletePhotoSync(aquariumId: String)
+
+    // LEFT JOIN: a mark whose Aquarium is gone still deletes the remote photo.
+    @Query(
+        "SELECT s.aquariumId AS aquariumId, a.photoId AS photoId FROM aquarium_photo_syncs s " +
+            "LEFT JOIN aquariums a ON a.id = s.aquariumId",
+    )
+    abstract suspend fun pendingPhotoSyncs(): List<PendingPhotoSync>
+
+    @Query("SELECT photoId FROM aquariums WHERE photoId IS NOT NULL")
+    abstract suspend fun photoIds(): List<String>
+
     @Upsert
     protected abstract suspend fun upsertSelection(selection: SelectedAquariumEntity)
 
@@ -356,6 +369,15 @@ abstract class AquariumDao {
         upsertAquarium(aquarium)
         upsertPhotoSync(AquariumPhotoSyncEntity(aquarium.id))
         insertSyncOperations(listOf(syncOperation))
+    }
+
+    /** Does nothing when the photo changed since [photoId] was read: that newer change syncs itself. */
+    @Transaction
+    open suspend fun markPhotoSynced(aquariumId: String, photoId: String?, syncOperation: SyncOperationEntity) {
+        val aquarium = getSetup(aquariumId)?.aquarium
+        if (aquarium?.photoId != photoId) return
+        deletePhotoSync(aquariumId)
+        if (aquarium != null) insertSyncOperations(listOf(syncOperation))
     }
 
     @Transaction
@@ -933,6 +955,15 @@ abstract class SyncDao {
     @Upsert
     protected abstract suspend fun upsertAquariums(aquariums: List<AquariumEntity>)
 
+    @Query("SELECT a.* FROM aquariums a INNER JOIN aquarium_photo_syncs s ON s.aquariumId = a.id")
+    protected abstract suspend fun aquariumsWithPendingPhoto(): List<AquariumEntity>
+
+    /** A local photo not yet pushed wins over the remote photoId. */
+    private suspend fun keepingPendingPhotos(aquariums: List<AquariumEntity>): List<AquariumEntity> {
+        val pending = aquariumsWithPendingPhoto().associate { it.id to it.photoId }
+        return aquariums.map { if (it.id in pending) it.copy(photoId = pending[it.id]) else it }
+    }
+
     @Upsert
     protected abstract suspend fun upsertParameterDefinitions(parameters: List<ParameterDefinitionEntity>)
 
@@ -1017,7 +1048,7 @@ abstract class SyncDao {
         val cleanMeasurements = measurements.filterNot { SyncEntityType.MEASUREMENT.storageValue to it.id in dirty }
         val cleanActions = actions.filterNot { SyncEntityType.MAINTENANCE_ACTION.storageValue to it.id in dirty }
         val cleanEvents = events.filterNot { SyncEntityType.EVENT.storageValue to it.id in dirty }
-        if (cleanAquariums.isNotEmpty()) upsertAquariums(cleanAquariums)
+        if (cleanAquariums.isNotEmpty()) upsertAquariums(keepingPendingPhotos(cleanAquariums))
         if (cleanParameters.isNotEmpty()) upsertParameterDefinitions(cleanParameters)
         if (cleanSessions.isNotEmpty()) {
             insertRemoteSessions(cleanSessions)
@@ -1060,7 +1091,7 @@ abstract class SyncDao {
         fun accepted(type: SyncEntityType, id: String) = type.storageValue to id in acceptedLive
 
         aquariums.filter { accepted(SyncEntityType.AQUARIUM, it.id) }
-            .takeIf(List<AquariumEntity>::isNotEmpty)?.let { upsertAquariums(it) }
+            .takeIf(List<AquariumEntity>::isNotEmpty)?.let { upsertAquariums(keepingPendingPhotos(it)) }
         parameters.filter { accepted(SyncEntityType.PARAMETER_DEFINITION, it.id) }
             .takeIf(List<ParameterDefinitionEntity>::isNotEmpty)?.let { upsertParameterDefinitions(it) }
         sessions.filter { accepted(SyncEntityType.SESSION, it.id) }.forEach { session ->

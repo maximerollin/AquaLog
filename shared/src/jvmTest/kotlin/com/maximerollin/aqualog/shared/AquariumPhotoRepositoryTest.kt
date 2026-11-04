@@ -5,6 +5,8 @@ import kotlinx.coroutines.test.runTest
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -95,6 +97,26 @@ class AquariumPhotoRepositoryTest {
 
         assertNotNull(store.read("a"))
         assertNull(store.read("b"))
+    }
+
+    @Test
+    fun `the store rejects photo ids that are not safe file names`() = runTest {
+        assertNull(store.read("../aqualog"))
+        assertFailsWith<IllegalArgumentException> { store.write("../escape", bytes) }
+        assertFailsWith<IllegalArgumentException> { store.delete("a/b") }
+        assertFailsWith<IllegalArgumentException> { store.write("", bytes) }
+        assertFailsWith<IllegalArgumentException> { store.write("a".repeat(65), bytes) }
+    }
+
+    @Test
+    fun `retainOnly removes stray temporary files`() = runTest {
+        store.write("a", bytes)
+        val stray = directory.resolve("photos").resolve("b.jpg.tmp").toFile().apply { writeBytes(bytes) }
+
+        store.retainOnly(setOf("a"))
+
+        assertFalse(stray.exists())
+        assertNotNull(store.read("a"))
     }
 
     private fun photoSyncRows(): List<String> {

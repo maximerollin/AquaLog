@@ -84,6 +84,9 @@ data class RemoteSyncSnapshot(
     val versions: List<RemoteEntityVersion>,
 )
 
+/** An Aquarium whose photo must be uploaded, or whose remote photo must be deleted when [photoId] is null. */
+data class PendingPhotoSync(val aquariumId: String, val photoId: String?)
+
 interface SyncLocalDataSource {
     fun observeSyncState(): kotlinx.coroutines.flow.Flow<SyncState>
     suspend fun pendingSyncBatch(limit: Int = 100, eligibleAtEpochMillis: Long = Long.MAX_VALUE): PendingSyncBatch
@@ -102,6 +105,9 @@ interface SyncLocalDataSource {
     suspend fun commitRemoteSnapshot(snapshot: RemoteSyncSnapshot, acknowledgedOperationIds: List<Long>) {
         commitRemoteCopy(snapshot.copy, acknowledgedOperationIds)
     }
+    suspend fun pendingPhotoSyncs(): List<PendingPhotoSync> = emptyList()
+    suspend fun markPhotoSynced(aquariumId: String, photoId: String?) {}
+    suspend fun aquariumPhotoIds(): Set<String> = emptySet()
 }
 
 data class SyncSession(
@@ -122,6 +128,9 @@ interface SyncBackend {
         copy = pull(session),
         versions = emptyList(),
     )
+    suspend fun uploadAquariumPhoto(session: SyncSession, aquariumId: String, jpeg: ByteArray) {}
+    suspend fun deleteAquariumPhoto(session: SyncSession, aquariumId: String) {}
+    suspend fun downloadAquariumPhoto(session: SyncSession, aquariumId: String): ByteArray? = null
 }
 
 class SyncNetworkException(message: String? = null) : Exception(message)
@@ -151,6 +160,7 @@ class SyncCoordinator(
     private val retryPolicy: SyncRetryPolicy = SyncRetryPolicy(),
     private val currentTimeMillis: (() -> Long)? = null,
     private val operationGate: AccountOperationGate? = null,
+    private val photoStore: AquariumPhotoStore? = null,
 ) {
     suspend fun runOnce(): SyncRunResult {
         val lease = operationGate?.acquire()
@@ -162,6 +172,7 @@ class SyncCoordinator(
         val generation = localData.syncGeneration()
         var refreshed = false
         var hasPulled = false
+        var photosPushed = false
         var downloadedSessionCount = 0
         repeat(MAX_BATCHES_PER_RUN) {
             val now = currentTimeMillis?.invoke()
@@ -175,6 +186,12 @@ class SyncCoordinator(
                 return SyncRunResult.Synchronized(downloadedSessionCount)
             }
             try {
+                if (!photosPushed) {
+                    if (runGuarded(lease) { pushPhotos(session) } is AccountLeaseResult.Revoked) {
+                        return SyncRunResult.SignedOut
+                    }
+                    photosPushed = true
+                }
                 if (batch.operations.isNotEmpty()) {
                     if (runGuarded(lease) { backend.push(session, batch) } is AccountLeaseResult.Revoked) {
                         return SyncRunResult.SignedOut
@@ -184,9 +201,13 @@ class SyncCoordinator(
                     is AccountLeaseResult.Completed -> pulled.value
                     AccountLeaseResult.Revoked -> return SyncRunResult.SignedOut
                 }
+                if (runGuarded(lease) { downloadMissingPhotos(session, remoteSnapshot) } is AccountLeaseResult.Revoked) {
+                    return SyncRunResult.SignedOut
+                }
                 if (
                     runGuarded(lease) {
                         localData.commitRemoteSnapshot(remoteSnapshot, batch.operations.map(SyncOperation::id))
+                        photoStore?.retainOnly(localData.aquariumPhotoIds())
                     } is AccountLeaseResult.Revoked
                 ) {
                     return SyncRunResult.SignedOut
@@ -229,6 +250,34 @@ class SyncCoordinator(
             }
         }
         return SyncRunResult.Retry(retryPolicy.delayMillis(1))
+    }
+
+    /** Uploads (or remotely deletes) each changed photo before the Aquarium that references it is pushed. */
+    private suspend fun pushPhotos(session: SyncSession) {
+        val store = photoStore ?: return
+        localData.pendingPhotoSyncs().forEach { pending ->
+            val photoId = pending.photoId
+            if (photoId == null) {
+                backend.deleteAquariumPhoto(session, pending.aquariumId)
+            } else {
+                store.read(photoId)?.let { backend.uploadAquariumPhoto(session, pending.aquariumId, it) }
+            }
+            localData.markPhotoSynced(pending.aquariumId, photoId)
+        }
+    }
+
+    /** A photo that fails to download stays missing and is tried again by the next sync. */
+    private suspend fun downloadMissingPhotos(session: SyncSession, snapshot: RemoteSyncSnapshot) {
+        val store = photoStore ?: return
+        snapshot.copy.aquariums.forEach { aquarium ->
+            val photoId = aquarium.photoId?.takeIf(::isSafePhotoId) ?: return@forEach
+            if (store.read(photoId) != null) return@forEach
+            try {
+                backend.downloadAquariumPhoto(session, aquarium.id)?.let { store.write(photoId, it) }
+            } catch (_: SyncNetworkException) {
+            } catch (_: SyncServerException) {
+            }
+        }
     }
 
     private suspend fun <T> runGuarded(

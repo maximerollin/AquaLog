@@ -264,7 +264,8 @@ class RoomAquariumRepository(
             newPhotoId?.let { store.delete(it) }
             throw failure
         }
-        existing.photoId?.let { store.delete(it) }
+        // A remote photoId may be unsafe; it was never stored, so there is no file to delete.
+        existing.photoId?.takeIf(::isSafePhotoId)?.let { store.delete(it) }
         onSyncNeeded()
         return updated.toDomain()
     }
@@ -867,6 +868,13 @@ class RoomAquariumRepository(
             acknowledgedOperationIds = acknowledgedOperationIds,
         )
     }
+
+    override suspend fun pendingPhotoSyncs(): List<PendingPhotoSync> = aquariumDao.pendingPhotoSyncs()
+
+    override suspend fun markPhotoSynced(aquariumId: String, photoId: String?) =
+        aquariumDao.markPhotoSynced(aquariumId, photoId, newSyncOperation(SyncEntityType.AQUARIUM, aquariumId))
+
+    override suspend fun aquariumPhotoIds(): Set<String> = aquariumDao.photoIds().toSet()
 
     private suspend fun newSyncOperation(
         entityType: SyncEntityType,

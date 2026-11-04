@@ -18,20 +18,32 @@ interface AquariumPhotoStore {
     suspend fun clear()
 }
 
+private val SAFE_PHOTO_ID = Regex("[A-Za-z0-9-]{1,64}")
+
+/** Photo ids reach the store from the server, so only plain file names are accepted. */
+fun isSafePhotoId(photoId: String) = SAFE_PHOTO_ID.matches(photoId)
+
 class DirectoryAquariumPhotoStore(private val directory: File) : AquariumPhotoStore {
-    private fun file(photoId: String) = File(directory, "$photoId.jpg")
+    private fun file(photoId: String): File {
+        require(isSafePhotoId(photoId)) { "Unsafe photo id" }
+        return File(directory, "$photoId.jpg")
+    }
 
     override suspend fun write(photoId: String, jpeg: ByteArray) = withContext(Dispatchers.IO) {
+        val target = file(photoId)
         directory.mkdirs()
         val temporary = File(directory, "$photoId.jpg.tmp")
-        temporary.writeBytes(jpeg)
-        if (!temporary.renameTo(file(photoId))) {
+        try {
+            temporary.writeBytes(jpeg)
+            check(temporary.renameTo(target)) { "Could not store photo $photoId" }
+        } catch (failure: Throwable) {
             temporary.delete()
-            error("Could not store photo $photoId")
+            throw failure
         }
     }
 
     override suspend fun read(photoId: String): ByteArray? = withContext(Dispatchers.IO) {
+        if (!isSafePhotoId(photoId)) return@withContext null
         file(photoId).takeIf(File::isFile)?.readBytes()
     }
 
@@ -41,8 +53,9 @@ class DirectoryAquariumPhotoStore(private val directory: File) : AquariumPhotoSt
     }
 
     override suspend fun retainOnly(photoIds: Set<String>) = withContext(Dispatchers.IO) {
-        directory.listFiles { photo -> photo.extension == "jpg" && photo.nameWithoutExtension !in photoIds }
-            ?.forEach(File::delete)
+        directory.listFiles { photo ->
+            photo.name.endsWith(".jpg.tmp") || photo.extension == "jpg" && photo.nameWithoutExtension !in photoIds
+        }?.forEach(File::delete)
         Unit
     }
 
