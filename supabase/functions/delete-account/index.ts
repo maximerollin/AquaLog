@@ -38,7 +38,8 @@ Deno.serve(async (request) => {
   const adminClient = createClient(url, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const buckets = (Deno.env.get("AQUALOG_ACCOUNT_STORAGE_BUCKETS") ?? "")
+  // Unset means the Aquarium photos bucket, so deletion never depends on an operator; an explicit value (even empty) wins.
+  const buckets = (Deno.env.get("AQUALOG_ACCOUNT_STORAGE_BUCKETS") ?? "aquarium-photos")
     .split(",").map((value) => value.trim()).filter(Boolean);
   const { data: liveUserData, error: liveUserError } = accessToken
     ? await userClient.auth.getUser()
