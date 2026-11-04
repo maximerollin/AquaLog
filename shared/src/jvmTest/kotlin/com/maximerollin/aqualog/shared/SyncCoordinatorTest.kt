@@ -6,11 +6,15 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
+import java.io.IOException
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+
+private fun aquariumOperation(id: Long) =
+    SyncOperation(id, "key-$id", SyncEntityType.AQUARIUM, "aq", SyncOperationKind.UPSERT, 0, 0, 0, 0)
 
 class SyncCoordinatorTest {
     @Test
@@ -484,6 +488,37 @@ class SyncCoordinatorTest {
     }
 
     @Test
+    fun `a photo that cannot be stored does not fail the sync`() = runTest {
+        val photos = PhotoFixture(remote = listOf(remoteAquarium("aq", "p2")))
+        photos.store.writeFailure = IOException("disk full")
+
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        assertTrue("commit" in photos.calls)
+    }
+
+    @Test
+    fun `a photo changed during the run is uploaded before its Aquarium is pushed`() = runTest {
+        val photos = PhotoFixture(localPhotoIds = setOf("p3"))
+        var changed = false
+        photos.local.onCommit = {
+            if (!changed) {
+                changed = true
+                photos.store.write("p3", byteArrayOf(3))
+                photos.local.pendingPhotos = listOf(PendingPhotoSync("aq", "p3"))
+                photos.local.operations = listOf(aquariumOperation(2))
+            }
+        }
+
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        assertEquals(
+            listOf("push", "commit", "retainOnly([p3])", "upload(aq,[3])", "push", "commit", "retainOnly([p3])"),
+            photos.calls,
+        )
+    }
+
+    @Test
     fun `photos no Aquarium references are removed after commit`() = runTest {
         val photos = PhotoFixture(localPhotoIds = setOf("p1"))
 
@@ -531,13 +566,13 @@ class SyncCoordinatorTest {
 
     private class PhotoLocalData(
         private val calls: MutableList<String>,
-        private val pending: List<PendingPhotoSync>,
+        var pendingPhotos: List<PendingPhotoSync>,
         private val photoIds: Set<String>,
     ) : SyncLocalDataSource {
         val marked = mutableListOf<Pair<String, String?>>()
         var onCommit: suspend () -> Unit = {}
         // One pending operation, so a push happens on the first iteration.
-        private var operations = listOf(SyncOperation(1, "key", SyncEntityType.AQUARIUM, "aq", SyncOperationKind.UPSERT, 0, 0, 0, 0))
+        var operations = listOf(aquariumOperation(1))
 
         override fun observeSyncState() = flowOf(SyncState(SyncStatus.SYNCED, 0))
         override suspend fun pendingSyncBatch(limit: Int, eligibleAtEpochMillis: Long) =
@@ -554,20 +589,23 @@ class SyncCoordinatorTest {
         ) = true
         override suspend fun retrySyncNow() = Unit
         override suspend fun commitRemoteCopy(copy: InitialAccountCopy, acknowledgedOperationIds: List<Long>) {
+            operations = emptyList()
             onCommit()
             calls += "commit"
-            operations = emptyList()
         }
-        override suspend fun pendingPhotoSyncs() = pending
+        override suspend fun pendingPhotoSyncs() = pendingPhotos
         override suspend fun markPhotoSynced(aquariumId: String, photoId: String?) {
             marked += aquariumId to photoId
+            pendingPhotos = pendingPhotos.filterNot { it.aquariumId == aquariumId }
         }
         override suspend fun aquariumPhotoIds() = photoIds
     }
 
     private class MemoryPhotoStore(private val calls: MutableList<String>) : AquariumPhotoStore {
         private val photos = mutableMapOf<String, ByteArray>()
+        var writeFailure: IOException? = null
         override suspend fun write(photoId: String, jpeg: ByteArray) {
+            writeFailure?.let { throw it }
             photos[photoId] = jpeg
         }
         override suspend fun read(photoId: String) = photos[photoId]

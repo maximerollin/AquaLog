@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.shared
 
+import java.io.IOException
 import kotlinx.coroutines.CancellationException
 
 enum class SyncEntityType(val storageValue: String) {
@@ -172,7 +173,6 @@ class SyncCoordinator(
         val generation = localData.syncGeneration()
         var refreshed = false
         var hasPulled = false
-        var photosPushed = false
         var downloadedSessionCount = 0
         repeat(MAX_BATCHES_PER_RUN) {
             val now = currentTimeMillis?.invoke()
@@ -186,11 +186,9 @@ class SyncCoordinator(
                 return SyncRunResult.Synchronized(downloadedSessionCount)
             }
             try {
-                if (!photosPushed) {
-                    if (runGuarded(lease) { pushPhotos(session) } is AccountLeaseResult.Revoked) {
-                        return SyncRunResult.SignedOut
-                    }
-                    photosPushed = true
+                // Every iteration: the batch was read first, so each photo it references is uploaded before it.
+                if (runGuarded(lease) { pushPhotos(session) } is AccountLeaseResult.Revoked) {
+                    return SyncRunResult.SignedOut
                 }
                 if (batch.operations.isNotEmpty()) {
                     if (runGuarded(lease) { backend.push(session, batch) } is AccountLeaseResult.Revoked) {
@@ -276,6 +274,7 @@ class SyncCoordinator(
                 backend.downloadAquariumPhoto(session, aquarium.id)?.let { store.write(photoId, it) }
             } catch (_: SyncNetworkException) {
             } catch (_: SyncServerException) {
+            } catch (_: IOException) {
             }
         }
     }

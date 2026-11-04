@@ -2,6 +2,8 @@ package com.maximerollin.aqualog.shared
 
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import kotlinx.coroutines.test.runTest
+import java.io.File
+import java.io.IOException
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -92,11 +94,34 @@ class AquariumPhotoRepositoryTest {
     fun `retainOnly keeps the listed files`() = runTest {
         store.write("a", bytes)
         store.write("b", bytes)
+        age(photo("b.jpg"))
 
         store.retainOnly(setOf("a"))
 
         assertNotNull(store.read("a"))
         assertNull(store.read("b"))
+    }
+
+    @Test
+    fun `retainOnly keeps a just-written unlisted photo`() = runTest {
+        store.write("fresh", bytes)
+        store.write("old", bytes)
+        age(photo("old.jpg"))
+
+        store.retainOnly(emptySet())
+
+        assertNotNull(store.read("fresh"))
+        assertNull(store.read("old"))
+    }
+
+    @Test
+    fun `a failed write removes its temporary file`() = runTest {
+        // A non-empty directory where the photo should land makes the rename fail.
+        photo("blocked.jpg").resolve("child").apply { parentFile.mkdirs() }.writeBytes(bytes)
+
+        assertFailsWith<IOException> { store.write("blocked", bytes) }
+
+        assertFalse(photo("blocked.jpg.tmp").exists())
     }
 
     @Test
@@ -111,13 +136,18 @@ class AquariumPhotoRepositoryTest {
     @Test
     fun `retainOnly removes stray temporary files`() = runTest {
         store.write("a", bytes)
-        val stray = directory.resolve("photos").resolve("b.jpg.tmp").toFile().apply { writeBytes(bytes) }
+        val stray = photo("b.jpg.tmp").apply { writeBytes(bytes) }
+        age(stray)
 
         store.retainOnly(setOf("a"))
 
         assertFalse(stray.exists())
         assertNotNull(store.read("a"))
     }
+
+    private fun photo(name: String) = directory.resolve("photos").resolve(name).toFile()
+
+    private fun age(file: File) = assertTrue(file.setLastModified(System.currentTimeMillis() - 10 * 60_000L))
 
     private fun photoSyncRows(): List<String> {
         database.close()

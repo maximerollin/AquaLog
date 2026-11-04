@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog.shared
 
 import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -17,6 +18,8 @@ interface AquariumPhotoStore {
 
     suspend fun clear()
 }
+
+private const val RECENT_PHOTO_MILLIS = 5 * 60_000L
 
 private val SAFE_PHOTO_ID = Regex("[A-Za-z0-9-]{1,64}")
 
@@ -35,7 +38,7 @@ class DirectoryAquariumPhotoStore(private val directory: File) : AquariumPhotoSt
         val temporary = File(directory, "$photoId.jpg.tmp")
         try {
             temporary.writeBytes(jpeg)
-            check(temporary.renameTo(target)) { "Could not store photo $photoId" }
+            if (!temporary.renameTo(target)) throw IOException("Could not store photo $photoId")
         } catch (failure: Throwable) {
             temporary.delete()
             throw failure
@@ -53,8 +56,11 @@ class DirectoryAquariumPhotoStore(private val directory: File) : AquariumPhotoSt
     }
 
     override suspend fun retainOnly(photoIds: Set<String>) = withContext(Dispatchers.IO) {
+        // A recent file may belong to a photo whose row is not committed yet; a later sync removes real orphans.
+        val recent = System.currentTimeMillis() - RECENT_PHOTO_MILLIS
         directory.listFiles { photo ->
-            photo.name.endsWith(".jpg.tmp") || photo.extension == "jpg" && photo.nameWithoutExtension !in photoIds
+            photo.lastModified() < recent &&
+                (photo.name.endsWith(".jpg.tmp") || photo.extension == "jpg" && photo.nameWithoutExtension !in photoIds)
         }?.forEach(File::delete)
         Unit
     }
