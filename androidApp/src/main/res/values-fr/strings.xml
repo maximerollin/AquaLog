@@ -11,4 +11,16 @@
         <item quantity="one">Votre bilan de la semaine est prêt · %1$d semaine d’entretien régulier</item>
         <item quantity="other">Votre bilan de la semaine est prêt · %1$d semaines d’entretien régulier</item>
     </plurals>
+    <string name="widget_small_label">Mon bac</string>
+    <string name="widget_medium_label">Mon bac en détail</string>
+    <string name="widget_tanks_label">Mes bacs</string>
+    <string name="widget_small_description">L’état de votre bac et la prochaine chose à faire</string>
+    <string name="widget_medium_description">L’état, les tâches du jour et Mesurer</string>
+    <string name="widget_tanks_description">Tous vos bacs, une ligne chacun</string>
+    <string name="widget_needs_pro">Le widget fait partie d’Aquagenda Pro</string>
+    <string name="widget_needs_pro_action">Découvrir Pro</string>
+    <string name="widget_no_aquarium">Ouvrez Aquagenda pour créer votre bac</string>
+    <string name="widget_configure_title">Choisir le bac</string>
+    <string name="widget_measure_action">Mesurer</string>
+    <string name="widget_task_overdue_label">en retard</string>
 </resources>

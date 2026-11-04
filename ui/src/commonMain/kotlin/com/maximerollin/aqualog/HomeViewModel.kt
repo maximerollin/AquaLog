@@ -105,6 +105,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.pow
 import kotlin.math.round
 import java.io.Serializable
@@ -113,6 +114,11 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.util.UUID
+
+/** Where a home-screen widget sends the app. */
+enum class WidgetTarget { HOME, MEASURE, PRO }
+
+private const val WIDGET_WAIT_MILLIS = 5_000L
 
 enum class OnboardingStep {
     WELCOME,
@@ -464,6 +470,9 @@ class HomeViewModel(
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
     private val feedbackCoordinator = FeedbackCoordinator(feedbackGateway)
+    private val taskCompleter = TaskCompleter(
+        aquariumRepository, taskReminderScheduler, ::recordProductEvent, currentTimeMillis, ::today, generateInteractionId,
+    )
     private val mutableUiState = MutableStateFlow(
         HomeUiState(
             rapidSession = savedStateHandle
@@ -644,6 +653,44 @@ class HomeViewModel(
             activateAquariumContext(aquariumId)
         }
     }
+
+    /**
+     * Brings the app to [aquariumId] (when it is a live Aquarium) on its home, then opens entry for MEASURE or the
+     * paywall for PRO (unless Pro is already active). Never while a view that may hold input is open (entry draft,
+     * account, rhythm settings, Aquarium editor), and MEASURE never opens on another Aquarium than the one asked for.
+     */
+    fun openFromWidget(aquariumId: String?, target: WidgetTarget) {
+        viewModelScope.launch {
+            val loaded = withTimeoutOrNull(WIDGET_WAIT_MILLIS) {
+                uiState.first { !it.isLoading && (it.setup == null || it.aquariums.isNotEmpty()) }
+            } ?: return@launch
+            // No Aquarium yet: onboarding is not complete.
+            val current = loaded.setup ?: return@launch
+            if (loaded.holdsInput()) return@launch
+            val known = aquariumId != null && loaded.aquariums.any { it.id == aquariumId }
+            if (target == WidgetTarget.MEASURE && aquariumId != null && !known) return@launch
+            if (known && aquariumId != current.aquarium.id) {
+                selectAquarium(aquariumId!!)
+                withTimeoutOrNull(WIDGET_WAIT_MILLIS) { uiState.first { it.setup?.aquarium?.id == aquariumId } } ?: return@launch
+                if (uiState.value.holdsInput()) return@launch
+            }
+            // A stale invitation tapped by a Pro user just brings the app forward.
+            val proActive = uiState.value.pro.purchaseStatus == ProPurchaseStatus.ACTIVE
+            // Read-only views lose nothing: close them so the Aquarium home, entry or paywall is what shows.
+            closeTasks()
+            closeSessionDetails()
+            if (target != WidgetTarget.PRO || proActive) selectDestination(MainDestination.TANK)
+            when (target) {
+                WidgetTarget.HOME -> Unit
+                WidgetTarget.MEASURE -> openRapidSession()
+                WidgetTarget.PRO -> if (!proActive) showProPaywall(PaywallSource.PRO_FEATURE)
+            }
+        }
+    }
+
+    /** An open view that may hold typed input: a widget tap only brings the app forward. */
+    private fun HomeUiState.holdsInput() =
+        rapidSession != null || account.step != AccountStep.HIDDEN || showRhythmSettings || aquariumEditor != null
 
     fun openCreateAquarium() {
         val state = mutableUiState.value
@@ -856,6 +903,7 @@ class HomeViewModel(
                             )
                         }
                     } else {
+                        proPurchaseCoordinator?.forgetEntitlement()
                         refreshAccountSettingsState()
                     }
                 }
@@ -892,7 +940,10 @@ class HomeViewModel(
                 return@launch
             }
             when (result) {
-                AccountControlResult.Deleted -> refreshAccountSettingsState()
+                AccountControlResult.Deleted -> {
+                    proPurchaseCoordinator?.forgetEntitlement()
+                    refreshAccountSettingsState()
+                }
                 is AccountControlResult.SignOutIncomplete -> Unit
                 is AccountControlResult.DeletionIncomplete -> {
                     val pending = coordinator.pendingDeletion()
@@ -944,7 +995,10 @@ class HomeViewModel(
     private suspend fun handleDeletionReauthentication(result: AccountDeletionReauthenticationResult) {
         when (result) {
             is AccountDeletionReauthenticationResult.Resumed -> when (val deletion = result.deletionResult) {
-                AccountControlResult.Deleted -> refreshAccountSettingsState()
+                AccountControlResult.Deleted -> {
+                    proPurchaseCoordinator?.forgetEntitlement()
+                    refreshAccountSettingsState()
+                }
                 is AccountControlResult.DeletionIncomplete -> {
                     val coordinator = requireNotNull(accountControlCoordinator)
                     val pending = coordinator.pendingDeletion()
@@ -1112,8 +1166,10 @@ class HomeViewModel(
         loadProOffer()
     }
 
-    fun openProPaywall() {
-        recordProductEvent(ProductEvent.PaywallViewed(PaywallSource.SETTINGS))
+    fun openProPaywall() = showProPaywall(PaywallSource.SETTINGS)
+
+    private fun showProPaywall(source: PaywallSource) {
+        recordProductEvent(ProductEvent.PaywallViewed(source))
         mutableUiState.update {
             it.copy(pro = it.pro.copy(showPaywall = true, openedFromOnboarding = false))
         }
@@ -1329,6 +1385,10 @@ class HomeViewModel(
 
     fun resolveTask(occurrence: TaskOccurrence, resolution: TaskResolution) {
         viewModelScope.launch {
+            if (resolution == TaskResolution.COMPLETED) {
+                runCatching { taskCompleter.complete(occurrence) }
+                return@launch
+            }
             val postponed = if (resolution == TaskResolution.POSTPONED) {
                 LocalDate.of(
                     occurrence.dueDate.year,
@@ -1372,39 +1432,16 @@ class HomeViewModel(
      * [onFailed] lets the row re-enable its checkbox.
      */
     fun completeTask(occurrence: TaskOccurrence, onFailed: () -> Unit = {}) {
-        val type = occurrence.maintenanceActionType ?: return resolveTask(occurrence, TaskResolution.COMPLETED)
+        if (occurrence.maintenanceActionType == null) return resolveTask(occurrence, TaskResolution.COMPLETED)
         viewModelScope.launch {
             runCatching {
-                val last = aquariumRepository.loadRapidSessionContext(occurrence.aquariumId).lastMaintenanceActions[type]
-                val recorded = aquariumRepository.saveRapidSession(
-                    RapidSessionInput(
-                        aquariumId = occurrence.aquariumId,
-                        occurredAtEpochMillis = currentTimeMillis(),
-                        idempotencyKey = generateInteractionId(),
-                        maintenanceActions = listOf(defaultMaintenanceInput(type, last)),
-                    ),
-                )
+                val recorded = taskCompleter.complete(occurrence)
                 // A Tâche of another Aquarium (from the agenda) must not replace the displayed one's latest Session.
-                mutableUiState.update { if (it.setup?.aquarium?.id == occurrence.aquariumId) it.copy(latestSession = recorded) else it }
-                completeLinkedTasks(recorded, alsoOccurrenceId = occurrence.id)
+                if (recorded != null) {
+                    mutableUiState.update { if (it.setup?.aquarium?.id == occurrence.aquariumId) it.copy(latestSession = recorded) else it }
+                }
             }.onFailure { onFailed() }
         }
-    }
-
-    /** Throws when the resolution fails, so a caller that must know can react; Session saves ignore it. */
-    private suspend fun completeLinkedTasks(
-        recorded: RecordedSession,
-        alreadyRecorded: Set<MaintenanceActionType> = emptySet(),
-        alsoOccurrenceId: String? = null,
-    ) {
-        val types = recorded.maintenanceActions.map { it.type }.toSet() - alreadyRecorded
-        if (types.isEmpty() && alsoOccurrenceId == null) return
-        aquariumRepository.completeLinkedTasks(recorded.session.aquariumId, types, today(), currentTimeMillis(), alsoOccurrenceId)
-            .forEach { result ->
-                taskReminderScheduler.cancel(result.resolved.id)
-                result.nextOccurrence?.let(taskReminderScheduler::schedule)
-                recordProductEvent(ProductEvent.TaskUsed(TaskUsage.COMPLETED))
-            }
     }
 
     /** The profile follows the Aquarium; parameters and ranges stay as they are, the rhythm follows the new profile. */
@@ -1824,7 +1861,7 @@ class HomeViewModel(
                     }
                 }
                 if (draft.editingSessionId == null) showPistesAfterSave(recorded)
-                runCatching { completeLinkedTasks(recorded, previousTypes) }
+                runCatching { taskCompleter.completeLinked(recorded, previousTypes) }
                 recordProductEvent(
                     ProductEvent.SessionSaved(
                         if (draft.editingSessionId == null) SessionUsage.CREATED else SessionUsage.EDITED,

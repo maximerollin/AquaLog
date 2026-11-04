@@ -5,6 +5,7 @@ import java.time.Instant
 import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlin.random.Random
@@ -96,10 +97,13 @@ interface AquariumRepository {
     fun observePendingTaskOccurrences(): Flow<List<TaskOccurrence>>
 
     fun observeResolvedTaskOccurrences(): Flow<List<TaskOccurrence>>
+
+    /** Emits each time what a widget shows may have changed (no initial emission). */
+    fun observeChanges(): Flow<Unit> = emptyFlow()
 }
 
 class RoomAquariumRepository(
-    database: AquaLogDatabase,
+    private val database: AquaLogDatabase,
     private val generateId: () -> String,
     private val currentTimeMillis: () -> Long,
     private val onSyncNeeded: () -> Unit = {},
@@ -121,6 +125,11 @@ class RoomAquariumRepository(
 
     override fun observeCurrentSetup(): Flow<AquariumSetup?> =
         aquariumDao.observeCurrentSetup().map { it?.toDomain() }
+
+    override fun observeChanges(): Flow<Unit> = database.invalidationTracker.createFlow(
+        "aquariums", "selected_aquarium", "parameter_definitions", "sessions", "measurements", "task_occurrences",
+        emitInitialState = false,
+    ).map { }
 
     override suspend fun createAquarium(
         name: String,

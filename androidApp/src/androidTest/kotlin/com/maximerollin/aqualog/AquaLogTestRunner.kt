@@ -77,6 +77,9 @@ class TestAquaLogApplication : AquaLogApplication() {
         resetRepository()
     }
 
+    // The repository is swapped between tests, so no collector is bound to it.
+    override fun keepWidgetsFresh() = Unit
+
     override val taskReminderScheduler: TaskReminderScheduler
         get() = recordingTaskReminderScheduler
 
@@ -114,6 +117,7 @@ class TestAquaLogApplication : AquaLogApplication() {
             override suspend fun verify(productId: String, purchaseToken: String) =
                 PurchaseVerificationResult.Rejected("Test purchases require an explicit test")
         },
+        entitlementCache = proEntitlementCache,
     )
 
     override val portableDataService: PortableDataService
@@ -155,6 +159,7 @@ class TestAquaLogApplication : AquaLogApplication() {
         analyticsPayloads.clear()
         recordedFeedback.clear()
         verifiedProEntitlement = null
+        proEntitlementCache.write(null)
     }
 
     private fun bindRepository(newRepository: RoomAquariumRepository, newDatabase: AquaLogDatabase) {

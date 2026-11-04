@@ -11,4 +11,16 @@
         <item quantity="one">Your weekly summary is ready · %1$d week of regular care</item>
         <item quantity="other">Your weekly summary is ready · %1$d weeks of regular care</item>
     </plurals>
+    <string name="widget_small_label">My Aquarium</string>
+    <string name="widget_medium_label">My Aquarium in detail</string>
+    <string name="widget_tanks_label">My Aquariums</string>
+    <string name="widget_small_description">Your Aquarium’s status and the next thing to do</string>
+    <string name="widget_medium_description">Status, today’s Tasks and Measure</string>
+    <string name="widget_tanks_description">All your Aquariums, one line each</string>
+    <string name="widget_needs_pro">The widget is part of Aquagenda Pro</string>
+    <string name="widget_needs_pro_action">Discover Pro</string>
+    <string name="widget_no_aquarium">Open Aquagenda to create your Aquarium</string>
+    <string name="widget_configure_title">Choose the Aquarium</string>
+    <string name="widget_measure_action">Measure</string>
+    <string name="widget_task_overdue_label">overdue</string>
 </resources>

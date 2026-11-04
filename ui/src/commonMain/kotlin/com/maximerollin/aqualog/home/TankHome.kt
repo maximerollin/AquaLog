@@ -472,29 +472,10 @@ private fun StatusLine(
     onOpenSession: () -> Unit,
     modifier: Modifier,
 ) {
-    val measured = overview.values.any { it.value != null }
-    val summary = when {
-        !measured -> stringResource(Res.string.home_no_measurement_yet)
-        overview.outsideRangeCount > 0 -> pluralStringResource(
-            Res.plurals.home_status_outside_range,
-            overview.outsideRangeCount,
-            overview.outsideRangeCount,
-        ).let { outside ->
-            if (overview.hasAlert) {
-                pluralStringResource(Res.plurals.home_status_with_alert, overview.alertCount, outside, overview.alertCount)
-            } else {
-                outside
-            }
-        }
-        else -> stringResource(Res.string.home_status_all_in_range)
-    }
-    val since = overview.latestReadingAtEpochMillis?.let {
-        when (val days = daysSince(it, today)) {
-            0 -> stringResource(Res.string.home_measured_today)
-            1 -> stringResource(Res.string.home_measured_yesterday)
-            else -> pluralStringResource(Res.plurals.home_measured_days_ago, days, days)
-        }
-    }
+    val measured = overview.isMeasured
+    val status = statusText(overview, today)
+    val summary = status.summary.resolve()
+    val since = status.since?.resolve()
     val dot = when {
         overview.hasAlert -> levelMarkColor(ReadingLevel.ALERT)!!
         overview.outsideRangeCount > 0 -> attentionMarkColor()
@@ -583,5 +564,5 @@ private fun SyncFailure(state: HomeUiState, viewModel: HomeViewModel, modifier: 
 private fun localDate(epochMillis: Long): LocalDate = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).toLocalDate()
 
 // A Session saved a moment "in the future" (clock skew) still reads as today.
-private fun daysSince(epochMillis: Long, today: LocalDate): Int =
+internal fun daysSince(epochMillis: Long, today: LocalDate): Int =
     ChronoUnit.DAYS.between(localDate(epochMillis), today).toInt().coerceAtLeast(0)

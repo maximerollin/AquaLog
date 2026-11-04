@@ -2,7 +2,12 @@ package com.maximerollin.aqualog.shared
 
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.test.runTest
 import java.nio.file.Files
 import kotlin.test.Test
@@ -12,6 +17,33 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class AquariumRepositoryContractTest {
+    @Test
+    fun `observeChanges emits after a Session is saved`() = runTest {
+        val database = createAquaLogDatabase(
+            createJvmDatabaseBuilder(Files.createTempDirectory("aqualog-changes").resolve("aqualog.db").toAbsolutePath().toString()),
+        )
+        val ids = generateSequence(1) { it + 1 }.map { "id-$it" }.iterator()
+        val repository = RoomAquariumRepository(database, ids::next, { 1_700_000_000_000L })
+        val aquarium = repository.createAquarium("Salon", 120.0, VolumeUnit.LITERS)
+
+        val change = async(Dispatchers.Default) { repository.observeChanges().first() }
+        // Real time, not runTest's virtual clock; the tracker may start observing after a first save, so save until it emits.
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) {
+                var attempt = 0
+                while (!change.isCompleted) {
+                    repository.saveRapidSession(
+                        RapidSessionInput(aquariumId = aquarium.id, occurredAtEpochMillis = 1_700_000_000_001L, idempotencyKey = "k${attempt++}", observation = "Clair"),
+                    )
+                    delay(50)
+                }
+            }
+        }
+
+        assertEquals(Unit, change.await())
+        database.close()
+    }
+
     @Test
     fun `Room thirteen migrates existing Aquarium into active multi Aquarium state`() = runTest {
         val databasePath = Files.createTempDirectory("aqualog-room-13-14")

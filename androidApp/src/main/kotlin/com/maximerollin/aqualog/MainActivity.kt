@@ -89,15 +89,30 @@ class MainActivity : ComponentActivity() {
             }
         }
         handleAuthenticationIntent(intent)
+        // A recreation still carries the launch intent, whose extras were already handled.
+        if (savedInstanceState == null) handleWidgetIntent(intent)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleAuthenticationIntent(intent)
+        handleWidgetIntent(intent)
+    }
+
+    private fun handleWidgetIntent(intent: Intent?) {
+        val target = intent?.getStringExtra(EXTRA_WIDGET_TARGET)
+            ?.let { name -> WidgetTarget.entries.firstOrNull { it.name == name } } ?: return
+        val aquariumId = intent.getStringExtra(EXTRA_WIDGET_AQUARIUM_ID)
+        setIntent(Intent(this, MainActivity::class.java))
+        homeViewModel.openFromWidget(aquariumId, target)
     }
 
     private fun handleAuthenticationIntent(intent: Intent?) {
-        val callbackUrl = intent?.dataString ?: return
+        val callback = intent?.data ?: return
+        // Glance's widget taps carry their own data (glance-action:/CALLBACK?appWidgetId=…): only the auth redirect is a callback.
+        val expected = Uri.parse(BuildConfig.AUTH_REDIRECT_URL)
+        if (callback.scheme != expected.scheme || callback.host != expected.host || callback.path != expected.path) return
+        val callbackUrl = callback.toString()
         setIntent(Intent(this, MainActivity::class.java))
         homeViewModel.completeAccountCallback(callbackUrl)
     }
@@ -155,6 +170,8 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        const val EXTRA_WIDGET_AQUARIUM_ID = "widget-aquarium-id"
+        const val EXTRA_WIDGET_TARGET = "widget-target"
         private const val MAX_PORTABLE_DATA_BYTES = 10 * 1024 * 1024
     }
 }

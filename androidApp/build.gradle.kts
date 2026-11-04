@@ -121,6 +121,8 @@ dependencies {
     implementation(libs.posthog.android)
     implementation(libs.firebase.crashlytics)
     implementation(libs.androidx.work.runtime)
+    implementation(libs.glance.appwidget)
+    implementation(libs.glance.material3)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
@@ -134,6 +136,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.intents)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.services.storage)
+    androidTestImplementation(libs.glance.appwidget.testing)
     androidTestUtil(libs.androidx.test.services)
     androidTestUtil(libs.androidx.test.orchestrator)
 }

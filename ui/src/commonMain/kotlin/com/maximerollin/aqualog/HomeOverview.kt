@@ -34,6 +34,7 @@ data class HomeOverview(
     val alertCount: Int = 0,
 ) {
     val hasAlert: Boolean get() = alertCount > 0
+    val isMeasured: Boolean get() = values.any { it.value != null }
 }
 
 fun homeOverview(setup: AquariumSetup, readings: List<LatestReading>): HomeOverview {
