@@ -28,6 +28,8 @@ data class WidgetTaskRow(val occurrenceId: String, val title: String, val isOver
 data class WidgetTankText(
     val aquariumId: String,
     val name: String,
+    /** The Aquarium's photo, read by the widget host (Glance cannot load it from here). */
+    val photoId: String? = null,
     val light: WidgetLight,
     /** False for an Aquarium never measured: its dot is the home's outline, not « all in range ». */
     val isMeasured: Boolean = true,
@@ -65,6 +67,7 @@ suspend fun widgetText(state: WidgetAquarium, today: LocalDate): WidgetTankText 
     return WidgetTankText(
         aquariumId = state.aquarium.id,
         name = state.aquarium.name,
+        photoId = state.aquarium.photoId,
         light = state.light,
         isMeasured = state.overview.isMeasured,
         lightDescription = lightDescription,

@@ -327,6 +327,8 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                 viewModel.openCreateAquarium()
             },
             onDismiss = { showPicker = false },
+            loadPhoto = viewModel::aquariumPhoto,
+            cachedPhoto = viewModel::cachedAquariumPhoto,
         )
     }
 }

@@ -2,12 +2,14 @@ package com.maximerollin.aqualog.widget
 
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Bitmap
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.assertHasContentDescriptionEqualTo
 import androidx.glance.testing.unit.hasContentDescriptionEqualTo
 import androidx.glance.testing.unit.hasStartActivityClickAction
+import androidx.glance.testing.unit.hasTestTag
 import androidx.glance.testing.unit.hasTextEqualTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -38,6 +40,20 @@ class TanksWidgetTest {
         }
         onNode(hasContentDescriptionEqualTo("Bac du salon, en dehors de votre plage indicative, Changement d’eau en retard"))
             .assertExists()
+    }
+
+    @Test
+    fun aRowWithAPhotoShowsItBeforeTheDot_aRowWithoutKeepsTheDotOnly() = runGlanceAppWidgetUnitTest {
+        setContext(localized("fr"))
+        val photo = Bitmap.createBitmap(4, 4, Bitmap.Config.ARGB_8888)
+        provideComposable { TanksContent(WidgetContent.Tanks(rows), mapOf("salon" to photo)) }
+
+        onNode(hasTestTag(TankPhotoTag("salon"))).assertExists()
+        onNode(hasTestTag(TankPhotoTag("crevettes"))).assertDoesNotExist()
+        for (row in rows) {
+            onNode(hasContentDescriptionEqualTo(row.lightDescription)).assertExists()
+            onNode(hasContentDescriptionEqualTo(row.contentDescription)).assertExists()
+        }
     }
 
     @Test

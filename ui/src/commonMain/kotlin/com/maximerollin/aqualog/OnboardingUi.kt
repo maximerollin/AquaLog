@@ -2,6 +2,7 @@ package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.ui.icon.*
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.maximerollin.aqualog.photo.AquariumThumbnail
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.home.TankHome
 import com.maximerollin.aqualog.ui.theme.CarnetDivider
@@ -52,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
@@ -388,6 +390,9 @@ private fun PortableDataSettings(
                         onClick = { viewModel.selectAquarium(aquarium.id) },
                         selected = current,
                         trailingIcon = if (current) AquagendaIcons.Check else null,
+                        leading = {
+                            AquariumThumbnail(aquarium, 40.dp, viewModel::aquariumPhoto, Modifier.clearAndSetSemantics {}, viewModel::cachedAquariumPhoto)
+                        },
                     )
                 }
             }
@@ -561,6 +566,7 @@ internal fun MoreRow(
     selected: Boolean? = null,
     color: Color = MaterialTheme.colorScheme.onSurface,
     trailingIcon: ImageVector? = null,
+    leading: (@Composable () -> Unit)? = null,
 ) {
     val interaction = when {
         onClick == null -> Modifier
@@ -571,6 +577,10 @@ internal fun MoreRow(
         modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).then(interaction).padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (leading != null) {
+            leading()
+            Spacer(Modifier.width(12.dp))
+        }
         Column(Modifier.weight(1f)) {
             Text(
                 label,
