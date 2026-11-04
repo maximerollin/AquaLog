@@ -18,7 +18,7 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 21.0,
+      "min": 22.0,
       "max": 26.0
     },
     "gh": {
@@ -57,7 +57,7 @@
     "motion": "SCHOOL",
     "ph": {
       "min": 5.5,
-      "max": 7.5
+      "max": 7.0
     },
     "temperatureC": {
       "min": 24.0,
@@ -65,7 +65,7 @@
     },
     "gh": {
       "min": 1.0,
-      "max": 10.0
+      "max": 8.0
     },
     "kh": {
       "min": 0.0,
@@ -98,25 +98,26 @@
     "family": "LIVEBEARER",
     "motion": "GLIDE",
     "ph": {
-      "min": 7.0,
-      "max": 8.5
+      "min": 6.5,
+      "max": 8.0
     },
     "temperatureC": {
-      "min": 22.0,
+      "min": 23.0,
       "max": 28.0
     },
     "gh": {
       "min": 9.0,
-      "max": 25.0
+      "max": 20.0
     },
     "kh": {
       "min": 4.0,
-      "max": 15.0
+      "max": 12.0
     },
     "minVolumeLiters": 60,
-    "adultSizeCm": 5.0,
+    "adultSizeCm": 6.0,
     "minGroup": 3,
     "tags": [
+      "PEACEFUL",
       "LONG_FINS"
     ],
     "diet": "OMNIVORE",
@@ -145,7 +146,7 @@
     },
     "temperatureC": {
       "min": 20.0,
-      "max": 26.0
+      "max": 25.0
     },
     "gh": {
       "min": 9.0,
@@ -183,7 +184,7 @@
     "motion": "GLIDE",
     "ph": {
       "min": 7.0,
-      "max": 8.5
+      "max": 8.2
     },
     "temperatureC": {
       "min": 24.0,
@@ -224,8 +225,8 @@
     "family": "LABYRINTH",
     "motion": "SLOW",
     "ph": {
-      "min": 6.0,
-      "max": 8.0
+      "min": 6.4,
+      "max": 7.6
     },
     "temperatureC": {
       "min": 24.0,
@@ -239,12 +240,13 @@
       "min": 1.0,
       "max": 10.0
     },
-    "minVolumeLiters": 20,
+    "minVolumeLiters": 30,
     "adultSizeCm": 6.5,
     "minGroup": 1,
     "tags": [
       "TERRITORIAL",
-      "LONG_FINS"
+      "LONG_FINS",
+      "FIN_NIPPER"
     ],
     "diet": "CARNIVORE",
     "lifespanYears": 3,
@@ -284,7 +286,7 @@
     },
     "minVolumeLiters": 60,
     "adultSizeCm": 4.5,
-    "minGroup": 6,
+    "minGroup": 8,
     "tags": [
       "PEACEFUL"
     ],
@@ -324,7 +326,7 @@
       "min": 1.0,
       "max": 10.0
     },
-    "minVolumeLiters": 80,
+    "minVolumeLiters": 95,
     "adultSizeCm": 12.0,
     "minGroup": 1,
     "tags": [
@@ -355,8 +357,8 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 24.0,
-      "max": 30.0
+      "min": 25.0,
+      "max": 28.0
     },
     "gh": {
       "min": 3.0,
@@ -397,7 +399,7 @@
     "motion": "GLIDE",
     "ph": {
       "min": 6.5,
-      "max": 7.5
+      "max": 7.3
     },
     "temperatureC": {
       "min": 24.0,
@@ -411,8 +413,8 @@
       "min": 2.0,
       "max": 8.0
     },
-    "minVolumeLiters": 60,
-    "adultSizeCm": 7.0,
+    "minVolumeLiters": 80,
+    "adultSizeCm": 6.0,
     "minGroup": 1,
     "tags": [
       "TERRITORIAL"
@@ -438,7 +440,7 @@
     "family": "CYPRINID",
     "motion": "SCHOOL",
     "ph": {
-      "min": 6.5,
+      "min": 6.0,
       "max": 8.0
     },
     "temperatureC": {
@@ -455,7 +457,7 @@
     },
     "minVolumeLiters": 60,
     "adultSizeCm": 5.0,
-    "minGroup": 6,
+    "minGroup": 8,
     "tags": [
       "PEACEFUL"
     ],
@@ -497,7 +499,7 @@
     },
     "minVolumeLiters": 60,
     "adultSizeCm": 4.5,
-    "minGroup": 8,
+    "minGroup": 6,
     "tags": [
       "PEACEFUL"
     ],
@@ -598,7 +600,7 @@
     "names": {
       "fr": "Otocinclus",
       "en": "Otocinclus",
-      "de": "Längsstreifen-Ohrgitterharnischwels",
+      "de": "Otocinclus",
       "it": "Otocinclus",
       "es": "Otocinclus"
     },
@@ -606,11 +608,11 @@
     "family": "CATFISH",
     "motion": "CRAWL",
     "ph": {
-      "min": 6.0,
+      "min": 6.5,
       "max": 7.5
     },
     "temperatureC": {
-      "min": 21.0,
+      "min": 22.0,
       "max": 26.0
     },
     "gh": {

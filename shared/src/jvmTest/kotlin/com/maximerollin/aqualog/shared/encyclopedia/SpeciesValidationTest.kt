@@ -69,5 +69,9 @@ class SpeciesValidationTest {
 
     @Test fun badWikidata() = assertOneProblemNaming("neon", problems(entry(wikidata = "131431")))
 
+    @Test fun nonPositiveMinVolume() {
+        for (v in listOf("0", "-10")) assertOneProblemNaming("neon", problems(entry(minVolume = v)))
+    }
+
     @Test fun fishWithoutMinVolume() = assertOneProblemNaming("neon", problems(entry(minVolume = "null")))
 }

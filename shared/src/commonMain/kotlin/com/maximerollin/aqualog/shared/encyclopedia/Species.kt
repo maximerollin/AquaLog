@@ -70,6 +70,7 @@ fun speciesProblems(species: List<Species>): List<String> {
         if (s.scientificName.isBlank()) problems += "${s.id}: blank scientificName"
         if (s.adultSizeCm <= 0) problems += "${s.id}: adultSizeCm <= 0"
         if (s.lifespanYears <= 0) problems += "${s.id}: lifespanYears <= 0"
+        if (s.minVolumeLiters != null && s.minVolumeLiters <= 0) problems += "${s.id}: minVolumeLiters <= 0"
         mapOf("ph" to s.ph, "temperatureC" to s.temperatureC, "gh" to s.gh, "kh" to s.kh).forEach { (name, r) ->
             if (r != null && r.min > r.max) problems += "${s.id}: $name min > max"
             if (r != null && r.min < 0) problems += "${s.id}: $name negative"
