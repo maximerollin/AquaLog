@@ -16,10 +16,22 @@ class PhotoPipelineTest {
     private fun encode(image: BufferedImage, format: String): ByteArray =
         ByteArrayOutputStream().also { ImageIO.write(image, format, it) }.toByteArray()
 
+    /** A photo-like fixture: diagonal gradient, a few shapes and low-amplitude sensor noise. */
     private fun noisyJpeg(width: Int, height: Int): ByteArray {
         val random = Random(42)
         val image = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-        for (y in 0 until height) for (x in 0 until width) image.setRGB(x, y, random.nextInt(0x1000000))
+        fun channel(value: Float) = (value + random.nextInt(-4, 5)).toInt().coerceIn(0, 255)
+        for (y in 0 until height) for (x in 0 until width) {
+            val t = (x + y) / (width + height).toFloat()
+            image.setRGB(x, y, (channel(40 + 160 * t) shl 16) or (channel(120 + 80 * (1 - t)) shl 8) or channel(200 - 120 * t))
+        }
+        image.createGraphics().apply {
+            color = java.awt.Color(230, 190, 40)
+            fillOval(width / 4, height / 4, width / 3, height / 2)
+            color = java.awt.Color(30, 60, 90)
+            fillRect(width / 2, height / 3, width / 3, height / 3)
+            dispose()
+        }
         return encode(image, "jpg")
     }
 
@@ -70,6 +82,30 @@ class PhotoPipelineTest {
         val decoded = ImageIO.read(ByteArrayInputStream(process(transparent)))
         val centre = decoded.getRGB(32, 32)
         listOf(16, 8, 0).forEach { shift -> assertTrue(255 - ((centre shr shift) and 0xFF) <= 8, "channel at $shift") }
+    }
+
+    @Test
+    fun `a crop that is not centred keeps its own pixels`() {
+        val halves = BufferedImage(400, 200, BufferedImage.TYPE_INT_RGB).apply {
+            for (y in 0 until 200) for (x in 0 until 400) setRGB(x, y, if (x < 200) 0xFF0000 else 0x0000FF)
+        }
+        val image = assertNotNull(runBlocking { normalizePhoto(encode(halves, "png")) })
+        val decoded = ImageIO.read(ByteArrayInputStream(runBlocking { encodeAquariumPhoto(image, SquareCrop(0f, 0f, 1f)) }))
+        val centre = decoded.getRGB(100, 100)
+        assertTrue((centre shr 16) and 0xFF > 200 && centre and 0xFF < 60, "expected red, was ${centre.toString(16)}")
+    }
+
+    @Test
+    fun `zoom keeps the framed centre fixed`() {
+        val (w, h, viewport) = Triple(4000, 3000, 300f)
+        fun centre(crop: SquareCrop) = crop.left * w + crop.side * minOf(w, h) / 2 to crop.top * h + crop.side * minOf(w, h) / 2
+        val (scale, offset) = applyGesture(w, h, viewport, 1f, Offset.Zero, 1f, Offset(-120f, 40f))
+        val before = centre(cropFor(w, h, viewport, scale, offset))
+        val (zoomed, zoomedOffset) = applyGesture(w, h, viewport, scale, offset, 2f, Offset.Zero)
+        val after = centre(cropFor(w, h, viewport, zoomed, zoomedOffset))
+        assertEquals(2f, zoomed)
+        assertEquals(before.first, after.first, 1f)
+        assertEquals(before.second, after.second, 1f)
     }
 
     @Test

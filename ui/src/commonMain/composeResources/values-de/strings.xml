@@ -98,7 +98,7 @@
     <string name="volume_us_gallons_format">%1$s US-gal</string>
 
     <string name="rapid_session_title">Neue Sitzung</string>
-    <string name="cancel">Stornieren</string>
+    <string name="cancel">Abbrechen</string>
     <string name="picker_confirm">OK</string>
     <string name="remove_action">%1$s entfernen</string>
     <string name="earlier_time">−15 Min</string>
@@ -450,4 +450,5 @@
     <string name="widget_tank_content_description">%1$s, %2$s, %3$s</string>
     <string name="photo_crop_title">Foto zuschneiden</string>
     <string name="photo_crop_confirm">Dieses Foto verwenden</string>
+    <string name="photo_crop_preview">Vorschau des Zuschnitts</string>
 </resources>

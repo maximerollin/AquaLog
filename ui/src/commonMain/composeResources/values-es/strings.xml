@@ -450,4 +450,5 @@
     <string name="widget_tank_content_description">%1$s, %2$s, %3$s</string>
     <string name="photo_crop_title">Recortar la foto</string>
     <string name="photo_crop_confirm">Usar esta foto</string>
+    <string name="photo_crop_preview">Vista previa del recorte</string>
 </resources>

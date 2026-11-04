@@ -450,4 +450,5 @@
     <string name="widget_tank_content_description">%1$s, %2$s, %3$s</string>
     <string name="photo_crop_title">Recadrer la photo</string>
     <string name="photo_crop_confirm">Utiliser cette photo</string>
+    <string name="photo_crop_preview">Aperçu du recadrage</string>
 </resources>

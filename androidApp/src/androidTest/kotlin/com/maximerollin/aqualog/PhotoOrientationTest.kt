@@ -1,9 +1,12 @@
 package com.maximerollin.aqualog
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import androidx.exifinterface.media.ExifInterface
 import androidx.test.platform.app.InstrumentationRegistry
+import com.maximerollin.aqualog.photo.centredCrop
+import com.maximerollin.aqualog.photo.encodeAquariumPhoto
 import com.maximerollin.aqualog.photo.normalizePhoto
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -26,6 +29,10 @@ class PhotoOrientationTest {
             val normalized = normalizePhoto(file.readBytes())!!
             assertEquals(20, normalized.width)
             assertEquals(40, normalized.height)
+            val encoded = encodeAquariumPhoto(normalized, centredCrop(normalized.width, normalized.height))
+            val decoded = BitmapFactory.decodeByteArray(encoded, 0, encoded.size)
+            assertEquals(20, decoded.width)
+            assertEquals(20, decoded.height)
         } finally {
             file.delete()
         }
