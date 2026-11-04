@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.shared
 
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.CompletableDeferred
@@ -430,6 +431,33 @@ class SyncCoordinatorTest {
     }
 
     @Test
+    fun `inhabitants added then partly removed on one device reach a second device`() = runTest {
+        val firstDevice = fixture()
+        val secondDevice = fixture()
+        val aquarium = firstDevice.repository.createAquarium("Amazonien", 120.0, VolumeUnit.LITERS)
+        val cloud = InMemorySyncBackend(failAfterFirstAcceptedPush = false)
+        val sessionProvider = FixedSyncSessionProvider(SyncSession("account-1", "access-token"))
+        val firstCoordinator = SyncCoordinator(firstDevice.repository, cloud, sessionProvider)
+        val secondCoordinator = SyncCoordinator(secondDevice.repository, cloud, sessionProvider)
+
+        val neons = firstDevice.repository.addInhabitant(aquarium.id, "neon", null, DrawingFamily.TETRA, 6)
+        assertIs<SyncRunResult.Synchronized>(firstCoordinator.runOnce())
+        assertIs<SyncRunResult.Synchronized>(secondCoordinator.runOnce())
+        assertEquals(listOf(neons), secondDevice.repository.observeInhabitants(aquarium.id).first())
+
+        firstDevice.repository.removeInhabitants(neons.id, 2)
+        assertIs<SyncRunResult.Synchronized>(firstCoordinator.runOnce())
+        assertIs<SyncRunResult.Synchronized>(secondCoordinator.runOnce())
+        assertEquals(listOf(4), secondDevice.repository.observeInhabitants(aquarium.id).first().map(Inhabitant::count))
+        assertEquals(
+            firstDevice.repository.observeInhabitantHistory(aquarium.id).first(),
+            secondDevice.repository.observeInhabitantHistory(aquarium.id).first(),
+        )
+        firstDevice.database.close()
+        secondDevice.database.close()
+    }
+
+    @Test
     fun `retry delays are deterministic and bounded`() {
         val policy = SyncRetryPolicy(baseDelayMillis = 1_000L, maximumDelayMillis = 8_000L)
 
@@ -743,6 +771,7 @@ class SyncCoordinatorTest {
         private val measurements = linkedMapOf<String, Measurement>()
         private val actions = linkedMapOf<String, MaintenanceAction>()
         private val events = linkedMapOf<String, SessionEvent>()
+        private val inhabitants = linkedMapOf<String, Inhabitant>()
         private val acceptedOperationKeys = mutableSetOf<String>()
         private val versions = linkedMapOf<Pair<SyncEntityType, String>, RemoteEntityVersion>()
 
@@ -754,6 +783,7 @@ class SyncCoordinatorTest {
                 measurements.values.toList(),
                 actions.values.toList(),
                 events.values.toList(),
+                inhabitants.values.toList(),
             )
 
         override suspend fun push(session: SyncSession, batch: PendingSyncBatch) {
@@ -782,6 +812,7 @@ class SyncCoordinatorTest {
                     SyncEntityType.MEASUREMENT -> measurements.remove(operation.entityId)
                     SyncEntityType.MAINTENANCE_ACTION -> actions.remove(operation.entityId)
                     SyncEntityType.EVENT -> events.remove(operation.entityId)
+                    SyncEntityType.INHABITANT -> inhabitants.remove(operation.entityId)
                 }
             }
             batch.aquariums.forEach { aquariums[it.id] = it }
@@ -790,6 +821,7 @@ class SyncCoordinatorTest {
             batch.measurements.forEach { measurements[it.id] = it }
             batch.maintenanceActions.forEach { actions[it.id] = it }
             batch.events.forEach { events[it.id] = it }
+            batch.inhabitants.forEach { inhabitants[it.id] = it }
             afterNextPush?.also { callback ->
                 afterNextPush = null
                 callback()

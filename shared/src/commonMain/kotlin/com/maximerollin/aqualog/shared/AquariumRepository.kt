@@ -571,12 +571,20 @@ class RoomAquariumRepository(
             count = count,
             addedAtEpochMillis = currentTimeMillis(),
         )
-        inhabitantDao.insert(inhabitant.toEntity())
+        inhabitantDao.add(inhabitant.toEntity(), newSyncOperation(SyncEntityType.INHABITANT, inhabitant.id))
+        onSyncNeeded()
         return inhabitant
     }
 
-    override suspend fun removeInhabitants(inhabitantId: String, count: Int) =
-        inhabitantDao.remove(inhabitantId, count, currentTimeMillis(), generateId())
+    override suspend fun removeInhabitants(inhabitantId: String, count: Int) {
+        val splitId = generateId()
+        inhabitantDao.remove(
+            inhabitantId, count, currentTimeMillis(), splitId,
+            groupOperation = newSyncOperation(SyncEntityType.INHABITANT, inhabitantId),
+            splitOperation = newSyncOperation(SyncEntityType.INHABITANT, splitId),
+        )
+        onSyncNeeded()
+    }
 
     override fun observeInhabitantHistory(aquariumId: String?): Flow<List<Inhabitant>> =
         inhabitantDao.observeHistory(aquariumId).map { rows -> rows.map(InhabitantEntity::toDomain) }
@@ -780,6 +788,8 @@ class RoomAquariumRepository(
     override suspend fun completeAccountMigration(accountId: String) {
         // The account may lack photos synced to an earlier one (sign-out keeping the copy): the next sync uploads them.
         aquariumDao.markAllPhotosPending()
+        // migrate-initial-copy does not carry inhabitants: these upserts send them.
+        inhabitantDao.insertSyncOperations(inhabitantDao.all().map { newSyncOperation(SyncEntityType.INHABITANT, it.id) })
         accountDao.upsert(
             AccountStateEntity(
                 accountId = accountId,
@@ -866,6 +876,8 @@ class RoomAquariumRepository(
             events = sessionDao.allEvents().filter { it.id in idsByType[SyncEntityType.EVENT].orEmpty() }
                 .map(SessionEventEntity::toDomain),
             photoAquariumIds = aquariums.map(Aquarium::id).filter { it in photoAquariumIds }.toSet(),
+            inhabitants = inhabitantDao.all().filter { it.id in idsByType[SyncEntityType.INHABITANT].orEmpty() }
+                .map(InhabitantEntity::toDomain),
         )
     }
 
@@ -905,6 +917,7 @@ class RoomAquariumRepository(
             measurements = copy.measurements.map(Measurement::toEntity),
             actions = copy.maintenanceActions.map(MaintenanceAction::toEntity),
             events = copy.events.map(SessionEvent::toEntity),
+            inhabitants = copy.inhabitants.map(Inhabitant::toEntity),
             acknowledgedOperationIds = acknowledgedOperationIds,
         )
     }
@@ -924,6 +937,7 @@ class RoomAquariumRepository(
             measurements = snapshot.copy.measurements.map(Measurement::toEntity),
             actions = snapshot.copy.maintenanceActions.map(MaintenanceAction::toEntity),
             events = snapshot.copy.events.map(SessionEvent::toEntity),
+            inhabitants = snapshot.copy.inhabitants.map(Inhabitant::toEntity),
             versions = snapshot.versions.map {
                 SyncEntityVersionEntity(
                     entityType = it.entityType.storageValue,

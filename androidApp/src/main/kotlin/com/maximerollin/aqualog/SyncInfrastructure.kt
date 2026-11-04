@@ -17,6 +17,7 @@ import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.CloudAuthenticationExpiredException
 import com.maximerollin.aqualog.shared.EventType
+import com.maximerollin.aqualog.shared.Inhabitant
 import com.maximerollin.aqualog.shared.InitialAccountCopy
 import com.maximerollin.aqualog.shared.InitialMigrationStatus
 import com.maximerollin.aqualog.shared.MaintenanceAction
@@ -44,6 +45,7 @@ import com.maximerollin.aqualog.shared.SyncOperation
 import com.maximerollin.aqualog.shared.SyncOperationKind
 import com.maximerollin.aqualog.shared.SyncWorkScheduler
 import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -110,6 +112,8 @@ class SupabaseSyncBackend(
                         .firstOrNull { it.id == operation.entityId }?.toRemoteJson(session.accountId)
                     SyncEntityType.EVENT -> batch.events.firstOrNull { it.id == operation.entityId }
                         ?.toRemoteJson(session.accountId)
+                    SyncEntityType.INHABITANT -> batch.inhabitants.firstOrNull { it.id == operation.entityId }
+                        ?.toRemoteJson(session.accountId)
                 }
                 require(operation.kind == SyncOperationKind.DELETE || payload != null) {
                     "Pending upsert payload is missing"
@@ -142,6 +146,7 @@ class SupabaseSyncBackend(
         val measurements = get("measurements", session.accessToken)
         val actions = get("maintenance_actions", session.accessToken)
         val events = get("session_events", session.accessToken)
+        val inhabitants = get("inhabitants", session.accessToken).withKnownFamily()
         RemoteSyncSnapshot(
             copy = InitialAccountCopy(
             aquariums = aquariums.filterLive().map { value ->
@@ -204,6 +209,7 @@ class SupabaseSyncBackend(
                     note = value.getString("note"),
                 )
             },
+            inhabitants = inhabitants.filterLive().map { it.toInhabitant() },
             ),
             versions = buildList {
                 addAll(aquariums.toVersions(SyncEntityType.AQUARIUM))
@@ -212,6 +218,7 @@ class SupabaseSyncBackend(
                 addAll(measurements.toVersions(SyncEntityType.MEASUREMENT))
                 addAll(actions.toVersions(SyncEntityType.MAINTENANCE_ACTION))
                 addAll(events.toVersions(SyncEntityType.EVENT))
+                addAll(inhabitants.toVersions(SyncEntityType.INHABITANT))
             },
         )
     }
@@ -455,6 +462,27 @@ private fun MaintenanceAction.toRemoteJson(accountId: String) = JSONObject()
 private fun SessionEvent.toRemoteJson(accountId: String) = JSONObject()
     .put("id", id).put("account_id", accountId).put("session_id", sessionId)
     .put("type", type.storageValue).put("note", note)
+
+internal fun Inhabitant.toRemoteJson(accountId: String) = JSONObject()
+    .put("id", id).put("account_id", accountId).put("aquarium_id", aquariumId)
+    .putNullable("species_id", speciesId).putNullable("custom_name", customName).put("family", family.name)
+    .put("count", count).put("added_at_epoch_millis", addedAtEpochMillis)
+    .putNullable("removed_at_epoch_millis", removedAtEpochMillis)
+
+/** A family this build does not know (written by a newer one) is skipped, row and version, until an update knows it. */
+internal fun List<JSONObject>.withKnownFamily() =
+    filter { row -> DrawingFamily.entries.any { it.name == row.optString("family") } }
+
+internal fun JSONObject.toInhabitant() = Inhabitant(
+    id = getString("id"),
+    aquariumId = getString("aquarium_id"),
+    speciesId = nullableString("species_id"),
+    customName = nullableString("custom_name"),
+    family = DrawingFamily.valueOf(getString("family")),
+    count = getInt("count"),
+    addedAtEpochMillis = getLong("added_at_epoch_millis"),
+    removedAtEpochMillis = if (isNull("removed_at_epoch_millis")) null else getLong("removed_at_epoch_millis"),
+)
 
 private fun JSONObject.putNullable(name: String, value: Any?): JSONObject = put(name, value ?: JSONObject.NULL)
 private fun JSONObject.nullableDouble(name: String): Double? = if (isNull(name)) null else getDouble(name)

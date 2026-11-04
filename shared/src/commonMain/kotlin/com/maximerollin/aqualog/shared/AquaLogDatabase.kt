@@ -214,7 +214,19 @@ abstract class InhabitantDao {
     protected abstract suspend fun get(id: String): InhabitantEntity?
 
     @Insert
-    abstract suspend fun insert(inhabitant: InhabitantEntity)
+    protected abstract suspend fun insert(inhabitant: InhabitantEntity)
+
+    @Insert
+    abstract suspend fun insertSyncOperations(operations: List<SyncOperationEntity>)
+
+    @Query("SELECT * FROM inhabitants")
+    abstract suspend fun all(): List<InhabitantEntity>
+
+    @Transaction
+    open suspend fun add(inhabitant: InhabitantEntity, syncOperation: SyncOperationEntity) {
+        insert(inhabitant)
+        insertSyncOperations(listOf(syncOperation))
+    }
 
     @Query("UPDATE inhabitants SET count = :count WHERE id = :id")
     protected abstract suspend fun setCount(id: String, count: Int)
@@ -222,16 +234,28 @@ abstract class InhabitantDao {
     @Query("UPDATE inhabitants SET removedAtEpochMillis = :removedAt WHERE id = :id")
     protected abstract suspend fun markRemoved(id: String, removedAt: Long)
 
-    /** Removes [count] from a present group: the whole group is dated, a part is split into a new dated row. */
+    /**
+     * Removes [count] from a present group: the whole group is dated, a part is split into a new dated row.
+     * [groupOperation] is enqueued for the group, [splitOperation] only when a split row is inserted.
+     */
     @Transaction
-    open suspend fun remove(id: String, count: Int, removedAt: Long, splitId: String) {
+    open suspend fun remove(
+        id: String,
+        count: Int,
+        removedAt: Long,
+        splitId: String,
+        groupOperation: SyncOperationEntity,
+        splitOperation: SyncOperationEntity,
+    ) {
         val row = requireNotNull(get(id)?.takeIf { it.removedAtEpochMillis == null }) { "Inhabitant is not present" }
         require(count in 1..row.count) { "Cannot remove $count of ${row.count}" }
         if (count == row.count) {
             markRemoved(id, removedAt)
+            insertSyncOperations(listOf(groupOperation))
         } else {
             setCount(id, row.count - count)
             insert(row.copy(id = splitId, count = count, removedAtEpochMillis = removedAt))
+            insertSyncOperations(listOf(groupOperation, splitOperation))
         }
     }
 }
@@ -1111,6 +1135,9 @@ abstract class SyncDao {
     @Upsert
     protected abstract suspend fun upsertEvents(events: List<SessionEventEntity>)
 
+    @Upsert
+    protected abstract suspend fun upsertInhabitants(inhabitants: List<InhabitantEntity>)
+
     @Query("SELECT * FROM sync_entity_versions")
     protected abstract suspend fun allVersions(): List<SyncEntityVersionEntity>
 
@@ -1141,6 +1168,12 @@ abstract class SyncDao {
     @Query("DELETE FROM session_events WHERE id IN (:ids)")
     protected abstract suspend fun deleteEvents(ids: List<String>)
 
+    @Query("DELETE FROM inhabitants WHERE id IN (:ids)")
+    protected abstract suspend fun deleteInhabitants(ids: List<String>)
+
+    @Query("DELETE FROM inhabitants WHERE aquariumId IN (:aquariumIds)")
+    protected abstract suspend fun deleteInhabitantsOfAquariums(aquariumIds: List<String>)
+
     @Query("DELETE FROM sessions WHERE id IN (:ids)")
     protected abstract suspend fun deleteSessions(ids: List<String>)
 
@@ -1158,6 +1191,7 @@ abstract class SyncDao {
         measurements: List<MeasurementEntity>,
         actions: List<MaintenanceActionEntity>,
         events: List<SessionEventEntity>,
+        inhabitants: List<InhabitantEntity>,
         acknowledgedOperationIds: List<Long>,
     ) {
         if (acknowledgedOperationIds.isNotEmpty()) acknowledge(acknowledgedOperationIds)
@@ -1169,6 +1203,7 @@ abstract class SyncDao {
         val cleanMeasurements = measurements.filterNot { SyncEntityType.MEASUREMENT.storageValue to it.id in dirty }
         val cleanActions = actions.filterNot { SyncEntityType.MAINTENANCE_ACTION.storageValue to it.id in dirty }
         val cleanEvents = events.filterNot { SyncEntityType.EVENT.storageValue to it.id in dirty }
+        val cleanInhabitants = inhabitants.filterNot { SyncEntityType.INHABITANT.storageValue to it.id in dirty }
         if (cleanAquariums.isNotEmpty()) upsertAquariums(keepingPendingPhotos(cleanAquariums))
         if (cleanParameters.isNotEmpty()) upsertParameterDefinitions(cleanParameters)
         if (cleanSessions.isNotEmpty()) {
@@ -1185,7 +1220,7 @@ abstract class SyncDao {
         if (cleanMeasurements.isNotEmpty()) upsertMeasurements(cleanMeasurements)
         if (cleanActions.isNotEmpty()) upsertMaintenanceActions(cleanActions)
         if (cleanEvents.isNotEmpty()) upsertEvents(cleanEvents)
-
+        if (cleanInhabitants.isNotEmpty()) upsertInhabitants(cleanInhabitants)
     }
 
     @Transaction
@@ -1196,6 +1231,7 @@ abstract class SyncDao {
         measurements: List<MeasurementEntity>,
         actions: List<MaintenanceActionEntity>,
         events: List<SessionEventEntity>,
+        inhabitants: List<InhabitantEntity>,
         versions: List<SyncEntityVersionEntity>,
         acknowledgedOperationIds: List<Long>,
     ) {
@@ -1230,6 +1266,8 @@ abstract class SyncDao {
             .takeIf(List<MaintenanceActionEntity>::isNotEmpty)?.let { upsertMaintenanceActions(it) }
         events.filter { accepted(SyncEntityType.EVENT, it.id) }
             .takeIf(List<SessionEventEntity>::isNotEmpty)?.let { upsertEvents(it) }
+        inhabitants.filter { accepted(SyncEntityType.INHABITANT, it.id) }
+            .takeIf(List<InhabitantEntity>::isNotEmpty)?.let { upsertInhabitants(it) }
 
         val tombstones = acceptedVersions.filter { it.deletedAtEpochMillis != null }.groupBy { it.entityType }
         tombstones[SyncEntityType.MEASUREMENT.storageValue]?.map(SyncEntityVersionEntity::entityId)
@@ -1242,8 +1280,14 @@ abstract class SyncDao {
             ?.takeIf(List<String>::isNotEmpty)?.let { deleteSessions(it) }
         tombstones[SyncEntityType.PARAMETER_DEFINITION.storageValue]?.map(SyncEntityVersionEntity::entityId)
             ?.takeIf(List<String>::isNotEmpty)?.let { deleteParameters(it) }
+        tombstones[SyncEntityType.INHABITANT.storageValue]?.map(SyncEntityVersionEntity::entityId)
+            ?.takeIf(List<String>::isNotEmpty)?.let { deleteInhabitants(it) }
+        // No foreign key locally: an Aquarium's inhabitants go with it.
         tombstones[SyncEntityType.AQUARIUM.storageValue]?.map(SyncEntityVersionEntity::entityId)
-            ?.takeIf(List<String>::isNotEmpty)?.let { deleteAquariums(it) }
+            ?.takeIf(List<String>::isNotEmpty)?.let {
+                deleteInhabitantsOfAquariums(it)
+                deleteAquariums(it)
+            }
         if (acceptedVersions.isNotEmpty()) upsertVersions(acceptedVersions)
     }
 }

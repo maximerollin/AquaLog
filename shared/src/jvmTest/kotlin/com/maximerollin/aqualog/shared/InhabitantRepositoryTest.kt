@@ -16,7 +16,11 @@ class InhabitantRepositoryTest {
             createJvmDatabaseBuilder(Files.createTempDirectory("aqualog-inhabitants").resolve("a.db").toString()),
         )
         private val ids = generateSequence(1) { it + 1 }.map { "id-$it" }.iterator()
-        val repository = RoomAquariumRepository(database, ids::next, { now })
+        var syncRequests = 0
+        val repository = RoomAquariumRepository(database, ids::next, { now }, onSyncNeeded = { syncRequests++ })
+
+        suspend fun acknowledgeAll() =
+            repository.acknowledgeSyncOperations(repository.pendingSyncBatch().operations.map(SyncOperation::id))
 
         suspend fun aquarium(name: String = "Amazonien") = repository.createConfiguredAquarium(
             name, 120.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
@@ -174,6 +178,42 @@ class InhabitantRepositoryTest {
                 .map { it.inhabitant.aquariumId },
         )
         assertTrue(f.repository.observeInhabitantHistory(null).first().size == 2)
+        f.database.close()
+    }
+
+    @Test
+    fun `adding or removing enqueues a sync operation`() = runTest {
+        val f = Fixture()
+        val aquarium = f.aquarium()
+        f.acknowledgeAll()
+        val requests = f.syncRequests
+
+        val group = f.neons(aquarium.id, 10)
+        val added = f.repository.pendingSyncBatch()
+        assertEquals(
+            listOf(Triple(SyncEntityType.INHABITANT, group.id, SyncOperationKind.UPSERT)),
+            added.operations.map { Triple(it.entityType, it.entityId, it.kind) },
+        )
+        assertEquals(listOf(group), added.inhabitants)
+        assertEquals(requests + 1, f.syncRequests)
+        f.acknowledgeAll()
+
+        f.now = 2_000L
+        f.repository.removeInhabitants(group.id, 4)
+        val split = f.repository.pendingSyncBatch()
+        assertTrue(split.operations.all { it.entityType == SyncEntityType.INHABITANT && it.kind == SyncOperationKind.UPSERT })
+        assertEquals(
+            f.repository.observeInhabitantHistory(aquarium.id).first().toSet(),
+            split.inhabitants.toSet(),
+        )
+        assertEquals(setOf(6 to null, 4 to 2_000L), split.inhabitants.map { it.count to it.removedAtEpochMillis }.toSet())
+        assertEquals(2, split.operations.size)
+        assertEquals(requests + 2, f.syncRequests)
+        f.acknowledgeAll()
+
+        f.repository.removeInhabitants(group.id, 6)
+        assertEquals(listOf(group.id), f.repository.pendingSyncBatch().operations.map(SyncOperation::entityId))
+        assertEquals(requests + 3, f.syncRequests)
         f.database.close()
     }
 }

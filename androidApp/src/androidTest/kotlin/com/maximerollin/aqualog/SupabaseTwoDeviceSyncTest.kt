@@ -26,10 +26,13 @@ import com.maximerollin.aqualog.shared.SyncSessionProvider
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assume.assumeTrue
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -149,6 +152,50 @@ class SupabaseTwoDeviceSyncTest {
             secondCoordinator.runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
             assertNull(second.loadSetup(aquarium.id)!!.aquarium.photoId)
             assertNull(backend.downloadAquariumPhoto(authenticated, aquarium.id))
+        }
+        firstDatabase.close()
+        secondDatabase.close()
+    }
+
+    @Test
+    fun productionAdapter_syncsInhabitantsToASecondDevice() {
+        val configuration = SupabaseConfiguration.fromBuildConfig()
+        assumeTrue("Local Supabase URL and anon key are required", configuration.isConfigured)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val suffix = UUID.randomUUID().toString()
+        val authenticated = signUp(
+            configuration,
+            email = "android-inhabitants-$suffix@example.com",
+            password = "Aq!$suffix",
+        )
+        val firstDatabase = createAquaLogDatabase(createAndroidDatabaseBuilder(context, "inhabitants-first-$suffix.db"))
+        val secondDatabase = createAquaLogDatabase(createAndroidDatabaseBuilder(context, "inhabitants-second-$suffix.db"))
+        val first = RoomAquariumRepository(firstDatabase, { UUID.randomUUID().toString() }, System::currentTimeMillis)
+        val second = RoomAquariumRepository(secondDatabase, { UUID.randomUUID().toString() }, System::currentTimeMillis)
+        val provider = object : SyncSessionProvider {
+            override suspend fun currentSession() = authenticated
+        }
+        val backend = SupabaseSyncBackend(configuration)
+        val firstCoordinator = SyncCoordinator(first, backend, provider)
+        val secondCoordinator = SyncCoordinator(second, backend, provider)
+
+        runBlocking {
+            val aquarium = first.createConfiguredAquarium(
+                "Android inhabitants", 90.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            ).aquarium
+            val neons = first.addInhabitant(aquarium.id, "neon", null, DrawingFamily.TETRA, 6)
+            firstCoordinator.runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
+            secondCoordinator.runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
+            assertEquals(listOf(neons), second.observeInhabitants(aquarium.id).first())
+
+            first.removeInhabitants(neons.id, 2)
+            firstCoordinator.runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
+            secondCoordinator.runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
+            assertEquals(listOf(4), second.observeInhabitants(aquarium.id).first().map { it.count })
+            val history = second.observeInhabitantHistory(aquarium.id).first()
+            assertEquals(1, history.count { it.removedAtEpochMillis != null })
+            assertEquals(first.observeInhabitantHistory(aquarium.id).first().toSet(), history.toSet())
         }
         firstDatabase.close()
         secondDatabase.close()

@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.shared
 
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -399,6 +400,95 @@ class SyncRecoveryTest {
                 photoStore = DirectoryAquariumPhotoStore(directory.resolve("photos").toFile()),
             ),
         )
+    }
+
+    @Test
+    fun `a remote inhabitant is added locally and its tombstone deletes it`() = runTest {
+        val local = fixture(Files.createTempDirectory("aqualog-sync-inhabitant").resolve("aqualog.db").toString()) { 100L }
+        val aquarium = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
+        val neons = Inhabitant("remote-neons", aquarium.id, "neon", null, DrawingFamily.TETRA, 6, 50L)
+        fun copy(inhabitants: List<Inhabitant>) = InitialAccountCopy(
+            listOf(aquarium), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), inhabitants,
+        )
+
+        local.repository.commitRemoteSnapshot(
+            RemoteSyncSnapshot(
+                copy(listOf(neons)),
+                listOf(
+                    RemoteEntityVersion(SyncEntityType.AQUARIUM, aquarium.id, 1L, 1L, null),
+                    RemoteEntityVersion(SyncEntityType.INHABITANT, neons.id, 1L, 1L, null),
+                ),
+            ),
+            local.repository.pendingSyncBatch().operations.map(SyncOperation::id),
+        )
+        assertEquals(listOf(neons), local.repository.observeInhabitants(aquarium.id).first())
+
+        local.repository.commitRemoteSnapshot(
+            RemoteSyncSnapshot(
+                copy(emptyList()),
+                listOf(RemoteEntityVersion(SyncEntityType.INHABITANT, neons.id, 2L, 2L, 2L)),
+            ),
+            emptyList(),
+        )
+        assertEquals(emptyList(), local.repository.observeInhabitantHistory(aquarium.id).first())
+        local.database.close()
+    }
+
+    @Test
+    fun `a remote copy without versions adds its inhabitants`() = runTest {
+        val local = fixture(Files.createTempDirectory("aqualog-sync-inhabitant-copy").resolve("aqualog.db").toString()) { 100L }
+        val aquarium = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
+        val shrimps = Inhabitant("remote-shrimps", aquarium.id, null, "Red cherry", DrawingFamily.SHRIMP, 3, 50L, 70L)
+
+        local.repository.commitRemoteCopy(
+            InitialAccountCopy(
+                listOf(aquarium), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), listOf(shrimps),
+            ),
+            local.repository.pendingSyncBatch().operations.map(SyncOperation::id),
+        )
+
+        assertEquals(listOf(shrimps), local.repository.observeInhabitantHistory(aquarium.id).first())
+        local.database.close()
+    }
+
+    @Test
+    fun `an Aquarium tombstone deletes its inhabitants`() = runTest {
+        val local = fixture(Files.createTempDirectory("aqualog-sync-inhabitant-aquarium").resolve("aqualog.db").toString()) { 100L }
+        val aquarium = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
+        val kept = local.repository.createAquarium("Cuisine", 40.0, VolumeUnit.LITERS, access = AquariumCreationAccess.PRO)
+        local.repository.addInhabitant(aquarium.id, "neon", null, DrawingFamily.TETRA, 6)
+        val other = local.repository.addInhabitant(kept.id, "neon", null, DrawingFamily.TETRA, 2)
+
+        local.repository.commitRemoteSnapshot(
+            RemoteSyncSnapshot(
+                InitialAccountCopy(listOf(kept), emptyList(), emptyList(), emptyList(), emptyList(), emptyList()),
+                listOf(RemoteEntityVersion(SyncEntityType.AQUARIUM, aquarium.id, 5L, 5L, 5L)),
+            ),
+            local.repository.pendingSyncBatch().operations.map(SyncOperation::id),
+        )
+
+        assertEquals(listOf(other), local.repository.observeInhabitantHistory(null).first())
+        local.database.close()
+    }
+
+    @Test
+    fun `completing an account migration enqueues an upsert for every local inhabitant`() = runTest {
+        val local = fixture(Files.createTempDirectory("aqualog-sync-inhabitant-migration").resolve("aqualog.db").toString()) { 100L }
+        val aquarium = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
+        val group = local.repository.addInhabitant(aquarium.id, "neon", null, DrawingFamily.TETRA, 10)
+        local.repository.removeInhabitants(group.id, 3)
+        local.repository.acknowledgeSyncOperations(local.repository.pendingSyncBatch().operations.map(SyncOperation::id))
+
+        local.repository.beginAccountMigration("account-2", null)
+        local.repository.completeAccountMigration("account-2")
+
+        val batch = local.repository.pendingSyncBatch()
+        assertEquals(
+            local.repository.observeInhabitantHistory(null).first().map { it.id to SyncOperationKind.UPSERT }.toSet(),
+            batch.operations.filter { it.entityType == SyncEntityType.INHABITANT }.map { it.entityId to it.kind }.toSet(),
+        )
+        assertEquals(2, batch.inhabitants.size)
+        local.database.close()
     }
 
     private fun fixture(path: String, now: () -> Long): Fixture {

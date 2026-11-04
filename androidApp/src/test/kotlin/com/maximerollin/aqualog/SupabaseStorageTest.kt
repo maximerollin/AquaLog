@@ -1,6 +1,8 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.shared.Aquarium
+import com.maximerollin.aqualog.shared.Inhabitant
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import com.maximerollin.aqualog.shared.SyncEntityType
 import com.maximerollin.aqualog.shared.SyncOperation
 import com.maximerollin.aqualog.shared.SyncOperationKind
@@ -77,5 +79,26 @@ class SupabaseStorageTest {
         val removed = aquarium.copy(photoId = null).toRemoteJson("account", withPhotoId = true)
         assertTrue(removed.has("photo_id"))
         assertEquals(JSONObject.NULL, removed.get("photo_id"))
+    }
+
+    @Test
+    fun `an inhabitant added to a new Aquarium is pushed after it`() {
+        val operations = listOf(
+            operation(1, SyncEntityType.AQUARIUM, "a"),
+            operation(2, SyncEntityType.INHABITANT, "i"),
+            operation(3, SyncEntityType.AQUARIUM, "a"),
+        )
+        assertEquals(listOf(3L, 2L), operations.inPushOrder().map { it.id })
+    }
+
+    @Test
+    fun `an inhabitant round-trips through its row and an unknown family is skipped`() {
+        val neons = Inhabitant("i1", "a", "neon", null, DrawingFamily.TETRA, 6, 10L)
+        val custom = Inhabitant("i2", "a", null, "Maison", DrawingFamily.CICHLID, 2, 10L, 20L)
+        val unknown = JSONObject(neons.toRemoteJson("account").toString()).put("id", "i3").put("family", "KRAKEN")
+
+        val rows = listOf(neons.toRemoteJson("account"), custom.toRemoteJson("account"), unknown).withKnownFamily()
+
+        assertEquals(listOf(neons, custom), rows.map { it.toInhabitant() })
     }
 }

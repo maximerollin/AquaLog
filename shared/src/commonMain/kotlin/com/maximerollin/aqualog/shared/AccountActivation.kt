@@ -101,6 +101,8 @@ data class InitialAccountCopy(
     val measurements: List<Measurement>,
     val maintenanceActions: List<MaintenanceAction>,
     val events: List<SessionEvent>,
+    /** Pulled with the rest; never sent by migrate-initial-copy: the upserts enqueued at migration carry them. */
+    val inhabitants: List<Inhabitant> = emptyList(),
 )
 
 enum class InitialMigrationStatus(val storageValue: String) {

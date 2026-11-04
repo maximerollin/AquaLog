@@ -33,6 +33,7 @@ Deno.test("two devices share entity sync while another account remains isolated"
   const measurementId = crypto.randomUUID();
   const actionId = crypto.randomUUID();
   const eventId = crypto.randomUUID();
+  const inhabitantId = crypto.randomUUID();
 
   try {
     const firstDevice = createClient(url, anonymousKey, {
@@ -114,6 +115,26 @@ Deno.test("two devices share entity sync while another account remains isolated"
       const result = await write;
       if (result.error) throw result.error;
     }
+    // Inhabitants have no direct write grant: they only go through the versioned RPC.
+    const inhabitant = await firstDevice.rpc("apply_sync_operation", {
+      p_operation_key: `inhabitant-${suffix}`,
+      p_entity_type: "inhabitant",
+      p_entity_id: inhabitantId,
+      p_kind: "upsert",
+      p_client_updated_at_epoch_millis: 1700000102000,
+      p_base_server_version: 0,
+      p_payload: {
+        id: inhabitantId,
+        aquarium_id: aquariumId,
+        species_id: "neon",
+        custom_name: null,
+        family: "TETRA",
+        count: 6,
+        added_at_epoch_millis: 1700000102000,
+        removed_at_epoch_millis: null,
+      },
+    });
+    if (inhabitant.error) throw inhabitant.error;
 
     for (
       const table of [
@@ -123,6 +144,7 @@ Deno.test("two devices share entity sync while another account remains isolated"
         "measurements",
         "maintenance_actions",
         "session_events",
+        "inhabitants",
       ]
     ) {
       const visible = await secondDevice.from(table).select("id");
@@ -163,6 +185,7 @@ Deno.test("two devices share entity sync while another account remains isolated"
   } finally {
     for (
       const table of [
+        "inhabitants",
         "session_events",
         "maintenance_actions",
         "measurements",
