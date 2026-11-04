@@ -15,6 +15,7 @@ import com.maximerollin.aqualog.shared.ProEntitlementCache
 import com.maximerollin.aqualog.shared.ProPurchaseCoordinator
 import com.maximerollin.aqualog.shared.PortableDataService
 import com.maximerollin.aqualog.shared.ReviewCoordinator
+import com.maximerollin.aqualog.shared.DirectoryAquariumPhotoStore
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.SyncCoordinator
 import com.maximerollin.aqualog.shared.TechnicalComponent
@@ -23,6 +24,7 @@ import com.maximerollin.aqualog.shared.TechnicalFailureKind
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
 import com.maximerollin.aqualog.widget.updateAllWidgets
+import java.io.File
 import java.time.ZoneId
 import java.util.UUID
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -60,12 +62,15 @@ open class AquaLogApplication : Application() {
         createAquaLogDatabase(createAndroidDatabaseBuilder(this, databaseName))
     }
 
+    private val aquariumPhotoStore by lazy { DirectoryAquariumPhotoStore(File(filesDir, "aquarium-photos")) }
+
     open val aquariumRepository: AquariumRepository by lazy {
         RoomAquariumRepository(
             database = database,
             generateId = { UUID.randomUUID().toString() },
             currentTimeMillis = System::currentTimeMillis,
             onSyncNeeded = { AndroidSyncScheduler.requestImmediate(this) },
+            photoStore = aquariumPhotoStore,
         )
     }
 
@@ -102,6 +107,7 @@ open class AquaLogApplication : Application() {
             sessionProvider = accountSessionProvider,
             currentTimeMillis = System::currentTimeMillis,
             operationGate = accountOperationGate,
+            photoStore = aquariumPhotoStore,
         )
     }
 

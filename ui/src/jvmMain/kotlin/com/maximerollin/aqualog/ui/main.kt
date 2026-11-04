@@ -9,6 +9,7 @@ import androidx.compose.ui.window.rememberWindowState
 import com.maximerollin.aqualog.AquaLogApp
 import com.maximerollin.aqualog.ExternalLinks
 import com.maximerollin.aqualog.HomeViewModel
+import com.maximerollin.aqualog.shared.DirectoryAquariumPhotoStore
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
 import com.maximerollin.aqualog.shared.createJvmDatabaseBuilder
@@ -25,6 +26,7 @@ fun main() = application {
                 database = createAquaLogDatabase(createJvmDatabaseBuilder(databaseFile.absolutePath)),
                 generateId = { UUID.randomUUID().toString() },
                 currentTimeMillis = System::currentTimeMillis,
+                photoStore = DirectoryAquariumPhotoStore(File(databaseFile.parentFile, "aquarium-photos")),
             ),
         )
     }

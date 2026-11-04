@@ -94,9 +94,11 @@ class SupabaseSyncBackend(
     override suspend fun push(session: SyncSession, batch: PendingSyncBatch) = withContext(Dispatchers.IO) {
         require(configuration.isConfigured) { "Supabase is not configured for this build" }
         batch.operations.groupBy { it.entityType to it.entityId }
-            .mapValues { (_, operations) -> operations.maxBy { it.id } }
             .values
-            .sortedBy { it.id }
+            // Latest operation per entity, but in the order the entity was first touched: a photo update
+            // must not move an Aquarium's insert after the rows that reference it.
+            .sortedBy { operations -> operations.minOf { it.id } }
+            .map { operations -> operations.maxBy { it.id } }
             .forEach { operation ->
                 val payload = when (operation.entityType) {
                     SyncEntityType.AQUARIUM -> batch.aquariums.firstOrNull { it.id == operation.entityId }
@@ -154,6 +156,7 @@ class SupabaseSyncBackend(
                     createdAtEpochMillis = value.getLong("created_at_epoch_millis"),
                     profile = AquariumProfile.fromStorageValue(value.getString("profile")),
                     isArchived = value.optBoolean("is_archived", false),
+                    photoId = value.nullableString("photo_id"),
                 )
             },
             parameterDefinitions = parameters.filterLive().map { value ->
@@ -227,13 +230,67 @@ class SupabaseSyncBackend(
         return List(values.length()) { index -> values.getJSONObject(index) }
     }
 
+    override suspend fun uploadAquariumPhoto(session: SyncSession, aquariumId: String, jpeg: ByteArray) {
+        withContext(Dispatchers.IO) {
+            requestBytes(
+                path = photoPath(session, aquariumId, authenticated = false),
+                method = "POST",
+                accessToken = session.accessToken,
+                body = jpeg,
+                contentType = "image/jpeg",
+                upsert = true,
+            )
+        }
+    }
+
+    // A missing object (HTTP 400 or 404) is already deleted: failing here would block every later sync.
+    override suspend fun deleteAquariumPhoto(session: SyncSession, aquariumId: String) {
+        withContext(Dispatchers.IO) {
+            requestBytes(
+                path = photoPath(session, aquariumId, authenticated = false),
+                method = "DELETE",
+                accessToken = session.accessToken,
+                missingStatuses = setOf(400, 404),
+            )
+        }
+    }
+
+    override suspend fun downloadAquariumPhoto(session: SyncSession, aquariumId: String): ByteArray? =
+        withContext(Dispatchers.IO) {
+            requestBytes(
+                path = photoPath(session, aquariumId, authenticated = true),
+                method = "GET",
+                accessToken = session.accessToken,
+                missingStatuses = setOf(400, 404),
+            )
+        }
+
+    private fun photoPath(session: SyncSession, aquariumId: String, authenticated: Boolean): String {
+        require(configuration.isConfigured) { "Supabase is not configured for this build" }
+        return "/storage/v1/object/${if (authenticated) "authenticated/" else ""}aquarium-photos/" +
+            "${session.accountId}/$aquariumId.jpg"
+    }
+
     private fun request(
         path: String,
         method: String,
         accessToken: String,
         body: String? = null,
         prefer: String? = null,
-    ): String {
+    ): String = requestBytes(path, method, accessToken, body?.toByteArray(), prefer = prefer)
+        ?.toString(Charsets.UTF_8).orEmpty()
+
+    /** The single HTTP helper; returns null when the status is one of [missingStatuses]. */
+    private fun requestBytes(
+        path: String,
+        method: String,
+        accessToken: String,
+        body: ByteArray? = null,
+        contentType: String = "application/json",
+        prefer: String? = null,
+        upsert: Boolean = false,
+        missingStatuses: Set<Int> = emptySet(),
+    ): ByteArray? {
         val connection = URL("${configuration.projectUrl}$path").openConnection() as HttpURLConnection
         return try {
             connection.requestMethod = method
@@ -241,19 +298,22 @@ class SupabaseSyncBackend(
             connection.readTimeout = 20_000
             connection.setRequestProperty("apikey", configuration.anonymousKey)
             connection.setRequestProperty("Authorization", "Bearer $accessToken")
-            connection.setRequestProperty("Content-Type", "application/json")
             prefer?.let { connection.setRequestProperty("Prefer", it) }
+            if (upsert) connection.setRequestProperty("x-upsert", "true")
             if (body != null) {
+                // Storage answers 400 to a Content-Type without a body, so it is only sent with one.
+                connection.setRequestProperty("Content-Type", contentType)
                 connection.doOutput = true
-                connection.outputStream.use { it.write(body.toByteArray()) }
+                connection.outputStream.use { it.write(body) }
             }
             val status = connection.responseCode
             val response = (if (status in 200..299) connection.inputStream else connection.errorStream)
-                ?.bufferedReader()?.use { it.readText() }.orEmpty()
+                ?.use { it.readBytes() } ?: ByteArray(0)
             if (status == HttpURLConnection.HTTP_UNAUTHORIZED) throw CloudAuthenticationExpiredException()
             if (status == HttpURLConnection.HTTP_CONFLICT) {
                 throw SyncConflictException("Supabase rejected a concurrent write (HTTP $status)")
             }
+            if (status in missingStatuses) return null
             if (status !in 200..299) throw SyncServerException("Supabase sync failed (HTTP $status)")
             response
         } catch (network: IOException) {
@@ -333,6 +393,7 @@ private fun Aquarium.toRemoteJson(accountId: String) = JSONObject()
     .put("id", id).put("account_id", accountId).put("name", name).put("volume", volume)
     .put("volume_unit", volumeUnit.storageValue).put("created_at_epoch_millis", createdAtEpochMillis)
     .put("profile", profile.storageValue).put("is_archived", isArchived)
+    .putNullable("photo_id", photoId)
 
 private fun ParameterDefinition.toRemoteJson(accountId: String) = JSONObject()
     .put("id", id).put("account_id", accountId).put("aquarium_id", aquariumId)
