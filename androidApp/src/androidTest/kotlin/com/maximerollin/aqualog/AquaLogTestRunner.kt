@@ -151,6 +151,7 @@ class TestAquaLogApplication : AquaLogApplication() {
             database = newDatabase,
             generateId = { UUID.randomUUID().toString() },
             currentTimeMillis = System::currentTimeMillis,
+            photoStore = aquariumPhotoStore,
         )
         bindRepository(newRepository, newDatabase)
         deletionResult = CloudAccountDeletionResult.Completed

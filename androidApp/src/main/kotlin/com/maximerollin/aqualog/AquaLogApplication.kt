@@ -62,7 +62,7 @@ open class AquaLogApplication : Application() {
         createAquaLogDatabase(createAndroidDatabaseBuilder(this, databaseName))
     }
 
-    private val aquariumPhotoStore by lazy { DirectoryAquariumPhotoStore(File(filesDir, "aquarium-photos")) }
+    protected val aquariumPhotoStore by lazy { DirectoryAquariumPhotoStore(File(filesDir, "aquarium-photos")) }
 
     open val aquariumRepository: AquariumRepository by lazy {
         RoomAquariumRepository(

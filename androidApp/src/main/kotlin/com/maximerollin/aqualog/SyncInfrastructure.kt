@@ -40,12 +40,14 @@ import com.maximerollin.aqualog.shared.ScheduledSyncExecution
 import com.maximerollin.aqualog.shared.SyncServerException
 import com.maximerollin.aqualog.shared.SyncSession
 import com.maximerollin.aqualog.shared.SyncSessionProvider
+import com.maximerollin.aqualog.shared.SyncOperation
 import com.maximerollin.aqualog.shared.SyncOperationKind
 import com.maximerollin.aqualog.shared.SyncWorkScheduler
 import com.maximerollin.aqualog.shared.VolumeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -93,12 +95,7 @@ class SupabaseSyncBackend(
 ) : SyncBackend {
     override suspend fun push(session: SyncSession, batch: PendingSyncBatch) = withContext(Dispatchers.IO) {
         require(configuration.isConfigured) { "Supabase is not configured for this build" }
-        batch.operations.groupBy { it.entityType to it.entityId }
-            .values
-            // Latest operation per entity, but in the order the entity was first touched: a photo update
-            // must not move an Aquarium's insert after the rows that reference it.
-            .sortedBy { operations -> operations.minOf { it.id } }
-            .map { operations -> operations.maxBy { it.id } }
+        batch.operations.inPushOrder()
             .forEach { operation ->
                 val payload = when (operation.entityType) {
                     SyncEntityType.AQUARIUM -> batch.aquariums.firstOrNull { it.id == operation.entityId }
@@ -239,18 +236,20 @@ class SupabaseSyncBackend(
                 body = jpeg,
                 contentType = "image/jpeg",
                 upsert = true,
+                storage = true,
             )
         }
     }
 
-    // A missing object (HTTP 400 or 404) is already deleted: failing here would block every later sync.
+    // A missing object is already deleted: failing here would block every later sync.
     override suspend fun deleteAquariumPhoto(session: SyncSession, aquariumId: String) {
         withContext(Dispatchers.IO) {
             requestBytes(
                 path = photoPath(session, aquariumId, authenticated = false),
                 method = "DELETE",
                 accessToken = session.accessToken,
-                missingStatuses = setOf(400, 404),
+                storage = true,
+                missingIsNull = true,
             )
         }
     }
@@ -261,7 +260,8 @@ class SupabaseSyncBackend(
                 path = photoPath(session, aquariumId, authenticated = true),
                 method = "GET",
                 accessToken = session.accessToken,
-                missingStatuses = setOf(400, 404),
+                storage = true,
+                missingIsNull = true,
             )
         }
 
@@ -280,7 +280,7 @@ class SupabaseSyncBackend(
     ): String = requestBytes(path, method, accessToken, body?.toByteArray(), prefer = prefer)
         ?.toString(Charsets.UTF_8).orEmpty()
 
-    /** The single HTTP helper; returns null when the status is one of [missingStatuses]. */
+    /** The single HTTP helper. A [storage] failure is classified by [classifyStorageFailure]; a missing object returns null if [missingIsNull]. */
     private fun requestBytes(
         path: String,
         method: String,
@@ -289,7 +289,8 @@ class SupabaseSyncBackend(
         contentType: String = "application/json",
         prefer: String? = null,
         upsert: Boolean = false,
-        missingStatuses: Set<Int> = emptySet(),
+        storage: Boolean = false,
+        missingIsNull: Boolean = false,
     ): ByteArray? {
         val connection = URL("${configuration.projectUrl}$path").openConnection() as HttpURLConnection
         return try {
@@ -313,7 +314,13 @@ class SupabaseSyncBackend(
             if (status == HttpURLConnection.HTTP_CONFLICT) {
                 throw SyncConflictException("Supabase rejected a concurrent write (HTTP $status)")
             }
-            if (status in missingStatuses) return null
+            if (storage && status !in 200..299) {
+                when (classifyStorageFailure(status, response.toString(Charsets.UTF_8))) {
+                    StorageFailure.MISSING -> if (missingIsNull) return null
+                    StorageFailure.AUTH_EXPIRED -> throw CloudAuthenticationExpiredException()
+                    StorageFailure.OTHER -> {}
+                }
+            }
             if (status !in 200..299) throw SyncServerException("Supabase sync failed (HTTP $status)")
             response
         } catch (network: IOException) {
@@ -321,6 +328,37 @@ class SupabaseSyncBackend(
         } finally {
             connection.disconnect()
         }
+    }
+}
+
+/**
+ * The latest operation per entity, ordered by when the entity was first touched: a later update must not
+ * move an Aquarium's insert after the rows that reference it.
+ */
+internal fun List<SyncOperation>.inPushOrder(): List<SyncOperation> =
+    groupBy { it.entityType to it.entityId }.values
+        .sortedBy { operations -> operations.minOf { it.id } }
+        .map { operations -> operations.maxBy { it.id } }
+
+internal enum class StorageFailure { MISSING, AUTH_EXPIRED, OTHER }
+
+/**
+ * Storage answers HTTP 400 to most client errors and carries the real code in the JSON body, e.g. an expired
+ * token is `{"statusCode":"403","error":"Unauthorized",...}` and a missing object `{"statusCode":"404","error":"not_found",...}`.
+ */
+internal fun classifyStorageFailure(status: Int, body: String): StorageFailure {
+    if (status == HttpURLConnection.HTTP_NOT_FOUND) return StorageFailure.MISSING
+    if (status == HttpURLConnection.HTTP_UNAUTHORIZED) return StorageFailure.AUTH_EXPIRED
+    if (status != HttpURLConnection.HTTP_BAD_REQUEST) return StorageFailure.OTHER
+    val json = try { JSONObject(body) } catch (_: JSONException) { return StorageFailure.OTHER }
+    val code = json.optString("statusCode")
+    val error = json.optString("error")
+    return when {
+        code == "404" || error == "not_found" || error == "NoSuchKey" -> StorageFailure.MISSING
+        // A row-level-security refusal is not an expired token: a new token would be refused too.
+        json.optString("message").contains("row-level security", ignoreCase = true) -> StorageFailure.OTHER
+        code == "401" || code == "403" || error == "InvalidJWT" -> StorageFailure.AUTH_EXPIRED
+        else -> StorageFailure.OTHER
     }
 }
 
