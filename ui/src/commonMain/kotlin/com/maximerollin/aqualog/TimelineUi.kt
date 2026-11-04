@@ -62,12 +62,12 @@ import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
 import com.maximerollin.aqualog.shared.TimelineInhabitantChange
 import com.maximerollin.aqualog.shared.encyclopedia.Species
 import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
 import com.maximerollin.aqualog.shared.assistance.readingLevel
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.ReadingValue
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 private sealed interface TimelineListItem {
@@ -158,7 +158,7 @@ private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel) {
     val showAquarium = state.timeline.aquariumId == null && state.aquariums.size > 1
     val encyclopedia by produceState<List<Species>?>(null) {
         // Unavailable file: lines fall back to the species id.
-        value = try { loadEncyclopedia() } catch (_: Exception) { null }
+        value = try { loadEncyclopedia() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { null }
     }
     val language = remember { Locale.getDefault().language }
     LazyColumn(
@@ -267,9 +267,9 @@ private fun TimelineInhabitantRow(change: TimelineInhabitantChange, name: String
     val formatter = currentLocalizedFormatters()
     val count = change.inhabitant.count
     val line = if (change.removed) {
-        pluralStringResource(Res.plurals.timeline_inhabitants_removed, count, count, name)
+        stringResource(Res.string.timeline_inhabitant_removed, name, count)
     } else {
-        pluralStringResource(Res.plurals.timeline_inhabitants_added, count, count, name)
+        stringResource(Res.string.timeline_inhabitant_added, name, count)
     }
     RailEntry(MaterialTheme.colorScheme.outlineVariant, isLast) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

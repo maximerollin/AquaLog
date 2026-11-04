@@ -16,4 +16,4 @@ fun Species.localName(languageTag: String): String = names[languageTag] ?: names
 
 /** The typed name of a custom species, else the encyclopedia name; the species id when the encyclopedia is unavailable. */
 fun Inhabitant.displayName(encyclopedia: List<Species>?, languageTag: String): String =
-    customName ?: speciesId?.let { id -> encyclopedia?.firstOrNull { it.id == id }?.localName(languageTag) ?: id } ?: ""
+    customName?.takeIf(String::isNotBlank) ?: speciesId?.let { id -> encyclopedia?.firstOrNull { it.id == id }?.localName(languageTag) ?: id } ?: ""

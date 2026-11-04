@@ -267,6 +267,10 @@ class PortableDataServiceTest {
             assertEquals(PortableImportProblem.INVALID_INHABITANTS, result.problem)
         }
 
+        val blankName = document.copy(inhabitants = document.inhabitants.map { it.copy(customName = " ") })
+        assertIs<PortableImportResult.Imported>(target.service.importData(TEST_JSON.encodeToString(blankName)))
+        assertEquals(null, target.repository.observeInhabitantHistory(null).first().single().customName)
+
         source.close()
         target.close()
     }

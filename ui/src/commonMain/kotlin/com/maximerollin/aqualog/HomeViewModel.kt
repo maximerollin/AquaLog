@@ -2334,6 +2334,8 @@ class HomeViewModel(
                 timeline = state.timeline.copy(
                     isLoading = true,
                     hasRecoverableError = false,
+                    // The previous filter's inhabitant lines must not show while the new ones load.
+                    inhabitantChanges = emptyList(),
                 ),
             )
         }

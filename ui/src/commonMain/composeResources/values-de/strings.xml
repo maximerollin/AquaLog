@@ -269,14 +269,8 @@
     <string name="open_session_details">Sitzungsdetails öffnen</string>
     <string name="back_to_timeline">Zurück zur Chronologie</string>
     <string name="timeline_events">Ereignisse</string>
-    <plurals name="timeline_inhabitants_added">
-        <item quantity="one">%1$d %2$s hinzugefügt</item>
-        <item quantity="other">%1$d %2$s hinzugefügt</item>
-    </plurals>
-    <plurals name="timeline_inhabitants_removed">
-        <item quantity="one">%1$d %2$s entfernt</item>
-        <item quantity="other">%1$d %2$s entfernt</item>
-    </plurals>
+    <string name="timeline_inhabitant_added">Hinzugefügt: %1$s × %2$d</string>
+    <string name="timeline_inhabitant_removed">Entfernt: %1$s × %2$d</string>
     <plurals name="timeline_action_count">
         <item quantity="one">%1$d Wartungsaktion</item>
         <item quantity="other">%1$d Wartungsaktionen</item>

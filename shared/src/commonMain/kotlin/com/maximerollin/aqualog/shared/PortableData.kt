@@ -621,5 +621,5 @@ private fun InhabitantEntity.toPortable() = PortableInhabitant(
 )
 
 private fun PortableInhabitant.toEntity() = InhabitantEntity(
-    id, aquariumId, speciesId, customName, family, count, addedAtEpochMillis, removedAtEpochMillis,
+    id, aquariumId, speciesId, customName?.takeIf(String::isNotBlank), family, count, addedAtEpochMillis, removedAtEpochMillis,
 )

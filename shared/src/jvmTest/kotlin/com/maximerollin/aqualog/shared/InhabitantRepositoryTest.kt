@@ -103,6 +103,25 @@ class InhabitantRepositoryTest {
     }
 
     @Test
+    fun `a split then removing the remainder gives one add line and two removal lines`() = runTest {
+        val f = Fixture()
+        val aquarium = f.aquarium()
+        val group = f.neons(aquarium.id, 10)
+        f.now = 2_000L
+        f.repository.removeInhabitants(group.id, 4)
+        f.now = 3_000L
+        f.repository.removeInhabitants(group.id, 6)
+
+        assertEquals(emptyList(), f.repository.observeInhabitants(aquarium.id).first())
+        val changes = f.repository.observeInhabitantTimeline(TimelineFilter()).first()
+        assertEquals(
+            listOf(Triple(1_000L, false, 10), Triple(2_000L, true, 4), Triple(3_000L, true, 6)),
+            changes.map { Triple(it.atEpochMillis, it.removed, it.inhabitant.count) },
+        )
+        f.database.close()
+    }
+
+    @Test
     fun `removing more than present is rejected and changes nothing`() = runTest {
         val f = Fixture()
         val aquarium = f.aquarium()
