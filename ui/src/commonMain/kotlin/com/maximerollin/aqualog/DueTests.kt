@@ -5,6 +5,7 @@ import com.maximerollin.aqualog.resources.list_pair
 import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
+import com.maximerollin.aqualog.shared.Inhabitant
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.assistance.AquariumHistory
 import com.maximerollin.aqualog.shared.assistance.DueTest
@@ -48,12 +49,15 @@ fun nextDueDate(
     (0..31).asSequence().map(today::plusDays).firstOrNull { dueTests(setup, samples, it, inhabitantAddedDays).isNotEmpty() }
 
 /** [inhabitantAddedDays] of one Aquarium; without the encyclopedia the groups' drawing family decides. */
-suspend fun AquariumRepository.addedDays(aquariumId: String, timeZoneId: String): List<TaskDate> =
+suspend fun List<Inhabitant>.addedDays(timeZoneId: String): List<TaskDate> =
     inhabitantAddedDays(
-        observeInhabitantHistory(aquariumId).first(),
+        this,
         try { loadEncyclopedia() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() },
         timeZoneId,
     )
+
+suspend fun AquariumRepository.addedDays(aquariumId: String, timeZoneId: String): List<TaskDate> =
+    observeInhabitantHistory(aquariumId).first().addedDays(timeZoneId)
 
 class DueTestSummary(val dueToday: List<DueTest>, val nextDueDate: TaskDate?)
 

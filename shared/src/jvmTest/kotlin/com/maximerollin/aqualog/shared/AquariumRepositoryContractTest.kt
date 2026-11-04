@@ -2,6 +2,7 @@ package com.maximerollin.aqualog.shared
 
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -35,6 +36,29 @@ class AquariumRepositoryContractTest {
                     repository.saveRapidSession(
                         RapidSessionInput(aquariumId = aquarium.id, occurredAtEpochMillis = 1_700_000_000_001L, idempotencyKey = "k${attempt++}", observation = "Clair"),
                     )
+                    delay(50)
+                }
+            }
+        }
+
+        assertEquals(Unit, change.await())
+        database.close()
+    }
+
+    @Test
+    fun `observeChanges emits after an inhabitant is added`() = runTest {
+        val database = createAquaLogDatabase(
+            createJvmDatabaseBuilder(Files.createTempDirectory("aqualog-changes-inhabitants").resolve("aqualog.db").toAbsolutePath().toString()),
+        )
+        val ids = generateSequence(1) { it + 1 }.map { "id-$it" }.iterator()
+        val repository = RoomAquariumRepository(database, ids::next, { 1_700_000_000_000L })
+        val aquarium = repository.createAquarium("Salon", 120.0, VolumeUnit.LITERS)
+
+        val change = async(Dispatchers.Default) { repository.observeChanges().first() }
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) {
+                while (!change.isCompleted) {
+                    repository.addInhabitant(aquarium.id, "neon", null, DrawingFamily.TETRA, 6)
                     delay(50)
                 }
             }

@@ -156,7 +156,7 @@ class RoomAquariumRepository(
         aquariumDao.observeCurrentSetup().map { it?.toDomain() }
 
     override fun observeChanges(): Flow<Unit> = database.invalidationTracker.createFlow(
-        "aquariums", "selected_aquarium", "parameter_definitions", "sessions", "measurements", "task_occurrences",
+        "aquariums", "selected_aquarium", "parameter_definitions", "sessions", "measurements", "task_occurrences", "inhabitants",
         emitInitialState = false,
     ).map { }
 

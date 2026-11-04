@@ -567,9 +567,8 @@ class HomeViewModel(
                             combine(
                                 aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()),
                                 aquariumRepository.observeInhabitantHistory(setup.aquarium.id),
-                            ) { samples, _ -> samples }.collect { samples ->
-                                val added = runCatching { aquariumRepository.addedDays(setup.aquarium.id, currentTimeZoneId()) }
-                                    .getOrDefault(emptyList())
+                            ) { samples, inhabitants -> samples to inhabitants }.collect { (samples, inhabitants) ->
+                                val added = inhabitants.addedDays(currentTimeZoneId())
                                 mutableUiState.update { it.copy(dueTests = dueTests(setup, samples, today(), added)) }
                                 refreshWeekly()
                                 // A failing read or alarm must not end this collector: the home keeps following the readings.

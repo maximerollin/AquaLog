@@ -248,8 +248,12 @@ class RhythmTest {
     fun `a measurement after D+1 clears that follow-up`() {
         val established = setup(AquariumProfile.ESTABLISHED, ammonia, nitriteAt0)
         val added = listOf(today.plusDays(-1))
-        assertEquals(2, dueTests(established, emptyList(), today, added).size)
-        val tested = listOf(sample(BuiltInParameter.AMMONIA, 0.0, 0), sample(BuiltInParameter.NITRITE, 0.0, 0))
+        // Tested 3 days ago: the rhythm is not due, only the D+1 follow-up is.
+        val old = listOf(sample(BuiltInParameter.AMMONIA, 0.0, 3), sample(BuiltInParameter.NITRITE, 0.0, 3))
+        val before = dueTests(established, old, today, added)
+        assertEquals(2, before.size)
+        assertTrue(before.all { it.reason == DueReason.FOLLOW_UP })
+        val tested = old + listOf(sample(BuiltInParameter.AMMONIA, 0.0, 0), sample(BuiltInParameter.NITRITE, 0.0, 0))
         assertTrue(dueTests(established, tested, today, added).isEmpty())
     }
 }

@@ -74,13 +74,13 @@ fun dueTests(
     val activeById = active.associateBy { it.id }
     val lastDay = samples.groupBy { it.parameterDefinitionId }
         .mapValues { (_, readings) -> readings.maxOf { it.day.toEpochDay() } }
-    val triggerDays = if (profile == AquariumProfile.CYCLING) emptyList() else inhabitantAddedDays + samples
+    val triggerDays = if (profile == AquariumProfile.CYCLING) emptyList() else (inhabitantAddedDays + samples
         .filter { sample ->
             val definition = activeById[sample.parameterDefinitionId] ?: return@filter false
             val level = readingLevel(definition, sample.value, profile)
             level == ReadingLevel.ALERT || (definition.parameter in NITROGEN_WASTE && level != ReadingLevel.OK)
         }
-        .map { it.day }
+        .map { it.day })
         .distinct()
 
     return active.mapNotNull { definition ->
