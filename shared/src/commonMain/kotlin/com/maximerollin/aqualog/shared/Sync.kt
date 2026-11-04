@@ -112,6 +112,8 @@ interface SyncLocalDataSource {
     suspend fun markPhotoSynced(aquariumId: String, photoId: String?) {}
     /** The upserts carrying photo_id of [aquariumIds] reached the server. */
     suspend fun photoIdsPushed(aquariumIds: Set<String>) {}
+    /** Photos of [aquariumIds] were downloaded; no row changed, so observers must be told. */
+    suspend fun photosDownloaded(aquariumIds: Set<String>) {}
     suspend fun aquariumPhotoIds(): Set<String> = emptySet()
 }
 
@@ -276,16 +278,21 @@ class SyncCoordinator(
     /** A photo that fails to download stays missing and is tried again by the next sync. */
     private suspend fun downloadMissingPhotos(session: SyncSession, snapshot: RemoteSyncSnapshot) {
         val store = photoStore ?: return
+        val downloaded = mutableSetOf<String>()
         snapshot.copy.aquariums.forEach { aquarium ->
             val photoId = aquarium.photoId?.takeIf(::isSafePhotoId) ?: return@forEach
             if (store.read(photoId) != null) return@forEach
             try {
-                backend.downloadAquariumPhoto(session, aquarium.id)?.let { store.write(photoId, it) }
+                backend.downloadAquariumPhoto(session, aquarium.id)?.let {
+                    store.write(photoId, it)
+                    downloaded += aquarium.id
+                }
             } catch (_: SyncNetworkException) {
             } catch (_: SyncServerException) {
             } catch (_: IOException) {
             }
         }
+        if (downloaded.isNotEmpty()) localData.photosDownloaded(downloaded)
     }
 
     private suspend fun <T> runGuarded(

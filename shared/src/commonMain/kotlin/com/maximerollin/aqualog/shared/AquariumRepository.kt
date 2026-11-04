@@ -884,6 +884,8 @@ class RoomAquariumRepository(
         if (aquariumIds.isNotEmpty()) aquariumDao.deleteUploadedPhotoSyncs(aquariumIds.toList())
     }
 
+    override suspend fun photosDownloaded(aquariumIds: Set<String>) = aquariumDao.touchAquariums(aquariumIds.toList())
+
     override suspend fun aquariumPhotoIds(): Set<String> = aquariumDao.photoIds().toSet()
 
     private suspend fun newSyncOperation(

@@ -1,5 +1,10 @@
 package com.maximerollin.aqualog.shared
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import java.nio.file.Files
@@ -346,6 +351,24 @@ class SyncRecoveryTest {
             setOf(PendingPhotoSync(aquarium.id, photoId), PendingPhotoSync(synced.id, uploadedId)),
             local.repository.pendingPhotoSyncs().toSet(),
         )
+        local.database.close()
+    }
+
+    @Test
+    fun `a downloaded photo wakes the observers of the Aquariums`() = runTest {
+        val local = photoFixture()
+        val aquarium = local.repository.createAquarium("Salon", 80.0, VolumeUnit.LITERS)
+        val change = async(Dispatchers.Default) { local.repository.observeChanges().first() }
+
+        // Repeated because the observer registers asynchronously; without the touch this times out.
+        withContext(Dispatchers.Default) {
+            withTimeout(10_000) {
+                while (!change.isCompleted) {
+                    local.repository.photosDownloaded(setOf(aquarium.id))
+                    delay(50)
+                }
+            }
+        }
         local.database.close()
     }
 

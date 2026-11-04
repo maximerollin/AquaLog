@@ -348,6 +348,10 @@ abstract class AquariumDao {
     @Query("SELECT photoId FROM aquariums WHERE photoId IS NOT NULL")
     abstract suspend fun photoIds(): List<String>
 
+    // A same-value write: it changes nothing but wakes every observer of the aquariums table (widgets, lists).
+    @Query("UPDATE aquariums SET photoId = photoId WHERE id IN (:aquariumIds)")
+    abstract suspend fun touchAquariums(aquariumIds: List<String>)
+
     @Upsert
     protected abstract suspend fun upsertSelection(selection: SelectedAquariumEntity)
 

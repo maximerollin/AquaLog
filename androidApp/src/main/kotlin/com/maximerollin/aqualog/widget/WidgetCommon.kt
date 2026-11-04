@@ -84,7 +84,7 @@ suspend fun tanksWidgetContent(context: Context): WidgetContent {
  * a composition) only recomposes from that state on update(), so [updateAllWidgets] bumps it to bring new data.
  */
 @Composable
-fun liveWidgetContent(initial: WidgetContent, load: suspend (Preferences) -> WidgetContent): WidgetContent {
+fun <T> liveWidgetContent(initial: T, load: suspend (Preferences) -> T): T {
     val state = currentState<Preferences>()
     return produceState(initial, state) { value = load(state) }.value
 }

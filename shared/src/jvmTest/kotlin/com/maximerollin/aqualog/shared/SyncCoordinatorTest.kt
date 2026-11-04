@@ -514,6 +514,21 @@ class SyncCoordinatorTest {
     }
 
     @Test
+    fun `a photo downloaded by a later sync is reported so observers refresh`() = runTest {
+        val photos = PhotoFixture(
+            remote = listOf(remoteAquarium("aq", "p2")),
+            downloadFailure = SyncNetworkException("offline"),
+        )
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+        assertEquals(emptyList(), photos.local.downloaded)
+
+        photos.backend.downloadFailure = null
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        assertEquals(listOf(setOf("aq")), photos.local.downloaded)
+    }
+
+    @Test
     fun `a photo that cannot be stored does not fail the sync`() = runTest {
         val photos = PhotoFixture(remote = listOf(remoteAquarium("aq", "p2")))
         photos.store.writeFailure = IOException("disk full")
@@ -602,6 +617,7 @@ class SyncCoordinatorTest {
         val marked = mutableListOf<Pair<String, String?>>()
         val uploaded = mutableSetOf<String>()
         val pushedPhotoIds = mutableListOf<Set<String>>()
+        val downloaded = mutableListOf<Set<String>>()
         var onCommit: suspend () -> Unit = {}
         // One pending operation, so a push happens on the first iteration.
         var operations = listOf(aquariumOperation(1))
@@ -634,6 +650,9 @@ class SyncCoordinatorTest {
             uploaded += aquariumId
             operations = operations + aquariumOperation(100L + marked.size)
         }
+        override suspend fun photosDownloaded(aquariumIds: Set<String>) {
+            downloaded += aquariumIds
+        }
         override suspend fun photoIdsPushed(aquariumIds: Set<String>) {
             pushedPhotoIds += aquariumIds
             uploaded -= aquariumIds
@@ -663,7 +682,7 @@ class SyncCoordinatorTest {
         private val calls: MutableList<String>,
         private val remote: List<Aquarium>,
         private val uploadFailure: Exception?,
-        private val downloadFailure: Exception?,
+        var downloadFailure: Exception?,
     ) : SyncBackend {
         var pushFailure: Exception? = null
         override suspend fun push(session: SyncSession, batch: PendingSyncBatch) {

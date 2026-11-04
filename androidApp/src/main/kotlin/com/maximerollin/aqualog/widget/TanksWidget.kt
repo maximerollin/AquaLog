@@ -3,8 +3,8 @@ package com.maximerollin.aqualog.widget
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.ThumbnailUtils
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -41,17 +41,16 @@ import com.maximerollin.aqualog.AquaLogApplication
 import com.maximerollin.aqualog.WidgetTarget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
 class TanksWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val initial = tanksWidgetContent(context)
-        val initialPhotos = tankPhotos(context, initial)
+        val initial = tanksWidgetContent(context).let { it to tankPhotos(context, it) }
         provideContent {
-            val content = liveWidgetContent(initial) { tanksWidgetContent(context) }
-            val photoIds = (content as? WidgetContent.Tanks)?.rows?.map { it.aquariumId to it.photoId }
-            val photos = produceState(initialPhotos, photoIds) {
-                if (content !== initial) value = tankPhotos(context, content)
-            }.value
+            // Photos reload with the content: a photo downloaded later changes no photoId, only the refresh says so.
+            val (content, photos) = liveWidgetContent(initial) {
+                tanksWidgetContent(context).let { content -> content to tankPhotos(context, content) }
+            }
             WidgetTheme { TanksContent(content, photos) }
         }
     }
@@ -109,7 +108,8 @@ private fun TankRow(text: WidgetTankText, photo: Bitmap?) {
 
 internal fun TankPhotoTag(aquariumId: String) = "tank-photo-$aquariumId"
 
-private const val PHOTO_TARGET_PX = 96
+// 36 dp at xxhdpi: in RGB_565 a 108 px square is about 23 KB, so many rows stay within the RemoteViews limit.
+private const val PHOTO_TARGET_PX = 108
 
 /** The largest power-of-two subsampling that keeps the shorter side at [PHOTO_TARGET_PX] or more. */
 internal fun tankPhotoSampleSize(width: Int, height: Int): Int {
@@ -126,17 +126,30 @@ private suspend fun tankPhotos(context: Context, content: WidgetContent): Map<St
         buildMap {
             for (row in rows) {
                 val photoId = row.photoId ?: continue
-                // A missing or corrupt photo is « no image » for that row, never a crash.
-                val bytes = runCatching { repository.readAquariumPhoto(photoId) }.getOrNull() ?: continue
-                decodeTankPhoto(bytes)?.let { put(row.aquariumId, it) }
+                // A missing, corrupt or too large photo is « no image » for that row, never a crash.
+                val photo = try {
+                    repository.readAquariumPhoto(photoId)?.let(::decodeTankPhoto)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    null
+                } catch (_: OutOfMemoryError) {
+                    null
+                }
+                photo?.let { put(row.aquariumId, it) }
             }
         }
     }
 }
 
-private fun decodeTankPhoto(bytes: ByteArray): Bitmap? {
+internal fun decodeTankPhoto(bytes: ByteArray): Bitmap? {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
-    val options = BitmapFactory.Options().apply { inSampleSize = tankPhotoSampleSize(bounds.outWidth, bounds.outHeight) }
-    return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+    val options = BitmapFactory.Options().apply {
+        inSampleSize = tankPhotoSampleSize(bounds.outWidth, bounds.outHeight)
+        inPreferredConfig = Bitmap.Config.RGB_565
+    }
+    val sampled = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options) ?: return null
+    // Square like the 36 dp crop it fills; the scale keeps RGB_565.
+    return ThumbnailUtils.extractThumbnail(sampled, PHOTO_TARGET_PX, PHOTO_TARGET_PX, ThumbnailUtils.OPTIONS_RECYCLE_INPUT)
 }
