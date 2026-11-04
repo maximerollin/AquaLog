@@ -40,12 +40,14 @@ import com.maximerollin.aqualog.shared.ScheduledSyncExecution
 import com.maximerollin.aqualog.shared.SyncServerException
 import com.maximerollin.aqualog.shared.SyncSession
 import com.maximerollin.aqualog.shared.SyncSessionProvider
+import com.maximerollin.aqualog.shared.SyncOperation
 import com.maximerollin.aqualog.shared.SyncOperationKind
 import com.maximerollin.aqualog.shared.SyncWorkScheduler
 import com.maximerollin.aqualog.shared.VolumeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -93,14 +95,11 @@ class SupabaseSyncBackend(
 ) : SyncBackend {
     override suspend fun push(session: SyncSession, batch: PendingSyncBatch) = withContext(Dispatchers.IO) {
         require(configuration.isConfigured) { "Supabase is not configured for this build" }
-        batch.operations.groupBy { it.entityType to it.entityId }
-            .mapValues { (_, operations) -> operations.maxBy { it.id } }
-            .values
-            .sortedBy { it.id }
+        batch.operations.inPushOrder()
             .forEach { operation ->
                 val payload = when (operation.entityType) {
                     SyncEntityType.AQUARIUM -> batch.aquariums.firstOrNull { it.id == operation.entityId }
-                        ?.toRemoteJson(session.accountId)
+                        ?.toRemoteJson(session.accountId, withPhotoId = operation.entityId in batch.photoAquariumIds)
                     SyncEntityType.PARAMETER_DEFINITION -> batch.parameterDefinitions
                         .firstOrNull { it.id == operation.entityId }?.toRemoteJson(session.accountId)
                     SyncEntityType.SESSION -> batch.sessions.firstOrNull { it.id == operation.entityId }
@@ -154,6 +153,7 @@ class SupabaseSyncBackend(
                     createdAtEpochMillis = value.getLong("created_at_epoch_millis"),
                     profile = AquariumProfile.fromStorageValue(value.getString("profile")),
                     isArchived = value.optBoolean("is_archived", false),
+                    photoId = value.nullableString("photo_id"),
                 )
             },
             parameterDefinitions = parameters.filterLive().map { value ->
@@ -227,13 +227,71 @@ class SupabaseSyncBackend(
         return List(values.length()) { index -> values.getJSONObject(index) }
     }
 
+    override suspend fun uploadAquariumPhoto(session: SyncSession, aquariumId: String, jpeg: ByteArray) {
+        withContext(Dispatchers.IO) {
+            requestBytes(
+                path = photoPath(session, aquariumId, authenticated = false),
+                method = "POST",
+                accessToken = session.accessToken,
+                body = jpeg,
+                contentType = "image/jpeg",
+                upsert = true,
+                storage = true,
+            )
+        }
+    }
+
+    // A missing object is already deleted: failing here would block every later sync.
+    override suspend fun deleteAquariumPhoto(session: SyncSession, aquariumId: String) {
+        withContext(Dispatchers.IO) {
+            requestBytes(
+                path = photoPath(session, aquariumId, authenticated = false),
+                method = "DELETE",
+                accessToken = session.accessToken,
+                storage = true,
+                missingIsNull = true,
+            )
+        }
+    }
+
+    override suspend fun downloadAquariumPhoto(session: SyncSession, aquariumId: String): ByteArray? =
+        withContext(Dispatchers.IO) {
+            requestBytes(
+                path = photoPath(session, aquariumId, authenticated = true),
+                method = "GET",
+                accessToken = session.accessToken,
+                storage = true,
+                missingIsNull = true,
+            )
+        }
+
+    private fun photoPath(session: SyncSession, aquariumId: String, authenticated: Boolean): String {
+        require(configuration.isConfigured) { "Supabase is not configured for this build" }
+        return "/storage/v1/object/${if (authenticated) "authenticated/" else ""}aquarium-photos/" +
+            "${session.accountId}/$aquariumId.jpg"
+    }
+
     private fun request(
         path: String,
         method: String,
         accessToken: String,
         body: String? = null,
         prefer: String? = null,
-    ): String {
+    ): String = requestBytes(path, method, accessToken, body?.toByteArray(), prefer = prefer)
+        ?.toString(Charsets.UTF_8).orEmpty()
+
+    /** The single HTTP helper. A [storage] failure is classified by [classifyStorageFailure]; a missing object returns null if [missingIsNull]. */
+    private fun requestBytes(
+        path: String,
+        method: String,
+        accessToken: String,
+        body: ByteArray? = null,
+        contentType: String = "application/json",
+        prefer: String? = null,
+        upsert: Boolean = false,
+        storage: Boolean = false,
+        missingIsNull: Boolean = false,
+    ): ByteArray? {
         val connection = URL("${configuration.projectUrl}$path").openConnection() as HttpURLConnection
         return try {
             connection.requestMethod = method
@@ -241,18 +299,27 @@ class SupabaseSyncBackend(
             connection.readTimeout = 20_000
             connection.setRequestProperty("apikey", configuration.anonymousKey)
             connection.setRequestProperty("Authorization", "Bearer $accessToken")
-            connection.setRequestProperty("Content-Type", "application/json")
             prefer?.let { connection.setRequestProperty("Prefer", it) }
+            if (upsert) connection.setRequestProperty("x-upsert", "true")
             if (body != null) {
+                // Storage answers 400 to a Content-Type without a body, so it is only sent with one.
+                connection.setRequestProperty("Content-Type", contentType)
                 connection.doOutput = true
-                connection.outputStream.use { it.write(body.toByteArray()) }
+                connection.outputStream.use { it.write(body) }
             }
             val status = connection.responseCode
             val response = (if (status in 200..299) connection.inputStream else connection.errorStream)
-                ?.bufferedReader()?.use { it.readText() }.orEmpty()
+                ?.use { it.readBytes() } ?: ByteArray(0)
             if (status == HttpURLConnection.HTTP_UNAUTHORIZED) throw CloudAuthenticationExpiredException()
             if (status == HttpURLConnection.HTTP_CONFLICT) {
                 throw SyncConflictException("Supabase rejected a concurrent write (HTTP $status)")
+            }
+            if (storage && status !in 200..299) {
+                when (classifyStorageFailure(status, response.toString(Charsets.UTF_8))) {
+                    StorageFailure.MISSING -> if (missingIsNull) return null
+                    StorageFailure.AUTH_EXPIRED -> throw CloudAuthenticationExpiredException()
+                    StorageFailure.OTHER -> {}
+                }
             }
             if (status !in 200..299) throw SyncServerException("Supabase sync failed (HTTP $status)")
             response
@@ -261,6 +328,37 @@ class SupabaseSyncBackend(
         } finally {
             connection.disconnect()
         }
+    }
+}
+
+/**
+ * The latest operation per entity, ordered by when the entity was first touched: a later update must not
+ * move an Aquarium's insert after the rows that reference it.
+ */
+internal fun List<SyncOperation>.inPushOrder(): List<SyncOperation> =
+    groupBy { it.entityType to it.entityId }.values
+        .sortedBy { operations -> operations.minOf { it.id } }
+        .map { operations -> operations.maxBy { it.id } }
+
+internal enum class StorageFailure { MISSING, AUTH_EXPIRED, OTHER }
+
+/**
+ * Storage answers HTTP 400 to most client errors and carries the real code in the JSON body, e.g. an expired
+ * token is `{"statusCode":"403","error":"Unauthorized",...}` and a missing object `{"statusCode":"404","error":"not_found",...}`.
+ */
+internal fun classifyStorageFailure(status: Int, body: String): StorageFailure {
+    if (status == HttpURLConnection.HTTP_NOT_FOUND) return StorageFailure.MISSING
+    if (status == HttpURLConnection.HTTP_UNAUTHORIZED) return StorageFailure.AUTH_EXPIRED
+    if (status != HttpURLConnection.HTTP_BAD_REQUEST) return StorageFailure.OTHER
+    val json = try { JSONObject(body) } catch (_: JSONException) { return StorageFailure.OTHER }
+    val code = json.optString("statusCode")
+    val error = json.optString("error")
+    return when {
+        code == "404" || error == "not_found" || error == "NoSuchKey" -> StorageFailure.MISSING
+        // A row-level-security refusal is not an expired token: a new token would be refused too.
+        json.optString("message").contains("row-level security", ignoreCase = true) -> StorageFailure.OTHER
+        code == "401" || code == "403" || error == "InvalidJWT" -> StorageFailure.AUTH_EXPIRED
+        else -> StorageFailure.OTHER
     }
 }
 
@@ -329,10 +427,12 @@ object AndroidSyncScheduler {
     }
 }
 
-private fun Aquarium.toRemoteJson(accountId: String) = JSONObject()
+/** Without [withPhotoId] the key is absent and the server keeps its photo_id: a stale one never overrides it. */
+internal fun Aquarium.toRemoteJson(accountId: String, withPhotoId: Boolean) = JSONObject()
     .put("id", id).put("account_id", accountId).put("name", name).put("volume", volume)
     .put("volume_unit", volumeUnit.storageValue).put("created_at_epoch_millis", createdAtEpochMillis)
     .put("profile", profile.storageValue).put("is_archived", isArchived)
+    .apply { if (withPhotoId) putNullable("photo_id", photoId) }
 
 private fun ParameterDefinition.toRemoteJson(accountId: String) = JSONObject()
     .put("id", id).put("account_id", accountId).put("aquarium_id", aquariumId)

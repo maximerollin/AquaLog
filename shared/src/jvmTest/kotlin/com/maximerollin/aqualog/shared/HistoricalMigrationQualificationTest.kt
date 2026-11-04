@@ -37,6 +37,7 @@ class HistoricalMigrationQualificationTest(private val version: Int) {
                     val aquarium = assertNotNull(repository.observeCurrentAquarium().first())
                     assertEquals("Historical Aquarium", aquarium.name)
                     assertEquals(false, aquarium.isArchived)
+                    assertNull(aquarium.photoId)
                     val session = assertNotNull(repository.observeLatestSession(aquarium.id).first())
                     assertEquals("session-19", session.session.id)
                     assertEquals(1, repository.sessionCount(aquarium.id))
@@ -54,6 +55,7 @@ class HistoricalMigrationQualificationTest(private val version: Int) {
                     } else {
                         assertEquals(mapOf("cycled" to "session-19"), dismissals.observeDismissals(aquarium.id).first())
                     }
+                    assertEquals(emptyList(), photoSyncRows(database))
                     if (version >= 5) {
                         assertEquals("account-19", repository.accountMigrationState()?.accountId)
                     }
@@ -79,6 +81,13 @@ class HistoricalMigrationQualificationTest(private val version: Int) {
             directory.toFile().deleteRecursively()
         }
     }
+
+    private suspend fun photoSyncRows(database: AquaLogDatabase): List<String> =
+        database.useConnection(true) { connection ->
+            connection.usePrepared("SELECT aquariumId FROM aquarium_photo_syncs") { statement ->
+                buildList { while (statement.step()) add(statement.getText(0)) }
+            }
+        }
 
     private fun createHistoricalCopy(path: String) {
         val schema = Json.parseToJsonElement(
@@ -163,6 +172,6 @@ class HistoricalMigrationQualificationTest(private val version: Int) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "Room {0} to current")
-        fun versions() = (3..14).map { arrayOf(it) }
+        fun versions() = (3..15).map { arrayOf(it) }
     }
 }

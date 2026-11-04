@@ -32,6 +32,17 @@ data class AquariumEntity(
     val createdAtEpochMillis: Long,
     @ColumnInfo(defaultValue = "'established'") val profile: String,
     @ColumnInfo(defaultValue = "0") val isArchived: Boolean = false,
+    val photoId: String? = null,
+)
+
+/**
+ * One row per Aquarium whose photo must be pushed (or whose remote photo must be deleted); kept after the photo is removed.
+ * [uploaded]: the file is done, only the Aquarium upsert carrying photo_id remains to be pushed.
+ */
+@Entity(tableName = "aquarium_photo_syncs")
+data class AquariumPhotoSyncEntity(
+    @PrimaryKey val aquariumId: String,
+    @ColumnInfo(defaultValue = "0") val uploaded: Boolean = false,
 )
 
 @Entity(tableName = "selected_aquarium")
@@ -296,6 +307,52 @@ abstract class AquariumDao {
     protected abstract suspend fun upsertParameter(parameter: ParameterDefinitionEntity)
 
     @Upsert
+    protected abstract suspend fun upsertPhotoSync(sync: AquariumPhotoSyncEntity)
+
+    @Query("DELETE FROM aquarium_photo_syncs WHERE aquariumId = :aquariumId")
+    protected abstract suspend fun deletePhotoSync(aquariumId: String)
+
+    @Query("UPDATE aquarium_photo_syncs SET uploaded = 1 WHERE aquariumId = :aquariumId")
+    protected abstract suspend fun markPhotoUploaded(aquariumId: String)
+
+    // LEFT JOIN: a mark whose Aquarium is gone still deletes the remote photo.
+    @Query(
+        "SELECT s.aquariumId AS aquariumId, a.photoId AS photoId FROM aquarium_photo_syncs s " +
+            "LEFT JOIN aquariums a ON a.id = s.aquariumId WHERE s.uploaded = 0",
+    )
+    abstract suspend fun pendingPhotoSyncs(): List<PendingPhotoSync>
+
+    @Query("SELECT aquariumId FROM aquarium_photo_syncs WHERE uploaded = 1")
+    abstract suspend fun uploadedPhotoAquariumIds(): List<String>
+
+    /** A row reset to uploaded = 0 by a newer photo change stays: that photo is not uploaded yet. */
+    @Query("DELETE FROM aquarium_photo_syncs WHERE uploaded = 1 AND aquariumId IN (:aquariumIds)")
+    abstract suspend fun deleteUploadedPhotoSyncs(aquariumIds: List<String>)
+
+    @Query("UPDATE aquarium_photo_syncs SET uploaded = 0")
+    protected abstract suspend fun resetPhotoUploads()
+
+    @Query(
+        "INSERT OR IGNORE INTO aquarium_photo_syncs (aquariumId, uploaded) " +
+            "SELECT id, 0 FROM aquariums WHERE photoId IS NOT NULL",
+    )
+    protected abstract suspend fun insertPendingPhotoSyncs()
+
+    /** Every local photo must reach the account it is about to be copied to, even one uploaded to an earlier account. */
+    @Transaction
+    open suspend fun markAllPhotosPending() {
+        resetPhotoUploads()
+        insertPendingPhotoSyncs()
+    }
+
+    @Query("SELECT photoId FROM aquariums WHERE photoId IS NOT NULL")
+    abstract suspend fun photoIds(): List<String>
+
+    // A same-value write: it changes nothing but wakes every observer of the aquariums table (widgets, lists).
+    @Query("UPDATE aquariums SET photoId = photoId WHERE id IN (:aquariumIds)")
+    abstract suspend fun touchAquariums(aquariumIds: List<String>)
+
+    @Upsert
     protected abstract suspend fun upsertSelection(selection: SelectedAquariumEntity)
 
     @Query("SELECT COUNT(*) FROM aquariums")
@@ -333,9 +390,34 @@ abstract class AquariumDao {
     }
 
     @Transaction
-    open suspend fun updateAquarium(aquarium: AquariumEntity, syncOperation: SyncOperationEntity) {
+    open suspend fun updateAquarium(aquarium: AquariumEntity, syncOperation: SyncOperationEntity): AquariumEntity {
+        val existing = requireNotNull(getSetup(aquarium.id)) { "Aquarium does not exist" }.aquarium
+        // The photo only changes through updateAquariumPhoto, so a stale Aquarium cannot wipe it.
+        val stored = aquarium.copy(photoId = existing.photoId)
+        upsertAquarium(stored)
+        insertSyncOperations(listOf(syncOperation))
+        return stored
+    }
+
+    @Transaction
+    open suspend fun updateAquariumPhoto(aquarium: AquariumEntity, syncOperation: SyncOperationEntity) {
         requireNotNull(getSetup(aquarium.id)) { "Aquarium does not exist" }
         upsertAquarium(aquarium)
+        upsertPhotoSync(AquariumPhotoSyncEntity(aquarium.id))
+        insertSyncOperations(listOf(syncOperation))
+    }
+
+    /** Does nothing when the photo changed since [photoId] was read: that newer change syncs itself. */
+    @Transaction
+    open suspend fun markPhotoSynced(aquariumId: String, photoId: String?, syncOperation: SyncOperationEntity) {
+        val aquarium = getSetup(aquariumId)?.aquarium
+        if (aquarium?.photoId != photoId) return
+        if (aquarium == null) {
+            deletePhotoSync(aquariumId)
+            return
+        }
+        // The row stays until the upsert below is pushed: only that upsert carries photo_id.
+        markPhotoUploaded(aquariumId)
         insertSyncOperations(listOf(syncOperation))
     }
 
@@ -653,6 +735,9 @@ abstract class AccountControlDao {
     @Query("DELETE FROM assistant_dismissals")
     protected abstract suspend fun deleteAssistantDismissals()
 
+    @Query("DELETE FROM aquarium_photo_syncs")
+    protected abstract suspend fun deleteAquariumPhotoSyncs()
+
     suspend fun markCloudDeletionComplete() {
         check(updateDeletionPhase(AccountDeletionPhase.CLOUD_DELETED.name) == 1) {
             "No account deletion is pending"
@@ -682,6 +767,7 @@ abstract class AccountControlDao {
         deleteParameterDefinitions()
         deleteAquariums()
         deleteAssistantDismissals()
+        deleteAquariumPhotoSyncs()
         detachAccountKeepingLocalCopy()
     }
 }
@@ -725,6 +811,12 @@ abstract class PortableDataDao {
 
     @Insert
     protected abstract suspend fun insertAquariums(values: List<AquariumEntity>)
+
+    @Insert
+    protected abstract suspend fun insertPhotoSyncs(values: List<AquariumPhotoSyncEntity>)
+
+    @Query("DELETE FROM aquarium_photo_syncs")
+    protected abstract suspend fun deletePhotoSyncs()
 
     @Insert
     protected abstract suspend fun insertParameterDefinitions(values: List<ParameterDefinitionEntity>)
@@ -805,8 +897,11 @@ abstract class PortableDataDao {
         deleteParameterDefinitions()
         deleteAquariums()
         deleteAssistantDismissals()
+        deletePhotoSyncs()
 
         if (snapshot.aquariums.isNotEmpty()) insertAquariums(snapshot.aquariums)
+        snapshot.aquariums.filter { it.photoId != null }.map { AquariumPhotoSyncEntity(it.id) }
+            .takeIf(List<*>::isNotEmpty)?.let { insertPhotoSyncs(it) }
         if (snapshot.parameterDefinitions.isNotEmpty()) insertParameterDefinitions(snapshot.parameterDefinitions)
         if (snapshot.sessions.isNotEmpty()) insertSessions(snapshot.sessions)
         if (snapshot.measurements.isNotEmpty()) insertMeasurements(snapshot.measurements)
@@ -910,6 +1005,15 @@ abstract class SyncDao {
     @Upsert
     protected abstract suspend fun upsertAquariums(aquariums: List<AquariumEntity>)
 
+    @Query("SELECT a.* FROM aquariums a INNER JOIN aquarium_photo_syncs s ON s.aquariumId = a.id")
+    protected abstract suspend fun aquariumsWithPendingPhoto(): List<AquariumEntity>
+
+    /** A local photo not yet pushed wins over the remote photoId. */
+    private suspend fun keepingPendingPhotos(aquariums: List<AquariumEntity>): List<AquariumEntity> {
+        val pending = aquariumsWithPendingPhoto().associate { it.id to it.photoId }
+        return aquariums.map { if (it.id in pending) it.copy(photoId = pending[it.id]) else it }
+    }
+
     @Upsert
     protected abstract suspend fun upsertParameterDefinitions(parameters: List<ParameterDefinitionEntity>)
 
@@ -994,7 +1098,7 @@ abstract class SyncDao {
         val cleanMeasurements = measurements.filterNot { SyncEntityType.MEASUREMENT.storageValue to it.id in dirty }
         val cleanActions = actions.filterNot { SyncEntityType.MAINTENANCE_ACTION.storageValue to it.id in dirty }
         val cleanEvents = events.filterNot { SyncEntityType.EVENT.storageValue to it.id in dirty }
-        if (cleanAquariums.isNotEmpty()) upsertAquariums(cleanAquariums)
+        if (cleanAquariums.isNotEmpty()) upsertAquariums(keepingPendingPhotos(cleanAquariums))
         if (cleanParameters.isNotEmpty()) upsertParameterDefinitions(cleanParameters)
         if (cleanSessions.isNotEmpty()) {
             insertRemoteSessions(cleanSessions)
@@ -1037,7 +1141,7 @@ abstract class SyncDao {
         fun accepted(type: SyncEntityType, id: String) = type.storageValue to id in acceptedLive
 
         aquariums.filter { accepted(SyncEntityType.AQUARIUM, it.id) }
-            .takeIf(List<AquariumEntity>::isNotEmpty)?.let { upsertAquariums(it) }
+            .takeIf(List<AquariumEntity>::isNotEmpty)?.let { upsertAquariums(keepingPendingPhotos(it)) }
         parameters.filter { accepted(SyncEntityType.PARAMETER_DEFINITION, it.id) }
             .takeIf(List<ParameterDefinitionEntity>::isNotEmpty)?.let { upsertParameterDefinitions(it) }
         sessions.filter { accepted(SyncEntityType.SESSION, it.id) }.forEach { session ->
@@ -1093,8 +1197,9 @@ abstract class SyncDao {
         SyncRuntimeStateEntity::class,
         SyncScheduleStateEntity::class,
         AssistantDismissalEntity::class,
+        AquariumPhotoSyncEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -1134,6 +1239,7 @@ fun createAquaLogDatabase(
         MIGRATION_12_13,
         MIGRATION_13_14,
         MIGRATION_14_15,
+        MIGRATION_15_16,
     )
     .build()
 
@@ -1294,5 +1400,13 @@ private val MIGRATION_14_15 = Migration(14, 15) { connection ->
     connection.execSQL("ALTER TABLE task_occurrences ADD COLUMN maintenanceActionType TEXT")
     connection.execSQL(
         "CREATE TABLE IF NOT EXISTS assistant_dismissals (aquariumId TEXT NOT NULL, kind TEXT NOT NULL, sessionId TEXT NOT NULL, PRIMARY KEY(aquariumId, kind))",
+    )
+}
+
+private val MIGRATION_15_16 = Migration(15, 16) { connection ->
+    connection.execSQL("ALTER TABLE aquariums ADD COLUMN photoId TEXT")
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS aquarium_photo_syncs " +
+            "(aquariumId TEXT NOT NULL, uploaded INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(aquariumId))",
     )
 }

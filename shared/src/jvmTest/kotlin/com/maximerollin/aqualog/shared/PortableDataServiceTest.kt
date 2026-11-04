@@ -9,13 +9,19 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import java.nio.file.Files
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+private val JPEG = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 9, 8, 7)
+
+@OptIn(ExperimentalEncodingApi::class)
 class PortableDataServiceTest {
     @Test
     fun `empty export has a deterministic versioned portable schema`() = runTest {
@@ -516,6 +522,107 @@ class PortableDataServiceTest {
         existing.close()
     }
 
+    @Test
+    fun `export then import restores the photo`() = runTest {
+        val source = portableFixture()
+        val aquarium = source.repository.createPortableAquarium("Salon", 120.0)
+        source.repository.setAquariumPhoto(aquarium.id, JPEG)
+        val payload = source.service.export()
+        val target = portableFixture()
+
+        assertIs<PortableImportResult.Imported>(target.service.importData(payload))
+
+        val photoId = assertNotNull(target.repository.loadSetup(aquarium.id)?.aquarium?.photoId)
+        assertTrue(JPEG.contentEquals(target.repository.readAquariumPhoto(photoId)))
+        assertEquals(listOf(aquarium.id), target.photoSyncRows())
+        source.close()
+        target.close()
+    }
+
+    @Test
+    fun `a failed database write deletes the photo files just written`() = runTest {
+        val source = portableFixture()
+        val incoming = source.repository.createPortableAquarium("Incoming", 80.0)
+        source.repository.setAquariumPhoto(incoming.id, JPEG)
+        val payload = source.service.export()
+        val existing = portableFixture()
+        val local = existing.repository.createPortableAquarium("Local", 45.0)
+        existing.repository.setAquariumPhoto(local.id, JPEG)
+        val filesBefore = existing.photoFiles()
+        existing.rejectAquariumInserts()
+
+        val rejected = assertIs<PortableImportResult.Rejected>(existing.service.importData(payload))
+
+        assertEquals(PortableImportProblem.DATABASE_WRITE_FAILED, rejected.problem)
+        assertEquals(1, filesBefore.size)
+        assertEquals(filesBefore, existing.photoFiles())
+        source.close()
+        existing.close()
+    }
+
+    @Test
+    fun `a linked account rejects the import and deletes the photo files just written`() = runTest {
+        val source = portableFixture()
+        val incoming = source.repository.createPortableAquarium("Incoming", 80.0)
+        source.repository.setAquariumPhoto(incoming.id, JPEG)
+        val payload = source.service.export()
+        val existing = portableFixture()
+        existing.repository.beginAccountMigration("account-1", "owner@example.com")
+        val filesBefore = existing.photoFiles()
+
+        val rejected = assertIs<PortableImportResult.Rejected>(existing.service.importData(payload))
+
+        assertEquals(PortableImportRejection.ACCOUNT_LINKED, rejected.reason)
+        assertEquals(filesBefore, existing.photoFiles())
+        source.close()
+        existing.close()
+    }
+
+    @Test
+    fun `a file without photoJpegBase64 imports without a photo`() = runTest {
+        val source = portableFixture()
+        source.repository.createPortableAquarium("Salon", 120.0)
+        val withoutKey = source.service.export().replace(Regex(",\\s*\"photoJpegBase64\": null"), "")
+        assertFalse("photoJpegBase64" in withoutKey)
+        val target = portableFixture()
+
+        assertIs<PortableImportResult.Imported>(target.service.importData(withoutKey))
+
+        assertNull(target.repository.observeCurrentSetup().first()?.aquarium?.photoId)
+        source.close()
+        target.close()
+    }
+
+    @Test
+    fun `a broken photo rejects the import and changes nothing`() = runTest {
+        val source = portableFixture()
+        source.repository.createPortableAquarium("Incoming", 80.0)
+        val payload = source.service.export()
+        val existing = portableFixture()
+        val local = existing.repository.createPortableAquarium("Local", 45.0)
+        val localPhoto = assertNotNull(existing.repository.setAquariumPhoto(local.id, JPEG).photoId)
+        val before = existing.service.export()
+        val broken = listOf(
+            "not base64 !!",
+            Base64.Default.encode(byteArrayOf(1, 2, 3, 4)),
+            Base64.Default.encode(byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte()) + ByteArray(1_048_574)),
+        )
+
+        broken.forEach { photo ->
+            val document = payload.replace("\"photoJpegBase64\": null", "\"photoJpegBase64\": \"$photo\"")
+            assertTrue(document != payload)
+
+            val rejected = assertIs<PortableImportResult.Rejected>(existing.service.importData(document))
+
+            assertEquals(PortableImportRejection.INVALID_DATA, rejected.reason)
+            assertEquals(PortableImportProblem.INVALID_PHOTO, rejected.problem)
+            assertEquals(before, existing.service.export())
+            assertTrue(JPEG.contentEquals(existing.repository.readAquariumPhoto(localPhoto)))
+        }
+        source.close()
+        existing.close()
+    }
+
     private fun portableFixture(): PortableFixture {
         val path = Files.createTempDirectory("aqualog-portable-data")
             .resolve("aqualog.db")
@@ -523,14 +630,27 @@ class PortableDataServiceTest {
             .toString()
         val database = createAquaLogDatabase(createJvmDatabaseBuilder(path))
         val ids = generateSequence(1) { it + 1 }.map { "portable-id-$it" }.iterator()
+        val photoDirectory = Files.createTempDirectory("aqualog-portable-photos").toFile()
+        val store = DirectoryAquariumPhotoStore(photoDirectory)
         return PortableFixture(
+            photoDirectory = photoDirectory,
             database = database,
-            repository = RoomAquariumRepository(database, ids::next, { 1_800_000_000_000L }),
-            service = PortableDataService(database),
+            repository = RoomAquariumRepository(database, ids::next, { 1_800_000_000_000L }, photoStore = store),
+            service = PortableDataService(database, store),
         )
     }
 
+    private suspend fun RoomAquariumRepository.createPortableAquarium(name: String, volume: Double) =
+        createConfiguredAquarium(
+            name = name,
+            volume = volume,
+            volumeUnit = VolumeUnit.LITERS,
+            profile = AquariumProfile.ESTABLISHED,
+            parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+        ).aquarium
+
     private class PortableFixture(
+        val photoDirectory: java.io.File,
         val database: AquaLogDatabase,
         val repository: RoomAquariumRepository,
         val service: PortableDataService,
@@ -548,6 +668,14 @@ class PortableDataServiceTest {
                 ) { statement ->
                     statement.step()
                 }
+            }
+        }
+
+        fun photoFiles(): Set<String> = photoDirectory.list().orEmpty().toSet()
+
+        suspend fun photoSyncRows(): List<String> = database.useConnection(false) { connection ->
+            connection.usePrepared("SELECT aquariumId FROM aquarium_photo_syncs") { statement ->
+                buildList { while (statement.step()) add(statement.getText(0)) }
             }
         }
 

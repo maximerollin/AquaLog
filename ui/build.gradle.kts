@@ -10,7 +10,7 @@ kotlin {
     android {
         namespace = "com.maximerollin.aqualog.ui"
         compileSdk = 37
-        minSdk = 23
+        minSdk = 24
         // Packages the Compose resources (strings) into the Android assets.
         androidResources.enable = true
     }
@@ -28,6 +28,7 @@ kotlin {
             implementation(libs.jetbrains.lifecycle.runtime.compose)
             implementation(libs.jetbrains.lifecycle.viewmodel.compose)
             implementation(libs.jetbrains.lifecycle.viewmodel.savedstate)
+            implementation(libs.filekit.dialogs.compose)
         }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)

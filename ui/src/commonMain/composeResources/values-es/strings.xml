@@ -209,6 +209,7 @@
     <string name="portable_problem_duplicate_strategy">Esta exportación utiliza una estrategia duplicada no admitida. Sus datos locales no fueron cambiados.</string>
     <string name="portable_problem_duplicate_ids">Esta exportación contiene ID estables vacíos o duplicados. Sus datos locales no fueron cambiados.</string>
     <string name="portable_problem_aquariums">Esta exportación contiene un acuario no válido. Sus datos locales no fueron cambiados.</string>
+    <string name="portable_problem_photo">Esta exportación contiene la foto de un acuario que no es un JPEG legible. Sus datos locales no fueron cambiados.</string>
     <string name="portable_problem_parameters">La exportación debe contener todos los parámetros integrados en orden, con al menos uno activo. Sus datos locales no fueron cambiados.</string>
     <string name="portable_problem_sessions">Esta exportación contiene una sesión vacía o una relación de acuario no válida. Sus datos locales no fueron cambiados.</string>
     <string name="portable_problem_measurements">Esta exportación contiene una medida no válida o relaciones de sesión y parámetro rotas. Sus datos locales no fueron cambiados.</string>
@@ -447,4 +448,20 @@
     <string name="widget_task_today">%1$s hoy</string>
     <string name="widget_nothing_to_do">Nada que hacer</string>
     <string name="widget_tank_content_description">%1$s, %2$s, %3$s</string>
+    <string name="photo_crop_title">Recortar la foto</string>
+    <string name="photo_crop_confirm">Usar esta foto</string>
+    <string name="photo_crop_preview">Vista previa del recorte</string>
+    <string name="photo_open">Ver la foto de %1$s</string>
+    <string name="photo_add">Añadir una foto de %1$s</string>
+    <string name="photo_take">Hacer una foto</string>
+    <string name="photo_choose">Elegir de la galería</string>
+    <string name="photo_of">Foto de %1$s</string>
+    <string name="photo_change">Cambiar la foto</string>
+    <string name="photo_remove">Quitar la foto</string>
+    <string name="photo_remove_title">¿Quitar la foto?</string>
+    <string name="photo_remove_text">La foto se eliminará de este dispositivo y de tu cuenta.</string>
+    <string name="photo_remove_confirm">Quitar</string>
+    <string name="photo_unreadable">Esta imagen no se puede leer.</string>
+    <string name="photo_save_failed">No se pudo guardar la foto. Inténtalo de nuevo.</string>
+    <string name="photo_processing">Preparando la foto…</string>
 </resources>

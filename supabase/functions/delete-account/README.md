@@ -8,7 +8,14 @@ already exists.
 
 Configure `AQUALOG_DELETION_SIGNING_SECRET` with a dedicated high-entropy server secret. It must
 never be shipped in the Android build. `AQUALOG_ACCOUNT_STORAGE_BUCKETS` is an optional comma-
-separated allowlist of buckets whose objects live below the account-ID prefix.
+separated allowlist of buckets whose objects live below the account-ID prefix. When it is unset it
+defaults to `aquarium-photos` (the private bucket of Aquarium photos, objects
+`<accountId>/<aquariumId>.jpg`), so account deletion removes the photos; an explicitly set value,
+even empty, replaces that default.
+
+Deployment checklist, secrets of this function: `AQUALOG_DELETION_SIGNING_SECRET`, and
+`REVENUECAT_SECRET_API_KEY` for RevenueCat-enabled accounts. Leave `AQUALOG_ACCOUNT_STORAGE_BUCKETS`
+unset unless another account-prefixed bucket must also be emptied.
 
 
 For RevenueCat-enabled accounts, configure `REVENUECAT_SECRET_API_KEY` (v1 read/delete customer

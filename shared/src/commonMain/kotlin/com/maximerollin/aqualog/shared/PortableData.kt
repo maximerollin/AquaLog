@@ -1,6 +1,11 @@
 package com.maximerollin.aqualog.shared
 
+import java.util.UUID
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Required
 import kotlinx.serialization.Serializable
@@ -34,6 +39,7 @@ enum class PortableImportProblem(val safeExplanation: String) {
     UNSUPPORTED_DUPLICATE_STRATEGY("The export uses an unsupported duplicate strategy."),
     DUPLICATE_IDENTIFIERS("Stable identifiers must be non-empty and unique."),
     INVALID_AQUARIUMS("An Aquarium record is invalid."),
+    INVALID_PHOTO("An Aquarium photo in the selected file is not a readable JPEG."),
     INVALID_PARAMETERS("Parameters are incomplete, unordered, inactive, or reference a missing Aquarium."),
     INVALID_SESSIONS("A Session is empty, duplicated, or references a missing Aquarium."),
     INVALID_MEASUREMENTS("A Measurement is invalid or has broken Session and Parameter relations."),
@@ -91,6 +97,7 @@ data class PortableAquarium(
     val createdAtEpochMillis: Long,
     val profile: String,
     val isArchived: Boolean = false,
+    val photoJpegBase64: String? = null,
 )
 
 @Serializable
@@ -168,12 +175,26 @@ data class PortableTaskOccurrence(
     val maintenanceActionType: String? = null,
 )
 
+/** With a null [photoStore], export omits photos and import ignores them. */
+@OptIn(ExperimentalEncodingApi::class)
 class PortableDataService(
     database: AquaLogDatabase,
+    private val photoStore: AquariumPhotoStore? = null,
 ) {
     private val portableDataDao = database.portableDataDao()
 
-    suspend fun export(): String = PORTABLE_JSON.encodeToString(portableDataDao.snapshot().toDocument())
+    suspend fun export(): String {
+        val snapshot = portableDataDao.snapshot()
+        val document = snapshot.toDocument()
+        val store = photoStore ?: return PORTABLE_JSON.encodeToString(document)
+        val photos = snapshot.aquariums.mapNotNull { aquarium ->
+            val photoId = aquarium.photoId ?: return@mapNotNull null
+            store.read(photoId)?.let { aquarium.id to Base64.Default.encode(it) }
+        }.toMap()
+        return PORTABLE_JSON.encodeToString(
+            document.copy(aquariums = document.aquariums.map { it.copy(photoJpegBase64 = photos[it.id]) }),
+        )
+    }
 
     suspend fun importData(payload: String): PortableImportResult {
         val document = when (val decoded = decodeAndMigrate(payload)) {
@@ -189,23 +210,42 @@ class PortableDataService(
                 problem = problem,
             )
         }
+        val writtenIds = mutableMapOf<String, String>()
+        var imported = false
         return try {
-            if (portableDataDao.replaceAll(document.toSnapshot())) {
+            photoStore?.let { store ->
+                document.aquariums.forEach { aquarium ->
+                    val photo = aquarium.photoJpegBase64 ?: return@forEach
+                    val photoId = UUID.randomUUID().toString()
+                    store.write(photoId, Base64.Default.decode(photo))
+                    writtenIds[aquarium.id] = photoId
+                }
+            }
+            imported = portableDataDao.replaceAll(document.toSnapshot(writtenIds))
+            if (imported) {
+                photoStore?.retainOnly(writtenIds.values.toSet())
                 PortableImportResult.Imported(PortableDuplicateStrategy.REPLACE_LOCAL_PORTABLE_DATA)
             } else {
+                deleteWritten(writtenIds.values)
                 PortableImportResult.Rejected(
                     reason = PortableImportRejection.ACCOUNT_LINKED,
                     problem = PortableImportProblem.ACCOUNT_LINKED,
                 )
             }
         } catch (cancelled: CancellationException) {
+            if (!imported) withContext(NonCancellable) { deleteWritten(writtenIds.values) }
             throw cancelled
         } catch (_: Exception) {
+            if (!imported) deleteWritten(writtenIds.values)
             PortableImportResult.Rejected(
                 reason = PortableImportRejection.IMPORT_FAILED,
                 problem = PortableImportProblem.DATABASE_WRITE_FAILED,
             )
         }
+    }
+
+    private suspend fun deleteWritten(photoIds: Collection<String>) {
+        photoIds.forEach { runCatching { photoStore?.delete(it) } }
     }
 }
 
@@ -285,6 +325,7 @@ private fun PortableDataDocument.validationProblem(): PortableImportProblem? {
     ) {
         return PortableImportProblem.INVALID_AQUARIUMS
     }
+    if (aquariums.any { it.photoJpegBase64?.isReadableJpeg() == false }) return PortableImportProblem.INVALID_PHOTO
     val aquariumsById = aquariums.associateBy(PortableAquarium::id)
     if (parameterDefinitions.any {
             it.aquariumId !in aquariumsById || it.unit.isBlank() || it.position < 0 || it.precision !in 0..3 ||
@@ -381,6 +422,17 @@ private fun PortableDataDocument.validationProblem(): PortableImportProblem? {
     return null
 }
 
+// The aquarium-photos bucket limit: a bigger photo would be rejected by Storage on every sync.
+private const val MAX_PHOTO_BYTES = 1_048_576
+
+@OptIn(ExperimentalEncodingApi::class)
+private fun String.isReadableJpeg(): Boolean {
+    if (length > MAX_PHOTO_BYTES * 4 / 3 + 4) return false
+    val bytes = runCatching { Base64.Default.decode(this) }.getOrNull() ?: return false
+    return bytes.size <= MAX_PHOTO_BYTES && bytes.size >= 3 &&
+        bytes[0] == 0xFF.toByte() && bytes[1] == 0xD8.toByte() && bytes[2] == 0xFF.toByte()
+}
+
 private fun String?.isKnownActionType() =
     this == null || runCatching { MaintenanceActionType.fromStorageValue(this) }.isSuccess
 
@@ -400,8 +452,8 @@ private fun PortableDatabaseSnapshot.toDocument() = PortableDataDocument(
     taskOccurrences = taskOccurrences.map { it.toPortable() }.sortedBy(PortableTaskOccurrence::id),
 )
 
-private fun PortableDataDocument.toSnapshot() = PortableDatabaseSnapshot(
-    aquariums = aquariums.map(PortableAquarium::toEntity),
+private fun PortableDataDocument.toSnapshot(photoIds: Map<String, String>) = PortableDatabaseSnapshot(
+    aquariums = aquariums.map { it.toEntity(photoIds[it.id]) },
     parameterDefinitions = parameterDefinitions.map(PortableParameterDefinition::toEntity),
     sessions = sessions.map(PortableSession::toEntity),
     measurements = measurements.map(PortableMeasurement::toEntity),
@@ -421,7 +473,7 @@ private fun AquariumEntity.toPortable() = PortableAquarium(
     isArchived,
 )
 
-private fun PortableAquarium.toEntity() = AquariumEntity(
+private fun PortableAquarium.toEntity(photoId: String?) = AquariumEntity(
     id,
     name,
     volume,
@@ -429,6 +481,7 @@ private fun PortableAquarium.toEntity() = AquariumEntity(
     createdAtEpochMillis,
     profile,
     isArchived,
+    photoId,
 )
 
 private fun ParameterDefinitionEntity.toPortable() = PortableParameterDefinition(

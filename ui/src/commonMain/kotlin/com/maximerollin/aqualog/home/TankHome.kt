@@ -2,6 +2,15 @@ package com.maximerollin.aqualog.home
 
 import com.maximerollin.aqualog.ui.icon.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.graphics.ImageBitmap
+import com.maximerollin.aqualog.photo.AquariumThumbnail
+import com.maximerollin.aqualog.photo.PhotoSheets
+import com.maximerollin.aqualog.ui.theme.CarnetLightColors
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -122,6 +131,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
         overdueLinkedAction(state.tasks.pendingOccurrences, aquarium.id, MaintenanceActionType.WATER_CHANGE, today),
     )
     var showPicker by remember { mutableStateOf(false) }
+    val snackbar = remember { SnackbarHostState() }
     val currentIndex = state.aquariums.indexOfFirst { it.id == aquarium.id }.coerceAtLeast(0)
     val pager = rememberPagerState(initialPage = currentIndex) { state.aquariums.size }
     // Set when a swipe asks for an Aquarium, cleared once it is the current one: independent of the pager's layout.
@@ -159,7 +169,9 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             contentPadding = PaddingValues(bottom = 88.dp),
         ) {
             item {
-                AquariumScene(state.aquariums, aquarium, pager) { showPicker = true }
+                AquariumScene(state.aquariums, aquarium, pager, viewModel::openPhoto, viewModel::aquariumPhoto, viewModel::cachedAquariumPhoto) {
+                    showPicker = true
+                }
             }
             item {
                 StatusLine(
@@ -298,7 +310,9 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
         ) { Text(stringResource(Res.string.measure_action), fontWeight = FontWeight.SemiBold) }
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp))
     }
+    PhotoSheets(state, viewModel, snackbar)
     if (state.pistesAfterSave.isNotEmpty()) PistesSheet(state.pistesAfterSave, viewModel.today(), viewModel::dismissPistes)
     if (showPicker) {
         AquariumPickerSheet(
@@ -313,6 +327,8 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                 viewModel.openCreateAquarium()
             },
             onDismiss = { showPicker = false },
+            loadPhoto = viewModel::aquariumPhoto,
+            cachedPhoto = viewModel::cachedAquariumPhoto,
         )
     }
 }
@@ -334,15 +350,19 @@ private fun AquariumScene(
     aquariums: List<Aquarium>,
     current: Aquarium,
     pager: PagerState,
+    onOpenPhoto: () -> Unit,
+    loadPhoto: suspend (String) -> ImageBitmap?,
+    cachedPhoto: (String) -> ImageBitmap?,
     onChangeAquarium: () -> Unit,
 ) {
     if (aquariums.size < 2) {
-        SceneHeader(current, onChangeAquarium)
+        SceneHeader(current, onChangeAquarium, onOpenPhoto, loadPhoto, cachedPhoto)
         return
     }
     Column {
         HorizontalPager(pager, Modifier.testTag("home-pager")) { page ->
-            SceneHeader(aquariums[page], onChangeAquarium)
+            // The photo flow acts on the current Aquarium: a page still sliding in has no live vignette.
+            SceneHeader(aquariums[page], onChangeAquarium, onOpenPhoto.takeIf { aquariums[page].id == current.id }, loadPhoto, cachedPhoto)
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center) {
             repeat(aquariums.size) { index ->
@@ -432,7 +452,13 @@ private fun DueTestsRow(tests: List<DueTest>, enabled: Boolean, onClick: () -> U
 }
 
 @Composable
-private fun SceneHeader(aquarium: Aquarium, onChangeAquarium: () -> Unit) {
+private fun SceneHeader(
+    aquarium: Aquarium,
+    onChangeAquarium: () -> Unit,
+    onOpenPhoto: (() -> Unit)?,
+    loadPhoto: suspend (String) -> ImageBitmap?,
+    cachedPhoto: (String) -> ImageBitmap?,
+) {
     // No age: createdAtEpochMillis is when the Aquarium was added to the app, not when it was set up.
     val type = stringResource(
         when (aquarium.profile) {
@@ -445,7 +471,8 @@ private fun SceneHeader(aquarium: Aquarium, onChangeAquarium: () -> Unit) {
     Box(Modifier.fillMaxWidth()) {
         TankScene(aquarium, Modifier.fillMaxWidth())
         Column(
-            Modifier.clickable(onClickLabel = stringResource(Res.string.home_change_aquarium), onClick = onChangeAquarium)
+            // Clear of the photo vignette (48 dp + 12 dp margin) at the top end.
+            Modifier.padding(end = 60.dp).clickable(onClickLabel = stringResource(Res.string.home_change_aquarium), onClick = onChangeAquarium)
                 .padding(horizontal = 16.dp, vertical = 12.dp).heightIn(min = 48.dp),
         ) {
             Text(
@@ -460,6 +487,25 @@ private fun SceneHeader(aquarium: Aquarium, onChangeAquarium: () -> Unit) {
                 style = MaterialTheme.typography.bodyMedium.copy(shadow = shadow),
                 color = Color.White,
             )
+        }
+        val photoLabel = stringResource(if (aquarium.photoId != null) Res.string.photo_open else Res.string.photo_add, aquarium.name)
+        Box(
+            Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 12.dp).size(48.dp)
+                // The label is the node's name only, so TalkBack reads it once.
+                .clickable(enabled = onOpenPhoto != null, role = Role.Button) { onOpenPhoto?.invoke() }
+                .semantics { contentDescription = photoLabel },
+            contentAlignment = Alignment.Center,
+        ) {
+            Box {
+                AquariumThumbnail(aquarium, 44.dp, loadPhoto, Modifier.border(1.5.dp, Color.White, RoundedCornerShape(12.dp)), cachedPhoto)
+                if (aquarium.photoId == null) {
+                    Box(
+                        Modifier.align(Alignment.BottomEnd).offset(4.dp, 4.dp).size(22.dp)
+                            .background(Color.White.copy(alpha = .85f), CircleShape),
+                        contentAlignment = Alignment.Center,
+                    ) { Icon(AquagendaIcons.Camera, contentDescription = null, modifier = Modifier.size(14.dp), tint = CarnetLightColors.primary) }
+                }
+            }
         }
     }
 }

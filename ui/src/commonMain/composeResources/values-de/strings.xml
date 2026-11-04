@@ -98,7 +98,7 @@
     <string name="volume_us_gallons_format">%1$s US-gal</string>
 
     <string name="rapid_session_title">Neue Sitzung</string>
-    <string name="cancel">Stornieren</string>
+    <string name="cancel">Abbrechen</string>
     <string name="picker_confirm">OK</string>
     <string name="remove_action">%1$s entfernen</string>
     <string name="earlier_time">−15 Min</string>
@@ -209,6 +209,7 @@
     <string name="portable_problem_duplicate_strategy">Dieser Export verwendet eine nicht unterstützte Duplikatstrategie. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_duplicate_ids">Dieser Export enthält leere oder doppelte stabile IDs. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_aquariums">Dieser Export enthält ein ungültiges Aquarium. Ihre lokalen Daten wurden nicht geändert.</string>
+    <string name="portable_problem_photo">Dieser Export enthält ein Aquarium-Foto, das kein lesbares JPEG ist. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_parameters">Der Export muss alle integrierten Parameter in der richtigen Reihenfolge enthalten, wobei mindestens einer aktiv sein muss. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_sessions">Dieser Export enthält eine leere Sitzung oder eine ungültige Aquarium-Beziehung. Ihre lokalen Daten wurden nicht geändert.</string>
     <string name="portable_problem_measurements">Dieser Export enthält eine ungültige Messung oder fehlerhafte Sitzungs- und Parameterbeziehungen. Ihre lokalen Daten wurden nicht geändert.</string>
@@ -447,4 +448,20 @@
     <string name="widget_task_today">%1$s heute</string>
     <string name="widget_nothing_to_do">Nichts zu tun</string>
     <string name="widget_tank_content_description">%1$s, %2$s, %3$s</string>
+    <string name="photo_crop_title">Foto zuschneiden</string>
+    <string name="photo_crop_confirm">Dieses Foto verwenden</string>
+    <string name="photo_crop_preview">Vorschau des Zuschnitts</string>
+    <string name="photo_open">Foto von %1$s ansehen</string>
+    <string name="photo_add">Foto von %1$s hinzufügen</string>
+    <string name="photo_take">Foto aufnehmen</string>
+    <string name="photo_choose">Aus der Galerie wählen</string>
+    <string name="photo_of">Foto von %1$s</string>
+    <string name="photo_change">Foto ändern</string>
+    <string name="photo_remove">Foto entfernen</string>
+    <string name="photo_remove_title">Foto entfernen?</string>
+    <string name="photo_remove_text">Das Foto wird von diesem Gerät und aus Ihrem Konto gelöscht.</string>
+    <string name="photo_remove_confirm">Entfernen</string>
+    <string name="photo_unreadable">Dieses Bild kann nicht gelesen werden.</string>
+    <string name="photo_save_failed">Das Foto konnte nicht gespeichert werden. Versuchen Sie es erneut.</string>
+    <string name="photo_processing">Foto wird vorbereitet…</string>
 </resources>

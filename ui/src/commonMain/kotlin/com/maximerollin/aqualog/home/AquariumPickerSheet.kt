@@ -17,9 +17,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.resources.*
+import com.maximerollin.aqualog.photo.AquariumThumbnail
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import org.jetbrains.compose.resources.stringResource
@@ -33,6 +36,8 @@ fun AquariumPickerSheet(
     onSelect: (String) -> Unit,
     onAdd: () -> Unit,
     onDismiss: () -> Unit,
+    loadPhoto: suspend (String) -> ImageBitmap?,
+    cachedPhoto: (String) -> ImageBitmap? = { null },
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
@@ -45,6 +50,7 @@ fun AquariumPickerSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     RadioButton(selected = aquarium.id == currentId, onClick = null)
+                    AquariumThumbnail(aquarium, 40.dp, loadPhoto, Modifier.clearAndSetSemantics {}, cachedPhoto)
                     Text(aquarium.name, style = MaterialTheme.typography.bodyLarge)
                 }
             }

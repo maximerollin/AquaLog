@@ -58,6 +58,14 @@ class WidgetAquariumTest {
     ) = widgetAquarium(setup, readings, tests, pending, today)
 
     @Test
+    fun `widgetText carries the Aquarium photoId`() = runTest {
+        val day = java.time.LocalDate.of(2026, 11, 2)
+        val withPhoto = widgetAquarium(setup.copy(aquarium = setup.aquarium.copy(photoId = "p1")), allOk, emptyList(), emptyList(), today)
+        assertEquals("p1", widgetText(withPhoto, day).photoId)
+        assertNull(widgetText(widget(), day).photoId)
+    }
+
+    @Test
     fun `an alert value comes before an overdue task`() {
         val result = widget(listOf(reading(ph, 7.0), reading(nitrite, 0.5), reading(nitrate, 10.0)), pending = listOf(occurrence("1", yesterday)))
         assertEquals(NextStep.Value(nitrite, ReadingLevel.ALERT), result.next)

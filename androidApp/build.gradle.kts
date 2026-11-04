@@ -40,7 +40,7 @@ android {
 
     defaultConfig {
         applicationId = "com.maximerollin.aqualog"
-        minSdk = 23
+        minSdk = 24
         targetSdk = 37
         versionCode = aqualogVersionCode.get()
         versionName = aqualogVersionName.get()
@@ -128,6 +128,8 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     testImplementation(kotlin("test-junit"))
+    // The Android stub of org.json throws in JVM unit tests.
+    testImplementation("org.json:json:20240303")
     testImplementation(libs.kotlinx.coroutines.test)
 
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -136,6 +138,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.intents)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.services.storage)
+    androidTestImplementation(libs.androidx.exifinterface)
     androidTestImplementation(libs.glance.appwidget.testing)
     androidTestUtil(libs.androidx.test.services)
     androidTestUtil(libs.androidx.test.orchestrator)

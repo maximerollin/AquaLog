@@ -98,7 +98,7 @@
     <string name="volume_us_gallons_format">%1$s Gal</string>
 
     <string name="rapid_session_title">Nuova sessione</string>
-    <string name="cancel">Cancellare</string>
+    <string name="cancel">Annulla</string>
     <string name="picker_confirm">OK</string>
     <string name="remove_action">Rimuovi %1$s</string>
     <string name="earlier_time">-15 minuti</string>
@@ -209,6 +209,7 @@
     <string name="portable_problem_duplicate_strategy">Questa esportazione utilizza una strategia di duplicazione non supportata. I tuoi dati locali non sono stati modificati.</string>
     <string name="portable_problem_duplicate_ids">Questa esportazione contiene ID stabili vuoti o duplicati. I tuoi dati locali non sono stati modificati.</string>
     <string name="portable_problem_aquariums">Questa esportazione contiene un acquario non valido. I tuoi dati locali non sono stati modificati.</string>
+    <string name="portable_problem_photo">Questa esportazione contiene la foto di un acquario che non è un JPEG leggibile. I tuoi dati locali non sono stati modificati.</string>
     <string name="portable_problem_parameters">L'esportazione deve contenere tutti i parametri incorporati in ordine, con almeno uno attivo. I tuoi dati locali non sono stati modificati.</string>
     <string name="portable_problem_sessions">Questa esportazione contiene una sessione vuota o una relazione Aquarium non valida. I tuoi dati locali non sono stati modificati.</string>
     <string name="portable_problem_measurements">Questa esportazione contiene una misurazione non valida o relazioni tra sessione e parametro interrotte. I tuoi dati locali non sono stati modificati.</string>
@@ -447,4 +448,20 @@
     <string name="widget_task_today">%1$s oggi</string>
     <string name="widget_nothing_to_do">Niente da fare</string>
     <string name="widget_tank_content_description">%1$s, %2$s, %3$s</string>
+    <string name="photo_crop_title">Ritaglia la foto</string>
+    <string name="photo_crop_confirm">Usa questa foto</string>
+    <string name="photo_crop_preview">Anteprima del ritaglio</string>
+    <string name="photo_open">Vedi la foto di %1$s</string>
+    <string name="photo_add">Aggiungi una foto di %1$s</string>
+    <string name="photo_take">Scatta una foto</string>
+    <string name="photo_choose">Scegli dalla galleria</string>
+    <string name="photo_of">Foto di %1$s</string>
+    <string name="photo_change">Cambia la foto</string>
+    <string name="photo_remove">Rimuovi la foto</string>
+    <string name="photo_remove_title">Rimuovere la foto?</string>
+    <string name="photo_remove_text">La foto verrà eliminata da questo dispositivo e dal tuo account.</string>
+    <string name="photo_remove_confirm">Rimuovi</string>
+    <string name="photo_unreadable">Questa immagine non può essere letta.</string>
+    <string name="photo_save_failed">Impossibile salvare la foto. Riprova.</string>
+    <string name="photo_processing">Preparazione della foto…</string>
 </resources>

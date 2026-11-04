@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.shared
 
+import java.io.IOException
 import kotlinx.coroutines.CancellationException
 
 enum class SyncEntityType(val storageValue: String) {
@@ -69,6 +70,8 @@ data class PendingSyncBatch(
     val measurements: List<Measurement>,
     val maintenanceActions: List<MaintenanceAction>,
     val events: List<SessionEvent>,
+    /** Aquariums whose photo is uploaded: only their upserts carry photo_id, so a stale one never wins remotely. */
+    val photoAquariumIds: Set<String> = emptySet(),
 )
 
 data class RemoteEntityVersion(
@@ -83,6 +86,9 @@ data class RemoteSyncSnapshot(
     val copy: InitialAccountCopy,
     val versions: List<RemoteEntityVersion>,
 )
+
+/** An Aquarium whose photo must be uploaded, or whose remote photo must be deleted when [photoId] is null. */
+data class PendingPhotoSync(val aquariumId: String, val photoId: String?)
 
 interface SyncLocalDataSource {
     fun observeSyncState(): kotlinx.coroutines.flow.Flow<SyncState>
@@ -102,6 +108,13 @@ interface SyncLocalDataSource {
     suspend fun commitRemoteSnapshot(snapshot: RemoteSyncSnapshot, acknowledgedOperationIds: List<Long>) {
         commitRemoteCopy(snapshot.copy, acknowledgedOperationIds)
     }
+    suspend fun pendingPhotoSyncs(): List<PendingPhotoSync> = emptyList()
+    suspend fun markPhotoSynced(aquariumId: String, photoId: String?) {}
+    /** The upserts carrying photo_id of [aquariumIds] reached the server. */
+    suspend fun photoIdsPushed(aquariumIds: Set<String>) {}
+    /** Photos of [aquariumIds] were downloaded; no row changed, so observers must be told. */
+    suspend fun photosDownloaded(aquariumIds: Set<String>) {}
+    suspend fun aquariumPhotoIds(): Set<String> = emptySet()
 }
 
 data class SyncSession(
@@ -122,6 +135,9 @@ interface SyncBackend {
         copy = pull(session),
         versions = emptyList(),
     )
+    suspend fun uploadAquariumPhoto(session: SyncSession, aquariumId: String, jpeg: ByteArray) {}
+    suspend fun deleteAquariumPhoto(session: SyncSession, aquariumId: String) {}
+    suspend fun downloadAquariumPhoto(session: SyncSession, aquariumId: String): ByteArray? = null
 }
 
 class SyncNetworkException(message: String? = null) : Exception(message)
@@ -151,6 +167,7 @@ class SyncCoordinator(
     private val retryPolicy: SyncRetryPolicy = SyncRetryPolicy(),
     private val currentTimeMillis: (() -> Long)? = null,
     private val operationGate: AccountOperationGate? = null,
+    private val photoStore: AquariumPhotoStore? = null,
 ) {
     suspend fun runOnce(): SyncRunResult {
         val lease = operationGate?.acquire()
@@ -175,8 +192,17 @@ class SyncCoordinator(
                 return SyncRunResult.Synchronized(downloadedSessionCount)
             }
             try {
+                // Every iteration: the batch was read first, so each photo it references is uploaded before it.
+                if (runGuarded(lease) { pushPhotos(session) } is AccountLeaseResult.Revoked) {
+                    return SyncRunResult.SignedOut
+                }
                 if (batch.operations.isNotEmpty()) {
-                    if (runGuarded(lease) { backend.push(session, batch) } is AccountLeaseResult.Revoked) {
+                    if (
+                        runGuarded(lease) {
+                            backend.push(session, batch)
+                            localData.photoIdsPushed(batch.photoAquariumIds)
+                        } is AccountLeaseResult.Revoked
+                    ) {
                         return SyncRunResult.SignedOut
                     }
                 }
@@ -184,9 +210,13 @@ class SyncCoordinator(
                     is AccountLeaseResult.Completed -> pulled.value
                     AccountLeaseResult.Revoked -> return SyncRunResult.SignedOut
                 }
+                if (runGuarded(lease) { downloadMissingPhotos(session, remoteSnapshot) } is AccountLeaseResult.Revoked) {
+                    return SyncRunResult.SignedOut
+                }
                 if (
                     runGuarded(lease) {
                         localData.commitRemoteSnapshot(remoteSnapshot, batch.operations.map(SyncOperation::id))
+                        photoStore?.retainOnly(localData.aquariumPhotoIds())
                     } is AccountLeaseResult.Revoked
                 ) {
                     return SyncRunResult.SignedOut
@@ -229,6 +259,40 @@ class SyncCoordinator(
             }
         }
         return SyncRunResult.Retry(retryPolicy.delayMillis(1))
+    }
+
+    /** Uploads (or remotely deletes) each changed photo before the Aquarium that references it is pushed. */
+    private suspend fun pushPhotos(session: SyncSession) {
+        val store = photoStore ?: return
+        localData.pendingPhotoSyncs().forEach { pending ->
+            val photoId = pending.photoId
+            if (photoId == null) {
+                backend.deleteAquariumPhoto(session, pending.aquariumId)
+            } else {
+                store.read(photoId)?.let { backend.uploadAquariumPhoto(session, pending.aquariumId, it) }
+            }
+            localData.markPhotoSynced(pending.aquariumId, photoId)
+        }
+    }
+
+    /** A photo that fails to download stays missing and is tried again by the next sync. */
+    private suspend fun downloadMissingPhotos(session: SyncSession, snapshot: RemoteSyncSnapshot) {
+        val store = photoStore ?: return
+        val downloaded = mutableSetOf<String>()
+        snapshot.copy.aquariums.forEach { aquarium ->
+            val photoId = aquarium.photoId?.takeIf(::isSafePhotoId) ?: return@forEach
+            if (store.read(photoId) != null) return@forEach
+            try {
+                backend.downloadAquariumPhoto(session, aquarium.id)?.let {
+                    store.write(photoId, it)
+                    downloaded += aquarium.id
+                }
+            } catch (_: SyncNetworkException) {
+            } catch (_: SyncServerException) {
+            } catch (_: IOException) {
+            }
+        }
+        if (downloaded.isNotEmpty()) localData.photosDownloaded(downloaded)
     }
 
     private suspend fun <T> runGuarded(

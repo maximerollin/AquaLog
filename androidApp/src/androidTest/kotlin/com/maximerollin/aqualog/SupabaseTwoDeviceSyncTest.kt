@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import android.graphics.Bitmap
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
@@ -12,6 +13,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximerollin.aqualog.shared.AquariumProfile
+import com.maximerollin.aqualog.shared.DirectoryAquariumPhotoStore
 import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
@@ -27,10 +29,14 @@ import com.maximerollin.aqualog.shared.createAquaLogDatabase
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.junit.Assume.assumeTrue
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.io.ByteArrayOutputStream
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.UUID
@@ -92,6 +98,58 @@ class SupabaseTwoDeviceSyncTest {
         composeRule.onNodeWithContentDescription("Open Session details").performClick()
         composeRule.onNodeWithText("Observation · Downloaded from first installation").assertIsDisplayed()
         scenario.close()
+        firstDatabase.close()
+        secondDatabase.close()
+    }
+
+    @Test
+    fun productionAdapter_syncsAnAquariumPhotoToASecondDevice() {
+        val configuration = SupabaseConfiguration.fromBuildConfig()
+        assumeTrue("Local Supabase URL and anon key are required", configuration.isConfigured)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val suffix = UUID.randomUUID().toString()
+        val authenticated = signUp(
+            configuration,
+            email = "android-photo-$suffix@example.com",
+            password = "Aq!$suffix",
+        )
+        val firstDatabase = createAquaLogDatabase(createAndroidDatabaseBuilder(context, "photo-first-$suffix.db"))
+        val secondDatabase = createAquaLogDatabase(createAndroidDatabaseBuilder(context, "photo-second-$suffix.db"))
+        val firstStore = DirectoryAquariumPhotoStore(File(context.cacheDir, "photo-first-$suffix"))
+        val secondStore = DirectoryAquariumPhotoStore(File(context.cacheDir, "photo-second-$suffix"))
+        val first = RoomAquariumRepository(
+            firstDatabase, { UUID.randomUUID().toString() }, System::currentTimeMillis, photoStore = firstStore,
+        )
+        val second = RoomAquariumRepository(
+            secondDatabase, { UUID.randomUUID().toString() }, System::currentTimeMillis, photoStore = secondStore,
+        )
+        val provider = object : SyncSessionProvider {
+            override suspend fun currentSession() = authenticated
+        }
+        val backend = SupabaseSyncBackend(configuration)
+        val firstCoordinator = SyncCoordinator(first, backend, provider, photoStore = firstStore)
+        val secondCoordinator = SyncCoordinator(second, backend, provider, photoStore = secondStore)
+        val jpeg = ByteArrayOutputStream().also {
+            Bitmap.createBitmap(16, 16, Bitmap.Config.ARGB_8888).compress(Bitmap.CompressFormat.JPEG, 80, it)
+        }.toByteArray()
+
+        runBlocking {
+            val aquarium = first.createConfiguredAquarium(
+                "Android photo", 90.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            ).aquarium
+            first.setAquariumPhoto(aquarium.id, jpeg)
+            firstCoordinator.runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
+            secondCoordinator.runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
+            val photoId = second.loadSetup(aquarium.id)!!.aquarium.photoId!!
+            assertArrayEquals(jpeg, second.readAquariumPhoto(photoId))
+
+            first.setAquariumPhoto(aquarium.id, null)
+            firstCoordinator.runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
+            secondCoordinator.runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
+            assertNull(second.loadSetup(aquarium.id)!!.aquarium.photoId)
+            assertNull(backend.downloadAquariumPhoto(authenticated, aquarium.id))
+        }
         firstDatabase.close()
         secondDatabase.close()
     }

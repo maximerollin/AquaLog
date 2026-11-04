@@ -39,6 +39,11 @@ interface AquariumRepository {
 
     suspend fun updateAquarium(aquarium: Aquarium): Aquarium
 
+    /** Replaces the Aquarium's single photo with [jpeg], or removes it when null. */
+    suspend fun setAquariumPhoto(aquariumId: String, jpeg: ByteArray?): Aquarium = error("unsupported")
+
+    suspend fun readAquariumPhoto(photoId: String): ByteArray? = null
+
     suspend fun updateParameterDefinition(parameter: ParameterDefinition): ParameterDefinition
 
     /** Sets the per-Aquarium analysis rhythm of one Parameter; null means the profile default. */
@@ -108,6 +113,7 @@ class RoomAquariumRepository(
     private val currentTimeMillis: () -> Long,
     private val onSyncNeeded: () -> Unit = {},
     private val generateOperationKey: () -> String = ::randomSyncOperationKey,
+    private val photoStore: AquariumPhotoStore? = null,
 ) : AquariumRepository, AccountLocalDataSource, AccountControlLocalData, AccountAccessMarkerStore, SyncLocalDataSource {
     private val aquariumDao = database.aquariumDao()
     private val sessionDao = database.sessionDao()
@@ -239,13 +245,32 @@ class RoomAquariumRepository(
         require(aquarium.name.isNotBlank()) { "Aquarium name must not be blank" }
         require(aquarium.volume > 0.0 && aquarium.volume.isFinite()) { "Aquarium volume must be positive" }
         val normalized = aquarium.copy(name = aquarium.name.trim())
-        aquariumDao.updateAquarium(
+        val stored = aquariumDao.updateAquarium(
             normalized.toEntity(),
             newSyncOperation(SyncEntityType.AQUARIUM, normalized.id),
         )
         onSyncNeeded()
-        return normalized
+        return stored.toDomain()
     }
+
+    override suspend fun setAquariumPhoto(aquariumId: String, jpeg: ByteArray?): Aquarium {
+        val store = checkNotNull(photoStore) { "No photo store" }
+        val existing = requireNotNull(aquariumDao.getSetup(aquariumId)) { "Aquarium does not exist" }.aquarium
+        val newPhotoId = jpeg?.let { generateId().also { id -> store.write(id, jpeg) } }
+        val updated = existing.copy(photoId = newPhotoId)
+        try {
+            aquariumDao.updateAquariumPhoto(updated, newSyncOperation(SyncEntityType.AQUARIUM, aquariumId))
+        } catch (failure: Throwable) {
+            newPhotoId?.let { store.delete(it) }
+            throw failure
+        }
+        // A remote photoId may be unsafe; it was never stored, so there is no file to delete.
+        existing.photoId?.takeIf(::isSafePhotoId)?.let { store.delete(it) }
+        onSyncNeeded()
+        return updated.toDomain()
+    }
+
+    override suspend fun readAquariumPhoto(photoId: String): ByteArray? = photoStore?.read(photoId)
 
     override suspend fun updateParameterDefinition(parameter: ParameterDefinition): ParameterDefinition {
         require(parameter.unit.isNotBlank()) { "Parameter unit must not be blank" }
@@ -691,6 +716,8 @@ class RoomAquariumRepository(
     }
 
     override suspend fun completeAccountMigration(accountId: String) {
+        // The account may lack photos synced to an earlier one (sign-out keeping the copy): the next sync uploads them.
+        aquariumDao.markAllPhotosPending()
         accountDao.upsert(
             AccountStateEntity(
                 accountId = accountId,
@@ -726,7 +753,10 @@ class RoomAquariumRepository(
 
     override suspend fun detachAccountKeepingLocalCopy() = accountControlDao.detachAccountKeepingLocalCopy()
 
-    override suspend fun removeAccountAndLocalCopy() = accountControlDao.removeAccountAndLocalCopy()
+    override suspend fun removeAccountAndLocalCopy() {
+        accountControlDao.removeAccountAndLocalCopy()
+        photoStore?.clear()
+    }
 
     override fun observeSyncState(): Flow<SyncState> = combine(
         syncDao.observePending(),
@@ -754,10 +784,13 @@ class RoomAquariumRepository(
         val operations = syncDao.pendingEligible(limit, eligibleAtEpochMillis).map(SyncOperationEntity::toDomain)
         val idsByType = operations.groupBy(SyncOperation::entityType)
             .mapValues { (_, values) -> values.map(SyncOperation::entityId).toSet() }
+        val aquariums = aquariumDao.allAquariums().filter { it.id in idsByType[SyncEntityType.AQUARIUM].orEmpty() }
+            .map(AquariumEntity::toDomain)
+        // Read after the Aquariums: a photo changed in between has its row back at uploaded = 0, so it is left out.
+        val photoAquariumIds = aquariumDao.uploadedPhotoAquariumIds().toSet()
         return PendingSyncBatch(
             operations = operations,
-            aquariums = aquariumDao.allAquariums().filter { it.id in idsByType[SyncEntityType.AQUARIUM].orEmpty() }
-                .map(AquariumEntity::toDomain),
+            aquariums = aquariums,
             parameterDefinitions = aquariumDao.allParameterDefinitions()
                 .filter { it.id in idsByType[SyncEntityType.PARAMETER_DEFINITION].orEmpty() }
                 .map(ParameterDefinitionEntity::toDomain),
@@ -770,6 +803,7 @@ class RoomAquariumRepository(
                 .map(MaintenanceActionEntity::toDomain),
             events = sessionDao.allEvents().filter { it.id in idsByType[SyncEntityType.EVENT].orEmpty() }
                 .map(SessionEventEntity::toDomain),
+            photoAquariumIds = aquariums.map(Aquarium::id).filter { it in photoAquariumIds }.toSet(),
         )
     }
 
@@ -840,6 +874,19 @@ class RoomAquariumRepository(
             acknowledgedOperationIds = acknowledgedOperationIds,
         )
     }
+
+    override suspend fun pendingPhotoSyncs(): List<PendingPhotoSync> = aquariumDao.pendingPhotoSyncs()
+
+    override suspend fun markPhotoSynced(aquariumId: String, photoId: String?) =
+        aquariumDao.markPhotoSynced(aquariumId, photoId, newSyncOperation(SyncEntityType.AQUARIUM, aquariumId))
+
+    override suspend fun photoIdsPushed(aquariumIds: Set<String>) {
+        if (aquariumIds.isNotEmpty()) aquariumDao.deleteUploadedPhotoSyncs(aquariumIds.toList())
+    }
+
+    override suspend fun photosDownloaded(aquariumIds: Set<String>) = aquariumDao.touchAquariums(aquariumIds.toList())
+
+    override suspend fun aquariumPhotoIds(): Set<String> = aquariumDao.photoIds().toSet()
 
     private suspend fun newSyncOperation(
         entityType: SyncEntityType,
@@ -934,6 +981,7 @@ private fun AquariumEntity.toDomain() = Aquarium(
     createdAtEpochMillis = createdAtEpochMillis,
     profile = AquariumProfile.fromStorageValue(profile),
     isArchived = isArchived,
+    photoId = photoId,
 )
 
 private fun Aquarium.toEntity() = AquariumEntity(
@@ -944,6 +992,7 @@ private fun Aquarium.toEntity() = AquariumEntity(
     createdAtEpochMillis = createdAtEpochMillis,
     profile = profile.storageValue,
     isArchived = isArchived,
+    photoId = photoId,
 )
 
 private fun AquariumSetupEntity.toDomain() = AquariumSetup(

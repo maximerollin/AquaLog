@@ -1,15 +1,20 @@
 package com.maximerollin.aqualog.shared
 
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
+import java.io.IOException
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+
+private fun aquariumOperation(id: Long) =
+    SyncOperation(id, "key-$id", SyncEntityType.AQUARIUM, "aq", SyncOperationKind.UPSERT, 0, 0, 0, 0)
 
 class SyncCoordinatorTest {
     @Test
@@ -431,6 +436,273 @@ class SyncCoordinatorTest {
         assertEquals(1_000L, policy.delayMillis(attempt = 1))
         assertEquals(2_000L, policy.delayMillis(attempt = 2))
         assertEquals(8_000L, policy.delayMillis(attempt = 20))
+    }
+
+    @Test
+    fun `pending photo is uploaded before the batch is pushed`() = runTest {
+        val photos = PhotoFixture(pending = listOf(PendingPhotoSync("aq", "p1")))
+        photos.store.write("p1", byteArrayOf(1, 2, 3))
+
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        assertEquals(listOf("upload(aq,[1, 2, 3])", "push"), photos.calls.take(2))
+        assertEquals(listOf<Pair<String, String?>>("aq" to "p1"), photos.local.marked)
+    }
+
+    @Test
+    fun `photo_id is pushed only after the upload, then the row is dropped`() = runTest {
+        val photos = PhotoFixture(pending = listOf(PendingPhotoSync("aq", "p1")))
+        photos.store.write("p1", byteArrayOf(1))
+
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        assertEquals(
+            listOf("upload(aq,[1])", "push", "commit", "retainOnly([])", "push(photo [aq])", "commit", "retainOnly([])"),
+            photos.calls,
+        )
+        assertEquals(listOf(setOf("aq")), photos.local.pushedPhotoIds.filter(Set<String>::isNotEmpty))
+        assertEquals(emptySet(), photos.local.uploaded)
+    }
+
+    @Test
+    fun `a failed push keeps the uploaded row for the retry`() = runTest {
+        val photos = PhotoFixture()
+        photos.local.uploaded += "aq"
+        photos.backend.pushFailure = SyncNetworkException("offline")
+
+        assertIs<SyncRunResult.Retry>(photos.coordinator().runOnce())
+
+        assertEquals(setOf("aq"), photos.local.uploaded)
+    }
+
+    @Test
+    fun `removed photo deletes the remote object`() = runTest {
+        val photos = PhotoFixture(pending = listOf(PendingPhotoSync("aq", null)))
+
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        assertTrue("delete(aq)" in photos.calls)
+        assertEquals(listOf<Pair<String, String?>>("aq" to null), photos.local.marked)
+    }
+
+    @Test
+    fun `missing photos are downloaded before the snapshot is committed`() = runTest {
+        val photos = PhotoFixture(
+            remote = listOf(remoteAquarium("aq", "p2"), remoteAquarium("evil", "../escape")),
+        )
+        var storedAtCommit: ByteArray? = null
+        photos.local.onCommit = { storedAtCommit = photos.store.read("p2") }
+
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        // The unsafe "../escape" id is never downloaded.
+        assertEquals(listOf("push", "download(aq)", "commit", "retainOnly([])"), photos.calls)
+        assertTrue(byteArrayOf(9).contentEquals(storedAtCommit))
+    }
+
+    @Test
+    fun `a failed download does not fail the sync`() = runTest {
+        val photos = PhotoFixture(
+            remote = listOf(remoteAquarium("aq", "p2")),
+            downloadFailure = SyncNetworkException("offline"),
+        )
+
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        assertTrue("commit" in photos.calls)
+        assertEquals(null, photos.store.read("p2"))
+    }
+
+    @Test
+    fun `a photo downloaded by a later sync is reported so observers refresh`() = runTest {
+        val photos = PhotoFixture(
+            remote = listOf(remoteAquarium("aq", "p2")),
+            downloadFailure = SyncNetworkException("offline"),
+        )
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+        assertEquals(emptyList(), photos.local.downloaded)
+
+        photos.backend.downloadFailure = null
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        assertEquals(listOf(setOf("aq")), photos.local.downloaded)
+    }
+
+    @Test
+    fun `a photo that cannot be stored does not fail the sync`() = runTest {
+        val photos = PhotoFixture(remote = listOf(remoteAquarium("aq", "p2")))
+        photos.store.writeFailure = IOException("disk full")
+
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        assertTrue("commit" in photos.calls)
+    }
+
+    @Test
+    fun `a photo changed during the run is uploaded before its Aquarium is pushed`() = runTest {
+        val photos = PhotoFixture(localPhotoIds = setOf("p3"))
+        var changed = false
+        photos.local.onCommit = {
+            if (!changed) {
+                changed = true
+                photos.store.write("p3", byteArrayOf(3))
+                photos.local.pendingPhotos = listOf(PendingPhotoSync("aq", "p3"))
+                photos.local.operations = listOf(aquariumOperation(2))
+            }
+        }
+
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        assertEquals(
+            listOf(
+                "push", "commit", "retainOnly([p3])",
+                "upload(aq,[3])", "push", "commit", "retainOnly([p3])",
+                "push(photo [aq])", "commit", "retainOnly([p3])",
+            ),
+            photos.calls,
+        )
+    }
+
+    @Test
+    fun `photos no Aquarium references are removed after commit`() = runTest {
+        val photos = PhotoFixture(localPhotoIds = setOf("p1"))
+
+        assertIs<SyncRunResult.Synchronized>(photos.coordinator().runOnce())
+
+        assertEquals(listOf("push", "commit", "retainOnly([p1])"), photos.calls)
+    }
+
+    @Test
+    fun `an upload failure retries like a push failure`() = runTest {
+        val photos = PhotoFixture(
+            pending = listOf(PendingPhotoSync("aq", "p1")),
+            uploadFailure = SyncNetworkException("offline"),
+        )
+        photos.store.write("p1", byteArrayOf(1))
+
+        assertIs<SyncRunResult.Retry>(photos.coordinator().runOnce())
+
+        assertTrue("push" !in photos.calls)
+        assertEquals(emptyList<Pair<String, String?>>(), photos.local.marked)
+    }
+
+    private fun remoteAquarium(id: String, photoId: String?) =
+        Aquarium(id, "Remote", 60.0, VolumeUnit.LITERS, 1L, photoId = photoId)
+
+    private class PhotoFixture(
+        pending: List<PendingPhotoSync> = emptyList(),
+        remote: List<Aquarium> = emptyList(),
+        localPhotoIds: Set<String> = emptySet(),
+        uploadFailure: Exception? = null,
+        downloadFailure: Exception? = null,
+    ) {
+        val calls = mutableListOf<String>()
+        val local = PhotoLocalData(calls, pending, localPhotoIds)
+        val store = MemoryPhotoStore(calls)
+        val backend = PhotoBackend(calls, remote, uploadFailure, downloadFailure)
+
+        fun coordinator() = SyncCoordinator(
+            local,
+            backend,
+            FixedSyncSessionProvider(SyncSession("account-1", "access")),
+            photoStore = store,
+        )
+    }
+
+    private class PhotoLocalData(
+        private val calls: MutableList<String>,
+        var pendingPhotos: List<PendingPhotoSync>,
+        private val photoIds: Set<String>,
+    ) : SyncLocalDataSource {
+        val marked = mutableListOf<Pair<String, String?>>()
+        val uploaded = mutableSetOf<String>()
+        val pushedPhotoIds = mutableListOf<Set<String>>()
+        val downloaded = mutableListOf<Set<String>>()
+        var onCommit: suspend () -> Unit = {}
+        // One pending operation, so a push happens on the first iteration.
+        var operations = listOf(aquariumOperation(1))
+
+        override fun observeSyncState() = flowOf(SyncState(SyncStatus.SYNCED, 0))
+        override suspend fun pendingSyncBatch(limit: Int, eligibleAtEpochMillis: Long) = PendingSyncBatch(
+            operations, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(),
+            photoAquariumIds = uploaded.toSet(),
+        )
+        override suspend fun nextRetryAtEpochMillis(): Long? = null
+        override suspend fun syncAttemptCount() = 0
+        override suspend fun syncGeneration() = 0L
+        override suspend fun acknowledgeSyncOperations(operationIds: List<Long>) = Unit
+        override suspend fun recordSyncFailure(
+            operationIds: List<Long>,
+            failure: SyncFailure,
+            nextRetryAtEpochMillis: Long,
+            expectedGeneration: Long,
+        ) = true
+        override suspend fun retrySyncNow() = Unit
+        override suspend fun commitRemoteCopy(copy: InitialAccountCopy, acknowledgedOperationIds: List<Long>) {
+            operations = operations.filterNot { it.id in acknowledgedOperationIds }
+            onCommit()
+            calls += "commit"
+        }
+        override suspend fun pendingPhotoSyncs() = pendingPhotos
+        override suspend fun markPhotoSynced(aquariumId: String, photoId: String?) {
+            marked += aquariumId to photoId
+            pendingPhotos = pendingPhotos.filterNot { it.aquariumId == aquariumId }
+            uploaded += aquariumId
+            operations = operations + aquariumOperation(100L + marked.size)
+        }
+        override suspend fun photosDownloaded(aquariumIds: Set<String>) {
+            downloaded += aquariumIds
+        }
+        override suspend fun photoIdsPushed(aquariumIds: Set<String>) {
+            pushedPhotoIds += aquariumIds
+            uploaded -= aquariumIds
+        }
+        override suspend fun aquariumPhotoIds() = photoIds
+    }
+
+    private class MemoryPhotoStore(private val calls: MutableList<String>) : AquariumPhotoStore {
+        private val photos = mutableMapOf<String, ByteArray>()
+        var writeFailure: IOException? = null
+        override suspend fun write(photoId: String, jpeg: ByteArray) {
+            writeFailure?.let { throw it }
+            photos[photoId] = jpeg
+        }
+        override suspend fun read(photoId: String) = photos[photoId]
+        override suspend fun delete(photoId: String) {
+            photos.remove(photoId)
+        }
+        override suspend fun retainOnly(photoIds: Set<String>) {
+            calls += "retainOnly($photoIds)"
+            photos.keys.retainAll(photoIds)
+        }
+        override suspend fun clear() = photos.clear()
+    }
+
+    private class PhotoBackend(
+        private val calls: MutableList<String>,
+        private val remote: List<Aquarium>,
+        private val uploadFailure: Exception?,
+        var downloadFailure: Exception?,
+    ) : SyncBackend {
+        var pushFailure: Exception? = null
+        override suspend fun push(session: SyncSession, batch: PendingSyncBatch) {
+            pushFailure?.let { throw it }
+            calls += if (batch.photoAquariumIds.isEmpty()) "push" else "push(photo ${batch.photoAquariumIds})"
+        }
+        override suspend fun pull(session: SyncSession) =
+            InitialAccountCopy(remote, emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+        override suspend fun uploadAquariumPhoto(session: SyncSession, aquariumId: String, jpeg: ByteArray) {
+            uploadFailure?.let { throw it }
+            calls += "upload($aquariumId,${jpeg.toList()})"
+        }
+        override suspend fun deleteAquariumPhoto(session: SyncSession, aquariumId: String) {
+            calls += "delete($aquariumId)"
+        }
+        override suspend fun downloadAquariumPhoto(session: SyncSession, aquariumId: String): ByteArray {
+            downloadFailure?.let { throw it }
+            calls += "download($aquariumId)"
+            return byteArrayOf(9)
+        }
     }
 
     private fun fixture(path: String): Fixture {
