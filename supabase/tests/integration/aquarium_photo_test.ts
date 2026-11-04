@@ -27,7 +27,7 @@ Deno.test("an account reaches only its own folder of the private photo bucket", 
     const [tokenA, tokenB] = sessions;
     const path = `aquarium-photos/${accountA}/${crypto.randomUUID()}.jpg`;
     const bytes = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4]);
-    const send = (method: string, route: string, token: string, body?: Uint8Array) =>
+    const send = (method: string, route: string, token: string, body?: Uint8Array<ArrayBuffer>) =>
       fetch(`${url}/storage/v1/object/${route}`, {
         method,
         headers: {
