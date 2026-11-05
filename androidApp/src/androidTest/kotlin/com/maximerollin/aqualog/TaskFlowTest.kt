@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -273,6 +274,7 @@ class TaskFlowTest {
             composeRule.onNodeWithText("Save Task").performClick()
             composeRule.onNodeWithText("Task title").assertIsDisplayed()
             composeRule.onNodeWithText("Task title").performTextInput("Clean the glass")
+            closeSoftKeyboard()
             composeRule.onNodeWithText("Save Task").performClick()
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasText("Task title")).fetchSemanticsNodes().isEmpty()
