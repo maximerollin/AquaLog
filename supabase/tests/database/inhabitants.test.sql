@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(14);
 
 insert into auth.users (id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -35,7 +35,7 @@ select public.apply_sync_operation(
 select results_eq(
   $$select count, server_version from public.inhabitants where id = '82000000-0000-0000-0000-000000000001'$$,
   $$values (4, 2::bigint)$$,
-  'an update with a newer version wins'
+  'the later server-accepted update wins (server-ordered LWW)'
 );
 
 select public.apply_sync_operation(
@@ -110,6 +110,15 @@ select throws_ok(
   '23514',
   null,
   'a group counts at least one'
+);
+select throws_ok(
+  $$select public.apply_sync_operation(
+      'blank-custom-name', 'inhabitant', '82000000-0000-0000-0000-000000000006', 'upsert', 5, 0,
+      '{"id":"82000000-0000-0000-0000-000000000006","aquarium_id":"81000000-0000-0000-0000-000000000001","species_id":null,"custom_name":"  ","family":"TETRA","count":1,"added_at_epoch_millis":10}'::jsonb
+  )$$,
+  '23514',
+  null,
+  'an inhabitant names a species or a non-blank custom name'
 );
 
 reset role;
