@@ -238,6 +238,7 @@ abstract class InhabitantDao {
      * Removes [count] from a present group: the whole group is dated, a part is split into a new dated row.
      * [groupOperation] is enqueued for the group, [splitOperation] only when a split row is inserted.
      */
+    // shortcut: concurrent removals of one group on two devices can leave a wrong present count (a full removal resurrected by the other device's split upsert) and inflate the Chronologie's add line, upgrade to a removal-event model if multi-device editing of one group becomes common.
     @Transaction
     open suspend fun remove(
         id: String,
@@ -1283,6 +1284,7 @@ abstract class SyncDao {
         tombstones[SyncEntityType.INHABITANT.storageValue]?.map(SyncEntityVersionEntity::entityId)
             ?.takeIf(List<String>::isNotEmpty)?.let { deleteInhabitants(it) }
         // No foreign key locally: an Aquarium's inhabitants go with it.
+        // shortcut: this also deletes rows with pending ops, which would block the push (require(payload != null)); unreachable while no Aquarium DELETE op exists, drop those pending ops in the same transaction when Aquarium deletion lands.
         tombstones[SyncEntityType.AQUARIUM.storageValue]?.map(SyncEntityVersionEntity::entityId)
             ?.takeIf(List<String>::isNotEmpty)?.let {
                 deleteInhabitantsOfAquariums(it)

@@ -7,7 +7,8 @@ import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.assistance.usesPresetUnit
 
-enum class CriterionStatus { OK, CAUTION, PROBLEM, NOT_MEASURED }
+/** UNIT_NOT_COMPARED: the Aquarium has a reading, but in a unit the species ranges are not written in. */
+enum class CriterionStatus { OK, CAUTION, PROBLEM, NOT_MEASURED, UNIT_NOT_COMPARED }
 
 /** Declaration order is the badge priority. */
 enum class CriterionKind { VOLUME, PH, TEMPERATURE, GH, KH, COHABITATION, GROUP }
@@ -63,10 +64,10 @@ fun assessSpecies(
     fun water(kind: CriterionKind, parameter: BuiltInParameter, range: ValueRange?, low: Reason, high: Reason) {
         if (range == null) return
         // Species ranges are in the preset units (°C, °dGH, °dKH): a value in °F or another kit's scale is not judged.
-        val definition = setup.parameters.firstOrNull { it.parameter == parameter && it.isActive }?.takeIf { it.usesPresetUnit() }
+        val definition = setup.parameters.firstOrNull { it.parameter == parameter && it.isActive }
         val value = readings.firstOrNull { it.parameterDefinitionId == definition?.id }?.value
-        if (value == null) {
-            checks += CriterionCheck(kind, CriterionStatus.NOT_MEASURED)
+        if (value == null || definition?.usesPresetUnit() != true) {
+            checks += CriterionCheck(kind, if (value == null) CriterionStatus.NOT_MEASURED else CriterionStatus.UNIT_NOT_COMPARED)
             return
         }
         val gap = if (value < range.min) range.min - value else if (value > range.max) value - range.max else 0.0

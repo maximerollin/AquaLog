@@ -138,7 +138,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
         overdueLinkedAction(state.tasks.pendingOccurrences, aquarium.id, MaintenanceActionType.WATER_CHANGE, today),
     )
     var showPicker by remember { mutableStateOf(false) }
-    var showHabitants by remember { mutableStateOf(false) }
+    var showHabitants by remember(aquarium.id) { mutableStateOf(false) }
     // null while loading, so the scene does not flash silhouettes; empty when the file is unreadable (silhouettes, species ids).
     val encyclopedia by produceState<List<Species>?>(null) {
         value = try { loadEncyclopedia() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() }

@@ -521,6 +521,7 @@
     <string name="habitants_minimum_volume">minimo %1$d L</string>
     <string name="habitants_range">%1$s – %2$s</string>
     <string name="habitants_not_measured">non ancora misurato</string>
+    <string name="habitants_unit_not_compared">unità non confrontata</string>
     <string name="habitants_none_present">nessun abitante</string>
     <string name="habitants_present_group">%1$s × %2$d</string>
     <string name="habitants_group_minimum">minimo %1$d</string>

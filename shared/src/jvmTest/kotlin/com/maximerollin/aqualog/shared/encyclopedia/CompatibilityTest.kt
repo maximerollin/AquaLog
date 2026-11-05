@@ -114,13 +114,15 @@ class CompatibilityTest {
     }
 
     @Test
-    fun `a water criterion in a non-preset unit is NOT_MEASURED`() {
+    fun `a water criterion read in a non-preset unit is UNIT_NOT_COMPARED, unread it is NOT_MEASURED`() {
         val fahrenheit = definitions.map { if (it.parameter == BuiltInParameter.TEMPERATURE) it.copy(unit = "°F") else it }
         val result = assess(neon, setup(defs = fahrenheit), readings(t = 77.0))
         val temperature = result.check(CriterionKind.TEMPERATURE)
-        assertEquals(CriterionStatus.NOT_MEASURED, temperature.status)
+        assertEquals(CriterionStatus.UNIT_NOT_COMPARED, temperature.status)
         assertNull(temperature.reason)
+        assertNull(temperature.aquariumValue)
         assertEquals(Fit.GOOD, result.fit)
+        assertEquals(CriterionStatus.NOT_MEASURED, assess(neon, setup(defs = fahrenheit), emptyList()).check(CriterionKind.TEMPERATURE).status)
     }
 
     @Test

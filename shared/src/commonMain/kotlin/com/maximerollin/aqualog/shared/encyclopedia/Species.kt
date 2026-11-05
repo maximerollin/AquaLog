@@ -77,6 +77,8 @@ fun speciesProblems(species: List<Species>): List<String> {
         }
         if (s.minGroup < 1) problems += "${s.id}: minGroup < 1"
         if (s.kind == SpeciesKind.FISH && s.minVolumeLiters == null) problems += "${s.id}: fish without minVolumeLiters"
+        if ((s.kind == SpeciesKind.PLANT) != (s.family == DrawingFamily.PLANT)) problems += "${s.id}: kind PLANT and family PLANT must go together"
+        if (s.color ushr 24 != 0xFFL) problems += "${s.id}: color is not opaque ARGB"
     }
     return problems
 }

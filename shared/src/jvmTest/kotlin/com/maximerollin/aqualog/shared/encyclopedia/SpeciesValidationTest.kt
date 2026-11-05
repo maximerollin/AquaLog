@@ -18,10 +18,12 @@ class SpeciesValidationTest {
         scientificName: String = "Paracheirodon innesi",
         adultSize: Double = 3.5,
         lifespan: Int = 4,
+        kind: String = "FISH",
+        color: Long = 4278190335,
     ) = """{"id":"$id","wikidata":"$wikidata","scientificName":"$scientificName","names":$names,
-        "kind":"FISH","family":"$family","motion":"SCHOOL","ph":$ph,"temperatureC":null,"gh":null,"kh":null,
+        "kind":"$kind","family":"$family","motion":"SCHOOL","ph":$ph,"temperatureC":null,"gh":null,"kh":null,
         "minVolumeLiters":$minVolume,"adultSizeCm":$adultSize,"minGroup":$minGroup,"tags":["PEACEFUL"],"diet":"OMNIVORE",
-        "lifespanYears":$lifespan,"zone":"MIDDLE","color":4278190335,"drawing":null}"""
+        "lifespanYears":$lifespan,"zone":"MIDDLE","color":$color,"drawing":null}"""
 
     private fun problems(vararg entries: String) = speciesProblems(decodeSpecies("[${entries.joinToString(",")}]"))
 
@@ -74,4 +76,14 @@ class SpeciesValidationTest {
     }
 
     @Test fun fishWithoutMinVolume() = assertOneProblemNaming("neon", problems(entry(minVolume = "null")))
+
+    @Test fun plantKindAndFamilyGoTogether() {
+        assertOneProblemNaming("neon", problems(entry(kind = "PLANT", family = "TETRA")))
+        assertOneProblemNaming("neon", problems(entry(kind = "SNAIL", family = "PLANT")))
+        assertEquals(emptyList(), problems(entry(kind = "PLANT", family = "PLANT")))
+    }
+
+    @Test fun colorMustBeOpaque() {
+        for (c in listOf(0x00FF8F00L, 0x80FF8F00L, 0x1FFFF8F00L)) assertOneProblemNaming("neon", problems(entry(color = c)))
+    }
 }

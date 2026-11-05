@@ -17,7 +17,7 @@ suspend fun loadEncyclopedia(): List<Species> = loadLock.withLock {
 }
 
 fun Species.localName(languageTag: String): String =
-    names[languageTag.substringBefore('-').lowercase()] ?: names["fr"] ?: scientificName
+    names[languageTag.substringBefore('-').lowercase()] ?: names["en"] ?: names["fr"] ?: scientificName
 
 /** The typed name of a custom species, else the encyclopedia name; the species id when the encyclopedia is unavailable. */
 fun Inhabitant.displayName(encyclopedia: List<Species>?, languageTag: String): String =

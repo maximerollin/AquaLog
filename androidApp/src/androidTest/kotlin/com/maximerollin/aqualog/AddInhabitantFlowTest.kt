@@ -54,6 +54,8 @@ class AddInhabitantFlowTest {
             val habitants = strings.getString(Res.string.habitants_title)
             composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(habitants))
             composeRule.onNodeWithText(habitants).performClick()
+            // « Plus » opens the habitants sheet of the current Aquarium; its « Ajouter » leads to the encyclopedia.
+            composeRule.onNodeWithText(strings.getString(Res.string.habitants_add_one)).performClick()
 
             composeRule.onNodeWithText(strings.getString(Res.string.habitants_search_hint)).performTextInput("oto")
             composeRule.waitUntil(5_000) { exists("Otocinclus vittatus") }

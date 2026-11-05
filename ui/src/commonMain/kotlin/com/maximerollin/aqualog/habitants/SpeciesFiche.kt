@@ -222,7 +222,7 @@ private fun CheckRow(
             label = parameter.label()
             detail = range?.let { withUnit(rangeText(it, formatter), OnboardingPresets.presetUnit(parameter)) }
             value = check.aquariumValue?.let { withUnit(formatter.number(it, definition?.precision ?: 1), definition?.unit) }
-                ?: stringResource(Res.string.habitants_not_measured)
+                ?: stringResource(if (check.status == CriterionStatus.UNIT_NOT_COMPARED) Res.string.habitants_unit_not_compared else Res.string.habitants_not_measured)
         }
         CriterionKind.COHABITATION -> {
             label = stringResource(Res.string.habitants_criterion_cohabitation)
@@ -250,7 +250,7 @@ private fun CheckRow(
         CriterionStatus.OK -> "✓" to MaterialTheme.colorScheme.primary
         CriterionStatus.CAUTION -> "⚠" to fitColor(Fit.CAUTION)
         CriterionStatus.PROBLEM -> "✗" to fitColor(Fit.BAD)
-        CriterionStatus.NOT_MEASURED -> "–" to MaterialTheme.colorScheme.onSurfaceVariant
+        CriterionStatus.NOT_MEASURED, CriterionStatus.UNIT_NOT_COMPARED -> "–" to MaterialTheme.colorScheme.onSurfaceVariant
     }
     // The mark is spoken through the reason (or « pas encore mesuré »), so colour and symbol never carry it alone.
     val spoken = listOfNotNull(label, detail, value, check.reason?.explanation()?.takeIf { it != detail }).joinToString(", ")

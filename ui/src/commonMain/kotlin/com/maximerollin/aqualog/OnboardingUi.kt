@@ -1,5 +1,15 @@
 package com.maximerollin.aqualog
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
+import com.maximerollin.aqualog.home.HabitantsSheet
+import com.maximerollin.aqualog.shared.encyclopedia.Species
+import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
 import com.maximerollin.aqualog.ui.icon.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.maximerollin.aqualog.photo.AquariumThumbnail
@@ -369,6 +379,7 @@ private fun PortableDataSettings(
     modifier: Modifier,
 ) {
     val proActive = proState.purchaseStatus == ProPurchaseStatus.ACTIVE
+    var showHabitants by remember(homeState.setup?.aquarium?.id) { mutableStateOf(false) }
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("settings-list").padding(horizontal = 24.dp),
     ) {
@@ -411,7 +422,7 @@ private fun PortableDataSettings(
             moreItem {
                 MoreRow(
                     stringResource(Res.string.habitants_title),
-                    onClick = viewModel::openAddInhabitant,
+                    onClick = { showHabitants = true },
                     trailingIcon = AquagendaIcons.ChevronRight,
                 )
             }
@@ -553,6 +564,22 @@ private fun PortableDataSettings(
     }
     AccountSettingsDialog(accountState.dialog, viewModel, externalLinks)
     homeState.aquariumEditor?.let { editor -> AquariumEditorDialog(editor, viewModel) }
+    if (showHabitants) {
+        val encyclopedia by produceState<List<Species>>(emptyList()) {
+            value = try { loadEncyclopedia() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() }
+        }
+        HabitantsSheet(
+            groups = homeState.inhabitants,
+            encyclopedia = encyclopedia,
+            language = remember { Locale.getDefault().language },
+            onRemove = viewModel::removeInhabitants,
+            onAdd = {
+                showHabitants = false
+                viewModel.openAddInhabitant()
+            },
+            onDismiss = { showHabitants = false },
+        )
+    }
 }
 
 private fun LazyListScope.moreSection(title: StringResource, rows: LazyListScope.() -> Unit) {
