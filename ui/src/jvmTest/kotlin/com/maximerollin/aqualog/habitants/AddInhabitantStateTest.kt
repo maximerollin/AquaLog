@@ -1,0 +1,222 @@
+package com.maximerollin.aqualog.habitants
+
+import androidx.lifecycle.viewModelScope
+import com.maximerollin.aqualog.HomeViewModel
+import com.maximerollin.aqualog.MainDestination
+import com.maximerollin.aqualog.shared.AquariumCreationAccess
+import com.maximerollin.aqualog.shared.AquariumProfile
+import com.maximerollin.aqualog.shared.AquariumSetup
+import com.maximerollin.aqualog.shared.OnboardingPresets
+import com.maximerollin.aqualog.shared.RoomAquariumRepository
+import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.createAquaLogDatabase
+import com.maximerollin.aqualog.shared.createJvmDatabaseBuilder
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
+import com.maximerollin.aqualog.shared.encyclopedia.Fit
+import com.maximerollin.aqualog.shared.encyclopedia.SpeciesKind
+import com.maximerollin.aqualog.shared.encyclopedia.assessSpecies
+import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
+import java.io.File
+import java.nio.file.Files
+import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class AddInhabitantStateTest {
+    private val species = decodeSpecies(File("src/commonMain/composeResources/files/encyclopedia/species.json").readText())
+
+    @BeforeTest
+    fun setMain() = Dispatchers.setMain(UnconfinedTestDispatcher())
+
+    @AfterTest
+    fun resetMain() = Dispatchers.resetMain()
+
+    private inner class Fixture(load: suspend () -> List<com.maximerollin.aqualog.shared.encyclopedia.Species> = { species }) {
+        private val directory = Files.createTempDirectory("aqualog-add-inhabitant")
+        private val database = createAquaLogDatabase(createJvmDatabaseBuilder(directory.resolve("aqualog.db").toString()))
+        val repository = RoomAquariumRepository(database, { UUID.randomUUID().toString() }, { 1_700_000_000_000L })
+        val viewModel = HomeViewModel(repository, loadSpecies = load)
+        lateinit var setup: AquariumSetup
+
+        suspend fun start(): HomeViewModel {
+            setup = repository.createConfiguredAquarium(
+                "Salon", 120.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED), AquariumCreationAccess.PRO,
+            )
+            viewModel.uiState.first { it.setup?.aquarium?.id == setup.aquarium.id }
+            return viewModel
+        }
+
+        suspend fun openLoaded() {
+            viewModel.openAddInhabitant()
+            viewModel.uiState.first { it.addInhabitant?.species != null }
+        }
+
+        suspend fun present() = repository.observeInhabitants(setup.aquarium.id).first()
+
+        fun close() {
+            viewModel.viewModelScope.cancel()
+            database.close()
+        }
+    }
+
+    @Test
+    fun `search finds "neon" for "néon", "Neon" and "Paracheirodon"`() {
+        listOf("néon", "Neon", "neon", "NÉON", "Paracheirodon").forEach { query ->
+            assertTrue("neon" in searchSpecies(species, query, "fr", null).map { it.id }, query)
+        }
+        assertTrue("neon" in searchSpecies(species, "neon", "en", null).map { it.id })
+        assertEquals(listOf("cardinalis", "neon"), searchSpecies(species, "paracheirodon", "fr", null).map { it.id }.sorted())
+        assertEquals(emptyList(), searchSpecies(species, "zzz", "fr", null))
+        assertEquals(species.size, searchSpecies(species, "  ", "fr", null).size)
+    }
+
+    @Test
+    fun `the kind chips filter`() {
+        val shrimps = searchSpecies(species, "", "fr", SpeciesKind.SHRIMP)
+        assertEquals(setOf("red-cherry", "amano"), shrimps.map { it.id }.toSet())
+        assertEquals(emptyList(), searchSpecies(species, "neon", "fr", SpeciesKind.SHRIMP))
+        assertTrue(searchSpecies(species, "", "fr", SpeciesKind.FISH).all { it.kind == SpeciesKind.FISH })
+    }
+
+    @Test
+    fun `grouping keeps the three sections in order`() = runTest {
+        val fixture = Fixture()
+        fixture.start()
+        val byId = species.associateBy { it.id }
+        val assessments = listOf("scalaire", "otocinclus", "guppy", "corydoras-panda", "neon")
+            .map { assessSpecies(byId.getValue(it), fixture.setup, emptyList(), emptyList()) }
+            .map { if (it.species.id == "guppy") it.copy(fit = Fit.CAUTION) else it }
+
+        val grouped = groupedForAquarium(assessments, "fr")
+
+        assertEquals(listOf(Fit.GOOD, Fit.CAUTION, Fit.BAD), grouped.keys.toList())
+        // Alphabetical by localized name, accents ignored: Corydoras panda, Néon bleu, Otocinclus.
+        assertEquals(listOf("corydoras-panda", "neon", "otocinclus"), grouped.getValue(Fit.GOOD).map { it.species.id })
+        assertEquals(listOf("guppy"), grouped.getValue(Fit.CAUTION).map { it.species.id })
+        assertEquals(listOf("scalaire"), grouped.getValue(Fit.BAD).map { it.species.id })
+        assertEquals(listOf(Fit.GOOD), groupedForAquarium(assessments.filter { it.fit == Fit.GOOD }, "fr").keys.toList())
+        fixture.close()
+    }
+
+    @Test
+    fun `adding uses the counter value and returns to the home`() = runTest {
+        val fixture = Fixture()
+        val viewModel = fixture.start()
+        viewModel.selectDestination(MainDestination.MORE)
+        fixture.openLoaded()
+
+        viewModel.openSpeciesFiche("otocinclus")
+        assertEquals(6, viewModel.uiState.value.addInhabitant?.count)
+        viewModel.changeInhabitantCount(8)
+        viewModel.confirmAddInhabitant()
+
+        val state = viewModel.uiState.first { it.addInhabitant == null }
+        assertEquals(MainDestination.TANK, state.destination)
+        val added = fixture.present().single()
+        assertEquals("otocinclus", added.speciesId)
+        assertEquals(8, added.count)
+        assertEquals(DrawingFamily.CATFISH, added.family)
+        fixture.close()
+    }
+
+    @Test
+    fun `the counter never goes below one`() = runTest {
+        val fixture = Fixture()
+        val viewModel = fixture.start()
+        fixture.openLoaded()
+        viewModel.openSpeciesFiche("betta")
+
+        viewModel.changeInhabitantCount(0)
+
+        assertEquals(1, viewModel.uiState.value.addInhabitant?.count)
+        fixture.close()
+    }
+
+    @Test
+    fun `"Ajouter quand même" on a BAD species still adds`() = runTest {
+        val fixture = Fixture()
+        val viewModel = fixture.start()
+        fixture.openLoaded()
+        val scalaire = species.first { it.id == "scalaire" }
+        assertEquals(Fit.BAD, assessSpecies(scalaire, fixture.setup, emptyList(), emptyList()).fit)
+
+        viewModel.openSpeciesFiche("scalaire")
+        viewModel.confirmAddInhabitant()
+
+        viewModel.uiState.first { it.addInhabitant == null }
+        assertEquals(listOf("scalaire" to 2), fixture.present().map { it.speciesId to it.count })
+        fixture.close()
+    }
+
+    @Test
+    fun `a custom species needs a name and a family`() = runTest {
+        val fixture = Fixture()
+        val viewModel = fixture.start()
+        fixture.openLoaded()
+        viewModel.openCustomInhabitant()
+
+        viewModel.confirmAddInhabitant()
+        assertEquals(true, viewModel.uiState.value.addInhabitant?.showCustomError)
+        viewModel.updateCustomInhabitantName("  Barbus de Sumatra ")
+        viewModel.confirmAddInhabitant()
+        assertEquals(true, viewModel.uiState.value.addInhabitant?.showCustomError)
+        assertEquals(emptyList(), fixture.present())
+
+        viewModel.selectCustomInhabitantFamily(DrawingFamily.CYPRINID)
+        viewModel.changeInhabitantCount(5)
+        viewModel.confirmAddInhabitant()
+
+        viewModel.uiState.first { it.addInhabitant == null }
+        val added = fixture.present().single()
+        assertNull(added.speciesId)
+        assertEquals("Barbus de Sumatra", added.customName)
+        assertEquals(DrawingFamily.CYPRINID, added.family)
+        assertEquals(5, added.count)
+        fixture.close()
+    }
+
+    @Test
+    fun `an unreadable encyclopedia gives an empty search and keeps the custom form`() = runTest {
+        val fixture = Fixture(load = { error("broken file") })
+        val viewModel = fixture.start()
+
+        viewModel.openAddInhabitant()
+        val state = assertNotNull(viewModel.uiState.first { it.addInhabitant?.species != null }.addInhabitant)
+
+        assertEquals(emptyList(), state.species)
+        assertTrue(state.loadFailed)
+        viewModel.openCustomInhabitant()
+        assertEquals(true, viewModel.uiState.value.addInhabitant?.custom)
+        fixture.close()
+    }
+
+    @Test
+    fun `back goes from the fiche to the search, then closes`() = runTest {
+        val fixture = Fixture()
+        val viewModel = fixture.start()
+        fixture.openLoaded()
+        viewModel.openSpeciesFiche("neon")
+
+        viewModel.backInAddInhabitant()
+        assertNull(viewModel.uiState.value.addInhabitant?.ficheSpeciesId)
+        assertNotNull(viewModel.uiState.value.addInhabitant)
+        viewModel.backInAddInhabitant()
+        assertNull(viewModel.uiState.value.addInhabitant)
+        fixture.close()
+    }
+}

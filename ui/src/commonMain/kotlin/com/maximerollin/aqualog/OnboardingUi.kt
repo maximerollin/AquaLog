@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.maximerollin.aqualog.photo.AquariumThumbnail
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.home.TankHome
+import com.maximerollin.aqualog.habitants.AddInhabitantScreen
 import com.maximerollin.aqualog.ui.theme.CarnetDivider
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
@@ -99,6 +100,8 @@ fun AquaLogContent(
             viewModel = viewModel,
             modifier = modifier,
         )
+        // Below entry: « Faire une analyse » opens a Session over the fiche, which comes back once it is closed.
+        state.addInhabitant != null && state.setup != null -> AddInhabitantScreen(state.addInhabitant, state, viewModel, modifier)
         state.sessionDetail != null && state.setup != null -> SessionDetailsScreen(
             recorded = state.sessionDetail,
             setup = state.setup,
@@ -402,6 +405,13 @@ private fun PortableDataSettings(
                 MoreRow(
                     stringResource(Res.string.rhythm_title),
                     onClick = viewModel::openRhythmSettings,
+                    trailingIcon = AquagendaIcons.ChevronRight,
+                )
+            }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.habitants_title),
+                    onClick = viewModel::openAddInhabitant,
                     trailingIcon = AquagendaIcons.ChevronRight,
                 )
             }
