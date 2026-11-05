@@ -8,6 +8,8 @@ Une application Play `com.maximerollin.aqualog`, un projet RevenueCat, un Supaba
 
 La publication est manuelle (`workflow_dispatch`) et dépend de la réussite de ces contrôles. Pistes disponibles : internal, alpha, production. Production exige main et la confirmation explicite, et prépare un **brouillon** Play. Configurer dans GitHub les environments `google-play-test` et `google-play-production`, avec approbation humaine obligatoire sur le second. Ces protections doivent être réglées dans GitHub ; le fichier workflow ne les crée pas. `workflow_dispatch` n’est proposé qu’une fois ce workflow présent sur la branche par défaut `main`.
 
+**Ordre de déploiement — appliquer les migrations backend avant de publier l’app.** Avant tout `workflow_dispatch` de publication, appliquer sur le Supabase de production toutes les migrations versionnées de `supabase/migrations/` (`supabase db push`), en particulier `20261104100000_aquarium_photos.sql` (lot 4 : bucket `aquarium-photos`, colonne `photo_id`) et `20261105100000_inhabitants.sql` (lot 5 : table `inhabitants`). L’app lit `inhabitants` à chaque synchronisation : publiée avant la migration, chaque pull échoue et toute la synchronisation s’arrête. Vérifier dans le tableau de bord Supabase que la table `inhabitants` existe avant de lancer la publication.
+
 Protections attendues :
 
 - `google-play-test` : branches de déploiement limitées à `main` et `integration/aqualog-v1` ;
