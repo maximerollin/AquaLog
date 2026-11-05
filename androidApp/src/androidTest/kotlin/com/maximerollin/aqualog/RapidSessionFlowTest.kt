@@ -93,6 +93,8 @@ class RapidSessionFlowTest {
             composeRule.waitUntil(timeoutMillis = 10_000) { received.isNotEmpty() }
             assertEquals(1, received.single().sessions.size)
             assertEquals(24.5, received.single().measurements.single().value, 0.0)
+            // The account migration keeps running after the upload; the home comes back only once it ends.
+            waitForText("History")
             composeRule.onNodeWithText("History").performClick()
             waitForText("Chronology")
             composeRule.onNodeWithContentDescription("Open Session details").performClick()
