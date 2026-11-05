@@ -1668,6 +1668,19 @@ class HomeViewModel(
         }
     }
 
+    /** Removes [count] animals of a present group; a stale group (already changed on another device) or a failed write calls [onFailed]. */
+    fun removeInhabitants(inhabitantId: String, count: Int, onFailed: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                aquariumRepository.removeInhabitants(inhabitantId, count)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                onFailed()
+            }
+        }
+    }
+
     private fun updateAddInhabitant(transform: (AddInhabitantUiState) -> AddInhabitantUiState) =
         mutableUiState.update { state -> state.addInhabitant?.let { state.copy(addInhabitant = transform(it)) } ?: state }
 

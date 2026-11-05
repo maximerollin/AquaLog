@@ -22,7 +22,10 @@ import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
 import java.io.File
 import java.nio.file.Files
 import java.util.UUID
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.job
@@ -236,6 +239,23 @@ class AddInhabitantStateTest {
         assertNotNull(viewModel.uiState.value.addInhabitant)
         viewModel.backInAddInhabitant()
         assertNull(viewModel.uiState.value.addInhabitant)
+        fixture.close()
+    }
+
+    @Test
+    fun `removing part of a group leaves the rest, a stale removal reports instead of crashing`() = runTest {
+        val fixture = Fixture()
+        fixture.start()
+        val group = fixture.repository.addInhabitant(fixture.setup.aquarium.id, "otocinclus", null, DrawingFamily.CATFISH, 6)
+
+        fixture.viewModel.removeInhabitants(group.id, 2) { error("unexpected failure") }
+        fixture.repository.observeInhabitants(fixture.setup.aquarium.id).first { it.singleOrNull()?.count == 4 }
+
+        // Removing more than the group still holds (another device got there first) must not crash.
+        val failed = CompletableDeferred<Unit>()
+        fixture.viewModel.removeInhabitants(group.id, 5) { failed.complete(Unit) }
+        withContext(Dispatchers.Default) { withTimeout(5_000) { failed.await() } }
+        assertEquals(listOf(4), fixture.present().map { it.count })
         fixture.close()
     }
 }

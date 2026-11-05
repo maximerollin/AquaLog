@@ -281,9 +281,9 @@ private fun rangeText(range: ValueRange, formatter: LocalizedFormatters) =
 /** Keeps a number with its unit at large font sizes. */
 private const val NBSP = "\u00A0"
 
-/** « Combien ? »: minus and plus are 48 dp each; the count never goes below one. */
+/** « Combien ? »: minus and plus are 48 dp each; the count stays within 1..[max]. */
 @Composable
-internal fun InhabitantCounter(count: Int, onChange: (Int) -> Unit) {
+internal fun InhabitantCounter(count: Int, onChange: (Int) -> Unit, max: Int = Int.MAX_VALUE) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(onClick = { onChange(count - 1) }, enabled = count > 1, modifier = Modifier.size(48.dp)) {
             Icon(AquagendaIcons.Minus, contentDescription = stringResource(Res.string.habitants_count_decrease))
@@ -294,7 +294,7 @@ internal fun InhabitantCounter(count: Int, onChange: (Int) -> Unit) {
             style = MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Center,
         )
-        IconButton(onClick = { onChange(count + 1) }, modifier = Modifier.size(48.dp)) {
+        IconButton(onClick = { onChange(count + 1) }, enabled = count < max, modifier = Modifier.size(48.dp)) {
             Icon(AquagendaIcons.Plus, contentDescription = stringResource(Res.string.habitants_count_increase))
         }
     }

@@ -537,6 +537,13 @@
     <string name="habitants_add_failed">The inhabitant could not be saved. Try again.</string>
     <string name="habitants_unavailable">The species list could not be loaded. You can still add one by hand.</string>
     <string name="habitants_missing">Species missing? Add it by hand</string>
+    <string name="habitants_open">See the inhabitants</string>
+    <string name="habitants_remove">Remove…</string>
+    <string name="habitants_remove_title">How many to remove?</string>
+    <string name="habitants_remove_confirm">Remove %1$d</string>
+    <string name="habitants_remove_failed">The removal could not be saved. Try again.</string>
+    <string name="habitants_add_one">Add an inhabitant</string>
+    <string name="habitants_add_yours">Add your inhabitants</string>
     <string name="habitants_custom_title">Add by hand</string>
     <string name="habitants_custom_name">Species name</string>
     <string name="habitants_custom_family">Family</string>

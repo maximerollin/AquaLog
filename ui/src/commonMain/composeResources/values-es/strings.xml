@@ -537,6 +537,13 @@
     <string name="habitants_add_failed">No se pudo guardar el habitante. Inténtelo de nuevo.</string>
     <string name="habitants_unavailable">No se pudo cargar la lista de especies. Puede añadir una a mano.</string>
     <string name="habitants_missing">¿Falta la especie? Añadirla a mano</string>
+    <string name="habitants_open">Ver los habitantes</string>
+    <string name="habitants_remove">Quitar…</string>
+    <string name="habitants_remove_title">¿Cuántos quitar?</string>
+    <string name="habitants_remove_confirm">Quitar %1$d</string>
+    <string name="habitants_remove_failed">No se pudo guardar la retirada. Inténtelo de nuevo.</string>
+    <string name="habitants_add_one">Añadir un habitante</string>
+    <string name="habitants_add_yours">Añada sus habitantes</string>
     <string name="habitants_custom_title">Añadir a mano</string>
     <string name="habitants_custom_name">Nombre de la especie</string>
     <string name="habitants_custom_family">Familia</string>

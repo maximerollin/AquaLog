@@ -12,10 +12,11 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.maximerollin.aqualog.home.SceneSprite
 import com.maximerollin.aqualog.home.TankScene
 import com.maximerollin.aqualog.shared.Aquarium
 
-/** The Aquarium's photo, or its still mini-scene when it has none (or the photo cannot be read). */
+/** The Aquarium's photo, or its still mini-scene (with [inhabitants]) when it has none or the photo cannot be read. */
 @Composable
 fun AquariumThumbnail(
     aquarium: Aquarium,
@@ -23,11 +24,12 @@ fun AquariumThumbnail(
     loadPhoto: suspend (String) -> ImageBitmap?,
     modifier: Modifier = Modifier,
     cachedPhoto: (String) -> ImageBitmap? = { null },
+    inhabitants: List<SceneSprite> = emptyList(),
 ) {
     val photoId = aquarium.photoId
     // The seed only applies on the first frame (no mini-scene flash); later photo ids are always assigned, even null.
     val photo by produceState(photoId?.let(cachedPhoto), photoId) { value = photoId?.let { cachedPhoto(it) ?: loadPhoto(it) } }
     val clipped = modifier.size(size).clip(RoundedCornerShape(12.dp))
     photo?.let { Image(it, contentDescription = null, modifier = clipped, contentScale = ContentScale.Crop) }
-        ?: TankScene(aquarium, clipped, animate = false)
+        ?: TankScene(aquarium, inhabitants, clipped, animate = false)
 }

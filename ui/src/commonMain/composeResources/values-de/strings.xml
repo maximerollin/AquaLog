@@ -537,6 +537,13 @@
     <string name="habitants_add_failed">Der Bewohner konnte nicht gespeichert werden. Versuchen Sie es erneut.</string>
     <string name="habitants_unavailable">Die Artenliste konnte nicht geladen werden. Sie können eine Art von Hand hinzufügen.</string>
     <string name="habitants_missing">Art fehlt? Von Hand hinzufügen</string>
+    <string name="habitants_open">Bewohner ansehen</string>
+    <string name="habitants_remove">Entfernen…</string>
+    <string name="habitants_remove_title">Wie viele entfernen?</string>
+    <string name="habitants_remove_confirm">%1$d entfernen</string>
+    <string name="habitants_remove_failed">Das Entfernen konnte nicht gespeichert werden. Versuchen Sie es erneut.</string>
+    <string name="habitants_add_one">Bewohner hinzufügen</string>
+    <string name="habitants_add_yours">Ihre Bewohner hinzufügen</string>
     <string name="habitants_custom_title">Von Hand hinzufügen</string>
     <string name="habitants_custom_name">Name der Art</string>
     <string name="habitants_custom_family">Familie</string>

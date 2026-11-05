@@ -32,6 +32,8 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -44,6 +46,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -104,7 +107,11 @@ import com.maximerollin.aqualog.ui.theme.attentionMarkColor
 import com.maximerollin.aqualog.ui.theme.levelMarkColor
 import com.maximerollin.aqualog.ui.theme.attentionTextColor
 import com.maximerollin.aqualog.shared.assistance.ReadingSample
+import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
+import com.maximerollin.aqualog.shared.encyclopedia.Species
 import java.time.Instant
+import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -131,6 +138,14 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
         overdueLinkedAction(state.tasks.pendingOccurrences, aquarium.id, MaintenanceActionType.WATER_CHANGE, today),
     )
     var showPicker by remember { mutableStateOf(false) }
+    var showHabitants by remember { mutableStateOf(false) }
+    // null while loading, so the scene does not flash silhouettes; empty when the file is unreadable (silhouettes, species ids).
+    val encyclopedia by produceState<List<Species>?>(null) {
+        value = try { loadEncyclopedia() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() }
+    }
+    val sprites = remember(state.inhabitants, encyclopedia) {
+        encyclopedia?.let { species -> sceneSprites(state.inhabitants, species.associateBy { it.id }) }.orEmpty()
+    }
     val snackbar = remember { SnackbarHostState() }
     val currentIndex = state.aquariums.indexOfFirst { it.id == aquarium.id }.coerceAtLeast(0)
     val pager = rememberPagerState(initialPage = currentIndex) { state.aquariums.size }
@@ -169,9 +184,11 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             contentPadding = PaddingValues(bottom = 88.dp),
         ) {
             item {
-                AquariumScene(state.aquariums, aquarium, pager, viewModel::openPhoto, viewModel::aquariumPhoto, viewModel::cachedAquariumPhoto) {
-                    showPicker = true
-                }
+                AquariumScene(
+                    state.aquariums, aquarium, pager, viewModel::openPhoto, viewModel::aquariumPhoto, viewModel::cachedAquariumPhoto,
+                    onChangeAquarium = { showPicker = true },
+                    habitants = SceneHabitants(sprites, state.inhabitants.isEmpty(), { showHabitants = true }, viewModel::openAddInhabitant),
+                )
             }
             item {
                 StatusLine(
@@ -314,6 +331,19 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     }
     PhotoSheets(state, viewModel, snackbar)
     if (state.pistesAfterSave.isNotEmpty()) PistesSheet(state.pistesAfterSave, viewModel.today(), viewModel::dismissPistes)
+    if (showHabitants) {
+        HabitantsSheet(
+            groups = state.inhabitants,
+            encyclopedia = encyclopedia.orEmpty(),
+            language = remember { Locale.getDefault().language },
+            onRemove = viewModel::removeInhabitants,
+            onAdd = {
+                showHabitants = false
+                viewModel.openAddInhabitant()
+            },
+            onDismiss = { showHabitants = false },
+        )
+    }
     if (showPicker) {
         AquariumPickerSheet(
             aquariums = state.aquariums,
@@ -344,6 +374,9 @@ internal fun measureTargetsShownAquarium(aquariumCount: Int, scrolling: Boolean,
 internal fun pagerSyncTarget(currentIndex: Int, pageCount: Int, currentPage: Int): Int? =
     currentIndex.takeIf { pageCount > 1 && it in 0 until pageCount && it != currentPage }
 
+/** The current Aquarium's inhabitants as the scene shows them, and the scene's ways into the habitants sheet. */
+private class SceneHabitants(val sprites: List<SceneSprite>, val empty: Boolean, val onOpen: () -> Unit, val onAdd: () -> Unit)
+
 /** One scene, or a pager of scenes with dots when there are several Aquariums; settling on a page selects it. */
 @Composable
 private fun AquariumScene(
@@ -354,15 +387,17 @@ private fun AquariumScene(
     loadPhoto: suspend (String) -> ImageBitmap?,
     cachedPhoto: (String) -> ImageBitmap?,
     onChangeAquarium: () -> Unit,
+    habitants: SceneHabitants,
 ) {
     if (aquariums.size < 2) {
-        SceneHeader(current, onChangeAquarium, onOpenPhoto, loadPhoto, cachedPhoto)
+        SceneHeader(current, onChangeAquarium, onOpenPhoto, loadPhoto, cachedPhoto, habitants)
         return
     }
     Column {
         HorizontalPager(pager, Modifier.testTag("home-pager")) { page ->
-            // The photo flow acts on the current Aquarium: a page still sliding in has no live vignette.
-            SceneHeader(aquariums[page], onChangeAquarium, onOpenPhoto.takeIf { aquariums[page].id == current.id }, loadPhoto, cachedPhoto)
+            // The photo flow and the inhabitants belong to the current Aquarium: a page still sliding in has neither.
+            val isCurrent = aquariums[page].id == current.id
+            SceneHeader(aquariums[page], onChangeAquarium, onOpenPhoto.takeIf { isCurrent }, loadPhoto, cachedPhoto, habitants.takeIf { isCurrent })
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center) {
             repeat(aquariums.size) { index ->
@@ -458,6 +493,7 @@ private fun SceneHeader(
     onOpenPhoto: (() -> Unit)?,
     loadPhoto: suspend (String) -> ImageBitmap?,
     cachedPhoto: (String) -> ImageBitmap?,
+    habitants: SceneHabitants?,
 ) {
     // No age: createdAtEpochMillis is when the Aquarium was added to the app, not when it was set up.
     val type = stringResource(
@@ -468,8 +504,17 @@ private fun SceneHeader(
         },
     )
     val shadow = Shadow(Color.Black.copy(alpha = .45f), Offset(0f, 1f), blurRadius = 3f)
-    Box(Modifier.fillMaxWidth()) {
-        TankScene(aquarium, Modifier.fillMaxWidth())
+    val habitantsLabel = stringResource(Res.string.habitants_title)
+    Box(
+        // The scene's background opens the habitants sheet; the name block and the vignette keep their own actions.
+        if (habitants == null) {
+            Modifier.fillMaxWidth()
+        } else {
+            Modifier.fillMaxWidth().clickable(onClickLabel = stringResource(Res.string.habitants_open), onClick = habitants.onOpen)
+                .semantics { contentDescription = habitantsLabel }
+        },
+    ) {
+        TankScene(aquarium, habitants?.sprites.orEmpty(), Modifier.fillMaxWidth())
         Column(
             // Clear of the photo vignette (48 dp + 12 dp margin) at the top end.
             Modifier.padding(end = 60.dp).clickable(onClickLabel = stringResource(Res.string.home_change_aquarium), onClick = onChangeAquarium)
@@ -497,7 +542,10 @@ private fun SceneHeader(
             contentAlignment = Alignment.Center,
         ) {
             Box {
-                AquariumThumbnail(aquarium, 44.dp, loadPhoto, Modifier.border(1.5.dp, Color.White, RoundedCornerShape(12.dp)), cachedPhoto)
+                AquariumThumbnail(
+                    aquarium, 44.dp, loadPhoto, Modifier.border(1.5.dp, Color.White, RoundedCornerShape(12.dp)), cachedPhoto,
+                    habitants?.sprites.orEmpty(),
+                )
                 if (aquarium.photoId == null) {
                     Box(
                         Modifier.align(Alignment.BottomEnd).offset(4.dp, 4.dp).size(22.dp)
@@ -506,6 +554,16 @@ private fun SceneHeader(
                     ) { Icon(AquagendaIcons.Camera, contentDescription = null, modifier = Modifier.size(14.dp), tint = CarnetLightColors.primary) }
                 }
             }
+        }
+        if (habitants?.empty == true) {
+            // Light on the water whatever the theme, like the vignette's camera badge.
+            AssistChip(
+                onClick = habitants.onAdd,
+                label = { Text(stringResource(Res.string.habitants_add_yours)) },
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 12.dp),
+                colors = AssistChipDefaults.assistChipColors(containerColor = Color.White.copy(alpha = .9f), labelColor = CarnetLightColors.primary),
+                border = null,
+            )
         }
     }
 }

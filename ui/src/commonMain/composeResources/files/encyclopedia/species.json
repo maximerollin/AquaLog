@@ -39,7 +39,7 @@
     "lifespanYears": 5,
     "zone": "MIDDLE",
     "color": 4280191205,
-    "drawing": null
+    "drawing": "species_neon"
   },
   {
     "id": "cardinalis",
@@ -81,7 +81,7 @@
     "lifespanYears": 5,
     "zone": "MIDDLE",
     "color": 4292030255,
-    "drawing": null
+    "drawing": "species_cardinalis"
   },
   {
     "id": "guppy",
@@ -124,7 +124,7 @@
     "lifespanYears": 3,
     "zone": "SURFACE",
     "color": 4294938368,
-    "drawing": null
+    "drawing": "species_guppy"
   },
   {
     "id": "platy",
@@ -166,7 +166,7 @@
     "lifespanYears": 4,
     "zone": "MIDDLE",
     "color": 4294201630,
-    "drawing": null
+    "drawing": "species_platy"
   },
   {
     "id": "molly",
@@ -208,7 +208,7 @@
     "lifespanYears": 4,
     "zone": "MIDDLE",
     "color": 4280693304,
-    "drawing": null
+    "drawing": "species_molly"
   },
   {
     "id": "betta",
@@ -252,7 +252,7 @@
     "lifespanYears": 3,
     "zone": "SURFACE",
     "color": 4290910299,
-    "drawing": null
+    "drawing": "species_betta"
   },
   {
     "id": "corydoras-panda",
@@ -294,7 +294,7 @@
     "lifespanYears": 10,
     "zone": "BOTTOM",
     "color": 4293451984,
-    "drawing": null
+    "drawing": "species_corydoras_panda"
   },
   {
     "id": "ancistrus",
@@ -336,7 +336,7 @@
     "lifespanYears": 10,
     "zone": "BOTTOM",
     "color": 4284306248,
-    "drawing": null
+    "drawing": "species_ancistrus"
   },
   {
     "id": "scalaire",
@@ -381,7 +381,7 @@
     "lifespanYears": 10,
     "zone": "MIDDLE",
     "color": 4291415766,
-    "drawing": null
+    "drawing": "species_scalaire"
   },
   {
     "id": "gourami-nain",
@@ -423,7 +423,7 @@
     "lifespanYears": 4,
     "zone": "SURFACE",
     "color": 4292892970,
-    "drawing": null
+    "drawing": "species_gourami_nain"
   },
   {
     "id": "danio-zebre",
@@ -465,7 +465,7 @@
     "lifespanYears": 3,
     "zone": "SURFACE",
     "color": 4287604936,
-    "drawing": null
+    "drawing": "species_danio_zebre"
   },
   {
     "id": "rasbora-arlequin",
@@ -507,7 +507,7 @@
     "lifespanYears": 5,
     "zone": "MIDDLE",
     "color": 4293432426,
-    "drawing": null
+    "drawing": "species_rasbora_arlequin"
   },
   {
     "id": "red-cherry",
@@ -549,7 +549,7 @@
     "lifespanYears": 2,
     "zone": "BOTTOM",
     "color": 4292352816,
-    "drawing": null
+    "drawing": "species_red_cherry"
   },
   {
     "id": "amano",
@@ -591,7 +591,7 @@
     "lifespanYears": 3,
     "zone": "BOTTOM",
     "color": 4290294952,
-    "drawing": null
+    "drawing": "species_amano"
   },
   {
     "id": "otocinclus",
@@ -633,6 +633,6 @@
     "lifespanYears": 5,
     "zone": "BOTTOM",
     "color": 4290091885,
-    "drawing": null
+    "drawing": "species_otocinclus"
   }
 ]
