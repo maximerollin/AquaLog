@@ -187,7 +187,10 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                 AquariumScene(
                     state.aquariums, aquarium, pager, viewModel::openPhoto, viewModel::aquariumPhoto, viewModel::cachedAquariumPhoto,
                     onChangeAquarium = { showPicker = true },
-                    habitants = SceneHabitants(sprites, state.inhabitants.isEmpty(), { showHabitants = true }, viewModel::openAddInhabitant),
+                    habitants = SceneHabitants(
+                        sprites, decorPlants(state.inhabitants), state.inhabitantsLoaded && state.inhabitants.isEmpty(),
+                        { showHabitants = true }, viewModel::openAddInhabitant,
+                    ),
                 )
             }
             item {
@@ -375,7 +378,10 @@ internal fun pagerSyncTarget(currentIndex: Int, pageCount: Int, currentPage: Int
     currentIndex.takeIf { pageCount > 1 && it in 0 until pageCount && it != currentPage }
 
 /** The current Aquarium's inhabitants as the scene shows them, and the scene's ways into the habitants sheet. */
-private class SceneHabitants(val sprites: List<SceneSprite>, val empty: Boolean, val onOpen: () -> Unit, val onAdd: () -> Unit)
+private class SceneHabitants(val sprites: List<SceneSprite>, val plants: Int, val empty: Boolean, val onOpen: () -> Unit, val onAdd: () -> Unit)
+
+/** The scene's deep water under the name block: white text keeps 4.5:1 even over the lightest fish (ScenePhysicsTest). */
+internal val HeaderScrim = Color(0xFF0F4A43).copy(alpha = .72f)
 
 /** One scene, or a pager of scenes with dots when there are several Aquariums; settling on a page selects it. */
 @Composable
@@ -514,11 +520,13 @@ private fun SceneHeader(
                 .semantics { contentDescription = habitantsLabel }
         },
     ) {
-        TankScene(aquarium, habitants?.sprites.orEmpty(), Modifier.fillMaxWidth())
+        TankScene(aquarium, habitants?.sprites.orEmpty(), Modifier.fillMaxWidth(), habitants?.plants ?: 0)
         Column(
-            // Clear of the photo vignette (48 dp + 12 dp margin) at the top end.
+            // Clear of the photo vignette (48 dp + 12 dp margin) at the top end. The scrim sits inside the same 16/12 dp
+            // padding, so the click target is unchanged, and keeps the white text readable over a passing fish.
             Modifier.padding(end = 60.dp).clickable(onClickLabel = stringResource(Res.string.home_change_aquarium), onClick = onChangeAquarium)
-                .padding(horizontal = 16.dp, vertical = 12.dp).heightIn(min = 48.dp),
+                .padding(horizontal = 8.dp, vertical = 6.dp).background(HeaderScrim, RoundedCornerShape(12.dp))
+                .padding(horizontal = 8.dp, vertical = 6.dp).heightIn(min = 48.dp),
         ) {
             Text(
                 aquarium.name,
@@ -544,7 +552,7 @@ private fun SceneHeader(
             Box {
                 AquariumThumbnail(
                     aquarium, 44.dp, loadPhoto, Modifier.border(1.5.dp, Color.White, RoundedCornerShape(12.dp)), cachedPhoto,
-                    habitants?.sprites.orEmpty(),
+                    habitants?.sprites.orEmpty(), habitants?.plants ?: 0,
                 )
                 if (aquarium.photoId == null) {
                     Box(

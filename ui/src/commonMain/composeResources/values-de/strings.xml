@@ -539,6 +539,7 @@
     <string name="habitants_missing">Art fehlt? Von Hand hinzufügen</string>
     <string name="habitants_open">Bewohner ansehen</string>
     <string name="habitants_remove">Entfernen…</string>
+    <string name="habitants_remove_named">%1$s entfernen…</string>
     <string name="habitants_remove_title">Wie viele entfernen?</string>
     <string name="habitants_remove_confirm">%1$d entfernen</string>
     <string name="habitants_remove_failed">Das Entfernen konnte nicht gespeichert werden. Versuchen Sie es erneut.</string>

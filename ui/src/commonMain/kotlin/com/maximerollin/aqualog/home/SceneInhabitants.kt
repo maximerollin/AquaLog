@@ -58,6 +58,7 @@ private fun familyMotion(family: DrawingFamily): Pair<MotionFamily, SwimZone> = 
  * A sprite's seed is its group's (from the group id, so it keeps its place when other groups change) times 16 plus its rank.
  */
 fun sceneSprites(present: List<Inhabitant>, species: Map<String, Species>, max: Int = 12): List<SceneSprite> {
+    require(max <= 16) { "A sprite's rank is packed in the low 4 bits of its seed" }
     val groups = present.filter { it.family != DrawingFamily.PLANT && it.count > 0 }.sortedByDescending { it.count }.take(max)
     val shown = IntArray(groups.size) { 1 }
     repeat(max - groups.size) {
@@ -73,6 +74,9 @@ fun sceneSprites(present: List<Inhabitant>, species: Map<String, Species>, max: 
     }
 }
 
+/** Plants are decor, not swimmers: each plant group adds one plant to the scene's decor, up to 3. */
+fun decorPlants(present: List<Inhabitant>): Int = present.count { it.family == DrawingFamily.PLANT }.coerceAtMost(3)
+
 /**
  * Top-left corner of a sprite at [elapsedMillis], inside a [width] × [height] area (the scene minus the sprite's size,
  * so it is never clipped). Pure: elapsed 0 is the still frame reduced motion shows.
@@ -82,28 +86,34 @@ fun spritePosition(motion: MotionFamily, zone: SwimZone, seed: Int, elapsedMilli
     fun swim(periodMillis: Int, key: Int, salt: Int) =
         (1 - cos(2 * PI.toFloat() * cycleProgress(elapsedMillis + (noise(key, salt) * periodMillis).toLong(), periodMillis))) / 2
     fun bob(periodMillis: Int) = sin(2 * PI.toFloat() * cycleProgress(elapsedMillis + (noise(seed, 9) * periodMillis).toLong(), periodMillis))
-    val (top, bottom) = when (zone) {
-        SwimZone.SURFACE -> .05f to .3f
-        SwimZone.MIDDLE -> .3f to .65f
-        SwimZone.BOTTOM -> .8f to 1f
+    // Called for every sprite on every frame: plain floats and an Offset, nothing allocated.
+    val top = when (zone) {
+        SwimZone.SURFACE -> .05f
+        SwimZone.MIDDLE -> .3f
+        SwimZone.BOTTOM -> .8f
+    }
+    val bottom = when (zone) {
+        SwimZone.SURFACE -> .3f
+        SwimZone.MIDDLE -> .65f
+        SwimZone.BOTTOM -> 1f
     }
     val inZone = top + (bottom - top) * noise(seed, 4)
-    val (x, y) = when (motion) {
+    val at = when (motion) {
         MotionFamily.SCHOOL -> {
             val school = seed shr 4
             val centre = .15f + .7f * swim(26_000 + (noise(school, 1) * 8_000).toInt(), school, 2)
-            (centre + (noise(seed, 3) - .5f) * .2f) to (inZone + .03f * bob(3_000)).coerceIn(top, bottom)
+            Offset(centre + (noise(seed, 3) - .5f) * .2f, (inZone + .03f * bob(3_000)).coerceIn(top, bottom))
         }
-        MotionFamily.BOTTOM -> (.05f + .9f * swim(36_000 + (noise(seed, 1) * 12_000).toInt(), seed, 2)) to .8f + .2f * noise(seed, 4)
-        MotionFamily.GLIDE -> (.05f + .9f * swim(44_000 + (noise(seed, 1) * 12_000).toInt(), seed, 2)) to (inZone + .03f * bob(8_000)).coerceIn(top, bottom)
+        MotionFamily.BOTTOM -> Offset(.05f + .9f * swim(36_000 + (noise(seed, 1) * 12_000).toInt(), seed, 2), .8f + .2f * noise(seed, 4))
+        MotionFamily.GLIDE -> Offset(.05f + .9f * swim(44_000 + (noise(seed, 1) * 12_000).toInt(), seed, 2), (inZone + .03f * bob(8_000)).coerceIn(top, bottom))
         MotionFamily.CRAWL -> {
             // Most crawl on the sand; one in four on the front glass.
             val onGlass = noise(seed, 6) < .25f
-            (.7f * noise(seed, 1) + .3f * swim(80_000, seed, 2)) to if (onGlass) .45f + .3f * noise(seed, 4) else .82f + .18f * noise(seed, 4)
+            Offset(.7f * noise(seed, 1) + .3f * swim(80_000, seed, 2), if (onGlass) .45f + .3f * noise(seed, 4) else .82f + .18f * noise(seed, 4))
         }
-        MotionFamily.SLOW -> (.1f + .7f * noise(seed, 1) + .1f * swim(40_000, seed, 2)) to (inZone + .02f * bob(7_000)).coerceIn(top, bottom)
+        MotionFamily.SLOW -> Offset(.1f + .7f * noise(seed, 1) + .1f * swim(40_000, seed, 2), (inZone + .02f * bob(7_000)).coerceIn(top, bottom))
     }
-    return Offset(x.coerceIn(0f, 1f) * width, y.coerceIn(0f, 1f) * height)
+    return Offset(at.x.coerceIn(0f, 1f) * width, at.y.coerceIn(0f, 1f) * height)
 }
 
 /** A stable pseudo-random 0..1 for a seed and a salt (an integer hash, so it never changes between runs). */

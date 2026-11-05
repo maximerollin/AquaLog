@@ -5,7 +5,11 @@ import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import com.maximerollin.aqualog.shared.encyclopedia.MotionFamily
 import com.maximerollin.aqualog.shared.encyclopedia.SwimZone
 import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.luminance
 import java.io.File
+import kotlin.test.assertFailsWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -113,6 +117,62 @@ class ScenePhysicsTest {
         for (t in 0L until 100L) {
             val xs = (0 until 6).map { spritePosition(MotionFamily.SCHOOL, SwimZone.MIDDLE, (9 shl 4) or it, t * 1_000, 300f, 120f).x }
             assertTrue(xs.max() - xs.min() <= 300f * .3f, "at ${t}s: $xs")
+        }
+    }
+
+    private data class Golden(val motion: MotionFamily, val zone: SwimZone, val seed: Int, val elapsed: Long, val x: Float, val y: Float)
+
+    @Test
+    fun `positions are unchanged by the allocation-free rewrite`() {
+        // Recorded from the first implementation (Pair-based) before it stopped allocating per frame.
+        listOf(
+        Golden(MotionFamily.SCHOOL, SwimZone.MIDDLE, 7, 0L, 113.90116f, 53.735992f),
+        Golden(MotionFamily.SCHOOL, SwimZone.MIDDLE, 1234, 12345L, 47.929176f, 59.064877f),
+        Golden(MotionFamily.SCHOOL, SwimZone.MIDDLE, 1235, 987654L, 253.74493f, 36.0f),
+        Golden(MotionFamily.BOTTOM, SwimZone.MIDDLE, 7, 0L, 123.15826f, 106.69221f),
+        Golden(MotionFamily.BOTTOM, SwimZone.MIDDLE, 1234, 12345L, 280.14047f, 108.84962f),
+        Golden(MotionFamily.BOTTOM, SwimZone.MIDDLE, 1235, 987654L, 28.433239f, 96.15823f),
+        Golden(MotionFamily.GLIDE, SwimZone.BOTTOM, 7, 0L, 123.15563f, 105.71503f),
+        Golden(MotionFamily.GLIDE, SwimZone.BOTTOM, 1234, 12345L, 263.09314f, 109.881096f),
+        Golden(MotionFamily.GLIDE, SwimZone.BOTTOM, 1235, 987654L, 122.723625f, 98.053665f),
+        Golden(MotionFamily.GLIDE, SwimZone.MIDDLE, 7, 0L, 123.15563f, 53.734177f),
+        Golden(MotionFamily.GLIDE, SwimZone.MIDDLE, 1234, 12345L, 263.09314f, 59.518314f),
+        Golden(MotionFamily.GLIDE, SwimZone.MIDDLE, 1235, 987654L, 122.723625f, 38.17234f),
+        Golden(MotionFamily.GLIDE, SwimZone.SURFACE, 7, 0L, 123.15563f, 18.388071f),
+        Golden(MotionFamily.GLIDE, SwimZone.SURFACE, 1234, 12345L, 263.09314f, 23.093506f),
+        Golden(MotionFamily.GLIDE, SwimZone.SURFACE, 1235, 987654L, 122.723625f, 8.093225f),
+        Golden(MotionFamily.CRAWL, SwimZone.MIDDLE, 7, 0L, 74.88236f, 108.02299f),
+        Golden(MotionFamily.CRAWL, SwimZone.MIDDLE, 1234, 12345L, 149.57275f, 109.96465f),
+        Golden(MotionFamily.CRAWL, SwimZone.MIDDLE, 1235, 987654L, 114.303085f, 98.542404f),
+        Golden(MotionFamily.SLOW, SwimZone.MIDDLE, 7, 0L, 80.845955f, 54.060425f),
+        Golden(MotionFamily.SLOW, SwimZone.MIDDLE, 1234, 12345L, 147.49832f, 56.35431f),
+        Golden(MotionFamily.SLOW, SwimZone.MIDDLE, 1235, 987654L, 158.40343f, 36.0f),
+        ).forEach { g ->
+            val p = spritePosition(g.motion, g.zone, g.seed, g.elapsed, 300f, 120f)
+            assertEquals(g.x, p.x, 1e-3f, "$g")
+            assertEquals(g.y, p.y, 1e-3f, "$g")
+        }
+    }
+
+    @Test
+    fun `sprite ranks fit in the seed`() {
+        assertFailsWith<IllegalArgumentException> { sceneSprites(emptyList(), byId, max = 17) }
+    }
+
+    @Test
+    fun `each plant group adds a decor plant, up to 3`() {
+        val plant = { id: String -> group(id, null, 5, DrawingFamily.PLANT, "Anubias") }
+        assertEquals(0, decorPlants(listOf(group("n", "neon", 10))))
+        assertEquals(1, decorPlants(listOf(plant("a"), group("n", "neon", 10))))
+        assertEquals(3, decorPlants((1..5).map { plant("p$it") }))
+    }
+
+    @Test
+    fun `white header text stays readable over the lightest sprites`() {
+        for (sprite in listOf(Color(0xFFE3EAEC), Color(0xFFE8E0D0), Color(0xFFDCE0E6), Color.White)) {
+            val behind = HeaderScrim.compositeOver(sprite).luminance()
+            val contrast = (Color.White.luminance() + .05f) / (behind + .05f)
+            assertTrue(contrast >= 4.5f, "over $sprite: $contrast")
         }
     }
 }

@@ -385,6 +385,8 @@ data class HomeUiState(
     val latestReadings: List<LatestReading> = emptyList(),
     /** Present inhabitant groups of the displayed Aquarium. */
     val inhabitants: List<Inhabitant> = emptyList(),
+    /** False until [inhabitants] holds the displayed Aquarium's list, so an empty list is not mistaken for « no inhabitants ». */
+    val inhabitantsLoaded: Boolean = false,
     /** Tests of the displayed Aquarium due today or overdue, earliest first. */
     val dueTests: List<DueTest> = emptyList(),
     /** The day the date-dependent home was last computed for: a new day recomposes it (see [HomeViewModel.refreshForToday]). */
@@ -553,6 +555,7 @@ class HomeViewModel(
                         latestSession = if (setup == null) null else it.latestSession,
                         latestReadings = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.latestReadings else emptyList(),
                         inhabitants = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.inhabitants else emptyList(),
+                        inhabitantsLoaded = setup?.aquarium?.id == it.setup?.aquarium?.id && it.inhabitantsLoaded,
                         // The add flow belongs to the Aquarium it was opened on.
                         addInhabitant = it.addInhabitant?.takeIf { add -> add.aquariumId == setup?.aquarium?.id },
                         dueTests = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.dueTests else emptyList(),
@@ -572,7 +575,7 @@ class HomeViewModel(
                         }
                         launch {
                             aquariumRepository.observeInhabitants(setup.aquarium.id).collect { inhabitants ->
-                                mutableUiState.update { it.copy(inhabitants = inhabitants) }
+                                mutableUiState.update { it.copy(inhabitants = inhabitants, inhabitantsLoaded = true) }
                             }
                         }
                         launch {

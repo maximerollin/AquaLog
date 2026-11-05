@@ -55,18 +55,26 @@ private val plants = listOf(
     Plant(.78f, 84f, 5f, Color(0xFF4F9D5D), .4f, listOf(3f to 66f, -3f to 50f, 3f to 32f)),
     Plant(.9f, 56f, -4f, Color(0xFF5FB36F), .7f, listOf(-3f to 40f, 3f to 24f)),
 )
+// One per plant group of the Aquarium (decorPlants), up to 3, between the fixed ones.
+private val extraPlants = listOf(
+    Plant(.6f, 76f, -5f, Color(0xFF3F8D4F), .55f, listOf(-3f to 58f, 3f to 42f, -3f to 26f)),
+    Plant(.42f, 62f, 4f, Color(0xFF4F9D5D), .2f, listOf(3f to 44f, -3f to 30f, 3f to 16f)),
+    Plant(.2f, 48f, 3f, Color(0xFF5FB36F), .85f, listOf(3f to 34f, -3f to 20f)),
+)
 private val bubbles = listOf(.3f to 0f, .34f to .375f, .28f to .7f) // x fraction, phase
 private val rays = listOf(.12f to 1f, .5f to .6f) // x fraction, alpha
 
-/** Decorative tank (water, sand, plants, bubbles, light) with the [inhabitants] swimming in it. */
+/** Decorative tank (water, sand, plants, bubbles, light) with the [inhabitants] swimming in it and [decorPlants] more plants. */
 @Composable
 @Suppress("UNUSED_PARAMETER") // the decor is the same for every Aquarium; only the inhabitants differ
 fun TankScene(
     aquarium: Aquarium,
     inhabitants: List<SceneSprite> = emptyList(),
     modifier: Modifier = Modifier,
+    decorPlants: Int = 0,
     animate: Boolean = !rememberReducedMotion(),
 ) {
+    val shownPlants = plants + extraPlants.take(decorPlants)
     val painters = inhabitants.map { it.drawing }.distinct().associateWith { key(it) { painterResource(it) } }
     // Read only while drawing: a new time redraws the scene without recomposing it. Stays 0 (a still frame) without motion.
     val elapsed = remember(animate) { mutableLongStateOf(0L) }
@@ -98,7 +106,7 @@ fun TankScene(
                 } to Brush.verticalGradient(listOf(Color.White.copy(alpha = .14f * alpha), Color.Transparent), 0f, h)
             }
             val baseY = h - 10 * dp
-            val stems = plants.map { plant ->
+            val stems = shownPlants.map { plant ->
                 val x = w * plant.x
                 Path().apply {
                     moveTo(x, baseY)
@@ -123,7 +131,7 @@ fun TankScene(
                 val rise = cycleProgress(elapsed.longValue, BubbleMillis)
                 drawRect(water)
                 rayPaths.forEach { (path, brush) -> drawPath(path, brush) }
-                plants.forEachIndexed { index, plant ->
+                shownPlants.forEachIndexed { index, plant ->
                     val x = w * plant.x
                     rotate(plantSway((sway + plant.delay) % 1f), Offset(x, baseY)) {
                         drawPath(stems[index], plant.stem, style = stemStroke)

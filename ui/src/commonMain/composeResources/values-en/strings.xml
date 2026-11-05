@@ -539,6 +539,7 @@
     <string name="habitants_missing">Species missing? Add it by hand</string>
     <string name="habitants_open">See the inhabitants</string>
     <string name="habitants_remove">Remove…</string>
+    <string name="habitants_remove_named">Remove %1$s…</string>
     <string name="habitants_remove_title">How many to remove?</string>
     <string name="habitants_remove_confirm">Remove %1$d</string>
     <string name="habitants_remove_failed">The removal could not be saved. Try again.</string>

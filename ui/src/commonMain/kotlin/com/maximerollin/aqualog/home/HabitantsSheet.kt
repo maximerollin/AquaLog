@@ -28,6 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.encyclopedia.displayName
 import com.maximerollin.aqualog.habitants.InhabitantCounter
@@ -56,6 +58,7 @@ internal fun HabitantsSheet(
             CarnetSectionTitle(stringResource(Res.string.habitants_title))
             groups.forEach { group ->
                 val (drawing, tint) = inhabitantDrawing(group, encyclopedia.firstOrNull { it.id == group.speciesId })
+                val name = group.displayName(encyclopedia, language)
                 // At large font sizes « Retirer… » wraps under the name rather than cutting it mid-word.
                 FlowRow(
                     Modifier.fillMaxWidth().heightIn(min = 48.dp),
@@ -65,11 +68,16 @@ internal fun HabitantsSheet(
                     Row(Modifier.heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Image(painterResource(drawing), contentDescription = null, modifier = Modifier.size(40.dp), colorFilter = tint?.let { ColorFilter.tint(it) })
                         Text(
-                            stringResource(Res.string.habitants_present_group, group.displayName(encyclopedia, language), group.count),
+                            stringResource(Res.string.habitants_present_group, name, group.count),
                             style = MaterialTheme.typography.bodyLarge,
                         )
                     }
-                    TextButton(onClick = { removing = group }, modifier = Modifier.heightIn(min = 48.dp)) {
+                    val removeLabel = stringResource(Res.string.habitants_remove_named, name)
+                    TextButton(
+                        onClick = { removing = group },
+                        // The visible « Retirer… » is the same on every row: TalkBack hears which group.
+                        modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = removeLabel },
+                    ) {
                         Text(stringResource(Res.string.habitants_remove))
                     }
                 }

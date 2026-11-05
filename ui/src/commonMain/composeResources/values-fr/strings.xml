@@ -539,6 +539,7 @@
     <string name="habitants_missing">Espèce absente ? L'ajouter à la main</string>
     <string name="habitants_open">Voir les habitants</string>
     <string name="habitants_remove">Retirer…</string>
+    <string name="habitants_remove_named">Retirer des %1$s…</string>
     <string name="habitants_remove_title">Combien en retirer ?</string>
     <string name="habitants_remove_confirm">Retirer %1$d</string>
     <string name="habitants_remove_failed">Le retrait n'a pas pu être enregistré. Réessayez.</string>

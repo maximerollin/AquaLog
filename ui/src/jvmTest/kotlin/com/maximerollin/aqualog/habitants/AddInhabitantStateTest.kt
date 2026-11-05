@@ -258,4 +258,21 @@ class AddInhabitantStateTest {
         assertEquals(listOf(4), fixture.present().map { it.count })
         fixture.close()
     }
+
+    @Test
+    fun `the inhabitants count as loaded only once the displayed Aquarium's list arrives`() = runTest {
+        val fixture = Fixture()
+        val viewModel = fixture.start()
+        fixture.repository.addInhabitant(fixture.setup.aquarium.id, "otocinclus", null, DrawingFamily.CATFISH, 6)
+        viewModel.uiState.first { it.inhabitantsLoaded && it.inhabitants.size == 1 }
+        val other = fixture.repository.createConfiguredAquarium(
+            "Bureau", 60.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+            OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED), AquariumCreationAccess.PRO,
+        )
+        viewModel.selectAquarium(other.aquarium.id)
+        // Loaded for the new Aquarium means its own (empty) list, never the previous Aquarium's group.
+        val loaded = viewModel.uiState.first { it.setup?.aquarium?.id == other.aquarium.id && it.inhabitantsLoaded }
+        assertEquals(emptyList(), loaded.inhabitants)
+        fixture.close()
+    }
 }
