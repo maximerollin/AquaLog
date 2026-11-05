@@ -111,6 +111,10 @@ internal fun WidgetFamilyTag(family: DrawingFamily) = "widget-family-${family.na
 // A custom group has no species colour: near-white sand, 3.4:1 on the lightest water of widget_scene.
 private const val CustomTint = 0xFFF7F3E8
 
+// Species tints sit near the water and sand tones; a black under-layer outlines every silhouette:
+// 3.1:1 on the darkest water, 5.6:1 on the lightest, 4.2:1 on the plants, 12.2:1 on the sand.
+private const val HaloTint = 0xFF000000
+
 /** One silhouette of the scene: vertical place by the group's zone, horizontal by its rank (largest first). */
 @Composable
 private fun Silhouette(group: PresentGroup, slot: Int) {
@@ -121,12 +125,20 @@ private fun Silhouette(group: PresentGroup, slot: Int) {
     }
     val horizontal = listOf(Alignment.Start, Alignment.CenterHorizontally, Alignment.End)[slot]
     Box(GlanceModifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 2.dp), contentAlignment = Alignment(horizontal, vertical)) {
-        Image(
-            ImageProvider(familyDrawable(group.family)),
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(ColorProvider(Color(group.species?.color ?: CustomTint))),
-            modifier = GlanceModifier.size(24.dp).semantics { testTag = WidgetFamilyTag(group.family) },
-        )
+        Box(GlanceModifier.size(28.dp), contentAlignment = Alignment.Center) {
+            Image(
+                ImageProvider(familyDrawable(group.family)),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(ColorProvider(Color(HaloTint))),
+                modifier = GlanceModifier.fillMaxSize(),
+            )
+            Image(
+                ImageProvider(familyDrawable(group.family)),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(ColorProvider(Color(group.species?.color ?: CustomTint))),
+                modifier = GlanceModifier.size(24.dp).semantics { testTag = WidgetFamilyTag(group.family) },
+            )
+        }
     }
 }
 
