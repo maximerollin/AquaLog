@@ -2,10 +2,12 @@ package com.maximerollin.aqualog.widget
 
 import com.maximerollin.aqualog.HomeOverview
 import com.maximerollin.aqualog.addedDays
+import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
 import com.maximerollin.aqualog.homeOverview
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
+import com.maximerollin.aqualog.shared.Inhabitant
 import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.TaskDate
@@ -13,8 +15,12 @@ import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.assistance.DueTest
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.shared.assistance.dueTests
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
+import com.maximerollin.aqualog.shared.encyclopedia.PresentGroup
+import com.maximerollin.aqualog.shared.encyclopedia.Species
 import com.maximerollin.aqualog.shared.toEpochDay
 import com.maximerollin.aqualog.todayTasks
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.first
 
 /** The status dot, from readings only (like the home's): an overdue Tâche does not change it. */
@@ -35,7 +41,21 @@ data class WidgetAquarium(
     val next: NextStep,
     /** [todayTasks]' due list: due today or overdue, at most 3. */
     val dueTasks: List<TaskOccurrence>,
+    /** The 3 largest groups that swim (see [widgetGroups]). */
+    val groups: List<PresentGroup> = emptyList(),
 )
+
+/**
+ * The 3 largest present groups, merged per species (a custom one per name and family), biggest first, ties by key.
+ * Plants are decor, not swimmers. Without the [encyclopedia] a group keeps its stored family and no species.
+ */
+fun widgetGroups(inhabitants: List<Inhabitant>, encyclopedia: List<Species>?): List<PresentGroup> =
+    inhabitants.filter { it.family != DrawingFamily.PLANT && it.count > 0 }
+        .groupBy { it.speciesId ?: "custom:${it.customName?.lowercase()}:${it.family}" }
+        .map { (key, rows) -> key to PresentGroup(encyclopedia?.firstOrNull { it.id == rows.first().speciesId }, rows.first().family, rows.sumOf { it.count }) }
+        .sortedWith(compareBy({ -it.second.count }, { it.first }))
+        .take(3)
+        .map { it.second }
 
 /** Priority: a value in ALERT, an overdue Tâche, due tests, a value in ATTENTION, a Tâche due today, nothing. */
 fun widgetAquarium(
@@ -44,6 +64,7 @@ fun widgetAquarium(
     dueTests: List<DueTest>,
     pending: List<TaskOccurrence>,
     today: TaskDate,
+    groups: List<PresentGroup> = emptyList(),
 ): WidgetAquarium {
     val overview = homeOverview(setup, readings)
     val dueTasks = todayTasks(pending, setup.aquarium.id, today).due
@@ -61,7 +82,7 @@ fun widgetAquarium(
         overview.outsideRangeCount > 0 -> WidgetLight.ATTENTION
         else -> WidgetLight.OK
     }
-    return WidgetAquarium(setup.aquarium, overview, light, next, dueTasks)
+    return WidgetAquarium(setup.aquarium, overview, light, next, dueTasks, groups)
 }
 
 private suspend fun AquariumRepository.widgetAquarium(
@@ -76,7 +97,17 @@ private suspend fun AquariumRepository.widgetAquarium(
         dueTests(setup, observeReadingSamples(aquariumId, timeZoneId).first(), today, addedDays(aquariumId, timeZoneId)),
         pending,
         today,
+        widgetGroups(observeInhabitants(aquariumId).first(), encyclopediaOrNull()),
     )
+}
+
+/** The widget never fails for the encyclopedia: without it the groups use their stored family. */
+private suspend fun encyclopediaOrNull(): List<Species>? = try {
+    loadEncyclopedia()
+} catch (e: CancellationException) {
+    throw e
+} catch (e: Exception) {
+    null
 }
 
 /** [pinnedId] when it is a non-archived Aquarium, else the current one, else null (no Aquarium yet). */

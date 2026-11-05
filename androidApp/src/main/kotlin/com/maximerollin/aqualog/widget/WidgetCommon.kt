@@ -36,6 +36,7 @@ import com.maximerollin.aqualog.MainActivity
 import com.maximerollin.aqualog.R
 import com.maximerollin.aqualog.WidgetTarget
 import com.maximerollin.aqualog.shared.TaskDate
+import com.maximerollin.aqualog.shared.encyclopedia.PresentGroup
 import com.maximerollin.aqualog.shared.isActiveAt
 import com.maximerollin.aqualog.ui.theme.AlertMark
 import com.maximerollin.aqualog.ui.theme.AlertMarkDark
@@ -49,7 +50,7 @@ import java.time.ZoneId
 sealed interface WidgetContent {
     data object NoAquarium : WidgetContent
     data object NeedsPro : WidgetContent
-    data class Tank(val text: WidgetTankText) : WidgetContent
+    data class Tank(val text: WidgetTankText, val groups: List<PresentGroup> = emptyList()) : WidgetContent
     data class Tanks(val rows: List<WidgetTankText>) : WidgetContent
 }
 
@@ -66,7 +67,7 @@ suspend fun tankWidgetContent(context: Context, pinnedId: String?): WidgetConten
     val state = application.aquariumRepository.loadWidgetAquarium(pinnedId, taskDate, application.currentTimeZoneId())
         ?: return WidgetContent.NoAquarium
     if (!application.isProCached()) return WidgetContent.NeedsPro
-    return WidgetContent.Tank(widgetText(state, today))
+    return WidgetContent.Tank(widgetText(state, today), state.groups)
 }
 
 /** What « Mes bacs » shows: every non-archived Aquarium, gated like [tankWidgetContent]. */
