@@ -6,6 +6,9 @@ import com.maximerollin.aqualog.MainDestination
 import com.maximerollin.aqualog.shared.AquariumCreationAccess
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.AquariumSetup
+import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.LatestReading
+import com.maximerollin.aqualog.shared.encyclopedia.Reason
 import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.VolumeUnit
@@ -21,7 +24,8 @@ import java.nio.file.Files
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -68,8 +72,9 @@ class AddInhabitantStateTest {
 
         suspend fun present() = repository.observeInhabitants(setup.aquarium.id).first()
 
-        fun close() {
-            viewModel.viewModelScope.cancel()
+        /** Waits for the view model's work to end, so nothing touches the database or Main once they are gone. */
+        suspend fun close() {
+            viewModel.viewModelScope.coroutineContext.job.cancelAndJoin()
             database.close()
         }
     }
@@ -110,6 +115,20 @@ class AddInhabitantStateTest {
         assertEquals(listOf("guppy"), grouped.getValue(Fit.CAUTION).map { it.species.id })
         assertEquals(listOf("scalaire"), grouped.getValue(Fit.BAD).map { it.species.id })
         assertEquals(listOf(Fit.GOOD), groupedForAquarium(assessments.filter { it.fit == Fit.GOOD }, "fr").keys.toList())
+        fixture.close()
+    }
+
+    @Test
+    fun `a pH-only reason keeps « pH » as written at the start of the sentence`() = runTest {
+        val fixture = Fixture()
+        fixture.start()
+        val ph = fixture.setup.parameters.single { it.parameter == BuiltInParameter.PH }
+        val assessment = assessSpecies(species.first { it.id == "neon" }, fixture.setup, listOf(LatestReading(ph.id, 8.5, 0L)), emptyList())
+
+        assertEquals(listOf(Reason.PH_TOO_HIGH), explanationReasons(assessment))
+        assertEquals("pH trop haut", sentenceStart("pH trop haut"))
+        assertEquals("pH-Wert zu hoch", sentenceStart("pH-Wert zu hoch"))
+        assertEquals("Bac trop petit", sentenceStart("bac trop petit"))
         fixture.close()
     }
 

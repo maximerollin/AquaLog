@@ -508,8 +508,8 @@
     <string name="habitants_explain_group_too_small">Gruppe zu klein</string>
     <string name="habitants_explain_one">%1$s.</string>
     <string name="habitants_explain_two">%1$s und %2$s.</string>
-    <string name="habitants_explain_good">Volumen, letzte Messungen und vorhandene Bewohner passen.</string>
-    <string name="habitants_explain_unmeasured">Volumen und vorhandene Bewohner passen; das Wasser ist noch nicht gemessen.</string>
+    <string name="habitants_explain_good">Kein Problem mit Volumen, letzten Messungen und den bekannten Arten im Becken.</string>
+    <string name="habitants_explain_unmeasured">Kein Problem mit Volumen und den bekannten Arten im Becken; das Wasser ist noch nicht gemessen.</string>
     <string name="habitants_verdict_good">✓ Passt in %1$s</string>
     <string name="habitants_verdict_caution">⚠ Mit Vorsicht für %1$s</string>
     <string name="habitants_verdict_bad">✗ Nicht empfohlen für %1$s</string>
@@ -518,15 +518,15 @@
     <string name="habitants_criterion_volume">Volumen</string>
     <string name="habitants_criterion_cohabitation">Mitbewohner</string>
     <string name="habitants_criterion_group">Gruppe</string>
-    <string name="habitants_minimum_volume">mindestens %1$d L</string>
-    <string name="habitants_range">%1$s – %2$s</string>
+    <string name="habitants_minimum_volume">mindestens %1$d L</string>
+    <string name="habitants_range">%1$s – %2$s</string>
     <string name="habitants_not_measured">noch nicht gemessen</string>
     <string name="habitants_none_present">noch keine Bewohner</string>
-    <string name="habitants_present_group">%1$s × %2$d</string>
-    <string name="habitants_group_minimum">mindestens %1$d</string>
+    <string name="habitants_present_group">%1$s × %2$d</string>
+    <string name="habitants_group_minimum">mindestens %1$d</string>
     <string name="habitants_measure">Wasser testen</string>
     <string name="habitants_cycling">Warten Sie, bis Nitrit bei 0 liegt, bevor Sie Fische einsetzen.</string>
-    <string name="habitants_fact_size">Größe ausgewachsen: %1$s cm</string>
+    <string name="habitants_fact_size">Größe ausgewachsen: %1$s cm</string>
     <string name="habitants_fact_group">Mindestgruppe: %1$d</string>
     <string name="habitants_count_title">Wie viele?</string>
     <string name="habitants_count_minimum">in Gruppen ab %1$d</string>
@@ -552,5 +552,5 @@
     <string name="habitants_family_snail">Schnecke</string>
     <string name="habitants_family_plant">Pflanze</string>
     <plurals name="habitants_badge_problems"><item quantity="one">✗ %1$d Problem</item><item quantity="other">✗ %1$d Probleme</item></plurals>
-    <plurals name="habitants_fact_lifespan"><item quantity="one">Lebensdauer: %1$d Jahr</item><item quantity="other">Lebensdauer: %1$d Jahre</item></plurals>
+    <plurals name="habitants_fact_lifespan"><item quantity="one">Lebensdauer: %1$d Jahr</item><item quantity="other">Lebensdauer: %1$d Jahre</item></plurals>
 </resources>

@@ -5,6 +5,7 @@ import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.assistance.usesPresetUnit
 
 enum class CriterionStatus { OK, CAUTION, PROBLEM, NOT_MEASURED }
 
@@ -61,8 +62,9 @@ fun assessSpecies(
 
     fun water(kind: CriterionKind, parameter: BuiltInParameter, range: ValueRange?, low: Reason, high: Reason) {
         if (range == null) return
-        val id = setup.parameters.firstOrNull { it.parameter == parameter && it.isActive }?.id
-        val value = readings.firstOrNull { it.parameterDefinitionId == id }?.value
+        // Species ranges are in the preset units (°C, °dGH, °dKH): a value in °F or another kit's scale is not judged.
+        val definition = setup.parameters.firstOrNull { it.parameter == parameter && it.isActive }?.takeIf { it.usesPresetUnit() }
+        val value = readings.firstOrNull { it.parameterDefinitionId == definition?.id }?.value
         if (value == null) {
             checks += CriterionCheck(kind, CriterionStatus.NOT_MEASURED)
             return

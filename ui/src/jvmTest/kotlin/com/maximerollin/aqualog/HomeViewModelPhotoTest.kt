@@ -20,6 +20,8 @@ import javax.imageio.ImageIO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -70,8 +72,9 @@ class HomeViewModelPhotoTest {
 
         suspend fun awaitPhoto(predicate: (PhotoUiState) -> Boolean) = viewModel.uiState.first { predicate(it.photo) }.photo
 
-        fun close() {
-            viewModel.viewModelScope.cancel()
+        /** Waits for the view model's work to end, so nothing touches the database or Main once they are gone. */
+        suspend fun close() {
+            viewModel.viewModelScope.coroutineContext.job.cancelAndJoin()
             database.close()
         }
     }

@@ -2,6 +2,8 @@ package com.maximerollin.aqualog.habitants
 
 import com.maximerollin.aqualog.encyclopedia.localName
 import com.maximerollin.aqualog.shared.encyclopedia.Assessment
+import com.maximerollin.aqualog.shared.encyclopedia.CriterionStatus
+import com.maximerollin.aqualog.shared.encyclopedia.Reason
 import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import com.maximerollin.aqualog.shared.encyclopedia.Fit
 import com.maximerollin.aqualog.shared.encyclopedia.Species
@@ -48,3 +50,12 @@ fun groupedForAquarium(assessments: List<Assessment>, languageTag: String): Map<
     Fit.entries.associateWith { fit ->
         assessments.filter { it.fit == fit }.sortedBy { it.species.localName(languageTag).folded() }
     }.filterValues { it.isNotEmpty() }
+
+/** The reasons the fiche's sentence names: the first two, problems before precautions. */
+fun explanationReasons(assessment: Assessment): List<Reason> =
+    (assessment.checks.filter { it.status == CriterionStatus.PROBLEM } + assessment.checks.filter { it.status == CriterionStatus.CAUTION })
+        .mapNotNull { it.reason }.distinct().take(2)
+
+/** Upper-cases the first letter, unless the fragment opens with a symbol that keeps its case (« pH »). */
+fun sentenceStart(fragment: String): String =
+    if (fragment.length > 1 && fragment[1].isUpperCase()) fragment else fragment.replaceFirstChar(Char::uppercaseChar)

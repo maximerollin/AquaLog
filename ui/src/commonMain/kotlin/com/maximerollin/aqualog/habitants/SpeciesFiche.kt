@@ -54,7 +54,7 @@ import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.Inhabitant
 import com.maximerollin.aqualog.shared.LatestReading
-import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.shared.encyclopedia.Assessment
 import com.maximerollin.aqualog.shared.encyclopedia.CriterionCheck
@@ -206,7 +206,7 @@ private fun CheckRow(
         CriterionKind.VOLUME -> {
             label = stringResource(Res.string.habitants_criterion_volume)
             detail = species.minVolumeLiters?.let { stringResource(Res.string.habitants_minimum_volume, it) }
-            value = check.aquariumValue?.let { formatter.volume(it, VolumeUnit.LITERS) }.orEmpty()
+            value = formatter.volume(setup.aquarium.volume, setup.aquarium.volumeUnit).replace(" ", NBSP)
         }
         CriterionKind.PH, CriterionKind.TEMPERATURE, CriterionKind.GH, CriterionKind.KH -> {
             val (parameter, range) = when (check.kind) {
@@ -216,12 +216,12 @@ private fun CheckRow(
                 else -> BuiltInParameter.KH to species.kh
             }
             val definition = setup.parameters.firstOrNull { it.parameter == parameter && it.isActive }
-            // pH is its own unit: « 7,2 », not « 7,2 pH ».
-            val unit = definition?.unit?.takeIf { parameter != BuiltInParameter.PH && it.isNotBlank() }
-            fun withUnit(text: String) = listOfNotNull(text, unit).joinToString(" ")
+            // pH is its own unit: « 7,2 », not « 7,2 pH ». Species ranges are in the preset unit, the value in the Aquarium's.
+            fun withUnit(text: String, unit: String?) =
+                listOfNotNull(text, unit?.takeIf { parameter != BuiltInParameter.PH && it.isNotBlank() }).joinToString(NBSP)
             label = parameter.label()
-            detail = range?.let { withUnit(rangeText(it, formatter)) }
-            value = check.aquariumValue?.let { withUnit(formatter.number(it, definition?.precision ?: 1)) }
+            detail = range?.let { withUnit(rangeText(it, formatter), OnboardingPresets.presetUnit(parameter)) }
+            value = check.aquariumValue?.let { withUnit(formatter.number(it, definition?.precision ?: 1), definition?.unit) }
                 ?: stringResource(Res.string.habitants_not_measured)
         }
         CriterionKind.COHABITATION -> {
@@ -274,8 +274,12 @@ private fun CheckRow(
     }
 }
 
+@Composable
 private fun rangeText(range: ValueRange, formatter: LocalizedFormatters) =
-    "${formatter.number(range.min, 1)} – ${formatter.number(range.max, 1)}"
+    stringResource(Res.string.habitants_range, formatter.number(range.min, 1), formatter.number(range.max, 1))
+
+/** Keeps a number with its unit at large font sizes. */
+private const val NBSP = "\u00A0"
 
 /** « Combien ? »: minus and plus are 48 dp each; the count never goes below one. */
 @Composable
@@ -335,15 +339,13 @@ internal fun badgeText(assessment: Assessment): String {
 /** The verdict's sentence: the first two reasons (problems first), else what was checked. */
 @Composable
 private fun explanation(assessment: Assessment): String {
-    val reasons = (assessment.checks.filter { it.status == CriterionStatus.PROBLEM } + assessment.checks.filter { it.status == CriterionStatus.CAUTION })
-        .mapNotNull { it.reason }.distinct().take(2)
-    val parts = reasons.map { it.explanation() }
+    val parts = explanationReasons(assessment).map { it.explanation() }
     return when (parts.size) {
         0 -> stringResource(
             if (assessment.checks.any { it.status == CriterionStatus.NOT_MEASURED }) Res.string.habitants_explain_unmeasured else Res.string.habitants_explain_good,
         )
-        1 -> stringResource(Res.string.habitants_explain_one, parts[0].replaceFirstChar(Char::uppercaseChar))
-        else -> stringResource(Res.string.habitants_explain_two, parts[0].replaceFirstChar(Char::uppercaseChar), parts[1])
+        1 -> stringResource(Res.string.habitants_explain_one, sentenceStart(parts[0]))
+        else -> stringResource(Res.string.habitants_explain_two, sentenceStart(parts[0]), parts[1])
     }
 }
 

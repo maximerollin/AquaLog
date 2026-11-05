@@ -5,6 +5,7 @@ import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.LatestReading
+import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.VolumeUnit
 import kotlin.test.Test
@@ -16,7 +17,7 @@ import kotlin.test.assertTrue
 class CompatibilityTest {
     private val definitions = listOf(
         BuiltInParameter.PH, BuiltInParameter.TEMPERATURE, BuiltInParameter.GH, BuiltInParameter.KH,
-    ).map { ParameterDefinition("d-${it.storageValue}", "a", it, true, 0, "", 1, null, null) }
+    ).map { ParameterDefinition("d-${it.storageValue}", "a", it, true, 0, OnboardingPresets.presetUnit(it), 1, null, null) }
 
     private fun setup(
         volume: Double = 120.0,
@@ -110,6 +111,16 @@ class CompatibilityTest {
         assertEquals(Fit.GOOD, a.fit)
         val tooSmall = assess(scalaire, r = emptyList())
         assertEquals(Fit.BAD, tooSmall.fit)
+    }
+
+    @Test
+    fun `a water criterion in a non-preset unit is NOT_MEASURED`() {
+        val fahrenheit = definitions.map { if (it.parameter == BuiltInParameter.TEMPERATURE) it.copy(unit = "°F") else it }
+        val result = assess(neon, setup(defs = fahrenheit), readings(t = 77.0))
+        val temperature = result.check(CriterionKind.TEMPERATURE)
+        assertEquals(CriterionStatus.NOT_MEASURED, temperature.status)
+        assertNull(temperature.reason)
+        assertEquals(Fit.GOOD, result.fit)
     }
 
     @Test

@@ -481,8 +481,8 @@
     <string name="habitants_badge_caution">⚠ %1$s</string>
     <string name="habitants_badge_bad">✗ %1$s</string>
     <string name="habitants_reason_tank_too_small">Bac petit</string>
-    <string name="habitants_reason_water_too_hard">Eau dure</string>
-    <string name="habitants_reason_water_too_soft">Eau douce</string>
+    <string name="habitants_reason_water_too_hard">Eau trop dure</string>
+    <string name="habitants_reason_water_too_soft">Eau trop douce</string>
     <string name="habitants_reason_ph_too_high">pH haut</string>
     <string name="habitants_reason_ph_too_low">pH bas</string>
     <string name="habitants_reason_too_warm">Trop chaud</string>
@@ -507,9 +507,9 @@
     <string name="habitants_explain_eats_plants">les plantes risquent d'être mangées</string>
     <string name="habitants_explain_group_too_small">groupe trop petit</string>
     <string name="habitants_explain_one">%1$s.</string>
-    <string name="habitants_explain_two">%1$s, et %2$s.</string>
-    <string name="habitants_explain_good">Le volume, les dernières Mesures et les habitants présents lui conviennent.</string>
-    <string name="habitants_explain_unmeasured">Le volume et les habitants présents lui conviennent ; l'eau n'est pas encore mesurée.</string>
+    <string name="habitants_explain_two">%1$s et %2$s.</string>
+    <string name="habitants_explain_good">Aucun problème trouvé avec le volume, les dernières Mesures et les espèces connues du bac.</string>
+    <string name="habitants_explain_unmeasured">Aucun problème trouvé avec le volume et les espèces connues du bac ; l'eau n'est pas encore mesurée.</string>
     <string name="habitants_verdict_good">✓ Va bien dans %1$s</string>
     <string name="habitants_verdict_caution">⚠ Avec précautions pour %1$s</string>
     <string name="habitants_verdict_bad">✗ Déconseillé pour %1$s</string>
@@ -518,15 +518,15 @@
     <string name="habitants_criterion_volume">Volume</string>
     <string name="habitants_criterion_cohabitation">Cohabitation</string>
     <string name="habitants_criterion_group">Groupe</string>
-    <string name="habitants_minimum_volume">minimum %1$d L</string>
-    <string name="habitants_range">%1$s – %2$s</string>
+    <string name="habitants_minimum_volume">minimum %1$d L</string>
+    <string name="habitants_range">%1$s – %2$s</string>
     <string name="habitants_not_measured">pas encore mesuré</string>
     <string name="habitants_none_present">aucun habitant</string>
-    <string name="habitants_present_group">%1$s × %2$d</string>
-    <string name="habitants_group_minimum">%1$d minimum</string>
+    <string name="habitants_present_group">%1$s × %2$d</string>
+    <string name="habitants_group_minimum">%1$d minimum</string>
     <string name="habitants_measure">Faire une analyse</string>
     <string name="habitants_cycling">Attendez que les nitrites soient à 0 avant d'ajouter des poissons.</string>
-    <string name="habitants_fact_size">Taille adulte : %1$s cm</string>
+    <string name="habitants_fact_size">Taille adulte : %1$s cm</string>
     <string name="habitants_fact_group">Groupe minimum : %1$d</string>
     <string name="habitants_count_title">Combien ?</string>
     <string name="habitants_count_minimum">en groupe de %1$d minimum</string>
@@ -552,5 +552,5 @@
     <string name="habitants_family_snail">Escargot</string>
     <string name="habitants_family_plant">Plante</string>
     <plurals name="habitants_badge_problems"><item quantity="one">✗ %1$d problème</item><item quantity="other">✗ %1$d problèmes</item></plurals>
-    <plurals name="habitants_fact_lifespan"><item quantity="one">Durée de vie : %1$d an</item><item quantity="other">Durée de vie : %1$d ans</item></plurals>
+    <plurals name="habitants_fact_lifespan"><item quantity="one">Durée de vie : %1$d an</item><item quantity="other">Durée de vie : %1$d ans</item></plurals>
 </resources>

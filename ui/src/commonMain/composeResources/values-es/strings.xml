@@ -508,8 +508,8 @@
     <string name="habitants_explain_group_too_small">grupo demasiado pequeño</string>
     <string name="habitants_explain_one">%1$s.</string>
     <string name="habitants_explain_two">%1$s y %2$s.</string>
-    <string name="habitants_explain_good">El volumen, las últimas mediciones y los habitantes presentes le convienen.</string>
-    <string name="habitants_explain_unmeasured">El volumen y los habitantes presentes le convienen; el agua aún no se ha medido.</string>
+    <string name="habitants_explain_good">Ningún problema con el volumen, las últimas mediciones y las especies conocidas del acuario.</string>
+    <string name="habitants_explain_unmeasured">Ningún problema con el volumen y las especies conocidas del acuario; el agua aún no se ha medido.</string>
     <string name="habitants_verdict_good">✓ Va bien en %1$s</string>
     <string name="habitants_verdict_caution">⚠ Con precauciones para %1$s</string>
     <string name="habitants_verdict_bad">✗ No recomendado para %1$s</string>
@@ -518,15 +518,15 @@
     <string name="habitants_criterion_volume">Volumen</string>
     <string name="habitants_criterion_cohabitation">Convivencia</string>
     <string name="habitants_criterion_group">Grupo</string>
-    <string name="habitants_minimum_volume">mínimo %1$d L</string>
-    <string name="habitants_range">%1$s – %2$s</string>
+    <string name="habitants_minimum_volume">mínimo %1$d L</string>
+    <string name="habitants_range">%1$s – %2$s</string>
     <string name="habitants_not_measured">aún no medido</string>
     <string name="habitants_none_present">ningún habitante</string>
-    <string name="habitants_present_group">%1$s × %2$d</string>
-    <string name="habitants_group_minimum">mínimo %1$d</string>
+    <string name="habitants_present_group">%1$s × %2$d</string>
+    <string name="habitants_group_minimum">mínimo %1$d</string>
     <string name="habitants_measure">Hacer un análisis</string>
     <string name="habitants_cycling">Espere a que los nitritos estén en 0 antes de añadir peces.</string>
-    <string name="habitants_fact_size">Tamaño adulto: %1$s cm</string>
+    <string name="habitants_fact_size">Tamaño adulto: %1$s cm</string>
     <string name="habitants_fact_group">Grupo mínimo: %1$d</string>
     <string name="habitants_count_title">¿Cuántos?</string>
     <string name="habitants_count_minimum">en grupo de %1$d como mínimo</string>
@@ -552,5 +552,5 @@
     <string name="habitants_family_snail">Caracol</string>
     <string name="habitants_family_plant">Planta</string>
     <plurals name="habitants_badge_problems"><item quantity="one">✗ %1$d problema</item><item quantity="other">✗ %1$d problemas</item></plurals>
-    <plurals name="habitants_fact_lifespan"><item quantity="one">Esperanza de vida: %1$d año</item><item quantity="other">Esperanza de vida: %1$d años</item></plurals>
+    <plurals name="habitants_fact_lifespan"><item quantity="one">Esperanza de vida: %1$d año</item><item quantity="other">Esperanza de vida: %1$d años</item></plurals>
 </resources>
