@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.captureToImage
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -96,7 +97,12 @@ class AquariumPhotoFlowTest {
     /** Waits until the centre of the vignette labelled [label] is pure red, pure blue, or (null) neither. */
     private fun waitForCentre(label: String, expected: (Int?) -> Boolean) {
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            val image = composeRule.onNodeWithContentDescription(label).captureToImage().asAndroidBitmap()
+            // captureToImage gives up after 2 s on a slow emulator; retry until the 10 s budget instead.
+            val image = try {
+                composeRule.onNodeWithContentDescription(label).captureToImage().asAndroidBitmap()
+            } catch (_: ComposeTimeoutException) {
+                return@waitUntil false
+            }
             val pixel = image.getPixel(image.width / 2, image.height / 2)
             val (r, g, b) = Triple(Color.red(pixel), Color.green(pixel), Color.blue(pixel))
             expected(
