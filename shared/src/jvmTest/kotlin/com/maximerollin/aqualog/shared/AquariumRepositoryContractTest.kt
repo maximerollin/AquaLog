@@ -2,6 +2,7 @@ package com.maximerollin.aqualog.shared
 
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -45,6 +46,29 @@ class AquariumRepositoryContractTest {
     }
 
     @Test
+    fun `observeChanges emits after an inhabitant is added`() = runTest {
+        val database = createAquaLogDatabase(
+            createJvmDatabaseBuilder(Files.createTempDirectory("aqualog-changes-inhabitants").resolve("aqualog.db").toAbsolutePath().toString()),
+        )
+        val ids = generateSequence(1) { it + 1 }.map { "id-$it" }.iterator()
+        val repository = RoomAquariumRepository(database, ids::next, { 1_700_000_000_000L })
+        val aquarium = repository.createAquarium("Salon", 120.0, VolumeUnit.LITERS)
+
+        val change = async(Dispatchers.Default) { repository.observeChanges().first() }
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) {
+                while (!change.isCompleted) {
+                    repository.addInhabitant(aquarium.id, "neon", null, DrawingFamily.TETRA, 6)
+                    delay(50)
+                }
+            }
+        }
+
+        assertEquals(Unit, change.await())
+        database.close()
+    }
+
+    @Test
     fun `Room thirteen migrates existing Aquarium into active multi Aquarium state`() = runTest {
         val databasePath = Files.createTempDirectory("aqualog-room-13-14")
             .resolve("aqualog.db")
@@ -63,6 +87,7 @@ class AquariumRepositoryContractTest {
             connection.execSQL("ALTER TABLE aquariums DROP COLUMN isArchived")
             connection.execSQL("DROP TABLE assistant_dismissals")
             connection.execSQL("DROP TABLE aquarium_photo_syncs")
+            connection.execSQL("DROP TABLE inhabitants")
             connection.execSQL("ALTER TABLE aquariums DROP COLUMN photoId")
             connection.execSQL("ALTER TABLE parameter_definitions DROP COLUMN analysisIntervalDays")
             connection.execSQL("ALTER TABLE tasks DROP COLUMN maintenanceActionType")

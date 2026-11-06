@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The small widget's scene: decor only (water, sand, two plants); habitants arrive in lot 5. -->
+<!-- The small widget's scene: decor only (water, sand, two plants); the inhabitants are drawn over it. -->
 <vector xmlns:aapt="http://schemas.android.com/aapt" xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="200dp" android:height="84dp" android:viewportWidth="200" android:viewportHeight="84">
     <path android:pathData="M0,0 H200 V84 H0 Z">

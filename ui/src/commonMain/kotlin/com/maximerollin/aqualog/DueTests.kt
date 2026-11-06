@@ -2,13 +2,16 @@ package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.Res
 import com.maximerollin.aqualog.resources.list_pair
+import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
 import com.maximerollin.aqualog.shared.AquariumRepository
 import com.maximerollin.aqualog.shared.AquariumSetup
+import com.maximerollin.aqualog.shared.Inhabitant
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.assistance.AquariumHistory
 import com.maximerollin.aqualog.shared.assistance.DueTest
 import com.maximerollin.aqualog.shared.assistance.ReadingSample
 import com.maximerollin.aqualog.shared.assistance.dueTests
+import com.maximerollin.aqualog.shared.assistance.inhabitantAddedDays
 import com.maximerollin.aqualog.shared.plusDays
 import com.maximerollin.aqualog.shared.toEpochDay
 import java.time.DayOfWeek
@@ -17,6 +20,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import org.jetbrains.compose.resources.getString
 
@@ -36,19 +40,35 @@ fun nextDueTestReminder(dueDates: List<TaskDate>, zone: ZoneId, now: Long): Long
  * The first day from [today] on which a test of [setup] is due, or null when none is within 31 days.
  * shortcut: the longest offered rhythm is 30 days; a longer interval synced from elsewhere waits until it is within range.
  */
-fun nextDueDate(setup: AquariumSetup, samples: List<ReadingSample>, today: TaskDate): TaskDate? =
-    (0..31).asSequence().map(today::plusDays).firstOrNull { dueTests(setup, samples, it).isNotEmpty() }
+fun nextDueDate(
+    setup: AquariumSetup,
+    samples: List<ReadingSample>,
+    today: TaskDate,
+    inhabitantAddedDays: List<TaskDate> = emptyList(),
+): TaskDate? =
+    (0..31).asSequence().map(today::plusDays).firstOrNull { dueTests(setup, samples, it, inhabitantAddedDays).isNotEmpty() }
+
+/** [inhabitantAddedDays] of one Aquarium; without the encyclopedia the groups' drawing family decides. */
+suspend fun List<Inhabitant>.addedDays(timeZoneId: String): List<TaskDate> =
+    inhabitantAddedDays(
+        this,
+        try { loadEncyclopedia() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() },
+        timeZoneId,
+    )
+
+suspend fun AquariumRepository.addedDays(aquariumId: String, timeZoneId: String): List<TaskDate> =
+    observeInhabitantHistory(aquariumId).first().addedDays(timeZoneId)
 
 class DueTestSummary(val dueToday: List<DueTest>, val nextDueDate: TaskDate?)
 
 /** Due tests of every non-archived Aquarium, read once (reminders cover all Aquariums, not only the displayed one). */
 suspend fun AquariumRepository.dueTestSummary(today: TaskDate, timeZoneId: String): DueTestSummary {
     val inputs = observeAquariums().first().mapNotNull { aquarium ->
-        loadSetup(aquarium.id)?.let { it to observeReadingSamples(aquarium.id, timeZoneId).first() }
+        loadSetup(aquarium.id)?.let { Triple(it, observeReadingSamples(aquarium.id, timeZoneId).first(), addedDays(aquarium.id, timeZoneId)) }
     }
     return DueTestSummary(
-        dueToday = inputs.flatMap { (setup, samples) -> dueTests(setup, samples, today) },
-        nextDueDate = inputs.mapNotNull { (setup, samples) -> nextDueDate(setup, samples, today) }
+        dueToday = inputs.flatMap { (setup, samples, added) -> dueTests(setup, samples, today, added) },
+        nextDueDate = inputs.mapNotNull { (setup, samples, added) -> nextDueDate(setup, samples, today, added) }
             .minByOrNull { it.toEpochDay() },
     )
 }
@@ -58,7 +78,12 @@ suspend fun AquariumRepository.aquariumHistories(timeZoneId: String): List<Aquar
     val occurrences = observePendingTaskOccurrences().first() + observeResolvedTaskOccurrences().first()
     return observeAquariums().first().mapNotNull { aquarium ->
         loadSetup(aquarium.id)?.let {
-            AquariumHistory(it, observeReadingSamples(aquarium.id, timeZoneId).first(), occurrences.filter { o -> o.aquariumId == aquarium.id })
+            AquariumHistory(
+                it,
+                observeReadingSamples(aquarium.id, timeZoneId).first(),
+                occurrences.filter { o -> o.aquariumId == aquarium.id },
+                addedDays(aquarium.id, timeZoneId),
+            )
         }
     }
 }

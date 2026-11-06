@@ -21,6 +21,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
@@ -83,6 +84,7 @@ class RapidSessionFlowTest {
             composeRule.onNodeWithText("Measure").performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
+            closeSoftKeyboard()
             composeRule.onNodeWithText("Save Session").performClick()
             waitForText("measured today", substring = true)
             composeRule.onNodeWithText("Continue").performClick()
@@ -91,6 +93,8 @@ class RapidSessionFlowTest {
             composeRule.waitUntil(timeoutMillis = 10_000) { received.isNotEmpty() }
             assertEquals(1, received.single().sessions.size)
             assertEquals(24.5, received.single().measurements.single().value, 0.0)
+            // The account migration keeps running after the upload; the home comes back only once it ends.
+            waitForText("History")
             composeRule.onNodeWithText("History").performClick()
             waitForText("Chronology")
             composeRule.onNodeWithContentDescription("Open Session details").performClick()

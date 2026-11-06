@@ -59,4 +59,12 @@ class DueTestReminderTest {
         assertEquals(today, nextDueDate(setup(nitrate), emptyList(), today))
         assertNull(nextDueDate(setup(nitrate.copy(analysisIntervalDays = NEVER_INTERVAL_DAYS)), measured, today))
     }
+
+    @Test
+    fun `an added inhabitant brings the next due date to the day after`() {
+        val nitrite = nitrate.copy(id = "nitrite", parameter = BuiltInParameter.NITRITE, indicativeMaximum = 0.0)
+        val measured = listOf(ReadingSample("nitrite", 0.0, today))
+        assertEquals(TaskDate(2026, 11, 16), nextDueDate(setup(nitrite), measured, today))
+        assertEquals(TaskDate(2026, 11, 3), nextDueDate(setup(nitrite), measured, today, listOf(today)))
+    }
 }

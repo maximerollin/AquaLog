@@ -9,7 +9,8 @@ enum class SyncEntityType(val storageValue: String) {
     SESSION("session"),
     MEASUREMENT("measurement"),
     MAINTENANCE_ACTION("maintenance_action"),
-    EVENT("event");
+    EVENT("event"),
+    INHABITANT("inhabitant");
 
     companion object {
         fun fromStorageValue(value: String) = entries.first { it.storageValue == value }
@@ -72,6 +73,7 @@ data class PendingSyncBatch(
     val events: List<SessionEvent>,
     /** Aquariums whose photo is uploaded: only their upserts carry photo_id, so a stale one never wins remotely. */
     val photoAquariumIds: Set<String> = emptySet(),
+    val inhabitants: List<Inhabitant> = emptyList(),
 )
 
 data class RemoteEntityVersion(

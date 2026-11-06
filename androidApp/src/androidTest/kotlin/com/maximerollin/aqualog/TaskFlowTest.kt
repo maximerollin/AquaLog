@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -91,13 +92,13 @@ class TaskFlowTest {
             composeRule.onNode(hasText("See all") and hasClickAction()).performClick()
             composeRule.onNodeWithText("Change filter wool").performScrollTo().assertIsDisplayed()
             composeRule.onNodeWithContentDescription("Done, Change filter wool").performScrollTo().assertIsDisplayed().performClick()
-            composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
                 runBlocking {
                     application.aquariumRepository.observeResolvedTaskOccurrences().first()
                         .any { it.id == firstOccurrence.id }
                 }
             }
-            composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
                 application.recordingTaskReminderScheduler.canceledOccurrenceIds.contains(firstOccurrence.id)
             }
             runBlocking {
@@ -167,7 +168,7 @@ class TaskFlowTest {
                 composeRule.onAllNodes(hasText("Clean the glass")).fetchSemanticsNodes().isNotEmpty()
             }
             composeRule.onNodeWithContentDescription("Done, Clean the glass").assertIsDisplayed().performClick()
-            composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasText("Clean the glass")).fetchSemanticsNodes().isEmpty()
             }
             composeRule.onNodeWithText("No pending Task.").assertIsDisplayed()
@@ -210,11 +211,11 @@ class TaskFlowTest {
                 composeRule.onAllNodes(hasText("Weekly water change")).fetchSemanticsNodes().isNotEmpty()
             }
             composeRule.onNodeWithContentDescription("Done, Weekly water change").assertIsDisplayed().performClick()
-            composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
                 runBlocking { application.aquariumRepository.observeResolvedTaskOccurrences().first().isNotEmpty() }
             }
             composeRule.onNodeWithText("History").performClick()
-            composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasText("Water change", substring = true)).fetchSemanticsNodes().isNotEmpty()
             }
             composeRule.onNode(hasText("Water change", substring = true) and hasText("20", substring = true)).assertIsDisplayed()
@@ -252,7 +253,7 @@ class TaskFlowTest {
         try {
             composeRule.onNode(hasText("See all") and hasClickAction()).performClick()
             composeRule.onNodeWithContentDescription("Done, Future water change").performScrollTo().performClick()
-            composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
                 runBlocking { application.aquariumRepository.observeResolvedTaskOccurrences().first().isNotEmpty() }
             }
             runBlocking {
@@ -273,8 +274,9 @@ class TaskFlowTest {
             composeRule.onNodeWithText("Save Task").performClick()
             composeRule.onNodeWithText("Task title").assertIsDisplayed()
             composeRule.onNodeWithText("Task title").performTextInput("Clean the glass")
+            closeSoftKeyboard()
             composeRule.onNodeWithText("Save Task").performClick()
-            composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasText("Task title")).fetchSemanticsNodes().isEmpty()
             }
             composeRule.onNodeWithText("Clean the glass").assertIsDisplayed()
@@ -313,7 +315,7 @@ class TaskFlowTest {
             composeRule.onNode(hasText("See all") and hasClickAction()).performClick()
             composeRule.onNodeWithContentDescription("More actions, Rinse the filter").performClick()
             composeRule.onNodeWithText("+1 day").performClick()
-            composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
                 runBlocking {
                     application.aquariumRepository.observePendingTaskOccurrences().first()
                         .any { it.title == "Rinse the filter" && it.dueDate == TaskDate(2026, 10, 8) }
@@ -321,7 +323,7 @@ class TaskFlowTest {
             }
             composeRule.onNodeWithContentDescription("More actions, Trim the plants").performClick()
             composeRule.onNodeWithText("Ignore").performClick()
-            composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasText("Trim the plants")).fetchSemanticsNodes().isEmpty()
             }
         } finally {

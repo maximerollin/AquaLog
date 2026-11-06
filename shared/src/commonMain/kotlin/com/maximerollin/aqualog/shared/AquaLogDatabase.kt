@@ -45,6 +45,20 @@ data class AquariumPhotoSyncEntity(
     @ColumnInfo(defaultValue = "0") val uploaded: Boolean = false,
 )
 
+/** Like the other child tables, no foreign key: an Aquarium's rows are removed explicitly. */
+@Entity(tableName = "inhabitants", indices = [Index(value = ["aquariumId"])])
+data class InhabitantEntity(
+    @PrimaryKey val id: String,
+    val aquariumId: String,
+    val speciesId: String?,
+    val customName: String?,
+    /** DrawingFamily enum name. */
+    val family: String,
+    val count: Int,
+    val addedAtEpochMillis: Long,
+    val removedAtEpochMillis: Long?,
+)
+
 @Entity(tableName = "selected_aquarium")
 data class SelectedAquariumEntity(
     @PrimaryKey val singletonId: Int = 1,
@@ -180,6 +194,71 @@ abstract class AssistantDao {
 
     fun observeDismissals(aquariumId: String): Flow<Map<String, String>> =
         observeRows(aquariumId).map { rows -> rows.associate { it.kind to it.sessionId } }
+}
+
+@Dao
+abstract class InhabitantDao {
+    @Query(
+        "SELECT * FROM inhabitants WHERE aquariumId = :aquariumId AND removedAtEpochMillis IS NULL " +
+            "ORDER BY addedAtEpochMillis, id",
+    )
+    abstract fun observePresent(aquariumId: String): Flow<List<InhabitantEntity>>
+
+    @Query(
+        "SELECT * FROM inhabitants WHERE (:aquariumId IS NULL OR aquariumId = :aquariumId) " +
+            "ORDER BY addedAtEpochMillis, id",
+    )
+    abstract fun observeHistory(aquariumId: String?): Flow<List<InhabitantEntity>>
+
+    @Query("SELECT * FROM inhabitants WHERE id = :id")
+    protected abstract suspend fun get(id: String): InhabitantEntity?
+
+    @Insert
+    protected abstract suspend fun insert(inhabitant: InhabitantEntity)
+
+    @Insert
+    abstract suspend fun insertSyncOperations(operations: List<SyncOperationEntity>)
+
+    @Query("SELECT * FROM inhabitants")
+    abstract suspend fun all(): List<InhabitantEntity>
+
+    @Transaction
+    open suspend fun add(inhabitant: InhabitantEntity, syncOperation: SyncOperationEntity) {
+        insert(inhabitant)
+        insertSyncOperations(listOf(syncOperation))
+    }
+
+    @Query("UPDATE inhabitants SET count = :count WHERE id = :id")
+    protected abstract suspend fun setCount(id: String, count: Int)
+
+    @Query("UPDATE inhabitants SET removedAtEpochMillis = :removedAt WHERE id = :id")
+    protected abstract suspend fun markRemoved(id: String, removedAt: Long)
+
+    /**
+     * Removes [count] from a present group: the whole group is dated, a part is split into a new dated row.
+     * [groupOperation] is enqueued for the group, [splitOperation] only when a split row is inserted.
+     */
+    // shortcut: concurrent removals of one group on two devices can leave a wrong present count (a full removal resurrected by the other device's split upsert) and inflate the Chronologie's add line, upgrade to a removal-event model if multi-device editing of one group becomes common.
+    @Transaction
+    open suspend fun remove(
+        id: String,
+        count: Int,
+        removedAt: Long,
+        splitId: String,
+        groupOperation: SyncOperationEntity,
+        splitOperation: SyncOperationEntity,
+    ) {
+        val row = requireNotNull(get(id)?.takeIf { it.removedAtEpochMillis == null }) { "Inhabitant is not present" }
+        require(count in 1..row.count) { "Cannot remove $count of ${row.count}" }
+        if (count == row.count) {
+            markRemoved(id, removedAt)
+            insertSyncOperations(listOf(groupOperation))
+        } else {
+            setCount(id, row.count - count)
+            insert(row.copy(id = splitId, count = count, removedAtEpochMillis = removedAt))
+            insertSyncOperations(listOf(groupOperation, splitOperation))
+        }
+    }
 }
 
 @Entity(tableName = "account_state")
@@ -738,6 +817,9 @@ abstract class AccountControlDao {
     @Query("DELETE FROM aquarium_photo_syncs")
     protected abstract suspend fun deleteAquariumPhotoSyncs()
 
+    @Query("DELETE FROM inhabitants")
+    protected abstract suspend fun deleteInhabitants()
+
     suspend fun markCloudDeletionComplete() {
         check(updateDeletionPhase(AccountDeletionPhase.CLOUD_DELETED.name) == 1) {
             "No account deletion is pending"
@@ -768,6 +850,7 @@ abstract class AccountControlDao {
         deleteAquariums()
         deleteAssistantDismissals()
         deleteAquariumPhotoSyncs()
+        deleteInhabitants()
         detachAccountKeepingLocalCopy()
     }
 }
@@ -781,6 +864,7 @@ data class PortableDatabaseSnapshot(
     val events: List<SessionEventEntity>,
     val tasks: List<TaskEntity>,
     val taskOccurrences: List<TaskOccurrenceEntity>,
+    val inhabitants: List<InhabitantEntity> = emptyList(),
 )
 
 @Dao
@@ -808,6 +892,15 @@ abstract class PortableDataDao {
 
     @Query("SELECT * FROM task_occurrences")
     protected abstract suspend fun allTaskOccurrences(): List<TaskOccurrenceEntity>
+
+    @Query("SELECT * FROM inhabitants")
+    protected abstract suspend fun allInhabitants(): List<InhabitantEntity>
+
+    @Insert
+    protected abstract suspend fun insertInhabitants(values: List<InhabitantEntity>)
+
+    @Query("DELETE FROM inhabitants")
+    protected abstract suspend fun deleteInhabitants()
 
     @Insert
     protected abstract suspend fun insertAquariums(values: List<AquariumEntity>)
@@ -882,6 +975,7 @@ abstract class PortableDataDao {
         events = allEvents(),
         tasks = allTasks(),
         taskOccurrences = allTaskOccurrences(),
+        inhabitants = allInhabitants(),
     )
 
     @Transaction
@@ -898,6 +992,7 @@ abstract class PortableDataDao {
         deleteAquariums()
         deleteAssistantDismissals()
         deletePhotoSyncs()
+        deleteInhabitants()
 
         if (snapshot.aquariums.isNotEmpty()) insertAquariums(snapshot.aquariums)
         snapshot.aquariums.filter { it.photoId != null }.map { AquariumPhotoSyncEntity(it.id) }
@@ -909,6 +1004,7 @@ abstract class PortableDataDao {
         if (snapshot.events.isNotEmpty()) insertEvents(snapshot.events)
         if (snapshot.tasks.isNotEmpty()) insertTasks(snapshot.tasks)
         if (snapshot.taskOccurrences.isNotEmpty()) insertTaskOccurrences(snapshot.taskOccurrences)
+        if (snapshot.inhabitants.isNotEmpty()) insertInhabitants(snapshot.inhabitants)
         return true
     }
 }
@@ -1040,6 +1136,9 @@ abstract class SyncDao {
     @Upsert
     protected abstract suspend fun upsertEvents(events: List<SessionEventEntity>)
 
+    @Upsert
+    protected abstract suspend fun upsertInhabitants(inhabitants: List<InhabitantEntity>)
+
     @Query("SELECT * FROM sync_entity_versions")
     protected abstract suspend fun allVersions(): List<SyncEntityVersionEntity>
 
@@ -1070,6 +1169,12 @@ abstract class SyncDao {
     @Query("DELETE FROM session_events WHERE id IN (:ids)")
     protected abstract suspend fun deleteEvents(ids: List<String>)
 
+    @Query("DELETE FROM inhabitants WHERE id IN (:ids)")
+    protected abstract suspend fun deleteInhabitants(ids: List<String>)
+
+    @Query("DELETE FROM inhabitants WHERE aquariumId IN (:aquariumIds)")
+    protected abstract suspend fun deleteInhabitantsOfAquariums(aquariumIds: List<String>)
+
     @Query("DELETE FROM sessions WHERE id IN (:ids)")
     protected abstract suspend fun deleteSessions(ids: List<String>)
 
@@ -1087,6 +1192,7 @@ abstract class SyncDao {
         measurements: List<MeasurementEntity>,
         actions: List<MaintenanceActionEntity>,
         events: List<SessionEventEntity>,
+        inhabitants: List<InhabitantEntity>,
         acknowledgedOperationIds: List<Long>,
     ) {
         if (acknowledgedOperationIds.isNotEmpty()) acknowledge(acknowledgedOperationIds)
@@ -1098,6 +1204,7 @@ abstract class SyncDao {
         val cleanMeasurements = measurements.filterNot { SyncEntityType.MEASUREMENT.storageValue to it.id in dirty }
         val cleanActions = actions.filterNot { SyncEntityType.MAINTENANCE_ACTION.storageValue to it.id in dirty }
         val cleanEvents = events.filterNot { SyncEntityType.EVENT.storageValue to it.id in dirty }
+        val cleanInhabitants = inhabitants.filterNot { SyncEntityType.INHABITANT.storageValue to it.id in dirty }
         if (cleanAquariums.isNotEmpty()) upsertAquariums(keepingPendingPhotos(cleanAquariums))
         if (cleanParameters.isNotEmpty()) upsertParameterDefinitions(cleanParameters)
         if (cleanSessions.isNotEmpty()) {
@@ -1114,7 +1221,7 @@ abstract class SyncDao {
         if (cleanMeasurements.isNotEmpty()) upsertMeasurements(cleanMeasurements)
         if (cleanActions.isNotEmpty()) upsertMaintenanceActions(cleanActions)
         if (cleanEvents.isNotEmpty()) upsertEvents(cleanEvents)
-
+        if (cleanInhabitants.isNotEmpty()) upsertInhabitants(cleanInhabitants)
     }
 
     @Transaction
@@ -1125,6 +1232,7 @@ abstract class SyncDao {
         measurements: List<MeasurementEntity>,
         actions: List<MaintenanceActionEntity>,
         events: List<SessionEventEntity>,
+        inhabitants: List<InhabitantEntity>,
         versions: List<SyncEntityVersionEntity>,
         acknowledgedOperationIds: List<Long>,
     ) {
@@ -1159,6 +1267,8 @@ abstract class SyncDao {
             .takeIf(List<MaintenanceActionEntity>::isNotEmpty)?.let { upsertMaintenanceActions(it) }
         events.filter { accepted(SyncEntityType.EVENT, it.id) }
             .takeIf(List<SessionEventEntity>::isNotEmpty)?.let { upsertEvents(it) }
+        inhabitants.filter { accepted(SyncEntityType.INHABITANT, it.id) }
+            .takeIf(List<InhabitantEntity>::isNotEmpty)?.let { upsertInhabitants(it) }
 
         val tombstones = acceptedVersions.filter { it.deletedAtEpochMillis != null }.groupBy { it.entityType }
         tombstones[SyncEntityType.MEASUREMENT.storageValue]?.map(SyncEntityVersionEntity::entityId)
@@ -1171,8 +1281,15 @@ abstract class SyncDao {
             ?.takeIf(List<String>::isNotEmpty)?.let { deleteSessions(it) }
         tombstones[SyncEntityType.PARAMETER_DEFINITION.storageValue]?.map(SyncEntityVersionEntity::entityId)
             ?.takeIf(List<String>::isNotEmpty)?.let { deleteParameters(it) }
+        tombstones[SyncEntityType.INHABITANT.storageValue]?.map(SyncEntityVersionEntity::entityId)
+            ?.takeIf(List<String>::isNotEmpty)?.let { deleteInhabitants(it) }
+        // No foreign key locally: an Aquarium's inhabitants go with it.
+        // shortcut: this also deletes rows with pending ops, which would block the push (require(payload != null)); unreachable while no Aquarium DELETE op exists, drop those pending ops in the same transaction when Aquarium deletion lands.
         tombstones[SyncEntityType.AQUARIUM.storageValue]?.map(SyncEntityVersionEntity::entityId)
-            ?.takeIf(List<String>::isNotEmpty)?.let { deleteAquariums(it) }
+            ?.takeIf(List<String>::isNotEmpty)?.let {
+                deleteInhabitantsOfAquariums(it)
+                deleteAquariums(it)
+            }
         if (acceptedVersions.isNotEmpty()) upsertVersions(acceptedVersions)
     }
 }
@@ -1198,8 +1315,9 @@ abstract class SyncDao {
         SyncScheduleStateEntity::class,
         AssistantDismissalEntity::class,
         AquariumPhotoSyncEntity::class,
+        InhabitantEntity::class,
     ],
-    version = 16,
+    version = 17,
     exportSchema = true,
 )
 @ConstructedBy(AquaLogDatabaseConstructor::class)
@@ -1212,6 +1330,7 @@ abstract class AquaLogDatabase : RoomDatabase() {
     abstract fun syncDao(): SyncDao
     abstract fun portableDataDao(): PortableDataDao
     abstract fun assistantDao(): AssistantDao
+    abstract fun inhabitantDao(): InhabitantDao
 }
 
 @Suppress("NO_ACTUAL_FOR_EXPECT")
@@ -1240,6 +1359,7 @@ fun createAquaLogDatabase(
         MIGRATION_13_14,
         MIGRATION_14_15,
         MIGRATION_15_16,
+        MIGRATION_16_17,
     )
     .build()
 
@@ -1409,4 +1529,13 @@ private val MIGRATION_15_16 = Migration(15, 16) { connection ->
         "CREATE TABLE IF NOT EXISTS aquarium_photo_syncs " +
             "(aquariumId TEXT NOT NULL, uploaded INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(aquariumId))",
     )
+}
+
+private val MIGRATION_16_17 = Migration(16, 17) { connection ->
+    connection.execSQL(
+        "CREATE TABLE IF NOT EXISTS inhabitants (id TEXT NOT NULL, aquariumId TEXT NOT NULL, speciesId TEXT, " +
+            "customName TEXT, family TEXT NOT NULL, count INTEGER NOT NULL, addedAtEpochMillis INTEGER NOT NULL, " +
+            "removedAtEpochMillis INTEGER, PRIMARY KEY(id))",
+    )
+    connection.execSQL("CREATE INDEX IF NOT EXISTS index_inhabitants_aquariumId ON inhabitants (aquariumId)")
 }

@@ -3,11 +3,17 @@ package com.maximerollin.aqualog.shared.assistance
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.Inhabitant
 import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.plusDays
 import com.maximerollin.aqualog.shared.toEpochDay
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
+import com.maximerollin.aqualog.shared.encyclopedia.Species
+import com.maximerollin.aqualog.shared.encyclopedia.SpeciesKind
+import java.time.Instant
+import java.time.ZoneId
 
 /** « Jamais » is stored as this positive sentinel so every existing "null or > 0" check still accepts it. */
 const val NEVER_INTERVAL_DAYS = 9999
@@ -55,20 +61,26 @@ private val FOLLOW_UP_OFFSETS = listOf(1, 3)
  * Besides the rhythm, a FOLLOW_UP is due for ammonia and nitrite at T+1 and T+3 after a day T with an ALERT
  * or an out-of-range ammonia/nitrite (not while Cycling, where they are expected), and for any parameter
  * whose latest reading is out of range, at that day plus the pistes' retest delay. « Jamais » has no follow-up.
+ * The days of [inhabitantAddedDays] (see there) trigger the ammonia and nitrite follow-ups like an alert day.
  */
-fun dueTests(setup: AquariumSetup, samples: List<ReadingSample>, today: TaskDate): List<DueTest> {
+fun dueTests(
+    setup: AquariumSetup,
+    samples: List<ReadingSample>,
+    today: TaskDate,
+    inhabitantAddedDays: List<TaskDate> = emptyList(),
+): List<DueTest> {
     val profile = setup.aquarium.profile
     val active = setup.parameters.filter { it.isActive }
     val activeById = active.associateBy { it.id }
     val lastDay = samples.groupBy { it.parameterDefinitionId }
         .mapValues { (_, readings) -> readings.maxOf { it.day.toEpochDay() } }
-    val triggerDays = if (profile == AquariumProfile.CYCLING) emptyList() else samples
+    val triggerDays = if (profile == AquariumProfile.CYCLING) emptyList() else (inhabitantAddedDays + samples
         .filter { sample ->
             val definition = activeById[sample.parameterDefinitionId] ?: return@filter false
             val level = readingLevel(definition, sample.value, profile)
             level == ReadingLevel.ALERT || (definition.parameter in NITROGEN_WASTE && level != ReadingLevel.OK)
         }
-        .map { it.day }
+        .map { it.day })
         .distinct()
 
     return active.mapNotNull { definition ->
@@ -91,6 +103,22 @@ fun dueTests(setup: AquariumSetup, samples: List<ReadingSample>, today: TaskDate
             .minByOrNull { it.dueDate.toEpochDay() }
     }.sortedWith(compareBy({ it.dueDate.toEpochDay() }, { it.definition.position }))
 }
+
+/**
+ * The days, in [timeZoneId], on which fish, shrimp or snails were added: plants are not followed. A species missing
+ * from [species] (or custom) falls back to the group's drawing family. Removed groups count: the add happened.
+ */
+fun inhabitantAddedDays(inhabitants: List<Inhabitant>, species: List<Species>, timeZoneId: String): List<TaskDate> {
+    val kindById = species.associate { it.id to it.kind }
+    val zone = ZoneId.of(timeZoneId)
+    return inhabitants
+        .filterNot { (it.speciesId?.let(kindById::get) ?: kindFromFamily(it.family)) == SpeciesKind.PLANT }
+        .map { Instant.ofEpochMilli(it.addedAtEpochMillis).atZone(zone).toLocalDate().let { day -> TaskDate(day.year, day.monthValue, day.dayOfMonth) } }
+        .distinct()
+        .sortedBy { it.toEpochDay() }
+}
+
+private fun kindFromFamily(family: DrawingFamily) = if (family == DrawingFamily.PLANT) SpeciesKind.PLANT else SpeciesKind.FISH
 
 /** The pistes' retest day after the latest reading day of [definition], when a reading of that day is out of range. */
 private fun retestDay(definition: ParameterDefinition, samples: List<ReadingSample>, last: Long?, profile: AquariumProfile): TaskDate? {

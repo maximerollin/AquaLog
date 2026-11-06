@@ -56,6 +56,7 @@ class HistoricalMigrationQualificationTest(private val version: Int) {
                         assertEquals(mapOf("cycled" to "session-19"), dismissals.observeDismissals(aquarium.id).first())
                     }
                     assertEquals(emptyList(), photoSyncRows(database))
+                    assertEquals(emptyList(), repository.observeInhabitantHistory(null).first())
                     if (version >= 5) {
                         assertEquals("account-19", repository.accountMigrationState()?.accountId)
                     }
@@ -172,6 +173,6 @@ class HistoricalMigrationQualificationTest(private val version: Int) {
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "Room {0} to current")
-        fun versions() = (3..15).map { arrayOf(it) }
+        fun versions() = (3..16).map { arrayOf(it) }
     }
 }

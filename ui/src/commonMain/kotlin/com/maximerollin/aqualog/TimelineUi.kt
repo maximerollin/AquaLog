@@ -32,6 +32,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -54,6 +57,12 @@ import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.TaskResolution
 import com.maximerollin.aqualog.shared.TimelineSession
+import com.maximerollin.aqualog.encyclopedia.displayName
+import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
+import com.maximerollin.aqualog.shared.TimelineInhabitantChange
+import com.maximerollin.aqualog.shared.encyclopedia.Species
+import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
 import com.maximerollin.aqualog.shared.assistance.readingLevel
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
@@ -73,6 +82,11 @@ private sealed interface TimelineListItem {
     data class TaskItem(val occurrence: TaskOccurrence) : TimelineListItem {
         override val timestamp = requireNotNull(occurrence.resolvedAtEpochMillis)
         override val key = "task-${occurrence.id}"
+    }
+
+    data class InhabitantItem(val change: TimelineInhabitantChange) : TimelineListItem {
+        override val timestamp = change.atEpochMillis
+        override val key = "inhabitant-${if (change.removed) "removed" else "added"}-${change.inhabitant.id}"
     }
 }
 
@@ -132,11 +146,21 @@ private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel) {
             state.timeline.maintenanceActionType == null &&
             (periodStart == null || (occurrence.resolvedAtEpochMillis ?: Long.MIN_VALUE) >= periodStart)
     }
+    // Like Tâches, inhabitants belong to no Parameter or maintenance Action: those filters hide them.
+    val inhabitantChanges = state.timeline.inhabitantChanges.filter {
+        state.timeline.parameterDefinitionId == null && state.timeline.maintenanceActionType == null
+    }
     val items = (
         state.timeline.entries.map(TimelineListItem::SessionItem) +
-            resolvedTasks.map(TimelineListItem::TaskItem)
+            resolvedTasks.map(TimelineListItem::TaskItem) +
+            inhabitantChanges.map(TimelineListItem::InhabitantItem)
         ).sortedWith(compareByDescending<TimelineListItem> { it.timestamp }.thenBy { it.key })
     val showAquarium = state.timeline.aquariumId == null && state.aquariums.size > 1
+    val encyclopedia by produceState<List<Species>?>(null) {
+        // Unavailable file: lines fall back to the species id.
+        value = try { loadEncyclopedia() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { null }
+    }
+    val language = remember { Locale.getDefault().language }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 24.dp),
@@ -167,6 +191,12 @@ private fun TimelineList(state: HomeUiState, viewModel: HomeViewModel) {
                     formatter.date(items[index + 1].timestamp) != date
                 when (item) {
                     is TimelineListItem.TaskItem -> TimelineTaskRow(item.occurrence, isLast)
+                    is TimelineListItem.InhabitantItem -> TimelineInhabitantRow(
+                        item.change,
+                        item.change.inhabitant.displayName(encyclopedia, language),
+                        isLast,
+                        showAquarium,
+                    )
                     is TimelineListItem.SessionItem -> TimelineSessionRow(
                         item.entry,
                         isLast,
@@ -225,6 +255,28 @@ private fun TimelineTaskRow(occurrence: TaskOccurrence, isLast: Boolean) {
             Text(occurrence.title, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
             Text(
                 resolution,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TimelineInhabitantRow(change: TimelineInhabitantChange, name: String, isLast: Boolean, showAquarium: Boolean) {
+    val formatter = currentLocalizedFormatters()
+    val count = change.inhabitant.count
+    val line = if (change.removed) {
+        stringResource(Res.string.timeline_inhabitant_removed, name, count)
+    } else {
+        stringResource(Res.string.timeline_inhabitant_added, name, count)
+    }
+    RailEntry(MaterialTheme.colorScheme.outlineVariant, isLast) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(line, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+            Text(
+                listOfNotNull(change.aquarium.name.takeIf { showAquarium }, formatter.clock(change.atEpochMillis))
+                    .joinToString(" · "),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

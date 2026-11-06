@@ -13,6 +13,7 @@ import androidx.glance.testing.GlanceNodeMatcher
 import androidx.glance.testing.unit.MappedNode
 import androidx.glance.testing.unit.assertHasContentDescriptionEqualTo
 import androidx.glance.testing.unit.hasContentDescriptionEqualTo
+import androidx.glance.testing.unit.hasTestTag
 import androidx.glance.testing.unit.hasStartActivityClickAction
 import androidx.glance.testing.unit.hasTextEqualTo
 import androidx.glance.text.EmittableText
@@ -27,6 +28,8 @@ import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
+import com.maximerollin.aqualog.shared.encyclopedia.PresentGroup
 import com.maximerollin.aqualog.ui.theme.CarnetDarkColors
 import com.maximerollin.aqualog.ui.theme.CarnetLightColors
 import java.time.LocalDate
@@ -130,6 +133,29 @@ class SmallTankWidgetTest {
 
         onNode(hasTextEqualTo(text.next).and(hasMaxLines(2))).assertExists()
         onNode(hasTextEqualTo("Salon").and(hasMaxLines(1))).assertExists()
+    }
+
+    @Test
+    fun inhabitants_swimAsOneSilhouettePerGroup_withoutChangingTheTalkBackLabel() = runGlanceAppWidgetUnitTest {
+        val text = text("fr", BuiltInParameter.NITRITE)
+        setContext(localized("fr"))
+        val groups = listOf(PresentGroup(null, DrawingFamily.TETRA, 6), PresentGroup(null, DrawingFamily.CATFISH, 2))
+        provideComposable { SmallTankContent(WidgetContent.Tank(text, groups)) }
+
+        onNode(hasTestTag(WidgetFamilyTag(DrawingFamily.TETRA))).assertExists()
+        onNode(hasTestTag(WidgetFamilyTag(DrawingFamily.CATFISH))).assertExists()
+        onNode(hasTestTag(WidgetFamilyTag(DrawingFamily.CICHLID))).assertDoesNotExist()
+        onNode(hasStartActivityClickAction<MainActivity>(extras("salon", WidgetTarget.HOME)))
+            .assertHasContentDescriptionEqualTo("Salon, très en dehors de votre plage indicative, NO₂ très hors plage")
+    }
+
+    @Test
+    fun noInhabitants_noSilhouettes() = runGlanceAppWidgetUnitTest {
+        val text = text("fr", BuiltInParameter.NITRITE)
+        setContext(localized("fr"))
+        provideComposable { SmallTankContent(WidgetContent.Tank(text)) }
+
+        DrawingFamily.entries.forEach { onNode(hasTestTag(WidgetFamilyTag(it))).assertDoesNotExist() }
     }
 
     private fun text(language: String, parameter: BuiltInParameter, measured: Boolean = true): WidgetTankText {

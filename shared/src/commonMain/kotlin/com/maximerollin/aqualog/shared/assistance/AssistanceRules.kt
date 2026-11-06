@@ -31,7 +31,7 @@ fun ruleFor(parameter: BuiltInParameter): ParameterRule = when (parameter) {
 }
 
 /** The built-in rules only know the preset units; a value in °F or in another kit's scale is judged by its range alone. */
-private fun ParameterDefinition.usesPresetUnit(): Boolean =
+internal fun ParameterDefinition.usesPresetUnit(): Boolean =
     unit.trim().equals(OnboardingPresets.presetUnit(parameter), ignoreCase = true)
 
 /** The side whose alert threshold [value] reaches, only in the preset unit and beyond the person's own bound on that side. */

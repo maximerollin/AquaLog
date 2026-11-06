@@ -1,12 +1,14 @@
 package com.maximerollin.aqualog.shared
 
 import com.maximerollin.aqualog.shared.assistance.ReadingSample
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import java.time.Instant
 import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlin.random.Random
 
@@ -76,6 +78,26 @@ interface AquariumRepository {
 
     fun observeTimeline(filter: TimelineFilter): Flow<List<TimelineSession>>
 
+    /** Present inhabitant groups of an Aquarium (not removed). */
+    fun observeInhabitants(aquariumId: String): Flow<List<Inhabitant>> = flowOf(emptyList())
+
+    suspend fun addInhabitant(
+        aquariumId: String,
+        speciesId: String?,
+        customName: String?,
+        family: DrawingFamily,
+        count: Int,
+    ): Inhabitant = error("unsupported")
+
+    /** Removes [count] from a present group; less than its count splits it. Throws when more than present. */
+    suspend fun removeInhabitants(inhabitantId: String, count: Int): Unit = error("unsupported")
+
+    /** Every row, present or removed, of one Aquarium or of all (null). */
+    fun observeInhabitantHistory(aquariumId: String?): Flow<List<Inhabitant>> = flowOf(emptyList())
+
+    /** The adds and removals the Chronologie shows, oldest first, with the same filters as [observeTimeline]. */
+    fun observeInhabitantTimeline(filter: TimelineFilter): Flow<List<TimelineInhabitantChange>> = flowOf(emptyList())
+
     fun observeFreeTrends(aquariumId: String, period: TrendPeriod): Flow<TrendSnapshot>
 
     fun observeAdvancedTrends(
@@ -119,6 +141,7 @@ class RoomAquariumRepository(
     private val sessionDao = database.sessionDao()
     private val taskDao = database.taskDao()
     private val assistantDao = database.assistantDao()
+    private val inhabitantDao = database.inhabitantDao()
     private val accountDao = database.accountDao()
     private val accountControlDao = database.accountControlDao()
     private val syncDao = database.syncDao()
@@ -133,7 +156,7 @@ class RoomAquariumRepository(
         aquariumDao.observeCurrentSetup().map { it?.toDomain() }
 
     override fun observeChanges(): Flow<Unit> = database.invalidationTracker.createFlow(
-        "aquariums", "selected_aquarium", "parameter_definitions", "sessions", "measurements", "task_occurrences",
+        "aquariums", "selected_aquarium", "parameter_definitions", "sessions", "measurements", "task_occurrences", "inhabitants",
         emitInitialState = false,
     ).map { }
 
@@ -527,6 +550,53 @@ class RoomAquariumRepository(
             }
         }
 
+    override fun observeInhabitants(aquariumId: String): Flow<List<Inhabitant>> =
+        inhabitantDao.observePresent(aquariumId).map { rows -> rows.map(InhabitantEntity::toDomain) }
+
+    override suspend fun addInhabitant(
+        aquariumId: String,
+        speciesId: String?,
+        customName: String?,
+        family: DrawingFamily,
+        count: Int,
+    ): Inhabitant {
+        require(count >= 1) { "An inhabitant group has at least one" }
+        require(speciesId != null || !customName.isNullOrBlank()) { "A custom species needs a name" }
+        val inhabitant = Inhabitant(
+            id = generateId(),
+            aquariumId = aquariumId,
+            speciesId = speciesId,
+            customName = customName?.trim()?.takeIf(String::isNotEmpty),
+            family = family,
+            count = count,
+            addedAtEpochMillis = currentTimeMillis(),
+        )
+        inhabitantDao.add(inhabitant.toEntity(), newSyncOperation(SyncEntityType.INHABITANT, inhabitant.id))
+        onSyncNeeded()
+        return inhabitant
+    }
+
+    override suspend fun removeInhabitants(inhabitantId: String, count: Int) {
+        val splitId = generateId()
+        inhabitantDao.remove(
+            inhabitantId, count, currentTimeMillis(), splitId,
+            groupOperation = newSyncOperation(SyncEntityType.INHABITANT, inhabitantId),
+            splitOperation = newSyncOperation(SyncEntityType.INHABITANT, splitId),
+        )
+        onSyncNeeded()
+    }
+
+    override fun observeInhabitantHistory(aquariumId: String?): Flow<List<Inhabitant>> =
+        inhabitantDao.observeHistory(aquariumId).map { rows -> rows.map(InhabitantEntity::toDomain) }
+
+    override fun observeInhabitantTimeline(filter: TimelineFilter): Flow<List<TimelineInhabitantChange>> =
+        combine(
+            aquariumDao.observeAquariums(includeArchived = true),
+            inhabitantDao.observeHistory(filter.aquariumId),
+        ) { aquariums, rows ->
+            timelineInhabitantChanges(rows.map(InhabitantEntity::toDomain), aquariums.map(AquariumEntity::toDomain), filter)
+        }
+
     override fun observeFreeTrends(aquariumId: String, period: TrendPeriod): Flow<TrendSnapshot> =
         currentTimeMillis().let { now ->
             combine(
@@ -718,6 +788,8 @@ class RoomAquariumRepository(
     override suspend fun completeAccountMigration(accountId: String) {
         // The account may lack photos synced to an earlier one (sign-out keeping the copy): the next sync uploads them.
         aquariumDao.markAllPhotosPending()
+        // migrate-initial-copy does not carry inhabitants: these upserts send them.
+        inhabitantDao.insertSyncOperations(inhabitantDao.all().map { newSyncOperation(SyncEntityType.INHABITANT, it.id) })
         accountDao.upsert(
             AccountStateEntity(
                 accountId = accountId,
@@ -804,6 +876,8 @@ class RoomAquariumRepository(
             events = sessionDao.allEvents().filter { it.id in idsByType[SyncEntityType.EVENT].orEmpty() }
                 .map(SessionEventEntity::toDomain),
             photoAquariumIds = aquariums.map(Aquarium::id).filter { it in photoAquariumIds }.toSet(),
+            inhabitants = inhabitantDao.all().filter { it.id in idsByType[SyncEntityType.INHABITANT].orEmpty() }
+                .map(InhabitantEntity::toDomain),
         )
     }
 
@@ -843,6 +917,7 @@ class RoomAquariumRepository(
             measurements = copy.measurements.map(Measurement::toEntity),
             actions = copy.maintenanceActions.map(MaintenanceAction::toEntity),
             events = copy.events.map(SessionEvent::toEntity),
+            inhabitants = copy.inhabitants.map(Inhabitant::toEntity),
             acknowledgedOperationIds = acknowledgedOperationIds,
         )
     }
@@ -862,6 +937,7 @@ class RoomAquariumRepository(
             measurements = snapshot.copy.measurements.map(Measurement::toEntity),
             actions = snapshot.copy.maintenanceActions.map(MaintenanceAction::toEntity),
             events = snapshot.copy.events.map(SessionEvent::toEntity),
+            inhabitants = snapshot.copy.inhabitants.map(Inhabitant::toEntity),
             versions = snapshot.versions.map {
                 SyncEntityVersionEntity(
                     entityType = it.entityType.storageValue,
@@ -1032,6 +1108,15 @@ private fun Session.toEntity(idempotencyKey: String) = SessionEntity(
     occurredAtEpochMillis = occurredAtEpochMillis,
     createdAtEpochMillis = createdAtEpochMillis,
     idempotencyKey = idempotencyKey,
+)
+
+private fun InhabitantEntity.toDomain() = Inhabitant(
+    id, aquariumId, speciesId, customName, DrawingFamily.valueOf(family), count,
+    addedAtEpochMillis, removedAtEpochMillis,
+)
+
+private fun Inhabitant.toEntity() = InhabitantEntity(
+    id, aquariumId, speciesId, customName, family.name, count, addedAtEpochMillis, removedAtEpochMillis,
 )
 
 private fun SessionEntity.toDomain() = Session(id, aquariumId, occurredAtEpochMillis, createdAtEpochMillis)

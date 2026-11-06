@@ -63,6 +63,7 @@ import com.maximerollin.aqualog.shared.SyncOutcome
 import com.maximerollin.aqualog.shared.SyncState
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.TimelineFilter
+import com.maximerollin.aqualog.shared.TimelineInhabitantChange
 import com.maximerollin.aqualog.shared.TimelineSession
 import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.TaskDate
@@ -95,6 +96,13 @@ import com.maximerollin.aqualog.shared.assistance.weeklySummary
 import com.maximerollin.aqualog.shared.assistance.ReadingSample
 import com.maximerollin.aqualog.shared.assistance.checkMeasurement
 import com.maximerollin.aqualog.shared.evaluateMeasurement
+import com.maximerollin.aqualog.shared.Inhabitant
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
+import com.maximerollin.aqualog.shared.encyclopedia.Species
+import com.maximerollin.aqualog.shared.encyclopedia.SpeciesKind
+import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
+import com.maximerollin.aqualog.habitants.AddInhabitantUiState
+import kotlin.coroutines.cancellation.CancellationException
 import androidx.compose.ui.graphics.ImageBitmap
 import com.maximerollin.aqualog.photo.SquareCrop
 import com.maximerollin.aqualog.photo.encodeAquariumPhoto
@@ -109,6 +117,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -182,6 +191,7 @@ data class TimelineUiState(
     val isOffline: Boolean = true,
     val entries: List<TimelineSession> = emptyList(),
     val resolvedTaskOccurrences: List<TaskOccurrence> = emptyList(),
+    val inhabitantChanges: List<TimelineInhabitantChange> = emptyList(),
     val period: TimelinePeriod = TimelinePeriod.ALL,
     val aquariumId: String? = null,
     val parameterDefinitionId: String? = null,
@@ -373,6 +383,10 @@ data class HomeUiState(
     /** Advice for the new out-of-range values of the Session just saved; shown once, then dismissed. */
     val pistesAfterSave: List<DatedPisteAdvice> = emptyList(),
     val latestReadings: List<LatestReading> = emptyList(),
+    /** Present inhabitant groups of the displayed Aquarium. */
+    val inhabitants: List<Inhabitant> = emptyList(),
+    /** False until [inhabitants] holds the displayed Aquarium's list, so an empty list is not mistaken for « no inhabitants ». */
+    val inhabitantsLoaded: Boolean = false,
     /** Tests of the displayed Aquarium due today or overdue, earliest first. */
     val dueTests: List<DueTest> = emptyList(),
     /** The day the date-dependent home was last computed for: a new day recomposes it (see [HomeViewModel.refreshForToday]). */
@@ -401,6 +415,7 @@ data class HomeUiState(
     val feedback: FeedbackUiState = FeedbackUiState(),
     val accountSettings: AccountSettingsUiState = AccountSettingsUiState(),
     val photo: PhotoUiState = PhotoUiState.None,
+    val addInhabitant: AddInhabitantUiState? = null,
 )
 
 /** The photo flow of one Aquarium: the one shown when [HomeViewModel.openPhoto] was called, even if the home moves on. */
@@ -493,6 +508,7 @@ class HomeViewModel(
     feedbackGateway: FeedbackGateway = DisabledFeedbackGateway,
     private val reviewCoordinator: ReviewCoordinator? = null,
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    private val loadSpecies: suspend () -> List<Species> = ::loadEncyclopedia,
 ) : ViewModel() {
     private val feedbackCoordinator = FeedbackCoordinator(feedbackGateway)
     private val taskCompleter = TaskCompleter(
@@ -538,6 +554,10 @@ class HomeViewModel(
                         isSaving = false,
                         latestSession = if (setup == null) null else it.latestSession,
                         latestReadings = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.latestReadings else emptyList(),
+                        inhabitants = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.inhabitants else emptyList(),
+                        inhabitantsLoaded = setup?.aquarium?.id == it.setup?.aquarium?.id && it.inhabitantsLoaded,
+                        // The add flow belongs to the Aquarium it was opened on.
+                        addInhabitant = it.addInhabitant?.takeIf { add -> add.aquariumId == setup?.aquarium?.id },
                         dueTests = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.dueTests else emptyList(),
                         weeklySummary = it.weeklySummary.takeIf { _ -> setup?.aquarium?.id == it.setup?.aquarium?.id },
                         cycledDismissedSessionId = if (setup?.aquarium?.id == it.setup?.aquarium?.id) it.cycledDismissedSessionId else null,
@@ -554,14 +574,24 @@ class HomeViewModel(
                             }
                         }
                         launch {
+                            aquariumRepository.observeInhabitants(setup.aquarium.id).collect { inhabitants ->
+                                mutableUiState.update { it.copy(inhabitants = inhabitants, inhabitantsLoaded = true) }
+                            }
+                        }
+                        launch {
                             aquariumRepository.observeDismissals(setup.aquarium.id).collect { dismissals ->
                                 mutableUiState.update { it.copy(cycledDismissedSessionId = dismissals[CYCLED_PROPOSAL], cycledDismissalsLoaded = true) }
                             }
                         }
                         launch {
                             // The setup re-emits when a rhythm changes, so this also follows the rhythm settings.
-                            aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).collect { samples ->
-                                mutableUiState.update { it.copy(dueTests = dueTests(setup, samples, today())) }
+                            // An added inhabitant also schedules follow-up tests, so its history is followed too.
+                            combine(
+                                aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()),
+                                aquariumRepository.observeInhabitantHistory(setup.aquarium.id),
+                            ) { samples, inhabitants -> samples to inhabitants }.collect { (samples, inhabitants) ->
+                                val added = inhabitants.addedDays(currentTimeZoneId())
+                                mutableUiState.update { it.copy(dueTests = dueTests(setup, samples, today(), added)) }
                                 refreshWeekly()
                                 // A failing read or alarm must not end this collector: the home keeps following the readings.
                                 runCatching {
@@ -726,7 +756,8 @@ class HomeViewModel(
 
     /** An open view that may hold typed input: a widget tap only brings the app forward. */
     private fun HomeUiState.holdsInput() =
-        rapidSession != null || account.step != AccountStep.HIDDEN || showRhythmSettings || aquariumEditor != null
+        rapidSession != null || account.step != AccountStep.HIDDEN || showRhythmSettings || aquariumEditor != null ||
+            addInhabitant != null
 
     fun openCreateAquarium() {
         val state = mutableUiState.value
@@ -1573,6 +1604,89 @@ class HomeViewModel(
         savedStateHandle[photoTargetKey] = (mutableUiState.value.photo as? PhotoUiState.SourceSheet)?.aquariumId
     }
 
+    /** Opens « Ajouter un habitant » for the displayed Aquarium. */
+    fun openAddInhabitant() {
+        val setup = mutableUiState.value.setup ?: return
+        mutableUiState.update { it.copy(addInhabitant = AddInhabitantUiState(setup.aquarium.id)) }
+        viewModelScope.launch {
+            // An unreadable encyclopedia leaves an empty search; the custom form still works.
+            val species = try { loadSpecies() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { null }
+            updateAddInhabitant { it.copy(species = species.orEmpty(), loadFailed = species == null) }
+        }
+    }
+
+    /** From a fiche or the custom form back to the search; from the search, closes. */
+    fun backInAddInhabitant() = mutableUiState.update { state ->
+        val add = state.addInhabitant ?: return@update state
+        state.copy(
+            addInhabitant = if (add.ficheSpeciesId != null || add.custom) {
+                add.copy(ficheSpeciesId = null, custom = false, saveFailed = false)
+            } else {
+                null
+            },
+        )
+    }
+
+    fun updateSpeciesQuery(query: String) = updateAddInhabitant { it.copy(query = query) }
+
+    fun selectSpeciesKind(kind: SpeciesKind?) = updateAddInhabitant { it.copy(kind = kind) }
+
+    fun openSpeciesFiche(speciesId: String) = updateAddInhabitant { add ->
+        val species = add.species?.firstOrNull { it.id == speciesId } ?: return@updateAddInhabitant add
+        add.copy(ficheSpeciesId = species.id, count = species.minGroup, saveFailed = false)
+    }
+
+    fun openCustomInhabitant() = updateAddInhabitant {
+        it.copy(custom = true, count = 1, customName = "", customFamily = null, showCustomError = false, saveFailed = false)
+    }
+
+    fun changeInhabitantCount(count: Int) = updateAddInhabitant { it.copy(count = count.coerceAtLeast(1)) }
+
+    fun updateCustomInhabitantName(name: String) = updateAddInhabitant { it.copy(customName = name, showCustomError = false) }
+
+    fun selectCustomInhabitantFamily(family: DrawingFamily) =
+        updateAddInhabitant { it.copy(customFamily = family, showCustomError = false) }
+
+    /** Adds the fiche's species or the custom one, whatever its verdict (the fiche never forbids), then shows the home. */
+    fun confirmAddInhabitant() {
+        val add = mutableUiState.value.addInhabitant ?: return
+        if (add.isSaving) return
+        val species = add.ficheSpecies
+        val customName = add.customName.trim()
+        val family = species?.family ?: add.customFamily
+        if (family == null || species == null && (!add.custom || customName.isEmpty())) {
+            updateAddInhabitant { it.copy(showCustomError = true) }
+            return
+        }
+        updateAddInhabitant { it.copy(isSaving = true, saveFailed = false) }
+        viewModelScope.launch {
+            try {
+                aquariumRepository.addInhabitant(add.aquariumId, species?.id, customName.takeIf { species == null }, family, add.count)
+                mutableUiState.update { it.copy(addInhabitant = null, destination = MainDestination.TANK) }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                updateAddInhabitant { it.copy(isSaving = false, saveFailed = true) }
+            }
+        }
+    }
+
+    /** Removes [count] animals of a present group; a stale group (already changed on another device) or a failed write calls [onFailed]. */
+    fun removeInhabitants(inhabitantId: String, count: Int, onFailed: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                aquariumRepository.removeInhabitants(inhabitantId, count)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                onFailed()
+            }
+        }
+    }
+
+    private fun updateAddInhabitant(transform: (AddInhabitantUiState) -> AddInhabitantUiState) =
+        mutableUiState.update { state -> state.addInhabitant?.let { state.copy(addInhabitant = transform(it)) } ?: state }
+
     fun openRhythmSettings() = mutableUiState.update { it.copy(showRhythmSettings = true) }
 
     fun closeRhythmSettings() = mutableUiState.update { it.copy(showRhythmSettings = false) }
@@ -1593,7 +1707,12 @@ class HomeViewModel(
         val setup = mutableUiState.value.setup ?: return
         viewModelScope.launch {
             runCatching {
-                dueTests(setup, aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).first(), day)
+                dueTests(
+                    setup,
+                    aquariumRepository.observeReadingSamples(setup.aquarium.id, currentTimeZoneId()).first(),
+                    day,
+                    aquariumRepository.addedDays(setup.aquarium.id, currentTimeZoneId()),
+                )
             }.onSuccess { due ->
                 mutableUiState.update { if (it.setup?.aquarium?.id == setup.aquarium.id) it.copy(dueTests = due) else it }
             }
@@ -2332,10 +2451,22 @@ class HomeViewModel(
                 timeline = state.timeline.copy(
                     isLoading = true,
                     hasRecoverableError = false,
+                    // The previous filter's inhabitant lines must not show while the new ones load.
+                    inhabitantChanges = emptyList(),
                 ),
             )
         }
         timelineJob = viewModelScope.launch {
+            launch {
+                // Inhabitant lines are extra: a failing read must not turn the Chronologie into an error.
+                aquariumRepository.observeInhabitantTimeline(
+                    TimelineFilter(sinceEpochMillisInclusive = since, aquariumId = timeline.aquariumId),
+                ).catch { }.collect { changes ->
+                    mutableUiState.update { state ->
+                        state.copy(timeline = state.timeline.copy(inhabitantChanges = changes))
+                    }
+                }
+            }
             aquariumRepository.observeTimeline(
                 TimelineFilter(
                     sinceEpochMillisInclusive = since,

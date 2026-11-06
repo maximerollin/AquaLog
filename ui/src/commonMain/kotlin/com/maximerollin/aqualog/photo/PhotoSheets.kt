@@ -145,7 +145,7 @@ private fun PhotoViewer(
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Fit,
                         )
-                    } ?: TankScene(aquarium, Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)), animate = false)
+                    } ?: TankScene(aquarium, modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)), animate = false)
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(onClick = onRemove, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {

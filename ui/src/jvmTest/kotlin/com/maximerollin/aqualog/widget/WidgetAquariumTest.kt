@@ -16,7 +16,11 @@ import com.maximerollin.aqualog.shared.assistance.DueReason
 import com.maximerollin.aqualog.shared.assistance.DueTest
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
+import com.maximerollin.aqualog.shared.Inhabitant
 import com.maximerollin.aqualog.shared.createJvmDatabaseBuilder
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
+import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
+import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -165,5 +169,37 @@ class WidgetAquariumTest {
         assertNull(fixture.repository.loadWidgetAquarium(null, today, "UTC"))
         assertEquals(emptyList(), fixture.repository.loadWidgetAquariums(today, "UTC"))
         fixture.close()
+    }
+
+    private val encyclopedia = decodeSpecies(File("src/commonMain/composeResources/files/encyclopedia/species.json").readText())
+
+    private fun inhabitant(id: String, speciesId: String?, family: DrawingFamily, count: Int, customName: String? = null) =
+        Inhabitant(id, "a1", speciesId, customName, family, count, 0L)
+
+    @Test
+    fun `the widget shows the 3 largest swimming groups, plants excluded, ties by key`() {
+        val neon = encyclopedia.first { it.family == DrawingFamily.TETRA }
+        val groups = widgetGroups(
+            listOf(
+                inhabitant("1", neon.id, DrawingFamily.TETRA, 6),
+                inhabitant("2", null, DrawingFamily.PLANT, 30),
+                inhabitant("3", null, DrawingFamily.CICHLID, 2, "B"),
+                inhabitant("4", null, DrawingFamily.CATFISH, 2, "A"),
+                inhabitant("5", null, DrawingFamily.SNAIL, 1),
+                inhabitant("6", neon.id, DrawingFamily.TETRA, 4),
+            ),
+            encyclopedia,
+        )
+        assertEquals(listOf(DrawingFamily.TETRA, DrawingFamily.CATFISH, DrawingFamily.CICHLID), groups.map { it.family })
+        assertEquals(listOf(10, 2, 2), groups.map { it.count })
+        assertEquals(neon, groups.first().species)
+        assertNull(groups[1].species)
+    }
+
+    @Test
+    fun `without the encyclopedia the groups keep the stored family`() {
+        val groups = widgetGroups(listOf(inhabitant("1", "neon", DrawingFamily.TETRA, 3)), null)
+        assertEquals(listOf(DrawingFamily.TETRA), groups.map { it.family })
+        assertNull(groups.single().species)
     }
 }

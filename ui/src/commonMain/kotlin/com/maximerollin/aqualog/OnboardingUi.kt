@@ -1,10 +1,21 @@
 package com.maximerollin.aqualog
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
+import com.maximerollin.aqualog.home.HabitantsSheet
+import com.maximerollin.aqualog.shared.encyclopedia.Species
+import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
 import com.maximerollin.aqualog.ui.icon.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.maximerollin.aqualog.photo.AquariumThumbnail
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.home.TankHome
+import com.maximerollin.aqualog.habitants.AddInhabitantScreen
 import com.maximerollin.aqualog.ui.theme.CarnetDivider
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
@@ -99,6 +110,8 @@ fun AquaLogContent(
             viewModel = viewModel,
             modifier = modifier,
         )
+        // Below entry: « Faire une analyse » opens a Session over the fiche, which comes back once it is closed.
+        state.addInhabitant != null && state.setup != null -> AddInhabitantScreen(state.addInhabitant, state, viewModel, modifier)
         state.sessionDetail != null && state.setup != null -> SessionDetailsScreen(
             recorded = state.sessionDetail,
             setup = state.setup,
@@ -366,6 +379,7 @@ private fun PortableDataSettings(
     modifier: Modifier,
 ) {
     val proActive = proState.purchaseStatus == ProPurchaseStatus.ACTIVE
+    var showHabitants by remember(homeState.setup?.aquarium?.id) { mutableStateOf(false) }
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("settings-list").padding(horizontal = 24.dp),
     ) {
@@ -402,6 +416,13 @@ private fun PortableDataSettings(
                 MoreRow(
                     stringResource(Res.string.rhythm_title),
                     onClick = viewModel::openRhythmSettings,
+                    trailingIcon = AquagendaIcons.ChevronRight,
+                )
+            }
+            moreItem {
+                MoreRow(
+                    stringResource(Res.string.habitants_title),
+                    onClick = { showHabitants = true },
                     trailingIcon = AquagendaIcons.ChevronRight,
                 )
             }
@@ -543,6 +564,22 @@ private fun PortableDataSettings(
     }
     AccountSettingsDialog(accountState.dialog, viewModel, externalLinks)
     homeState.aquariumEditor?.let { editor -> AquariumEditorDialog(editor, viewModel) }
+    if (showHabitants) {
+        val encyclopedia by produceState<List<Species>>(emptyList()) {
+            value = try { loadEncyclopedia() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() }
+        }
+        HabitantsSheet(
+            groups = homeState.inhabitants,
+            encyclopedia = encyclopedia,
+            language = remember { Locale.getDefault().language },
+            onRemove = viewModel::removeInhabitants,
+            onAdd = {
+                showHabitants = false
+                viewModel.openAddInhabitant()
+            },
+            onDismiss = { showHabitants = false },
+        )
+    }
 }
 
 private fun LazyListScope.moreSection(title: StringResource, rows: LazyListScope.() -> Unit) {
@@ -744,6 +781,7 @@ private fun PortableDataMessage(state: PortableDataUiState) {
         PortableImportProblem.INVALID_EVENTS -> Res.string.portable_problem_events
         PortableImportProblem.INVALID_TASKS -> Res.string.portable_problem_tasks
         PortableImportProblem.INVALID_OCCURRENCES -> Res.string.portable_problem_occurrences
+        PortableImportProblem.INVALID_INHABITANTS -> Res.string.portable_problem_inhabitants
         PortableImportProblem.ACCOUNT_LINKED -> Res.string.portable_problem_account_linked
         PortableImportProblem.DATABASE_WRITE_FAILED -> Res.string.portable_problem_database
         null -> when (state.message) {

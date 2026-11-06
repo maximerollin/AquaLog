@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.shared
 
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.decodeFromString
@@ -8,6 +9,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import java.nio.file.Files
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -39,7 +41,8 @@ class PortableDataServiceTest {
                 "maintenanceActions": [],
                 "events": [],
                 "tasks": [],
-                "taskOccurrences": []
+                "taskOccurrences": [],
+                "inhabitants": []
             }
             """.trimIndent(),
             fixture.service.export(),
@@ -205,6 +208,68 @@ class PortableDataServiceTest {
         val target = portableFixture()
         assertIs<PortableImportResult.Imported>(target.service.importData(legacy))
         assertEquals(exported, target.service.export())
+
+        source.close()
+        target.close()
+    }
+
+    @Test
+    fun `round trip restores inhabitants with their history and a file without the key imports none`() = runTest {
+        val source = portableFixture()
+        val aquarium = source.repository.createPortableAquarium("Amazonien", 120.0)
+        val group = source.repository.addInhabitant(aquarium.id, "neon", null, DrawingFamily.TETRA, 10)
+        source.repository.removeInhabitants(group.id, 2)
+        source.repository.addInhabitant(aquarium.id, null, "Poisson maison", DrawingFamily.CICHLID, 1)
+        val exported = source.service.export()
+
+        val restored = portableFixture()
+        restored.repository.createPortableAquarium("Replaced", 20.0).let {
+            restored.repository.addInhabitant(it.id, "guppy", null, DrawingFamily.LIVEBEARER, 3)
+        }
+        assertIs<PortableImportResult.Imported>(restored.service.importData(exported))
+
+        assertEquals(exported, restored.service.export())
+        assertEquals(
+            source.repository.observeInhabitantHistory(null).first(),
+            restored.repository.observeInhabitantHistory(null).first(),
+        )
+        assertEquals(9, restored.repository.observeInhabitants(aquarium.id).first().sumOf { it.count })
+
+        val legacy = JsonObject(Json.parseToJsonElement(exported).jsonObject.filterKeys { it != "inhabitants" }).toString()
+        val target = portableFixture()
+        assertIs<PortableImportResult.Imported>(target.service.importData(legacy))
+        assertEquals(emptyList(), target.repository.observeInhabitantHistory(null).first())
+
+        source.close()
+        restored.close()
+        target.close()
+    }
+
+    @Test
+    fun `import rejects an invalid inhabitant`() = runTest {
+        val source = portableFixture()
+        val aquarium = source.repository.createPortableAquarium("Amazonien", 120.0)
+        source.repository.addInhabitant(aquarium.id, "neon", null, DrawingFamily.TETRA, 10)
+        val document = TEST_JSON.decodeFromString<PortableDataDocument>(source.service.export())
+        val target = portableFixture()
+
+        listOf<(PortableInhabitant) -> PortableInhabitant>(
+            { it.copy(aquariumId = "missing") },
+            { it.copy(count = 0) },
+            { it.copy(family = "DRAGON") },
+            { it.copy(speciesId = null, customName = " ") },
+            { it.copy(removedAtEpochMillis = it.addedAtEpochMillis - 1) },
+        ).forEach { corrupt ->
+            val invalid = document.copy(inhabitants = document.inhabitants.map(corrupt))
+            val result = assertIs<PortableImportResult.Rejected>(
+                target.service.importData(TEST_JSON.encodeToString(invalid)),
+            )
+            assertEquals(PortableImportProblem.INVALID_INHABITANTS, result.problem)
+        }
+
+        val blankName = document.copy(inhabitants = document.inhabitants.map { it.copy(customName = " ") })
+        assertIs<PortableImportResult.Imported>(target.service.importData(TEST_JSON.encodeToString(blankName)))
+        assertEquals(null, target.repository.observeInhabitantHistory(null).first().single().customName)
 
         source.close()
         target.close()
