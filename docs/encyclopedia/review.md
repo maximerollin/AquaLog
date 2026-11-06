@@ -92,7 +92,7 @@ Identifiant `guppy`, Wikidata [Q178202](https://www.wikidata.org/wiki/Q178202). 
 | Température | 23 – 28 °C | [fr](https://fr.wikipedia.org/wiki/Poecilia_reticulata), [de](https://de.wikipedia.org/wiki/Guppy), [en](https://en.wikipedia.org/wiki/Guppy) | fr (tableau) : 23–28 °C, (texte) 24–25 ; de : 24–26 optimal ; en : 25,5–27,8 |
 | GH | 9 – 20 °d | [fr](https://fr.wikipedia.org/wiki/Poecilia_reticulata), [en](https://en.wikipedia.org/wiki/Guppy) | fr : GH 9–12 ; en : préfère l'eau dure. Borne haute 20 : choix de notre part |
 | KH | 4 – 12 °d | [fr](https://fr.wikipedia.org/wiki/Poecilia_reticulata) | fr : KH 4–7. Borne haute 12 : choix de notre part |
-| Volume minimum | 60 L | [fr](https://fr.wikipedia.org/wiki/Poecilia_reticulata) | fr : 100 L minimum pour un trio. choix de notre part : 60 L, à trancher |
+| Volume minimum | 60 L | [fr](https://fr.wikipedia.org/wiki/Poecilia_reticulata) | fr : 100 L minimum pour un trio. choix de notre part : 60 L, tranché par Maxime (2026-11-06) |
 | Taille adulte | 6 cm | [fr](https://fr.wikipedia.org/wiki/Poecilia_reticulata), [en](https://en.wikipedia.org/wiki/Guppy), [de](https://de.wikipedia.org/wiki/Guppy) | femelle — fr (texte) : 5–7 cm, (tableau) 6–10 cm selon les variétés ; en : 3–7 cm ; de : plus de 6 cm. choix de notre part : 6 |
 | Groupe minimum | 3 | [fr](https://fr.wikipedia.org/wiki/Poecilia_reticulata) | fr : au moins deux femelles pour un mâle (un trio) |
 | Durée de vie | 3 ans | [fr](https://fr.wikipedia.org/wiki/Poecilia_reticulata), [en](https://en.wikipedia.org/wiki/Guppy) | fr : environ 3 ans ; en : ~2 ans dans la nature |
@@ -189,7 +189,7 @@ Identifiant `betta`, Wikidata [Q549](https://www.wikidata.org/wiki/Q549). Tempé
 | Taille adulte | 6,5 cm | [en](https://en.wikipedia.org/wiki/Siamese_fighting_fish), [de](https://de.wikipedia.org/wiki/Siamesischer_Kampffisch), [fr](https://fr.wikipedia.org/wiki/Combattant) | en : 6–8 cm ; de : 5–7 cm ; fr (infobox) : 5–8 cm |
 | Groupe minimum | 1 | [en](https://en.wikipedia.org/wiki/Siamese_fighting_fish) | en : les mâles maintenus ensemble se battent, souvent à mort |
 | Durée de vie | 3 ans | [de](https://de.wikipedia.org/wiki/Siamesischer_Kampffisch) | de : environ 3 ans au maximum |
-| Comportement | `TERRITORIAL`, `LONG_FINS`, `FIN_NIPPER` | [en](https://en.wikipedia.org/wiki/Siamese_fighting_fish), [fr](https://fr.wikipedia.org/wiki/Combattant), [guppy](https://fr.wikipedia.org/wiki/Poecilia_reticulata) | en : très territorial ; « agressif seulement envers les poissons plus petits et plus lents, comme les guppys » ; fr : territorial ; fr (guppy) : le guppy « cohabite mal » avec les combattants (l'article n'attribue le grignotage des caudales qu'aux poissons rouges). `FIN_NIPPER` : choix de notre part, à valider, appuyé seulement sur la phrase de en sur l'agressivité envers les poissons plus petits et plus lents comme les guppys. Pas d'`EATS_SHRIMP` (il chasse souvent les petites crevettes) : à trancher par Maxime |
+| Comportement | `TERRITORIAL`, `LONG_FINS`, `FIN_NIPPER` | [en](https://en.wikipedia.org/wiki/Siamese_fighting_fish), [fr](https://fr.wikipedia.org/wiki/Combattant), [guppy](https://fr.wikipedia.org/wiki/Poecilia_reticulata) | en : très territorial ; « agressif seulement envers les poissons plus petits et plus lents, comme les guppys » ; fr : territorial ; fr (guppy) : le guppy « cohabite mal » avec les combattants (l'article n'attribue le grignotage des caudales qu'aux poissons rouges). `FIN_NIPPER` : choix de notre part, validé par Maxime (2026-11-06), appuyé seulement sur la phrase de en sur l'agressivité envers les poissons plus petits et plus lents comme les guppys. Pas d'`EATS_SHRIMP` (il chasse souvent les petites crevettes, mais le tag rendrait aussi l'Amano « déconseillée ») : tranché par Maxime (2026-11-06) |
 | Régime | `CARNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `LABYRINTH`, `SLOW`, `SURFACE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#C2185B` | _aucune_ | choix de notre part : teinte dominante |
@@ -278,9 +278,9 @@ Identifiant `scalaire`, Wikidata [Q827441](https://www.wikidata.org/wiki/Q827441
 | Température | 25 – 28 °C | [fr](https://fr.wikipedia.org/wiki/Scalaire_%28poisson%29), [en](https://en.wikipedia.org/wiki/Pterophyllum_scalare) | fr (texte) : 25–28 °C, (infobox) 26–27 ; en : 26–30 dans la nature |
 | GH | 3 – 12 °d | [en](https://en.wikipedia.org/wiki/Pterophyllum_scalare), [fr](https://fr.wikipedia.org/wiki/Scalaire_%28poisson%29) | en : GH 3–10 dans la nature ; fr (infobox) : 5–12, (texte) 5–10. choix de notre part : 3–12 |
 | KH | 1 – 8 °d | _aucune_ | aucune source chiffrée. choix de notre part |
-| Volume minimum | 200 L | [fr](https://fr.wikipedia.org/wiki/Scalaire_%28poisson%29) | fr : 360 L pour un groupe de 6 (strict minimum). choix de notre part : 200 L, bac haut, pour un couple ; à trancher |
+| Volume minimum | 200 L | [fr](https://fr.wikipedia.org/wiki/Scalaire_%28poisson%29) | fr : 360 L pour un groupe de 6 (strict minimum). choix de notre part : 200 L, bac haut, pour un couple ; tranché par Maxime (2026-11-06) |
 | Taille adulte | 15 cm | [fr](https://fr.wikipedia.org/wiki/Scalaire_%28poisson%29) | fr : 12–15 cm de long, 18–20 cm de haut |
-| Groupe minimum | 2 | [fr](https://fr.wikipedia.org/wiki/Scalaire_%28poisson%29) | fr : vit en groupe de 6 au minimum ; des couples se forment à l'âge adulte. choix de notre part : 2 (un couple) ; à trancher |
+| Groupe minimum | 2 | [fr](https://fr.wikipedia.org/wiki/Scalaire_%28poisson%29) | fr : vit en groupe de 6 au minimum ; des couples se forment à l'âge adulte. choix de notre part : 2 (un couple) ; tranché par Maxime (2026-11-06) |
 | Durée de vie | 10 ans | [fr](https://fr.wikipedia.org/wiki/Scalaire_%28poisson%29) | fr : 10 ans en moyenne, jusqu'à 15 |
 | Comportement | `EATS_SMALL_FISH`, `EATS_SHRIMP`, `LONG_FINS`, `TERRITORIAL` | [fr](https://fr.wikipedia.org/wiki/Scalaire_%28poisson%29) | fr : « dévorent volontiers les petits poissons de moins de 4 cm » et les petites crevettes ; grandes nageoires fragiles ; grégaire et territorial (infobox) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
@@ -340,7 +340,7 @@ Identifiant `danio-zebre`, Wikidata [Q169444](https://www.wikidata.org/wiki/Q169
 | Température | 20 – 26 °C | [fr](https://fr.wikipedia.org/wiki/Danio_rerio), [de](https://de.wikipedia.org/wiki/Zebrab%C3%A4rbling) | fr (texte) : 17–23 °C (optimum 20), (infobox) 22–24 ; de : possible dès 18–20 °C. choix de notre part : 20–26 |
 | GH | 5 – 20 °d | [fr](https://fr.wikipedia.org/wiki/Danio_rerio) | fr (infobox) : 5–12, (texte) 0–25. choix de notre part : 5–20 |
 | KH | 3 – 12 °d | _aucune_ | aucune source chiffrée. choix de notre part |
-| Volume minimum | 60 L | [fr](https://fr.wikipedia.org/wiki/Danio_rerio) | fr (infobox) : 100 L, (texte) 80 cm de long minimum. choix de notre part : 60 L, à trancher |
+| Volume minimum | 60 L | [fr](https://fr.wikipedia.org/wiki/Danio_rerio) | fr (infobox) : 100 L, (texte) 80 cm de long minimum. choix de notre part : 60 L, tranché par Maxime (2026-11-06) |
 | Taille adulte | 5 cm | [en](https://en.wikipedia.org/wiki/Zebrafish), [fr](https://fr.wikipedia.org/wiki/Danio_rerio), [de](https://de.wikipedia.org/wiki/Zebrab%C3%A4rbling) | 4–5 cm |
 | Groupe minimum | 8 | [de](https://de.wikipedia.org/wiki/Zebrab%C3%A4rbling) | de : groupes d'au moins huit |
 | Durée de vie | 3 ans | [en](https://en.wikipedia.org/wiki/Zebrafish) | en : 2–3 ans en captivité, plus de 5 dans de bonnes conditions |
@@ -371,7 +371,7 @@ Identifiant `rasbora-arlequin`, Wikidata [Q28599939](https://www.wikidata.org/wi
 | Température | 22 – 27 °C | [en](https://en.wikipedia.org/wiki/Harlequin_rasbora), [fr](https://fr.wikipedia.org/wiki/Rasbora_arlequin) | en : 22–27 °C usuel (21–28 supporté) ; fr (infobox) : 24–28 |
 | GH | 2 – 12 °d | [fr](https://fr.wikipedia.org/wiki/Rasbora_arlequin), [en](https://en.wikipedia.org/wiki/Harlequin_rasbora) | fr (infobox) : 2–12 ; en : 0–15 °dH |
 | KH | 1 – 6 °d | _aucune_ | aucune source chiffrée. choix de notre part |
-| Volume minimum | 60 L | [fr](https://fr.wikipedia.org/wiki/Rasbora_arlequin) | fr (infobox) : 80 L. choix de notre part : 60 L, à trancher |
+| Volume minimum | 60 L | [fr](https://fr.wikipedia.org/wiki/Rasbora_arlequin) | fr (infobox) : 80 L. choix de notre part : 60 L, tranché par Maxime (2026-11-06) |
 | Taille adulte | 4,5 cm | [en](https://en.wikipedia.org/wiki/Harlequin_rasbora), [fr](https://fr.wikipedia.org/wiki/Rasbora_arlequin) | en : 4–4,5 cm (LS), jusqu'à 5,1 ; fr : 4–5 cm |
 | Groupe minimum | 6 | [en](https://en.wikipedia.org/wiki/Harlequin_rasbora) | en : groupe de six au minimum |
 | Durée de vie | 5 ans | [en](https://en.wikipedia.org/wiki/Harlequin_rasbora) | en : 5–8 ans |
@@ -402,7 +402,7 @@ Identifiant `red-cherry`, Wikidata [Q119167133](https://www.wikidata.org/wiki/Q1
 | Température | 20 – 26 °C | [it](https://it.wikipedia.org/wiki/Neocaridina_davidi), [es](https://es.wikipedia.org/wiki/Neocaridina_davidi) | it : 20–25 °C ; es : ne se reproduit pas sous 18 °C. Borne haute 26 : choix de notre part |
 | GH | 6 – 15 °d | [it](https://it.wikipedia.org/wiki/Neocaridina_davidi), [es](https://es.wikipedia.org/wiki/Neocaridina_davidi) | it : GH 8–15 ; es : survit à GH 1–20. choix de notre part : 6–15 |
 | KH | 2 – 10 °d | [it](https://it.wikipedia.org/wiki/Neocaridina_davidi), [es](https://es.wikipedia.org/wiki/Neocaridina_davidi) | it : KH 6–10 ; es : survit à KH 1–20. choix de notre part : 2–10 |
-| Volume minimum | 20 L | [it](https://it.wikipedia.org/wiki/Neocaridina_davidi) | it : 30–40 L pour un petit groupe. choix de notre part : 20 L, à trancher |
+| Volume minimum | 20 L | [it](https://it.wikipedia.org/wiki/Neocaridina_davidi) | it : 30–40 L pour un petit groupe. choix de notre part : 20 L, tranché par Maxime (2026-11-06) |
 | Taille adulte | 3 cm | [fr](https://fr.wikipedia.org/wiki/Neocaridina_davidi), [it](https://it.wikipedia.org/wiki/Neocaridina_davidi), [en](https://en.wikipedia.org/wiki/Neocaridina_davidi) | fr : femelles 2,5 cm, jusqu'à 4 ; it : 2,5–3,5 cm ; en : 3–4 cm |
 | Groupe minimum | 10 | _aucune_ | aucune source. choix de notre part : colonie de 10 |
 | Durée de vie | 2 ans | [en](https://en.wikipedia.org/wiki/Neocaridina_davidi), [de](https://de.wikipedia.org/wiki/R%C3%BCckenstrichgarnele) | en : 1–2 ans ; de : environ 1,5 an |
@@ -436,7 +436,7 @@ Identifiant `amano`, Wikidata [Q609311](https://www.wikidata.org/wiki/Q609311). 
 | Volume minimum | 30 L | _aucune_ | aucune source. choix de notre part, à vérifier en priorité |
 | Taille adulte | 5 cm | [fr](https://fr.wikipedia.org/wiki/Caridina_multidentata), [it](https://it.wikipedia.org/wiki/Caridina_multidentata) | fr : 4–5 cm ; it : jusqu'à 5 cm |
 | Groupe minimum | 3 | _aucune_ | aucune source. choix de notre part |
-| Durée de vie | 3 ans | [de](https://de.wikipedia.org/wiki/Yamatonuma-Garnele) | de : jusqu'à 15 ans en aquarium. choix de notre part : 3 ans ; à trancher |
+| Durée de vie | 5 ans | [de](https://de.wikipedia.org/wiki/Yamatonuma-Garnele) | de : jusqu'à 15 ans en aquarium. 15 ans est un record. choix de notre part : 5 ans ; tranché par Maxime (2026-11-06) |
 | Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Caridina_multidentata), [it](https://it.wikipedia.org/wiki/Caridina_multidentata) | en : mangeuse d'algues ; it : caractère souvent agressif envers les autres caridines. `PEACEFUL` : choix de notre part |
 | Régime | `ALGAE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `SHRIMP`, `CRAWL`, `BOTTOM` | _aucune_ | choix de notre part (affichage) |
