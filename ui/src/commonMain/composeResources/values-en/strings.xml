@@ -180,7 +180,7 @@
     <string name="settings_placeholder">Account, units and appearance settings will be added in their dedicated slices.</string>
     <string name="feedback_title">Send feedback</string>
     <string name="send_feedback">Send feedback</string>
-    <string name="feedback_privacy_explanation">Your message, its type, the app version and its language (and the species for a fiche) are sent. Without an account, a random device identifier limits how many messages can be sent. Aquagenda never attaches your water values, notes, Aquarium names, photos, email address or analytics identifiers.</string>
+    <string name="feedback_privacy_explanation">Your message, its type, the app version and its language (and the species, when reporting from a species page) are sent. Without an account, a random device identifier limits how many messages can be sent. Aquagenda never attaches your water values, notes, Aquarium names, photos, email address or analytics identifiers.</string>
     <string name="feedback_message_label">Feedback message</string>
     <string name="feedback_character_count">%1$d/2000</string>
     <string name="feedback_sent">Message sent. Thank you.</string>
@@ -566,7 +566,7 @@
     <plurals name="habitants_fact_lifespan"><item quantity="one">Lifespan: %1$d year</item><item quantity="other">Lifespan: %1$d years</item></plurals>
     <string name="feedback_kind_bug">Bug</string>
     <string name="feedback_kind_translation">Translation error</string>
-    <string name="feedback_kind_species">Fiche error</string>
+    <string name="feedback_kind_species">Species page error</string>
     <string name="feedback_kind_idea">Idea</string>
     <string name="feedback_kind_other">Other</string>
     <string name="feedback_species_line">Species: %1$s</string>
