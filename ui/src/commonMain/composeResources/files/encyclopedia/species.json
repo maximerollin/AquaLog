@@ -634,5 +634,972 @@
     "zone": "BOTTOM",
     "color": 4290091885,
     "drawing": "species_otocinclus"
+  },
+  {
+    "id": "neon-noir",
+    "wikidata": "Q265081",
+    "scientificName": "Hyphessobrycon herbertaxelrodi",
+    "names": {
+      "fr": "Néon noir",
+      "en": "Black neon tetra",
+      "de": "Schwarzer Neon",
+      "it": "Neon nero",
+      "es": "Tetra neón negro"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 4.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 3.5,
+    "minGroup": 10,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4282269246,
+    "drawing": null
+  },
+  {
+    "id": "tetra-nez-rouge",
+    "wikidata": "Q110858627",
+    "scientificName": "Hemigrammus bleheri",
+    "names": {
+      "fr": "Tétra nez rouge",
+      "en": "Red-nosed Tetra",
+      "de": "Rotnasensalmler",
+      "it": "Tetra naso rosso",
+      "es": "Tetra nariz roja"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 1.0,
+      "max": 8.0
+    },
+    "kh": {
+      "min": 0.0,
+      "max": 4.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 5.0,
+    "minGroup": 10,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4293227379,
+    "drawing": null
+  },
+  {
+    "id": "tetra-citron",
+    "wikidata": "Q206507",
+    "scientificName": "Hyphessobrycon pulchripinnis",
+    "names": {
+      "fr": "Tétra citron",
+      "en": "Lemon tetra",
+      "de": "Zitronensalmler",
+      "it": "Tetra limone",
+      "es": "Tetra limón"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 4.5,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4294565963,
+    "drawing": null
+  },
+  {
+    "id": "tetra-serpae",
+    "wikidata": "Q629430",
+    "scientificName": "Hyphessobrycon eques",
+    "names": {
+      "fr": "Tétra serpae",
+      "en": "Serpae tetra",
+      "de": "Blutsalmler",
+      "it": "Tetra serpae",
+      "es": "Tetra serpae"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 4.5,
+    "minGroup": 8,
+    "tags": [
+      "FIN_NIPPER"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4292363029,
+    "drawing": null
+  },
+  {
+    "id": "tetra-ember",
+    "wikidata": "Q923185",
+    "scientificName": "Hyphessobrycon amandae",
+    "names": {
+      "fr": "Tétra amande",
+      "en": "Ember tetra",
+      "de": "Funkensalmler",
+      "it": "Tetra ember",
+      "es": "Tetra ember"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 2.0,
+    "minGroup": 10,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 3,
+    "zone": "MIDDLE",
+    "color": 4294929664,
+    "drawing": null
+  },
+  {
+    "id": "tetra-empereur",
+    "wikidata": "Q239480",
+    "scientificName": "Nematobrycon palmeri",
+    "names": {
+      "fr": "Tétra-empereur",
+      "en": "Emperor tetra",
+      "de": "Kaisersalmler",
+      "it": "Tetra imperatore",
+      "es": "Tetra emperador"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 6.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 5.0,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4282339765,
+    "drawing": null
+  },
+  {
+    "id": "tetra-diamant",
+    "wikidata": "Q13222859",
+    "scientificName": "Moenkhausia pittieri",
+    "names": {
+      "fr": "Tétra diamant",
+      "en": "Diamond tetra",
+      "de": "Brillantsalmler",
+      "it": "Tetra diamante",
+      "es": "Tetra diamante"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 4.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 6.0,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4289773253,
+    "drawing": null
+  },
+  {
+    "id": "tetra-congo",
+    "wikidata": "Q530817",
+    "scientificName": "Phenacogrammus interruptus",
+    "names": {
+      "fr": "Tétra du Congo",
+      "en": "Congo tetra",
+      "de": "Blauer Kongosalmler",
+      "it": "Tetra del Congo",
+      "es": "Tetra del Congo"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 200,
+    "adultSizeCm": 9.0,
+    "minGroup": 10,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "MIDDLE",
+    "color": 4282557941,
+    "drawing": null
+  },
+  {
+    "id": "tetra-veuve-noire",
+    "wikidata": "Q519849",
+    "scientificName": "Gymnocorymbus ternetzi",
+    "names": {
+      "fr": "Tétra veuve noire",
+      "en": "Black tetra",
+      "de": "Trauermantelsalmler",
+      "it": "Tetra nero",
+      "es": "Tetra negro"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 6.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4284572001,
+    "drawing": null
+  },
+  {
+    "id": "tetra-cuivre",
+    "wikidata": "Q855167",
+    "scientificName": "Hasemania nana",
+    "names": {
+      "fr": "Tétra cuivré",
+      "en": "Silvertip tetra",
+      "de": "Kupfersalmler",
+      "it": "Tetra rame",
+      "es": "Tetra cobre"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.2,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 6.0
+    },
+    "minVolumeLiters": 50,
+    "adultSizeCm": 4.5,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4292125260,
+    "drawing": null
+  },
+  {
+    "id": "pristella",
+    "wikidata": "Q540539",
+    "scientificName": "Pristella maxillaris",
+    "names": {
+      "fr": "Pristella",
+      "en": "Pristella tetra",
+      "de": "Sternflecksalmler",
+      "it": "Pristella",
+      "es": "Pristella"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 4.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 4.5,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4291673994,
+    "drawing": null
+  },
+  {
+    "id": "tetra-buenos-aires",
+    "wikidata": "Q1687707",
+    "scientificName": "Hyphessobrycon anisitsi",
+    "names": {
+      "fr": "Tétra de Buenos Aires",
+      "en": "Buenos Aires tetra",
+      "de": "Rautenflecksalmler",
+      "it": "Tetra di Buenos Aires",
+      "es": "Tetra de Buenos Aires"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 7.0,
+    "minGroup": 6,
+    "tags": [
+      "FIN_NIPPER",
+      "EATS_PLANTS"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4287669422,
+    "drawing": null
+  },
+  {
+    "id": "tetra-lumiere",
+    "wikidata": "Q844602",
+    "scientificName": "Hemigrammus erythrozonus",
+    "names": {
+      "fr": "Néon rose",
+      "en": "Glowlight Tetra",
+      "de": "Glühlichtsalmler",
+      "it": "Neon rosa",
+      "es": "Tetra luz"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 6.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 4.0,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4294937189,
+    "drawing": null
+  },
+  {
+    "id": "tetra-fantome-noir",
+    "wikidata": "Q912897",
+    "scientificName": "Hyphessobrycon megalopterus",
+    "names": {
+      "fr": "Tétra fantôme noir",
+      "en": "Black phantom tetra",
+      "de": "Schwarzer Phantomsalmler",
+      "it": "Tetra fantasma nero",
+      "es": "Tetra fantasma negro"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 18.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 4.5,
+    "minGroup": 10,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4283723386,
+    "drawing": null
+  },
+  {
+    "id": "poisson-crayon",
+    "wikidata": "Q582640",
+    "scientificName": "Nannostomus beckfordi",
+    "names": {
+      "fr": "Poisson-crayon",
+      "en": "Golden pencilfish",
+      "de": "Längsbandziersalmler",
+      "it": "Pesce matita",
+      "es": "Pez lápiz"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 5.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 6.0,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4291070527,
+    "drawing": null
+  },
+  {
+    "id": "nannostomus-marginatus",
+    "wikidata": "Q244445",
+    "scientificName": "Nannostomus marginatus",
+    "names": {
+      "fr": "Nannostomus marginatus",
+      "en": "Dwarf pencilfish",
+      "de": "Zwergziersalmler",
+      "it": "Nannostomus marginatus",
+      "es": "Nannostomus marginatus"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 4.0
+    },
+    "minVolumeLiters": 40,
+    "adultSizeCm": 3.5,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4291070527,
+    "drawing": null
+  },
+  {
+    "id": "poisson-hachette",
+    "wikidata": "Q430284",
+    "scientificName": "Carnegiella strigata",
+    "names": {
+      "fr": "Poisson-hachette",
+      "en": "Marbled hatchetfish",
+      "de": "Marmorierter Beilbauchfisch",
+      "it": "Pesce ascia",
+      "es": "Pez hacha"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 5.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 3.5,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "CARNIVORE",
+    "lifespanYears": 4,
+    "zone": "SURFACE",
+    "color": 4289765520,
+    "drawing": null
+  },
+  {
+    "id": "neon-vert",
+    "wikidata": "Q882676",
+    "scientificName": "Paracheirodon simulans",
+    "names": {
+      "fr": "Faux tétra néon",
+      "en": "Green neon tetra",
+      "de": "Blauer Neon",
+      "it": "Neon verde",
+      "es": "Tetra neón verde"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 5.0,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 1.0,
+      "max": 8.0
+    },
+    "kh": {
+      "min": 0.0,
+      "max": 4.0
+    },
+    "minVolumeLiters": 54,
+    "adultSizeCm": 2.5,
+    "minGroup": 10,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4281245327,
+    "drawing": null
+  },
+  {
+    "id": "tetra-pingouin",
+    "wikidata": "Q979948",
+    "scientificName": "Thayeria boehlkei",
+    "names": {
+      "fr": "Poisson-pingouin",
+      "en": "Blackline penguinfish",
+      "de": "Schrägschwimmer",
+      "it": "Pesce pinguino",
+      "es": "Pez pingüino"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 6.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "SURFACE",
+    "color": 4287466893,
+    "drawing": null
+  },
+  {
+    "id": "tetra-feu-de-position",
+    "wikidata": "Q257894",
+    "scientificName": "Hemigrammus ocellifer",
+    "names": {
+      "fr": "Feu de position",
+      "en": "Head-and-taillight tetra",
+      "de": "Schlusslichtsalmler",
+      "it": "Tetra feu di posizione",
+      "es": "Tetra luz de posición"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 6.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 4.5,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4290291578,
+    "drawing": null
+  },
+  {
+    "id": "tetra-flamme",
+    "wikidata": "Q969545",
+    "scientificName": "Hyphessobrycon flammeus",
+    "names": {
+      "fr": "Tétra de Rio",
+      "en": "Flame tetra",
+      "de": "Roter von Rio",
+      "it": "Tetra fiamma",
+      "es": "Tetra llama"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 14.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 3.5,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4293282329,
+    "drawing": null
+  },
+  {
+    "id": "tetra-nageoires-rouges",
+    "wikidata": "Q1505634",
+    "scientificName": "Aphyocharax anisitsi",
+    "names": {
+      "fr": "Nageoires sanglantes",
+      "en": "Bloodfin tetra",
+      "de": "Rotflossensalmler",
+      "it": "Pinne rosse",
+      "es": "Tetra aleta roja"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 20.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 5.0,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4291259230,
+    "drawing": null
+  },
+  {
+    "id": "tetra-yeux-rouges",
+    "wikidata": "Q1544489",
+    "scientificName": "Moenkhausia sanctaefilomenae",
+    "names": {
+      "fr": "Tétra aux yeux rouges",
+      "en": "Redeye tetra",
+      "de": "Rotaugen-Moenkhausia",
+      "it": "Moenkhausia sanctaefilomenae",
+      "es": "Tetra de ojo rojo"
+    },
+    "kind": "FISH",
+    "family": "TETRA",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 110,
+    "adultSizeCm": 6.0,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4289773253,
+    "drawing": null
   }
 ]
