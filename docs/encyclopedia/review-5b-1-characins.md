@@ -130,7 +130,7 @@ Identifiant `tetra-serpae`, Wikidata [Q629430](https://www.wikidata.org/wiki/Q62
 | Taille adulte | 4,5 cm | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_eques), [en](https://en.wikipedia.org/wiki/Serpae_tetra) | fr : 4–5 cm (infobox), 4 cm en moyenne (texte) ; en : 4 cm de longueur standard |
 | Groupe minimum | 8 | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_eques), [de](https://de.wikipedia.org/wiki/Blutsalmler) | fr : grégaire ; de : grégaire mais besoin d'une distance entre congénères. choix de notre part : 8, un groupe nombreux calme les bagarres |
 | Durée de vie | 5 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `FIN_NIPPER` | [en](https://en.wikipedia.org/wiki/Serpae_tetra), [de](https://de.wikipedia.org/wiki/Blutsalmler) | en : « notoirement agressif » envers ses congénères et les autres poissons ; de : agressions entre congénères, parfois des nageoires mordues. `FIN_NIPPER` : à trancher (voir fin de fiche). Pas de `PEACEFUL`. Étiquettes : choix de notre part, à valider |
+| Comportement | `FIN_NIPPER` | [en](https://en.wikipedia.org/wiki/Serpae_tetra), [de](https://de.wikipedia.org/wiki/Blutsalmler) | en : « notoirement agressif » envers ses congénères et les autres poissons ; de : agressions entre congénères, parfois des nageoires mordues. `FIN_NIPPER` : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche). Pas de `PEACEFUL`. Étiquettes : choix de notre part, à valider |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_eques) | fr (infobox) : omnivore |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#D84315` | _aucune_ | choix de notre part : teinte dominante |
@@ -285,7 +285,7 @@ Identifiant `tetra-veuve-noire`, Wikidata [Q519849](https://www.wikidata.org/wik
 | Taille adulte | 6 cm | [fr](https://fr.wikipedia.org/wiki/Gymnocorymbus_ternetzi), [en](https://en.wikipedia.org/wiki/Black_tetra), [de](https://de.wikipedia.org/wiki/Trauermantelsalmler) | fr : jusqu'à 7 cm (femelle) ; en : 7,5 cm ; de : 5,5 cm. choix de notre part : 6 |
 | Groupe minimum | 6 | [fr](https://fr.wikipedia.org/wiki/Gymnocorymbus_ternetzi), [de](https://de.wikipedia.org/wiki/Trauermantelsalmler) | fr : 6 minimum, 10 bien plus approprié ; de : au moins 5 |
 | Durée de vie | 4 ans | [en](https://en.wikipedia.org/wiki/Black_tetra) | en : 3 à 5 ans en captivité |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Gymnocorymbus_ternetzi), [de](https://de.wikipedia.org/wiki/Trauermantelsalmler) | fr : paisible mais assez vif, agressif ou craintif en trop petit nombre ; de : paisible. `FIN_NIPPER` non retenu : à trancher. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Gymnocorymbus_ternetzi), [de](https://de.wikipedia.org/wiki/Trauermantelsalmler) | fr : paisible mais assez vif, agressif ou craintif en trop petit nombre ; de : paisible. `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé. Étiquettes : choix de notre part, à valider |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/Gymnocorymbus_ternetzi), [en](https://en.wikipedia.org/wiki/Black_tetra) | fr (infobox) : omnivore ; en : proies vivantes et surgelées acceptées |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#616161` | _aucune_ | choix de notre part : teinte dominante |
@@ -378,7 +378,7 @@ Identifiant `tetra-buenos-aires`, Wikidata [Q1687707](https://www.wikidata.org/w
 | Taille adulte | 7 cm | [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra) | en : jusqu'à 7,5 cm. choix de notre part : 7 |
 | Groupe minimum | 6 | [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra), [de](https://de.wikipedia.org/wiki/Rautenflecksalmler) | en : 5 ou plus réduit l'agressivité ; de : au moins 5. choix de notre part : 6 |
 | Durée de vie | 5 ans | [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra) | en : 5 à 6 ans |
-| Comportement | `FIN_NIPPER`, `EATS_PLANTS` | [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra) | en : mordille les nageoires longues des voisins s'il est mal nourri, grignote parfois les plantes. `FIN_NIPPER` et `EATS_PLANTS` : à trancher (voir fin de fiche). Étiquettes : choix de notre part, à valider |
+| Comportement | `FIN_NIPPER`, `EATS_PLANTS` | [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra) | en : mordille les nageoires longues des voisins s'il est mal nourri, grignote parfois les plantes. `FIN_NIPPER` et `EATS_PLANTS` : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche). Étiquettes : choix de notre part, à valider |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra) | en : omnivore |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#90A4AE` | _aucune_ | choix de notre part : teinte dominante |
@@ -719,23 +719,23 @@ Identifiant `tetra-yeux-rouges`, Wikidata [Q1544489](https://www.wikidata.org/wi
 | Taille adulte | 6 cm | [en](https://en.wikipedia.org/wiki/Redeye_tetra) | en : jusqu'à 7 cm. choix de notre part : 6 |
 | Groupe minimum | 8 | [de](https://de.wikipedia.org/wiki/Rotaugen-Moenkhausia) | de : moins de 8 est à éviter |
 | Durée de vie | 5 ans | [en](https://en.wikipedia.org/wiki/Redeye_tetra) | en : environ 5 ans |
-| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Redeye_tetra), [de](https://de.wikipedia.org/wiki/Rotaugen-Moenkhausia) | en : généralement paisible, mordille parfois les nageoires même en groupe ; de : paisible et facile à associer. `FIN_NIPPER` non retenu : à trancher. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Redeye_tetra), [de](https://de.wikipedia.org/wiki/Rotaugen-Moenkhausia) | en : généralement paisible, mordille parfois les nageoires même en groupe ; de : paisible et facile à associer. `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé. Étiquettes : choix de notre part, à valider |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#B0BEC5` | _aucune_ | choix de notre part : teinte dominante |
 
 Sources : [fr](https://fr.wikipedia.org/wiki/Moenkhausia_sanctaefilomenae) · [en](https://en.wikipedia.org/wiki/Redeye_tetra) · [de](https://de.wikipedia.org/wiki/Rotaugen-Moenkhausia)
 
-## Points à trancher
+## Points tranchés (Maxime, 2026-11-09 : tous les choix actuels sont gardés)
 
 Les étiquettes `FIN_NIPPER` et `EATS_PLANTS` pèsent le plus sur les verdicts. Un `FIN_NIPPER` rend « déconseillé » tout voisin portant `LONG_FINS` (en base aujourd'hui : guppy, combattant, scalaire) ; un `EATS_PLANTS` ne donne que « avec précautions » avec une plante.
 
 - **Tétra serpae** : `FIN_NIPPER` retenu (en et de le disent agressif). Effet : guppy, combattant et scalaire deviennent « Déconseillés » avec lui. À valider ou à retirer.
 - **Tétra de Buenos Aires** : `FIN_NIPPER` retenu (en : mordille les nageoires longues s'il est mal nourri). Même effet : guppy, combattant, scalaire « Déconseillés ». `EATS_PLANTS` retenu (en : grignote parfois les plantes) : « avec précautions » avec toute plante, aucun « Déconseillé ».
-- **Tétra de Buenos Aires, identité** : Wikidata (Q1687707) range *Hyphessobrycon anisitsi* sous « Buenos Aires tetra », mais, d'après notre connaissance du commerce, le « tétra de Buenos Aires » vendu en animalerie est souvent *Hemigrammus caudovittatus*, et l'article anglais décrit un poisson de 7,5 cm mordilleur. À trancher : garder cette fiche telle quelle, ou la remplacer par *Hemigrammus caudovittatus* (autre Q).
+- **Tétra de Buenos Aires, identité** : Wikidata (Q1687707) range *Hyphessobrycon anisitsi* sous « Buenos Aires tetra », mais, d'après notre connaissance du commerce, le « tétra de Buenos Aires » vendu en animalerie est souvent *Hemigrammus caudovittatus*, et l'article anglais décrit un poisson de 7,5 cm mordilleur. Tranché par Maxime (2026-11-09) : choix actuel gardé.
 - **Tétra veuve noire** : `FIN_NIPPER` non retenu (fr et de le disent paisible, mais agressif en trop petit groupe). S'il est ajouté : guppy, combattant, scalaire « Déconseillés ».
 - **Tétra aux yeux rouges** : `FIN_NIPPER` non retenu (en : mordille « parfois » même en groupe). S'il est ajouté : guppy, combattant, scalaire « Déconseillés ».
 - **Nageoires sanglantes** : `FIN_NIPPER` non retenu, choix de notre part sans source. S'il est ajouté : mêmes trois espèces « Déconseillées ».
-- **Faux tétra néon (*Paracheirodon simulans*)** : le nom français est l'alias Wikidata ; le nom courant « Néon vert » n'est donc pas dans la base. À trancher : le garder, ou prendre « Néon vert » comme nom (nom ajouté par nous), sans conflit avec « Néon bleu ».
-- **Tétra amande (*Hyphessobrycon amandae*)** : le nom français suit Wikipédia (« Tétra amande ») alors que l'identifiant est `tetra-ember`. À trancher : renommer en « Tétra ember » (nom ajouté par nous) si c'est le nom que vous préférez.
+- **Faux tétra néon (*Paracheirodon simulans*)** : le nom français est l'alias Wikidata ; le nom courant « Néon vert » n'est donc pas dans la base. Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Tétra amande (*Hyphessobrycon amandae*)** : le nom français suit Wikipédia (« Tétra amande ») alors que l'identifiant est `tetra-ember`. Tranché par Maxime (2026-11-09) : choix actuel gardé.
 

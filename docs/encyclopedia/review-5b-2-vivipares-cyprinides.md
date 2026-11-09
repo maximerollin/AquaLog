@@ -145,7 +145,7 @@ Identifiant `heterandria`, Wikidata [Q244221](https://www.wikidata.org/wiki/Q244
 
 | Langue | Nom | Origine |
 |---|---|---|
-| Français | Hétérandria | « nom ajouté par nous », à trancher (Wikidata ne donne que le nom scientifique) |
+| Français | Hétérandria | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (Wikidata ne donne que le nom scientifique) |
 | Anglais | Least killifish | Wikidata, libellé |
 | Allemand | Zwergkärpfling | Wikidata, libellé |
 | Italien | Heterandria | « nom ajouté par nous » |
@@ -191,8 +191,8 @@ Identifiant `poisson-rouge`, Wikidata [Q123141](https://www.wikidata.org/wiki/Q1
 | Volume minimum | 150 L | [fr](https://fr.wikipedia.org/wiki/Carassius_auratus) | fr : le bocal est dénoncé, grand aquarium ou bassin. Aucun volume chiffré. choix de notre part : 150 L, à vérifier en priorité |
 | Taille adulte | 20 cm | [fr](https://fr.wikipedia.org/wiki/Carassius_auratus), [en](https://en.wikipedia.org/wiki/Goldfish) | fr : 20 cm en moyenne (10–35) ; en : 12–22 cm, jusqu'à 41. choix de notre part : 20 |
 | Groupe minimum | 2 | [fr](https://fr.wikipedia.org/wiki/Carassius_auratus), [en](https://en.wikipedia.org/wiki/Goldfish) | fr : vit en bancs ; en : grégaire. choix de notre part : 2 |
-| Durée de vie | 20 ans | [fr](https://fr.wikipedia.org/wiki/Carassius_auratus) | fr : 30 ans en bonnes conditions, record de plus de 43. choix de notre part : 20 (valeur prudente), à trancher |
-| Comportement | `EATS_SMALL_FISH`, `EATS_SHRIMP`, `EATS_PLANTS` | [fr](https://fr.wikipedia.org/wiki/Carassius_auratus), [en](https://en.wikipedia.org/wiki/Goldfish) | fr : poisson résistant, omnivore à tendance insectivore ; en : « friendly » entre eux. `EATS_SMALL_FISH`, `EATS_SHRIMP` et `EATS_PLANTS` : à trancher (voir fin de fiche), aucune source ne les chiffre, choix de notre part. Pas de `PEACEFUL`. Étiquettes : choix de notre part, à valider |
+| Durée de vie | 20 ans | [fr](https://fr.wikipedia.org/wiki/Carassius_auratus) | fr : 30 ans en bonnes conditions, record de plus de 43. choix de notre part : 20 (valeur prudente), tranché par Maxime (2026-11-09), choix actuel gardé |
+| Comportement | `EATS_SMALL_FISH`, `EATS_SHRIMP`, `EATS_PLANTS` | [fr](https://fr.wikipedia.org/wiki/Carassius_auratus), [en](https://en.wikipedia.org/wiki/Goldfish) | fr : poisson résistant, omnivore à tendance insectivore ; en : « friendly » entre eux. `EATS_SMALL_FISH`, `EATS_SHRIMP` et `EATS_PLANTS` : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche), aucune source ne les chiffre, choix de notre part. Pas de `PEACEFUL`. Étiquettes : choix de notre part, à valider |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/Carassius_auratus) | fr : omnivore à tendance insectivore et détritivore |
 | Dessin, nage, zone | `CYPRINID`, `GLIDE`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#FF7043` | _aucune_ | choix de notre part : teinte dominante |
@@ -223,7 +223,7 @@ Identifiant `barbus-de-sumatra`, Wikidata [Q28599883](https://www.wikidata.org/w
 | Taille adulte | 6 cm | _aucune_ | aucune source chiffrée dans l'article lu. choix de notre part : 6, à vérifier en priorité |
 | Groupe minimum | 8 | [en](https://en.wikipedia.org/wiki/Tiger_barb) | en : 6 ou plus ; souvent agressifs en dessous de 5. choix de notre part : 8 |
 | Durée de vie | 5 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `FIN_NIPPER` | [en](https://en.wikipedia.org/wiki/Tiger_barb) | en : « known fin nippers », hiérarchie dans le banc. `FIN_NIPPER` : à trancher (voir fin de fiche). Pas de `PEACEFUL`. Étiquettes : choix de notre part, à valider |
+| Comportement | `FIN_NIPPER` | [en](https://en.wikipedia.org/wiki/Tiger_barb) | en : « known fin nippers », hiérarchie dans le banc. `FIN_NIPPER` : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche). Pas de `PEACEFUL`. Étiquettes : choix de notre part, à valider |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Tiger_barb) | en : omnivore |
 | Dessin, nage, zone | `CYPRINID`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#F9A825` | _aucune_ | choix de notre part : teinte dominante |
@@ -254,7 +254,7 @@ Identifiant `barbus-cerise`, Wikidata [Q637598](https://www.wikidata.org/wiki/Q6
 | Taille adulte | 5 cm | [de](https://de.wikipedia.org/wiki/Bitterlingsbarbe) | de : 4–5 cm |
 | Groupe minimum | 6 | [en](https://en.wikipedia.org/wiki/Cherry_barb) | en : 5 ou plus, hiérarchie dans le banc ; ratio de deux femelles par mâle. choix de notre part : 6 |
 | Durée de vie | 4 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `PEACEFUL` | [de](https://de.wikipedia.org/wiki/Bitterlingsbarbe), [fr](https://fr.wikipedia.org/wiki/Barbus_cerise) | de : très pacifique, bac communautaire, mais pas avec des poissons à longues nageoires (guppys, combattants) : ils tendent à leur mordre les nageoires ; fr : le mâle est ardent au frai. `FIN_NIPPER` non retenu : à trancher. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [de](https://de.wikipedia.org/wiki/Bitterlingsbarbe), [fr](https://fr.wikipedia.org/wiki/Barbus_cerise) | de : très pacifique, bac communautaire, mais pas avec des poissons à longues nageoires (guppys, combattants) : ils tendent à leur mordre les nageoires ; fr : le mâle est ardent au frai. `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé. Étiquettes : choix de notre part, à valider |
 | Régime | `OMNIVORE` | _aucune_ | aucune source chiffrée. choix de notre part |
 | Dessin, nage, zone | `CYPRINID`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#D32F2F` | _aucune_ | choix de notre part : teinte dominante |
@@ -316,7 +316,7 @@ Identifiant `barbus-rose`, Wikidata [Q844624](https://www.wikidata.org/wiki/Q844
 | Taille adulte | 8 cm | [fr](https://fr.wikipedia.org/wiki/Pethia_conchonius), [en](https://en.wikipedia.org/wiki/Rosy_barb), [de](https://de.wikipedia.org/wiki/Prachtbarbe) | fr : 15 cm, environ 8 en nature ; en : 10,2 cm ; de : 8 cm en aquarium. choix de notre part : 8 |
 | Groupe minimum | 6 | [fr](https://fr.wikipedia.org/wiki/Pethia_conchonius), [en](https://en.wikipedia.org/wiki/Rosy_barb) | fr : au moins 6 (5 autres) ; en : 5 ou plus. Retenu : 6 |
 | Durée de vie | 4 ans | [fr](https://fr.wikipedia.org/wiki/Pethia_conchonius), [en](https://en.wikipedia.org/wiki/Rosy_barb) | fr : environ 3 ans ; en : jusqu'à 5 ans. choix de notre part : 4 |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Pethia_conchonius), [en](https://en.wikipedia.org/wiki/Rosy_barb), [de](https://de.wikipedia.org/wiki/Prachtbarbe) | fr : très vifs, peuvent stresser les plus calmes ; en : paisible mais peut nipper les nageoires ; de : « friedlicher Schwarmfisch ». `FIN_NIPPER` non retenu : à trancher. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Pethia_conchonius), [en](https://en.wikipedia.org/wiki/Rosy_barb), [de](https://de.wikipedia.org/wiki/Prachtbarbe) | fr : très vifs, peuvent stresser les plus calmes ; en : paisible mais peut nipper les nageoires ; de : « friedlicher Schwarmfisch ». `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé. Étiquettes : choix de notre part, à valider |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Rosy_barb), [de](https://de.wikipedia.org/wiki/Prachtbarbe) | en : vers, insectes, crustacés, plantes ; de : idem |
 | Dessin, nage, zone | `CYPRINID`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#E57373` | _aucune_ | choix de notre part : teinte dominante |
@@ -393,11 +393,11 @@ Identifiant `danio-choprae`, Wikidata [Q1676526](https://www.wikidata.org/wiki/Q
 
 | Langue | Nom | Origine |
 |---|---|---|
-| Français | Danio choprae | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Français | Danio choprae | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 | Anglais | Glowlight danio | Wikidata, libellé |
 | Allemand | Rubinbärbling | Wikidata, libellé |
-| Italien | Danio choprae | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Danio choprae | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Danio choprae | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Danio choprae | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -439,7 +439,7 @@ Identifiant `rasbora-moustique`, Wikidata [Q2702953](https://www.wikidata.org/wi
 | Volume minimum | 30 L | _aucune_ | aucune source chiffrée. choix de notre part : 30 L (nano) |
 | Taille adulte | 2 cm | [fr](https://fr.wikipedia.org/wiki/Boraras_brigittae), [en](https://en.wikipedia.org/wiki/Boraras_brigittae) | fr : espèce miniaturisée, sans chiffre repris ici ; en : très petite. choix de notre part : 2 |
 | Groupe minimum | 10 | [de](https://de.wikipedia.org/wiki/Moskitob%C3%A4rbling) | de : « lebhafte Schwarmfische ». choix de notre part : 10 |
-| Durée de vie | 4 ans | [en](https://en.wikipedia.org/wiki/Boraras_brigittae) | en : jusqu'à 8 ans selon l'article, peu crédible pour ce genre. choix de notre part : 4, à trancher |
+| Durée de vie | 4 ans | [en](https://en.wikipedia.org/wiki/Boraras_brigittae) | en : jusqu'à 8 ans selon l'article, peu crédible pour ce genre. choix de notre part : 4, tranché par Maxime (2026-11-09), choix actuel gardé |
 | Comportement | `PEACEFUL` | [de](https://de.wikipedia.org/wiki/Moskitob%C3%A4rbling), [en](https://en.wikipedia.org/wiki/Boraras_brigittae) | de : très sensible au stress ; en : micro-prédateur de petits invertébrés. Étiquettes : choix de notre part, à valider |
 | Régime | `CARNIVORE` | [fr](https://fr.wikipedia.org/wiki/Boraras_brigittae), [en](https://en.wikipedia.org/wiki/Boraras_brigittae) | fr : carnivore, micro-prédateur ; en : insectes, vers, crustacés, zooplancton. Accepte aussi flocons : régime retenu CARNIVORE, choix de notre part |
 | Dessin, nage, zone | `CYPRINID`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
@@ -488,9 +488,9 @@ Identifiant `rasbora-nain`, Wikidata [Q765708](https://www.wikidata.org/wiki/Q76
 |---|---|---|
 | Français | Rasbora nain | « nom ajouté par nous » |
 | Anglais | Dwarf rasbora | « nom ajouté par nous » (titre de l'article Wikipédia) |
-| Allemand | Boraras maculatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Italien | Boraras maculatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Boraras maculatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Allemand | Boraras maculatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Italien | Boraras maculatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Boraras maculatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -517,7 +517,7 @@ Identifiant `vairon-de-chine`, Wikidata [Q1136461](https://www.wikidata.org/wiki
 
 | Langue | Nom | Origine |
 |---|---|---|
-| Français | Néon du pauvre | Wikidata, libellé ; l'identifiant est `vairon-de-chine`, à trancher |
+| Français | Néon du pauvre | Wikidata, libellé ; l'identifiant est `vairon-de-chine`, tranché par Maxime (2026-11-09), choix actuel gardé |
 | Anglais | White Cloud Mountain minnow | Wikidata, libellé |
 | Allemand | Kardinalfisch | Wikidata, libellé |
 | Italien | Pesce delle Montagne della Nuvola Bianca | Wikidata, alias |
@@ -626,7 +626,7 @@ Identifiant `mangeur-algues-siamois`, Wikidata [Q1570265](https://www.wikidata.o
 | Taille adulte | 14 cm | [fr](https://fr.wikipedia.org/wiki/Crossocheilus_oblongus), [en](https://en.wikipedia.org/wiki/Siamese_algae-eater), [de](https://de.wikipedia.org/wiki/Siamesische_R%C3%BCsselbarbe) | fr, en : 15 cm ; de : 10–16 cm. choix de notre part : 14 |
 | Groupe minimum | 3 | [de](https://de.wikipedia.org/wiki/Siamesische_R%C3%BCsselbarbe), [en](https://en.wikipedia.org/wiki/Siamese_algae-eater) | de : animaux de groupe ; en : vit en banc ou seul. choix de notre part : 3 |
 | Durée de vie | 10 ans | [fr](https://fr.wikipedia.org/wiki/Crossocheilus_oblongus), [en](https://en.wikipedia.org/wiki/Siamese_algae-eater), [de](https://de.wikipedia.org/wiki/Siamesische_R%C3%BCsselbarbe) | fr : 10 ans ; en : plus de 10 ans ; de : environ 9 ans. Retenu : 10 |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Crossocheilus_oblongus), [de](https://de.wikipedia.org/wiki/Siamesische_R%C3%BCsselbarbe), [en](https://en.wikipedia.org/wiki/Siamese_algae-eater) | fr : bonnes relations, poursuit parfois ses congénères ; de : très tolérant ; en : territoire entre congénères adultes. `TERRITORIAL` non retenu. Étiquettes : choix de notre part, à valider. Identité du nom commercial : à trancher (voir fin de fiche) |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Crossocheilus_oblongus), [de](https://de.wikipedia.org/wiki/Siamesische_R%C3%BCsselbarbe), [en](https://en.wikipedia.org/wiki/Siamese_algae-eater) | fr : bonnes relations, poursuit parfois ses congénères ; de : très tolérant ; en : territoire entre congénères adultes. `TERRITORIAL` non retenu. Étiquettes : choix de notre part, à valider. Identité du nom commercial : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche) |
 | Régime | `ALGAE` | [de](https://de.wikipedia.org/wiki/Siamesische_R%C3%BCsselbarbe), [en](https://en.wikipedia.org/wiki/Siamese_algae-eater) | de : algues en jeunesse, omnivore ; en : mange les algues rouges |
 | Dessin, nage, zone | `CYPRINID`, `GLIDE`, `BOTTOM` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#8D6E63` | _aucune_ | choix de notre part : teinte dominante |
@@ -657,7 +657,7 @@ Identifiant `barbus-requin`, Wikidata [Q187808](https://www.wikidata.org/wiki/Q1
 | Taille adulte | 30 cm | [fr](https://fr.wikipedia.org/wiki/Balantiocheilos_melanopterus), [de](https://de.wikipedia.org/wiki/Haibarbe) | fr : jusqu'à 50 cm en nature, rarement en captivité ; de : jusqu'à 40 cm. choix de notre part : 30 |
 | Groupe minimum | 5 | [en](https://en.wikipedia.org/wiki/Bala_shark) | en : au moins 3 en groupe. choix de notre part : 5 |
 | Durée de vie | 10 ans | [de](https://de.wikipedia.org/wiki/Haibarbe) | de : 9 à 10 ans, 13 ans observés |
-| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Bala_shark), [fr](https://fr.wikipedia.org/wiki/Balantiocheilos_melanopterus) | en : paisible, de banc, timide jeune ; fr : difficile, agressif dans un bac trop petit. `EATS_SMALL_FISH` non retenu : à trancher (voir fin de fiche). Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Bala_shark), [fr](https://fr.wikipedia.org/wiki/Balantiocheilos_melanopterus) | en : paisible, de banc, timide jeune ; fr : difficile, agressif dans un bac trop petit. `EATS_SMALL_FISH` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche). Étiquettes : choix de notre part, à valider |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Bala_shark) | en : crustacés, rotifères, insectes ; omnivore en bac, choix de notre part |
 | Dessin, nage, zone | `CYPRINID`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#B0BEC5` | _aucune_ | choix de notre part : teinte dominante |
@@ -705,7 +705,7 @@ Identifiant `barbus-schwanenfeldi`, Wikidata [Q2427972](https://www.wikidata.org
 |---|---|---|
 | Français | Barbus de Schwanenfeld | « nom ajouté par nous » |
 | Anglais | Tinfoil barb | Wikidata, libellé |
-| Allemand | Barbonymus schwanefeldii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Allemand | Barbonymus schwanefeldii | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 | Italien | Barbo di Schwanenfeld | Wikidata, alias |
 | Espagnol | Barbo de Schwanenfeld | « nom ajouté par nous » |
 
@@ -719,7 +719,7 @@ Identifiant `barbus-schwanenfeldi`, Wikidata [Q2427972](https://www.wikidata.org
 | Taille adulte | 30 cm | [en](https://en.wikipedia.org/wiki/Tinfoil_barb) | en : l'article avertit qu'il devient très grand, sans chiffre. choix de notre part : 30, à vérifier en priorité |
 | Groupe minimum | 5 | [en](https://en.wikipedia.org/wiki/Tinfoil_barb) | en : préfère plusieurs congénères. choix de notre part : 5 |
 | Durée de vie | 8 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Tinfoil_barb) | en : actif et paisible, à garder avec des poissons de taille égale ou supérieure (cichlidés comme l'oscar). `EATS_SMALL_FISH` et `EATS_PLANTS` non retenus, aucune source : à trancher. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Tinfoil_barb) | en : actif et paisible, à garder avec des poissons de taille égale ou supérieure (cichlidés comme l'oscar). `EATS_SMALL_FISH` et `EATS_PLANTS` non retenus, aucune source : tranché par Maxime (2026-11-09), choix actuel gardé. Étiquettes : choix de notre part, à valider |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Tinfoil_barb) | en : mange presque tout |
 | Dessin, nage, zone | `CYPRINID`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#CFD8DC` | _aucune_ | choix de notre part : teinte dominante |
@@ -756,7 +756,7 @@ Identifiant `danio-vert`, Wikidata [Q3760576](https://www.wikidata.org/wiki/Q376
 | Couleur | `#7CB342` | _aucune_ | choix de notre part : teinte dominante |
 
 Sources : [en](https://en.wikipedia.org/wiki/Microdevario_kubotai) · [de](https://de.wikipedia.org/wiki/Microdevario_kubotai)
-## Points à trancher
+## Points tranchés (Maxime, 2026-11-09 : tous les choix actuels sont gardés)
 
 Les étiquettes `FIN_NIPPER`, `EATS_SMALL_FISH`, `EATS_SHRIMP` et `EATS_PLANTS` pèsent le plus sur les verdicts. Un `FIN_NIPPER` rend « déconseillé » tout voisin portant `LONG_FINS` (en base aujourd'hui : guppy, combattant, scalaire) ; un `EATS_SMALL_FISH` rend « déconseillé » tout poisson de 4 cm ou moins ; un `EATS_SHRIMP` rend « déconseillée » toute crevette ; un `EATS_PLANTS` ne donne que « avec précautions » avec une plante.
 
@@ -767,9 +767,9 @@ Les étiquettes `FIN_NIPPER`, `EATS_SMALL_FISH`, `EATS_SHRIMP` et `EATS_PLANTS` 
 - **Barbus cerise** : `FIN_NIPPER` non retenu (de : il ne faut pas le mêler aux guppys et combattants, qu'il tend à mordiller). S'il est ajouté : mêmes trois espèces « Déconseillées ».
 - **Barbus requin** : `EATS_SMALL_FISH` non retenu (en : paisible, bon voisin ; mais adulte de 30 cm). S'il est ajouté : tous les poissons de 4 cm ou moins « Déconseillés ».
 - **Barbus de Schwanenfeld** : `EATS_SMALL_FISH` et `EATS_PLANTS` non retenus, aucune source. S'ils sont ajoutés : mêmes effets que pour le poisson rouge (petits poissons « Déconseillés », plantes « avec précautions »).
-- **Mangeur d'algues siamois, identité** : Wikidata (Q1570265) range *Crossocheilus oblongus* sous cette fiche, et les articles en et de qui lui sont liés décrivent le « Siamese algae eater », mais le libellé Wikidata « Siamese algae eater » appartient à un autre élément (Q2280823, *Crossocheilus siamensis*). D'après notre connaissance du commerce, le poisson vendu sous ce nom est souvent *C. siamensis*, parfois une fausse espèce. À trancher : garder cette fiche telle quelle, ou la remplacer par *Crossocheilus siamensis* (Q2280823).
+- **Mangeur d'algues siamois, identité** : Wikidata (Q1570265) range *Crossocheilus oblongus* sous cette fiche, et les articles en et de qui lui sont liés décrivent le « Siamese algae eater », mais le libellé Wikidata « Siamese algae eater » appartient à un autre élément (Q2280823, *Crossocheilus siamensis*). D'après notre connaissance du commerce, le poisson vendu sous ce nom est souvent *C. siamensis*, parfois une fausse espèce. Tranché par Maxime (2026-11-09) : choix actuel gardé.
 - **Rasbora moustique, durée de vie** : l'article en dit jusqu'à 8 ans ; nous retenons 4, choix de notre part.
-- **Noms scientifiques faute de nom courant** : le nom fr/it/es de *Danio choprae*, le nom de/it/es de *Boraras maculatus*, le nom de de *Barbonymus schwanefeldii* sont le nom scientifique, aucun nom courant n'ayant été trouvé. À trancher : les garder ou fournir un nom.
-- **Hétérandria** : le nom fr est ajouté par nous (Wikidata n'a que le nom scientifique). À trancher : le garder ou le remplacer.
-- **Néon du pauvre** : le nom fr est le libellé Wikidata, alors que l'identifiant est `vairon-de-chine`. À trancher : renommer en « Vairon de Chine » (nom ajouté par nous) si c'est le nom que vous préférez.
+- **Noms scientifiques faute de nom courant** : le nom fr/it/es de *Danio choprae*, le nom de/it/es de *Boraras maculatus*, le nom de de *Barbonymus schwanefeldii* sont le nom scientifique, aucun nom courant n'ayant été trouvé. Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Hétérandria** : le nom fr est ajouté par nous (Wikidata n'a que le nom scientifique). Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Néon du pauvre** : le nom fr est le libellé Wikidata, alors que l'identifiant est `vairon-de-chine`. Tranché par Maxime (2026-11-09) : choix actuel gardé.
 - **Platy varié** : le nom fr est l'alias Wikidata ; « Platy » seul est déjà pris par le platy commun.

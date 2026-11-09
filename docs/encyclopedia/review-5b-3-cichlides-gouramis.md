@@ -26,8 +26,8 @@ Identifiant `ramirezi`, Wikidata [Q260468](https://www.wikidata.org/wiki/Q260468
 | Français | Ramirezi | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Ram cichlid | Wikidata, libellé |
 | Allemand | Südamerikanischer Schmetterlingsbuntbarsch | Wikidata, libellé |
-| Italien | Mikrogeophagus ramirezi | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Mikrogeophagus ramirezi | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Mikrogeophagus ramirezi | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Mikrogeophagus ramirezi | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -54,11 +54,11 @@ Identifiant `apistogramma-cacatuoides`, Wikidata [Q265787](https://www.wikidata.
 
 | Langue | Nom | Origine |
 |---|---|---|
-| Français | Apistogramma cacatuoides | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Anglais | Apistogramma cacatuoides | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Français | Apistogramma cacatuoides | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Anglais | Apistogramma cacatuoides | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 | Allemand | Kakadu-Zwergbuntbarsch | Wikidata, libellé |
-| Italien | Apistogramma cacatuoides | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Apistogramma cacatuoides | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Apistogramma cacatuoides | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Apistogramma cacatuoides | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -85,11 +85,11 @@ Identifiant `apistogramma-agassizii`, Wikidata [Q390808](https://www.wikidata.or
 
 | Langue | Nom | Origine |
 |---|---|---|
-| Français | Apistogramma agassizii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Français | Apistogramma agassizii | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 | Anglais | Agassiz's dwarf cichlid | Wikidata, alias |
 | Allemand | Agassiz’ Zwergbuntbarsch | Wikidata, libellé |
-| Italien | Apistogramma agassizii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Apistogramma agassizii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Apistogramma agassizii | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Apistogramma agassizii | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -118,9 +118,9 @@ Identifiant `discus`, Wikidata [Q3091839](https://www.wikidata.org/wiki/Q3091839
 |---|---|---|
 | Français | Discus commun | Wikidata, libellé |
 | Anglais | Discus | « nom ajouté par nous » (le libellé en est le nom scientifique ; nom courant d'aquariophilie) |
-| Allemand | Symphysodon aequifasciatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Italien | Symphysodon aequifasciatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Symphysodon aequifasciatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Allemand | Symphysodon aequifasciatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Italien | Symphysodon aequifasciatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Symphysodon aequifasciatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -147,11 +147,11 @@ Identifiant `kribensis`, Wikidata [Q839683](https://www.wikidata.org/wiki/Q83968
 
 | Langue | Nom | Origine |
 |---|---|---|
-| Français | Pelmato | Wikidata, libellé, à trancher (l'identifiant est `kribensis`) |
+| Français | Pelmato | Wikidata, libellé, tranché par Maxime (2026-11-09), choix actuel gardé (l'identifiant est `kribensis`) |
 | Anglais | Kribensis | « nom ajouté par nous » (le libellé en est le nom scientifique ; nom courant d'aquariophilie) |
 | Allemand | Purpurprachtbarsch | Wikidata, libellé |
-| Italien | Pelvicachromis pulcher | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Pelvicachromis pulcher | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Pelvicachromis pulcher | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Pelvicachromis pulcher | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -181,8 +181,8 @@ Identifiant `oscar`, Wikidata [Q3442](https://www.wikidata.org/wiki/Q3442). Temp
 | Français | Oscar | Wikidata, alias |
 | Anglais | Oscar | Wikidata, alias |
 | Allemand | Pfauenaugenbuntbarsch | Wikidata, libellé |
-| Italien | Astronotus ocellatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Astronotus ocellatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Astronotus ocellatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Astronotus ocellatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -194,7 +194,7 @@ Identifiant `oscar`, Wikidata [Q3442](https://www.wikidata.org/wiki/Q3442). Temp
 | Taille adulte | 35 cm | [de](https://de.wikipedia.org/wiki/Pfauenaugenbuntbarsch), [en](https://en.wikipedia.org/wiki/Oscar_(fish)) | de : jusqu'à 45 cm ; en : jusqu'à 70 cm signalés. choix de notre part : 35 (taille d'aquarium courante) |
 | Groupe minimum | 1 | [fr](https://fr.wikipedia.org/wiki/Oscar_(poisson)) | fr : déconseillé en couple dans un bac commun, hiérarchie dure en groupe. choix de notre part : 1 |
 | Durée de vie | 12 ans | [en](https://en.wikipedia.org/wiki/Oscar_(fish)) | en : se reproduit pendant 9–10 ans. choix de notre part : 12, à vérifier en priorité |
-| Comportement | `EATS_SMALL_FISH`, `EATS_SHRIMP`, `EATS_SNAILS`, `TERRITORIAL`, `EATS_PLANTS` | [en](https://en.wikipedia.org/wiki/Oscar_(fish)), [de](https://de.wikipedia.org/wiki/Pfauenaugenbuntbarsch), [fr](https://fr.wikipedia.org/wiki/Oscar_(poisson)) | en : mange crevettes, escargots, insectes, jeunes poissons dans la nature ; de : régime de poissons et d'escargots ; fr : territorial, arrache les plantes, mais « plutôt calme ». Les cinq étiquettes : à trancher (voir fin de fiche). Étiquettes : choix de notre part, à valider |
+| Comportement | `EATS_SMALL_FISH`, `EATS_SHRIMP`, `EATS_SNAILS`, `TERRITORIAL`, `EATS_PLANTS` | [en](https://en.wikipedia.org/wiki/Oscar_(fish)), [de](https://de.wikipedia.org/wiki/Pfauenaugenbuntbarsch), [fr](https://fr.wikipedia.org/wiki/Oscar_(poisson)) | en : mange crevettes, escargots, insectes, jeunes poissons dans la nature ; de : régime de poissons et d'escargots ; fr : territorial, arrache les plantes, mais « plutôt calme ». Les cinq étiquettes : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche). Étiquettes : choix de notre part, à valider |
 | Régime | `CARNIVORE` | [en](https://en.wikipedia.org/wiki/Oscar_(fish)), [fr](https://fr.wikipedia.org/wiki/Oscar_(poisson)) | en : omnivore ; fr : poissons maigres, crevettes, moules. choix de notre part : `CARNIVORE` |
 | Dessin, nage, zone | `CICHLID`, `GLIDE`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#5D4037` | _aucune_ | choix de notre part : teinte dominante |
@@ -211,9 +211,9 @@ Identifiant `labidochromis-jaune`, Wikidata [Q258797](https://www.wikidata.org/w
 |---|---|---|
 | Français | Labidochromis jaune | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Electric yellow cichlid | Wikidata, libellé |
-| Allemand | Labidochromis caeruleus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Italien | Labidochromis caeruleus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Labidochromis caeruleus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Allemand | Labidochromis caeruleus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Italien | Labidochromis caeruleus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Labidochromis caeruleus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -225,7 +225,7 @@ Identifiant `labidochromis-jaune`, Wikidata [Q258797](https://www.wikidata.org/w
 | Taille adulte | 10 cm | [de](https://de.wikipedia.org/wiki/Labidochromis_caeruleus) | de : environ 9 cm dans la nature, 8–12 cm en aquarium. choix de notre part : 10 |
 | Groupe minimum | 5 | [fr](https://fr.wikipedia.org/wiki/Labidochromis_caeruleus) | fr : plusieurs individus, pour répartir l'insistance des mâles. choix de notre part : 5 |
 | Durée de vie | 8 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Labidochromis_caeruleus), [fr](https://fr.wikipedia.org/wiki/Labidochromis_caeruleus) | en : « peaceful compared to most other African cichlids », mais peut mordiller les nageoires des espèces paisibles ; fr : territorial. `FIN_NIPPER` non retenu : à trancher (voir fin de fiche). `TERRITORIAL` : à valider. `EATS_SHRIMP` non retenu : à trancher (voir fin de fiche) |
+| Comportement | `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Labidochromis_caeruleus), [fr](https://fr.wikipedia.org/wiki/Labidochromis_caeruleus) | en : « peaceful compared to most other African cichlids », mais peut mordiller les nageoires des espèces paisibles ; fr : territorial. `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche). `TERRITORIAL` : à valider. `EATS_SHRIMP` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche) |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Labidochromis_caeruleus) | en : granulés pour cichlidés, spiruline, krill |
 | Dessin, nage, zone | `CICHLID`, `GLIDE`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#FDD835` | _aucune_ | choix de notre part : teinte dominante |
@@ -240,11 +240,11 @@ Identifiant `neolamprologus-multifasciatus`, Wikidata [Q1541499](https://www.wik
 
 | Langue | Nom | Origine |
 |---|---|---|
-| Français | Neolamprologus multifasciatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Français | Neolamprologus multifasciatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 | Anglais | Many-banded shell dweller | Wikidata, libellé |
 | Allemand | Vielgestreifter Schneckenbuntbarsch | Wikidata, libellé |
-| Italien | Neolamprologus multifasciatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Neolamprologus multifasciatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Neolamprologus multifasciatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Neolamprologus multifasciatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -274,8 +274,8 @@ Identifiant `bolivien`, Wikidata [Q891383](https://www.wikidata.org/wiki/Q891383
 | Français | Bolivien | « nom ajouté par nous » (le libellé fr est un nom scientifique mal orthographié ; nom courant d'aquariophilie) |
 | Anglais | Ruby crown cichlid | Wikidata, alias |
 | Allemand | Bolivianischer Schmetterlingsbuntbarsch | Wikidata, libellé |
-| Italien | Mikrogeophagus altispinosus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Mikrogeophagus altispinosus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Mikrogeophagus altispinosus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Mikrogeophagus altispinosus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -306,7 +306,7 @@ Identifiant `acara-bleu`, Wikidata [Q3583](https://www.wikidata.org/wiki/Q3583).
 | Anglais | Blue acara | Wikidata, libellé |
 | Allemand | Blaupunktbuntbarsch | Wikidata, libellé |
 | Italien | Acara blu | Wikidata, libellé |
-| Espagnol | Andinoacara pulcher | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Andinoacara pulcher | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -318,7 +318,7 @@ Identifiant `acara-bleu`, Wikidata [Q3583](https://www.wikidata.org/wiki/Q3583).
 | Taille adulte | 15 cm | [fr](https://fr.wikipedia.org/wiki/Andinoacara_pulcher), [en](https://en.wikipedia.org/wiki/Blue_acara) | fr : 15 cm au plus ; en : environ 16 cm. choix de notre part : 15 |
 | Groupe minimum | 2 | _aucune_ | aucune source chiffrée. choix de notre part : 2 (couple) |
 | Durée de vie | 10 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `EATS_SHRIMP`, `TERRITORIAL` | _aucune_ | aucune source chiffrée. `TERRITORIAL`, `EATS_SHRIMP` : choix de notre part, à valider ; `EATS_SMALL_FISH` non retenu. À trancher (voir fin de fiche) |
+| Comportement | `EATS_SHRIMP`, `TERRITORIAL` | _aucune_ | aucune source chiffrée. `TERRITORIAL`, `EATS_SHRIMP` : choix de notre part, à valider ; `EATS_SMALL_FISH` non retenu. Tranché par Maxime (2026-11-09) : choix actuel gardé (voir fin de fiche) |
 | Régime | `OMNIVORE` | _aucune_ | aucune source chiffrée. choix de notre part |
 | Dessin, nage, zone | `CICHLID`, `GLIDE`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#1565C0` | _aucune_ | choix de notre part : teinte dominante |
@@ -336,7 +336,7 @@ Identifiant `cichlide-gorge-de-feu`, Wikidata [Q3705](https://www.wikidata.org/w
 | Français | Cichlide gorge de feu | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Firemouth cichlid | Wikidata, libellé |
 | Allemand | Feuermaulbuntbarsch | Wikidata, libellé |
-| Italien | Thorichthys meeki | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Thorichthys meeki | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 | Espagnol | Boca de fuego | Wikidata, alias |
 
 | Valeur | Fiche | Sources | Note |
@@ -349,7 +349,7 @@ Identifiant `cichlide-gorge-de-feu`, Wikidata [Q3705](https://www.wikidata.org/w
 | Taille adulte | 15 cm | [en](https://en.wikipedia.org/wiki/Firemouth_cichlid), [de](https://de.wikipedia.org/wiki/Feuermaulbuntbarsch) | en : mâles jusqu'à 15 cm ; de : 15–16 cm. choix de notre part : 15 |
 | Groupe minimum | 2 | _aucune_ | aucune source chiffrée. choix de notre part : 2 (couple) |
 | Durée de vie | 10 ans | [de](https://de.wikipedia.org/wiki/Feuermaulbuntbarsch) | de : 12 ans au plus. choix de notre part : 10 |
-| Comportement | `EATS_SHRIMP`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Firemouth_cichlid) | en : mâles plus grands et plus colorés ; pas d'autre indication de comportement. `TERRITORIAL`, `EATS_SHRIMP` : choix de notre part, à valider ; `EATS_SMALL_FISH` non retenu. À trancher (voir fin de fiche) |
+| Comportement | `EATS_SHRIMP`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Firemouth_cichlid) | en : mâles plus grands et plus colorés ; pas d'autre indication de comportement. `TERRITORIAL`, `EATS_SHRIMP` : choix de notre part, à valider ; `EATS_SMALL_FISH` non retenu. Tranché par Maxime (2026-11-09) : choix actuel gardé (voir fin de fiche) |
 | Régime | `OMNIVORE` | _aucune_ | aucune source chiffrée. choix de notre part |
 | Dessin, nage, zone | `CICHLID`, `GLIDE`, `BOTTOM` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#D32F2F` | _aucune_ | choix de notre part : teinte dominante |
@@ -364,11 +364,11 @@ Identifiant `cichlide-zebre`, Wikidata [Q3546](https://www.wikidata.org/wiki/Q35
 
 | Langue | Nom | Origine |
 |---|---|---|
-| Français | Nigro | Wikidata, libellé, à trancher (l'identifiant est `cichlide-zebre`, le nom de est « Zebrabuntbarsch ») |
+| Français | Nigro | Wikidata, libellé, tranché par Maxime (2026-11-09), choix actuel gardé (l'identifiant est `cichlide-zebre`, le nom de est « Zebrabuntbarsch ») |
 | Anglais | Convict Cichlid | Wikidata, libellé |
 | Allemand | Zebrabuntbarsch | Wikidata, libellé |
-| Italien | Amatitlania nigrofasciata | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Amatitlania nigrofasciata | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Amatitlania nigrofasciata | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Amatitlania nigrofasciata | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -380,7 +380,7 @@ Identifiant `cichlide-zebre`, Wikidata [Q3546](https://www.wikidata.org/wiki/Q35
 | Taille adulte | 12 cm | [en](https://en.wikipedia.org/wiki/Convict_cichlid), [de](https://de.wikipedia.org/wiki/Zebrabuntbarsch) | en : 10 cm standard, 12 cm au total ; de : mâle 15 cm, femelle 10 cm. choix de notre part : 12 |
 | Groupe minimum | 2 | [fr](https://fr.wikipedia.org/wiki/Amatitlania_nigrofasciata) | fr : à maintenir en couple. choix de notre part : 2 |
 | Durée de vie | 8 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `EATS_SHRIMP`, `TERRITORIAL` | [fr](https://fr.wikipedia.org/wiki/Amatitlania_nigrofasciata), [en](https://en.wikipedia.org/wiki/Convict_cichlid) | fr : « cichlidé territorial » ; en : plus agressif à 30 °C. `TERRITORIAL` : à valider ; `EATS_SHRIMP` : choix de notre part, sans source, à valider ; `EATS_SMALL_FISH` non retenu. À trancher (voir fin de fiche) |
+| Comportement | `EATS_SHRIMP`, `TERRITORIAL` | [fr](https://fr.wikipedia.org/wiki/Amatitlania_nigrofasciata), [en](https://en.wikipedia.org/wiki/Convict_cichlid) | fr : « cichlidé territorial » ; en : plus agressif à 30 °C. `TERRITORIAL` : à valider ; `EATS_SHRIMP` : choix de notre part, sans source, à valider ; `EATS_SMALL_FISH` non retenu. Tranché par Maxime (2026-11-09) : choix actuel gardé (voir fin de fiche) |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Convict_cichlid) | en : mâchoire protractile, régime varié |
 | Dessin, nage, zone | `CICHLID`, `GLIDE`, `BOTTOM` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#616161` | _aucune_ | choix de notre part : teinte dominante |
@@ -398,8 +398,8 @@ Identifiant `nannacara`, Wikidata [Q3666](https://www.wikidata.org/wiki/Q3666). 
 | Français | Nannacara | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Goldeneye cichlid | Wikidata, libellé |
 | Allemand | Glänzender Zwergbuntbarsch | Wikidata, libellé |
-| Italien | Nannacara anomala | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Nannacara anomala | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Nannacara anomala | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Nannacara anomala | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -426,11 +426,11 @@ Identifiant `aulonocara-jacobfreibergi`, Wikidata [Q168662](https://www.wikidata
 
 | Langue | Nom | Origine |
 |---|---|---|
-| Français | Aulonocara jacobfreibergi | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Anglais | Aulonocara jacobfreibergi | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Allemand | Aulonocara jacobfreibergi | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Italien | Aulonocara jacobfreibergi | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Aulonocara jacobfreibergi | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Français | Aulonocara jacobfreibergi | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Anglais | Aulonocara jacobfreibergi | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Allemand | Aulonocara jacobfreibergi | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Italien | Aulonocara jacobfreibergi | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Aulonocara jacobfreibergi | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -442,7 +442,7 @@ Identifiant `aulonocara-jacobfreibergi`, Wikidata [Q168662](https://www.wikidata
 | Taille adulte | 15 cm | [fr](https://fr.wikipedia.org/wiki/Aulonocara_jacobfreibergi), [en](https://en.wikipedia.org/wiki/Aulonocara_jacobfreibergi) | fr : environ 15 cm ; en : environ 15 cm |
 | Groupe minimum | 4 | [fr](https://fr.wikipedia.org/wiki/Aulonocara_jacobfreibergi) | fr : à garder en groupe (un mâle, plusieurs femelles). choix de notre part : 4 |
 | Durée de vie | 8 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `TERRITORIAL` | [fr](https://fr.wikipedia.org/wiki/Aulonocara_jacobfreibergi) | fr : « assez calme » mais territorial à la ponte. `TERRITORIAL` : à valider ; `EATS_SMALL_FISH` non retenu. À trancher (voir fin de fiche) |
+| Comportement | `TERRITORIAL` | [fr](https://fr.wikipedia.org/wiki/Aulonocara_jacobfreibergi) | fr : « assez calme » mais territorial à la ponte. `TERRITORIAL` : à valider ; `EATS_SMALL_FISH` non retenu. Tranché par Maxime (2026-11-09) : choix actuel gardé (voir fin de fiche) |
 | Régime | `OMNIVORE` | _aucune_ | aucune source chiffrée. choix de notre part |
 | Dessin, nage, zone | `CICHLID`, `GLIDE`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#0288D1` | _aucune_ | choix de notre part : teinte dominante |
@@ -457,11 +457,11 @@ Identifiant `pseudotropheus-saulosi`, Wikidata [Q265801](https://www.wikidata.or
 
 | Langue | Nom | Origine |
 |---|---|---|
-| Français | Pseudotropheus saulosi | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Anglais | Pseudotropheus saulosi | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Allemand | Chindongo saulosi | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Italien | Pseudotropheus saulosi | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Pseudotropheus saulosi | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Français | Pseudotropheus saulosi | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Anglais | Pseudotropheus saulosi | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Allemand | Chindongo saulosi | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Italien | Pseudotropheus saulosi | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Pseudotropheus saulosi | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -473,7 +473,7 @@ Identifiant `pseudotropheus-saulosi`, Wikidata [Q265801](https://www.wikidata.or
 | Taille adulte | 8 cm | [fr](https://fr.wikipedia.org/wiki/Pseudotropheus_saulosi), [en](https://en.wikipedia.org/wiki/Pseudotropheus_saulosi) | fr : 7–9 cm ; en : 8,6 cm au total. choix de notre part : 8 |
 | Groupe minimum | 6 | [fr](https://fr.wikipedia.org/wiki/Pseudotropheus_saulosi) | fr : plusieurs femelles par mâle. choix de notre part : 6 |
 | Durée de vie | 8 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `TERRITORIAL` | [fr](https://fr.wikipedia.org/wiki/Pseudotropheus_saulosi) | fr : « très agressifs entre eux ». `TERRITORIAL` : à valider. `EATS_SHRIMP` non retenu : à trancher (voir fin de fiche) |
+| Comportement | `TERRITORIAL` | [fr](https://fr.wikipedia.org/wiki/Pseudotropheus_saulosi) | fr : « très agressifs entre eux ». `TERRITORIAL` : à valider. `EATS_SHRIMP` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche) |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/Pseudotropheus_saulosi) | fr : omnivore |
 | Dessin, nage, zone | `CICHLID`, `GLIDE`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#0097A7` | _aucune_ | choix de notre part : teinte dominante |
@@ -491,8 +491,8 @@ Identifiant `badis`, Wikidata [Q882379](https://www.wikidata.org/wiki/Q882379). 
 | Français | Perche bleue | Wikidata, alias |
 | Anglais | Blue perch | Wikidata, alias |
 | Allemand | Blaubarsch | Wikidata, libellé |
-| Italien | Badis badis | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Badis badis | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Badis badis | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Badis badis | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -504,7 +504,7 @@ Identifiant `badis`, Wikidata [Q882379](https://www.wikidata.org/wiki/Q882379). 
 | Taille adulte | 7 cm | [fr](https://fr.wikipedia.org/wiki/Badis_badis), [en](https://en.wikipedia.org/wiki/Badis_badis), [de](https://de.wikipedia.org/wiki/Blaubarsch) | fr : 6–8 cm ; en : 8 cm au plus ; de : jusqu'à 8 cm. choix de notre part : 7 |
 | Groupe minimum | 2 | _aucune_ | aucune source chiffrée. choix de notre part : 2 (un mâle, une femelle) |
 | Durée de vie | 4 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `TERRITORIAL` | [de](https://de.wikipedia.org/wiki/Blaubarsch) | de : les œufs sont pondus dans des nids gardés par les adultes. `TERRITORIAL` : choix de notre part, à valider ; `EATS_SHRIMP` non retenu. À trancher (voir fin de fiche) |
+| Comportement | `TERRITORIAL` | [de](https://de.wikipedia.org/wiki/Blaubarsch) | de : les œufs sont pondus dans des nids gardés par les adultes. `TERRITORIAL` : choix de notre part, à valider ; `EATS_SHRIMP` non retenu. Tranché par Maxime (2026-11-09) : choix actuel gardé (voir fin de fiche) |
 | Régime | `CARNIVORE` | [en](https://en.wikipedia.org/wiki/Badis_badis), [fr](https://fr.wikipedia.org/wiki/Badis_badis) | en : petit prédateur d'invertébrés minuscules ; fr : petites proies vivantes. choix de notre part : `CARNIVORE` |
 | Dessin, nage, zone | `CICHLID`, `SLOW`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#1976D2` | _aucune_ | choix de notre part : teinte dominante |
@@ -522,8 +522,8 @@ Identifiant `gourami-perle`, Wikidata [Q14505073](https://www.wikidata.org/wiki/
 | Français | Gourami perlé | « nom ajouté par nous » (titre de l'article Wikipédia fr ; le libellé fr est le nom scientifique) |
 | Anglais | Pearl gourami | « nom ajouté par nous » (titre de l'article Wikipédia en ; le libellé en est le nom scientifique) |
 | Allemand | Mosaikfadenfisch | « nom ajouté par nous » (titre de l'article Wikipédia de ; le libellé de est le nom scientifique) |
-| Italien | Trichopodus leerii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Trichopodus leerii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Trichopodus leerii | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Trichopodus leerii | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -553,8 +553,8 @@ Identifiant `gourami-bleu`, Wikidata [Q10866107](https://www.wikidata.org/wiki/Q
 | Français | Gourami bleu | « nom ajouté par nous » (titre de l'article Wikipédia fr ; le libellé fr est le nom scientifique) |
 | Anglais | Three spot gourami | « nom ajouté par nous » (titre de l'article Wikipédia en ; le libellé en est le nom scientifique) |
 | Allemand | Gepunkteter Fadenfisch | Wikidata, libellé |
-| Italien | Trichopodus trichopterus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Trichopodus trichopterus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Trichopodus trichopterus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Trichopodus trichopterus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -566,7 +566,7 @@ Identifiant `gourami-bleu`, Wikidata [Q10866107](https://www.wikidata.org/wiki/Q
 | Taille adulte | 12 cm | [fr](https://fr.wikipedia.org/wiki/Gourami_bleu), [en](https://en.wikipedia.org/wiki/Three_spot_gourami) | fr : 10–15 cm ; en : 15 cm de longueur standard. choix de notre part : 12 |
 | Groupe minimum | 1 | [en](https://en.wikipedia.org/wiki/Three_spot_gourami) | en : on conseille de ne pas loger plusieurs gouramis ensemble. choix de notre part : 1 |
 | Durée de vie | 5 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `EATS_SHRIMP`, `FIN_NIPPER`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Three_spot_gourami), [fr](https://fr.wikipedia.org/wiki/Gourami_bleu), [de](https://de.wikipedia.org/wiki/Gepunkteter_Fadenfisch) | en : mâles très agressifs, peuvent mordiller les nageoires, s'en prennent aux poissons à longues nageoires (guppys, combattants) ; fr : « paisible » ; de : mange mollusques, insectes, crevettes. `FIN_NIPPER` et `EATS_SHRIMP` : à trancher (voir fin de fiche) ; `EATS_SNAILS` non retenu. Pas de `PEACEFUL`. `TERRITORIAL` : à valider |
+| Comportement | `EATS_SHRIMP`, `FIN_NIPPER`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Three_spot_gourami), [fr](https://fr.wikipedia.org/wiki/Gourami_bleu), [de](https://de.wikipedia.org/wiki/Gepunkteter_Fadenfisch) | en : mâles très agressifs, peuvent mordiller les nageoires, s'en prennent aux poissons à longues nageoires (guppys, combattants) ; fr : « paisible » ; de : mange mollusques, insectes, crevettes. `FIN_NIPPER` et `EATS_SHRIMP` : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche) ; `EATS_SNAILS` non retenu. Pas de `PEACEFUL`. `TERRITORIAL` : à valider |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Three_spot_gourami), [fr](https://fr.wikipedia.org/wiki/Gourami_bleu) | en : omnivore ; fr : omnivore |
 | Dessin, nage, zone | `LABYRINTH`, `GLIDE`, `SURFACE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#3F51B5` | _aucune_ | choix de notre part : teinte dominante |
@@ -584,7 +584,7 @@ Identifiant `gourami-miel`, Wikidata [Q1230573](https://www.wikidata.org/wiki/Q1
 | Français | Gourami miel | Wikidata, libellé |
 | Anglais | Honey gourami | Wikidata, libellé |
 | Allemand | Honiggurami | Wikidata, libellé |
-| Italien | Trichogaster chuna | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Trichogaster chuna | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 | Espagnol | Gurami miel | Wikidata, alias |
 
 | Valeur | Fiche | Sources | Note |
@@ -615,8 +615,8 @@ Identifiant `gourami-grogneur`, Wikidata [Q943624](https://www.wikidata.org/wiki
 | Français | Gourami grogneur | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Pygmy gourami | Wikidata, libellé |
 | Allemand | Knurrender Zwerggurami | Wikidata, libellé |
-| Italien | Trichopsis pumila | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Trichopsis pumila | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Trichopsis pumila | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Trichopsis pumila | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -628,7 +628,7 @@ Identifiant `gourami-grogneur`, Wikidata [Q943624](https://www.wikidata.org/wiki
 | Taille adulte | 4 cm | [de](https://de.wikipedia.org/wiki/Knurrender_Zwerggurami) | de : 3,1 cm en moyenne, 4 cm au plus. choix de notre part : 4 |
 | Groupe minimum | 2 | [en](https://en.wikipedia.org/wiki/Pygmy_gourami), [de](https://de.wikipedia.org/wiki/Knurrender_Zwerggurami) | en : petits groupes, trio ou couple ; de : territoire d'environ 25 × 25 cm. choix de notre part : 2 |
 | Durée de vie | 4 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `EATS_SHRIMP`, `TERRITORIAL`, `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Pygmy_gourami), [de](https://de.wikipedia.org/wiki/Knurrender_Zwerggurami) | en : n'est pas en concurrence avec des voisins agressifs ; de : timide, « friedlich », très agressif près de son nid ; ne pas le mêler aux crevettes naines, il les harcèle. `EATS_SHRIMP` : à trancher (voir fin de fiche). `PEACEFUL` et `TERRITORIAL` : à valider |
+| Comportement | `EATS_SHRIMP`, `TERRITORIAL`, `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Pygmy_gourami), [de](https://de.wikipedia.org/wiki/Knurrender_Zwerggurami) | en : n'est pas en concurrence avec des voisins agressifs ; de : timide, « friedlich », très agressif près de son nid ; ne pas le mêler aux crevettes naines, il les harcèle. `EATS_SHRIMP` : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche). `PEACEFUL` et `TERRITORIAL` : à valider |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Pygmy_gourami) | en : infusoires, nauplies d'artémia, aliments secs |
 | Dessin, nage, zone | `LABYRINTH`, `SLOW`, `SURFACE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#C0792B` | _aucune_ | choix de notre part : teinte dominante |
@@ -646,8 +646,8 @@ Identifiant `macropode`, Wikidata [Q304256](https://www.wikidata.org/wiki/Q30425
 | Français | Macropode | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie, identifiant du bac) |
 | Anglais | Paradise fish | Wikidata, libellé |
 | Allemand | Makropode | Wikidata, libellé |
-| Italien | Macropodus opercularis | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Macropodus opercularis | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Macropodus opercularis | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Macropodus opercularis | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -659,7 +659,7 @@ Identifiant `macropode`, Wikidata [Q304256](https://www.wikidata.org/wiki/Q30425
 | Taille adulte | 8 cm | [de](https://de.wikipedia.org/wiki/Makropode), [en](https://en.wikipedia.org/wiki/Paradise_fish), [fr](https://fr.wikipedia.org/wiki/Macropodus_opercularis) | de : mâles environ 8 cm, jusqu'à 10,4 cm ; en : 6,7 cm de longueur standard, la plupart 5,5 cm ; fr : jusqu'à 10 cm. choix de notre part : 8 |
 | Groupe minimum | 1 | [fr](https://fr.wikipedia.org/wiki/Macropodus_opercularis) | fr : un seul mâle par bac. choix de notre part : 1 |
 | Durée de vie | 6 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `EATS_SMALL_FISH`, `EATS_SHRIMP`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Paradise_fish), [fr](https://fr.wikipedia.org/wiki/Macropodus_opercularis) | en : un des gouramis les plus agressifs, peut agresser et tuer de petits poissons, mange alevins et invertébrés dans la nature ; fr : agressif envers ses congénères et d'autres espèces. `EATS_SMALL_FISH` et `EATS_SHRIMP` : à trancher (voir fin de fiche) ; `FIN_NIPPER` non retenu. `TERRITORIAL` : à valider |
+| Comportement | `EATS_SMALL_FISH`, `EATS_SHRIMP`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Paradise_fish), [fr](https://fr.wikipedia.org/wiki/Macropodus_opercularis) | en : un des gouramis les plus agressifs, peut agresser et tuer de petits poissons, mange alevins et invertébrés dans la nature ; fr : agressif envers ses congénères et d'autres espèces. `EATS_SMALL_FISH` et `EATS_SHRIMP` : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche) ; `FIN_NIPPER` non retenu. `TERRITORIAL` : à valider |
 | Régime | `CARNIVORE` | [fr](https://fr.wikipedia.org/wiki/Macropodus_opercularis), [en](https://en.wikipedia.org/wiki/Paradise_fish) | fr : carnivore ; en : régime riche en protéines |
 | Dessin, nage, zone | `LABYRINTH`, `GLIDE`, `SURFACE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#E53935` | _aucune_ | choix de notre part : teinte dominante |
@@ -678,7 +678,7 @@ Identifiant `gourami-embrasseur`, Wikidata [Q218891](https://www.wikidata.org/wi
 | Anglais | Kissing gourami | Wikidata, libellé |
 | Allemand | Küssender Gurami | Wikidata, libellé |
 | Italien | Gurami sbaciucchione | Wikidata, alias |
-| Espagnol | Helostoma temminckii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Helostoma temminckii | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -690,7 +690,7 @@ Identifiant `gourami-embrasseur`, Wikidata [Q218891](https://www.wikidata.org/wi
 | Taille adulte | 25 cm | [en](https://en.wikipedia.org/wiki/Kissing_gourami), [fr](https://fr.wikipedia.org/wiki/Helostoma_temminkii) | en : 30 cm au plus, 30–40 cm en aquarium ; fr : 10 cm en captivité, 30 cm dans la nature. choix de notre part : 25, à vérifier en priorité |
 | Groupe minimum | 2 | [de](https://de.wikipedia.org/wiki/K%C3%BCssender_Gurami) | de : forme des groupes sociaux. choix de notre part : 2 |
 | Durée de vie | 8 ans | [en](https://en.wikipedia.org/wiki/Kissing_gourami) | en : 5–7 ans en moyenne, plus de 25 ans signalés. choix de notre part : 8 |
-| Comportement | `TERRITORIAL`, `EATS_PLANTS` | [en](https://en.wikipedia.org/wiki/Kissing_gourami), [de](https://de.wikipedia.org/wiki/K%C3%BCssender_Gurami) | en : territorial, tourmente les poissons de même taille, broute plantes aquatiques ; de : râpe les feuilles des plantes. `EATS_PLANTS` : à trancher (voir fin de fiche) ; `TERRITORIAL` : à valider |
+| Comportement | `TERRITORIAL`, `EATS_PLANTS` | [en](https://en.wikipedia.org/wiki/Kissing_gourami), [de](https://de.wikipedia.org/wiki/K%C3%BCssender_Gurami) | en : territorial, tourmente les poissons de même taille, broute plantes aquatiques ; de : râpe les feuilles des plantes. `EATS_PLANTS` : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche) ; `TERRITORIAL` : à valider |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Kissing_gourami), [fr](https://fr.wikipedia.org/wiki/Helostoma_temminkii) | en : omnivore, broute algues et plantes ; fr : omnivore |
 | Dessin, nage, zone | `LABYRINTH`, `GLIDE`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#F48FB1` | _aucune_ | choix de notre part : teinte dominante |
@@ -708,7 +708,7 @@ Identifiant `gourami-chocolat`, Wikidata [Q1536867](https://www.wikidata.org/wik
 | Français | Gourami chocolat | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Chocolate gourami | Wikidata, libellé |
 | Allemand | Schokoladengurami | Wikidata, libellé |
-| Italien | Sphaerichthys osphromenoides | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Sphaerichthys osphromenoides | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 | Espagnol | Gurami chocolate | Wikidata, alias |
 
 | Valeur | Fiche | Sources | Note |
@@ -740,7 +740,7 @@ Identifiant `gourami-lune`, Wikidata [Q1037493](https://www.wikidata.org/wiki/Q1
 | Anglais | Moonlight gourami | Wikidata, libellé |
 | Allemand | Mondscheinfadenfisch | Wikidata, libellé |
 | Italien | Gurami chiaro di luna | Wikidata, alias |
-| Espagnol | Trichopodus microlepis | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Trichopodus microlepis | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -752,32 +752,32 @@ Identifiant `gourami-lune`, Wikidata [Q1037493](https://www.wikidata.org/wiki/Q1
 | Taille adulte | 15 cm | [en](https://en.wikipedia.org/wiki/Moonlight_gourami), [de](https://de.wikipedia.org/wiki/Mondscheinfadenfisch) | en : 13 cm ; de : jusqu'à 18 cm. choix de notre part : 15 |
 | Groupe minimum | 1 | _aucune_ | aucune source chiffrée. choix de notre part : 1 |
 | Durée de vie | 8 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Moonlight_gourami) | en : « peaceful species ». `PEACEFUL` : à valider ; `EATS_SHRIMP` non retenu. À trancher (voir fin de fiche) |
+| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Moonlight_gourami) | en : « peaceful species ». `PEACEFUL` : à valider ; `EATS_SHRIMP` non retenu. Tranché par Maxime (2026-11-09) : choix actuel gardé (voir fin de fiche) |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Moonlight_gourami) | en : insectes, crustacés, zooplancton. choix de notre part : `OMNIVORE` |
 | Dessin, nage, zone | `LABYRINTH`, `GLIDE`, `SURFACE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#B0BEC5` | _aucune_ | choix de notre part : teinte dominante |
 
 Sources : [en](https://en.wikipedia.org/wiki/Moonlight_gourami) · [de](https://de.wikipedia.org/wiki/Mondscheinfadenfisch)
 
-## Points à trancher
+## Points tranchés (Maxime, 2026-11-09 : tous les choix actuels sont gardés)
 
 Les étiquettes `EATS_SMALL_FISH`, `EATS_SHRIMP`, `FIN_NIPPER` et `EATS_PLANTS` pèsent le plus sur les verdicts de ce lot. Un `EATS_SMALL_FISH` rend « déconseillé » tout poisson de 4 cm ou moins : 19 fiches déjà en base (néon bleu, cardinalis, néon noir, tétra amande, néon rose, faux tétra néon, tétra de Rio, otocinclus, nannostomus marginatus, poisson-hachette, guppy Endler, hétérandria, rasbora galaxy, danio choprae, rasbora moustique, rasbora espei, rasbora nain, néon du pauvre, danio vert), plus le gourami grogneur (4 cm) de ce lot. Un `EATS_SHRIMP` rend « déconseillée » toute crevette (red cherry, Amano). Un `FIN_NIPPER` rend « déconseillé » tout voisin portant `LONG_FINS` (en base : guppy, combattant, scalaire). Un `EATS_PLANTS` ne donne que « avec précautions » avec une plante. `EATS_SNAILS` (nouveau) rend « déconseillé » tout escargot : aucune fiche d'escargot n'est encore en base, l'effet ne se verra qu'au lot suivant. `TERRITORIAL` ne joue qu'entre deux poissons de la même espèce (« avec précautions »).
 
-- **Oscar** : `EATS_SMALL_FISH`, `EATS_SHRIMP`, `EATS_SNAILS`, `TERRITORIAL` et `EATS_PLANTS` retenus (en : crevettes, escargots, jeunes poissons ; de : poissons et escargots ; fr : territorial, arrache les plantes). C'est un jugement de notre part sur des sources qualitatives. Effet : les 20 poissons de 4 cm ou moins (voir plus haut) et les crevettes deviennent « Déconseillés » avec lui, les escargots aussi quand ils seront en base ; « avec précautions » avec toute plante. À trancher : garder les cinq, ou en retirer.
-- **Macropode** : `EATS_SMALL_FISH` et `EATS_SHRIMP` retenus (en : « killing small fish », alevins et invertébrés dans la nature ; fr : agressif avec d'autres espèces). Effet : les 20 poissons de 4 cm ou moins et les crevettes « Déconseillés ». `FIN_NIPPER` non retenu : aucune source ne dit qu'il mord les nageoires, mais en et fr le disent agressif. S'il est ajouté : guppy, combattant et scalaire « Déconseillés ». À trancher.
-- **Gourami bleu** : `FIN_NIPPER` retenu (en : peut mordiller, s'en prend aux guppys et aux combattants), alors que fr le dit « paisible ». Effet : guppy, combattant et scalaire « Déconseillés » avec lui. `EATS_SHRIMP` retenu (de : crevettes au menu dans la nature) : red cherry et Amano « Déconseillées ». `EATS_SNAILS` non retenu (de : mollusques au menu dans la nature) ; s'il est ajouté, les escargots seront « Déconseillés ». À trancher.
-- **Gourami grogneur** : `EATS_SHRIMP` retenu (de : il harcèle les crevettes naines). Effet : red cherry et Amano « Déconseillées ». Précédent : Maxime a tranché « Pas de tag » pour le combattant (2026-11-06) : `EATS_SHRIMP` rend toute crevette « Déconseillée », Amano comprise. À trancher.
-- **Acara bleu, cichlide gorge de feu et nigro** : `EATS_SHRIMP` retenu, choix de notre part sans source (cichlidés américains de 12 à 15 cm). `EATS_SMALL_FISH` non retenu, aucune source (en pour le gorge de feu : la mâchoire limite le régime à des proies peu fuyantes). Effet de `EATS_SHRIMP` : red cherry et Amano « Déconseillées » avec chacun. S'il faut ajouter `EATS_SMALL_FISH` : 20 poissons de 4 cm ou moins « Déconseillés » avec chacun. À trancher.
-- **Aulonocara jacobfreibergi** : `EATS_SMALL_FISH` et `EATS_SHRIMP` non retenus, aucune source (fr : « assez calme »). S'ils sont ajoutés : 20 poissons de 4 cm ou moins, et les crevettes, « Déconseillés ». À trancher.
-- **Labidochromis jaune, crevettes** : `EATS_SHRIMP` non retenu (mbuna omnivore de 10 cm, sans source qui parle des crevettes ; connaissance aquariophile courante : il s'en prend aux petites crevettes). Effet : sans le tag, red cherry et Amano restent « Vont bien » à côté. S'il est ajouté : red cherry et Amano « Déconseillées ». Précédent : Maxime a tranché « Pas de tag » pour le combattant (2026-11-06) : `EATS_SHRIMP` rend toute crevette « Déconseillée », Amano comprise. À trancher.
-- **Pseudotropheus saulosi, crevettes** : `EATS_SHRIMP` non retenu (mbuna de 8 cm, « très agressif » entre eux d'après fr, aucune source sur les crevettes ; connaissance aquariophile courante : il s'en prend aux petites crevettes). Effet : sans le tag, red cherry et Amano restent « Vont bien » à côté. S'il est ajouté : red cherry et Amano « Déconseillées ». Précédent : Maxime a tranché « Pas de tag » pour le combattant (2026-11-06) : `EATS_SHRIMP` rend toute crevette « Déconseillée », Amano comprise. À trancher.
-- **Labidochromis jaune** : `FIN_NIPPER` non retenu (en : peut mordiller les nageoires des espèces paisibles ; mais « paisible » pour un cichlidé du Malawi). S'il est ajouté : guppy, combattant et scalaire « Déconseillés ». À trancher.
-- **Badis et gourami lune** : `EATS_SHRIMP` non retenu (badis : petit prédateur d'invertébrés minuscules ; gourami lune : en cite des crustacés au menu). S'il est ajouté : red cherry et Amano « Déconseillées ». À trancher.
-- **Gourami embrasseur** : `EATS_PLANTS` retenu (en : broute plantes aquatiques ; de : râpe les feuilles). Effet : « avec précautions » avec toute plante. Taille (25 cm) et volume (300 L) : choix de notre part, les sources vont de 10 à 40 cm. À trancher.
+- **Oscar** : `EATS_SMALL_FISH`, `EATS_SHRIMP`, `EATS_SNAILS`, `TERRITORIAL` et `EATS_PLANTS` retenus (en : crevettes, escargots, jeunes poissons ; de : poissons et escargots ; fr : territorial, arrache les plantes). C'est un jugement de notre part sur des sources qualitatives. Effet : les 20 poissons de 4 cm ou moins (voir plus haut) et les crevettes deviennent « Déconseillés » avec lui, les escargots aussi quand ils seront en base ; « avec précautions » avec toute plante. Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Macropode** : `EATS_SMALL_FISH` et `EATS_SHRIMP` retenus (en : « killing small fish », alevins et invertébrés dans la nature ; fr : agressif avec d'autres espèces). Effet : les 20 poissons de 4 cm ou moins et les crevettes « Déconseillés ». `FIN_NIPPER` non retenu : aucune source ne dit qu'il mord les nageoires, mais en et fr le disent agressif. S'il est ajouté : guppy, combattant et scalaire « Déconseillés ». Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Gourami bleu** : `FIN_NIPPER` retenu (en : peut mordiller, s'en prend aux guppys et aux combattants), alors que fr le dit « paisible ». Effet : guppy, combattant et scalaire « Déconseillés » avec lui. `EATS_SHRIMP` retenu (de : crevettes au menu dans la nature) : red cherry et Amano « Déconseillées ». `EATS_SNAILS` non retenu (de : mollusques au menu dans la nature) ; s'il est ajouté, les escargots seront « Déconseillés ». Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Gourami grogneur** : `EATS_SHRIMP` retenu (de : il harcèle les crevettes naines). Effet : red cherry et Amano « Déconseillées ». Précédent : Maxime a tranché « Pas de tag » pour le combattant (2026-11-06) : `EATS_SHRIMP` rend toute crevette « Déconseillée », Amano comprise. Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Acara bleu, cichlide gorge de feu et nigro** : `EATS_SHRIMP` retenu, choix de notre part sans source (cichlidés américains de 12 à 15 cm). `EATS_SMALL_FISH` non retenu, aucune source (en pour le gorge de feu : la mâchoire limite le régime à des proies peu fuyantes). Effet de `EATS_SHRIMP` : red cherry et Amano « Déconseillées » avec chacun. S'il faut ajouter `EATS_SMALL_FISH` : 20 poissons de 4 cm ou moins « Déconseillés » avec chacun. Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Aulonocara jacobfreibergi** : `EATS_SMALL_FISH` et `EATS_SHRIMP` non retenus, aucune source (fr : « assez calme »). S'ils sont ajoutés : 20 poissons de 4 cm ou moins, et les crevettes, « Déconseillés ». Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Labidochromis jaune, crevettes** : `EATS_SHRIMP` non retenu (mbuna omnivore de 10 cm, sans source qui parle des crevettes ; connaissance aquariophile courante : il s'en prend aux petites crevettes). Effet : sans le tag, red cherry et Amano restent « Vont bien » à côté. S'il est ajouté : red cherry et Amano « Déconseillées ». Précédent : Maxime a tranché « Pas de tag » pour le combattant (2026-11-06) : `EATS_SHRIMP` rend toute crevette « Déconseillée », Amano comprise. Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Pseudotropheus saulosi, crevettes** : `EATS_SHRIMP` non retenu (mbuna de 8 cm, « très agressif » entre eux d'après fr, aucune source sur les crevettes ; connaissance aquariophile courante : il s'en prend aux petites crevettes). Effet : sans le tag, red cherry et Amano restent « Vont bien » à côté. S'il est ajouté : red cherry et Amano « Déconseillées ». Précédent : Maxime a tranché « Pas de tag » pour le combattant (2026-11-06) : `EATS_SHRIMP` rend toute crevette « Déconseillée », Amano comprise. Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Labidochromis jaune** : `FIN_NIPPER` non retenu (en : peut mordiller les nageoires des espèces paisibles ; mais « paisible » pour un cichlidé du Malawi). S'il est ajouté : guppy, combattant et scalaire « Déconseillés ». Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Badis et gourami lune** : `EATS_SHRIMP` non retenu (badis : petit prédateur d'invertébrés minuscules ; gourami lune : en cite des crustacés au menu). S'il est ajouté : red cherry et Amano « Déconseillées ». Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Gourami embrasseur** : `EATS_PLANTS` retenu (en : broute plantes aquatiques ; de : râpe les feuilles). Effet : « avec précautions » avec toute plante. Taille (25 cm) et volume (300 L) : choix de notre part, les sources vont de 10 à 40 cm. Tranché par Maxime (2026-11-09) : choix actuel gardé.
 - **Cichlidés d'eau dure (Malawi, Tanganyika)** : pH, GH et KH hauts (labidochromis, néolamprologus, aulonocara, saulosi). Ces plages sont des choix de notre part, sans source chiffrée pour les GH et KH, à vérifier en priorité : dans un bac d'eau douce, ces quatre espèces ressortiront « déconseillées » sur le GH ou le pH.
-- **Noms scientifiques faute de nom courant** : ces noms sont le nom scientifique, aucun nom courant sourcé n'ayant été trouvé : *Aulonocara jacobfreibergi* (fr/en/de/it/es, les cinq langues) ; *Apistogramma cacatuoides* (fr/en/it/es) ; *Apistogramma agassizii* (fr/it/es) ; *Neolamprologus multifasciatus* (fr/it/es) ; *Symphysodon aequifasciatus* (de/it/es) ; *Labidochromis caeruleus* (de/it/es) ; *Pseudotropheus saulosi* (fr/en/it/es : libellé Wikidata, ancien nom) et *Chindongo saulosi* (de, alias Wikidata); it/es de la plupart des autres espèces (voir les tableaux de noms). À trancher : les garder ou fournir un nom.
-- **Pelmato et Nigro** : les noms fr sont les libellés Wikidata, alors que les identifiants sont `kribensis` et `cichlide-zebre`. À trancher : les garder, ou renommer en « Kribensis » et « Cichlide zèbre » (noms ajoutés par nous). L'article de pour *Amatitlania nigrofasciata* s'appelle « Zebrabuntbarsch ».
-- **Noms ajoutés par nous** : « Ramirezi », « Labidochromis jaune », « Bolivien », « Cichlide gorge de feu », « Nannacara », « Gourami grogneur », « Macropode », « Gourami chocolat » et « Gourami lune » (fr) ; « Discus » et « Kribensis » (en) ; « Gourami perlé », « Pearl gourami », « Mosaikfadenfisch », « Gourami bleu » et « Three spot gourami » (titres des articles Wikipédia liés). À trancher : les garder ou les remplacer.
-- **Badis, famille d'affichage** : `CICHLID` par choix de la liste (ce n'est pas un cichlidé, c'est un Badidae) ; la silhouette de cichlidé ne le représente qu'approximativement. À trancher : le garder, ou prévoir une famille propre.
+- **Noms scientifiques faute de nom courant** : ces noms sont le nom scientifique, aucun nom courant sourcé n'ayant été trouvé : *Aulonocara jacobfreibergi* (fr/en/de/it/es, les cinq langues) ; *Apistogramma cacatuoides* (fr/en/it/es) ; *Apistogramma agassizii* (fr/it/es) ; *Neolamprologus multifasciatus* (fr/it/es) ; *Symphysodon aequifasciatus* (de/it/es) ; *Labidochromis caeruleus* (de/it/es) ; *Pseudotropheus saulosi* (fr/en/it/es : libellé Wikidata, ancien nom) et *Chindongo saulosi* (de, alias Wikidata); it/es de la plupart des autres espèces (voir les tableaux de noms). Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Pelmato et Nigro** : les noms fr sont les libellés Wikidata, alors que les identifiants sont `kribensis` et `cichlide-zebre`. Tranché par Maxime (2026-11-09) : choix actuel gardé. L'article de pour *Amatitlania nigrofasciata* s'appelle « Zebrabuntbarsch ».
+- **Noms ajoutés par nous** : « Ramirezi », « Labidochromis jaune », « Bolivien », « Cichlide gorge de feu », « Nannacara », « Gourami grogneur », « Macropode », « Gourami chocolat » et « Gourami lune » (fr) ; « Discus » et « Kribensis » (en) ; « Gourami perlé », « Pearl gourami », « Mosaikfadenfisch », « Gourami bleu » et « Three spot gourami » (titres des articles Wikipédia liés). Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Badis, famille d'affichage** : `CICHLID` par choix de la liste (ce n'est pas un cichlidé, c'est un Badidae) ; la silhouette de cichlidé ne le représente qu'approximativement. Tranché par Maxime (2026-11-09) : choix actuel gardé.
 - **Discus, durée et volume** : le discus est une fiche exigeante (27 – 31 °C) ; durée de vie (10 ans), volume (250 L) et groupe (5) sont des choix de notre part sans source, à vérifier en priorité.
 - **Saulosi, identité Wikidata** : Q265801 porte l'ancien nom *Pseudotropheus saulosi* ; l'élément *Chindongo saulosi* (Q41533093) n'a aucun article. Voir l'introduction.

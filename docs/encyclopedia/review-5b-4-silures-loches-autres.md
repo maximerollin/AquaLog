@@ -28,7 +28,7 @@ Identifiant `corydoras-bronze`, Wikidata [Q741269](https://www.wikidata.org/wiki
 | Anglais | Bronze corydoras | Wikidata, libellé |
 | Allemand | Metallpanzerwels | Wikidata, libellé |
 | Italien | Coridora bronzino | Wikidata, alias |
-| Espagnol | Corydoras aeneus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Corydoras aeneus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -59,7 +59,7 @@ Identifiant `corydoras-paleatus`, Wikidata [Q863850](https://www.wikidata.org/wi
 | Anglais | Peppered corydoras | Wikidata, alias |
 | Allemand | Marmorierter Panzerwels | Wikidata, libellé |
 | Italien | Coridora paleato | Wikidata, alias |
-| Espagnol | Corydoras paleatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Corydoras paleatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -89,8 +89,8 @@ Identifiant `corydoras-sterbai`, Wikidata [Q965336](https://www.wikidata.org/wik
 | Français | Corydoras de Sterba | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie, d'après le nom en) |
 | Anglais | Sterba's corydoras | Wikidata, libellé |
 | Allemand | Sterbas Panzerwels | Wikidata, libellé |
-| Italien | Corydoras sterbai | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Corydoras sterbai | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Corydoras sterbai | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Corydoras sterbai | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -120,8 +120,8 @@ Identifiant `corydoras-pygmee`, Wikidata [Q244281](https://www.wikidata.org/wiki
 | Français | Corydoras pygmée | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Pygmy corydoras | Wikidata, alias |
 | Allemand | Zwergpanzerwels | Wikidata, libellé |
-| Italien | Corydoras pygmaeus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Corydoras pygmaeus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Corydoras pygmaeus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Corydoras pygmaeus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -151,8 +151,8 @@ Identifiant `corydoras-trilineatus`, Wikidata [Q1257383](https://www.wikidata.or
 | Français | Corydoras à trois bandes | Wikidata, libellé |
 | Anglais | Threestripe corydoras | Wikidata, libellé |
 | Allemand | Dreibinden-Panzerwels | Wikidata, libellé |
-| Italien | Corydoras trilineatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Corydoras trilineatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Corydoras trilineatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Corydoras trilineatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -182,8 +182,8 @@ Identifiant `corydoras-habrosus`, Wikidata [Q1851707](https://www.wikidata.org/w
 | Français | Corydoras sel et poivre | Wikidata, alias |
 | Anglais | Salt and pepper catfish | Wikidata, libellé |
 | Allemand | Marmorierter Zwergpanzerwels | Wikidata, libellé |
-| Italien | Corydoras habrosus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Corydoras habrosus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Corydoras habrosus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Corydoras habrosus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -213,7 +213,7 @@ Identifiant `botia-clown`, Wikidata [Q841395](https://www.wikidata.org/wiki/Q841
 | Français | Loche-clown | Wikidata, alias |
 | Anglais | Clown loach | Wikidata, libellé |
 | Allemand | Prachtschmerle | Wikidata, libellé |
-| Italien | Chromobotia macracanthus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Chromobotia macracanthus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 | Espagnol | Botia payaso | Wikidata, alias |
 
 | Valeur | Fiche | Sources | Note |
@@ -226,7 +226,7 @@ Identifiant `botia-clown`, Wikidata [Q841395](https://www.wikidata.org/wiki/Q841
 | Taille adulte | 20 cm | [en](https://en.wikipedia.org/wiki/Clown_loach), [fr](https://fr.wikipedia.org/wiki/Chromobotia_macracanthus) | en : 15–20 cm en aquarium, jusqu'à 40–50 cm dans la nature ; fr : 15 à 20 cm, au plus 30 cm. choix de notre part : 20 |
 | Groupe minimum | 4 | [fr](https://fr.wikipedia.org/wiki/Chromobotia_macracanthus), [de](https://de.wikipedia.org/wiki/Prachtschmerle) | fr : au moins 3 à 4 individus ; de : vit en groupe. choix de notre part : 4 |
 | Durée de vie | 20 ans | [en](https://en.wikipedia.org/wiki/Clown_loach), [fr](https://fr.wikipedia.org/wiki/Chromobotia_macracanthus) | en : jusqu'à 30 ans ; fr : 20 ans. choix de notre part : 20 |
-| Comportement | `EATS_SNAILS` | [en](https://en.wikipedia.org/wiki/Clown_loach), [fr](https://fr.wikipedia.org/wiki/Chromobotia_macracanthus) | en : mange les physes (escargots-bulles) et est apprécié pour cela ; fr : mollusques aquatiques au menu. `EATS_SNAILS` retenu : à trancher (tout escargot « déconseillé »). `TERRITORIAL` non retenu (de : territorial avec l'âge). `EATS_SHRIMP` non retenu : à trancher (voir fin de fiche) |
+| Comportement | `EATS_SNAILS` | [en](https://en.wikipedia.org/wiki/Clown_loach), [fr](https://fr.wikipedia.org/wiki/Chromobotia_macracanthus) | en : mange les physes (escargots-bulles) et est apprécié pour cela ; fr : mollusques aquatiques au menu. `EATS_SNAILS` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »). `TERRITORIAL` non retenu (de : territorial avec l'âge). `EATS_SHRIMP` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CATFISH`, `BOTTOM`, `BOTTOM` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#E8892B` | _aucune_ | choix de notre part : teinte dominante |
@@ -244,8 +244,8 @@ Identifiant `kuhli`, Wikidata [Q115045](https://www.wikidata.org/wiki/Q115045). 
 | Français | Kuhli | Wikidata, alias |
 | Anglais | Kuhli Loach | Wikidata, libellé |
 | Allemand | Geflecktes Dornauge | Wikidata, libellé |
-| Italien | Pangio kuhlii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Pangio kuhlii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Pangio kuhlii | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Pangio kuhlii | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -275,8 +275,8 @@ Identifiant `botia-yoyo`, Wikidata [Q1802036](https://www.wikidata.org/wiki/Q180
 | Français | Loche pakistanaise | Wikidata, libellé |
 | Anglais | Yoyo loach | Wikidata, libellé |
 | Allemand | Netzschmerle | Wikidata, libellé |
-| Italien | Botia almorhae | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Botia almorhae | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Botia almorhae | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Botia almorhae | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -288,7 +288,7 @@ Identifiant `botia-yoyo`, Wikidata [Q1802036](https://www.wikidata.org/wiki/Q180
 | Taille adulte | 15 cm | [en](https://en.wikipedia.org/wiki/Yoyo_loach), [fr](https://fr.wikipedia.org/wiki/Botia_almorhae), [de](https://de.wikipedia.org/wiki/Netzschmerle) | en : 14–16 cm ; fr : jusqu'à 15,5 cm sans la queue ; de : jusqu'à 18 cm. choix de notre part : 15 |
 | Groupe minimum | 5 | _aucune_ | aucune source chiffrée. choix de notre part : 5 |
 | Durée de vie | 10 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `EATS_SNAILS` | _aucune_ | aucune source ne parle du régime ni du comportement. `EATS_SNAILS` retenu par jugement de notre part, comme les autres botiidés : à trancher (tout escargot « déconseillé »). `EATS_SHRIMP` non retenu : à trancher (voir fin de fiche) |
+| Comportement | `EATS_SNAILS` | _aucune_ | aucune source ne parle du régime ni du comportement. `EATS_SNAILS` retenu par jugement de notre part, comme les autres botiidés : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »). `EATS_SHRIMP` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CATFISH`, `BOTTOM`, `BOTTOM` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#9C8F7A` | _aucune_ | choix de notre part : teinte dominante |
@@ -306,8 +306,8 @@ Identifiant `botia-nain`, Wikidata [Q28656882](https://www.wikidata.org/wiki/Q28
 | Français | Loche naine | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom employé dans l'article fr) |
 | Anglais | Dwarf loach | Wikidata, libellé |
 | Allemand | Zwergschmerle | Wikidata, libellé |
-| Italien | Ambastaia sidthimunki | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Ambastaia sidthimunki | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Ambastaia sidthimunki | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Ambastaia sidthimunki | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -319,7 +319,7 @@ Identifiant `botia-nain`, Wikidata [Q28656882](https://www.wikidata.org/wiki/Q28
 | Taille adulte | 6 cm | [en](https://en.wikipedia.org/wiki/Dwarf_loach), [fr](https://fr.wikipedia.org/wiki/Ambastaia_sidthimunki), [de](https://de.wikipedia.org/wiki/Zwergschmerle) | en : jusqu'à 6 cm ; fr : jusqu'à 5,5 cm ; de : jusqu'à 5,5 cm. choix de notre part : 6 |
 | Groupe minimum | 6 | [fr](https://fr.wikipedia.org/wiki/Ambastaia_sidthimunki) | fr : avec quelques congénères, sans chiffre. choix de notre part : 6 |
 | Durée de vie | 10 ans | [de](https://de.wikipedia.org/wiki/Zwergschmerle) | de : plus de 10 ans en captivité. choix de notre part : 10 |
-| Comportement | `EATS_SHRIMP`, `EATS_SNAILS` | [en](https://en.wikipedia.org/wiki/Dwarf_loach), [fr](https://fr.wikipedia.org/wiki/Ambastaia_sidthimunki), [de](https://de.wikipedia.org/wiki/Zwergschmerle) | en : mange crustacés, insectes, escargots ; fr : préfère les proies vivantes, escargots et crevettes ; de : sert à réduire un excès d'escargots. `EATS_SNAILS` retenu : à trancher (tout escargot « déconseillé »). `EATS_SHRIMP` retenu : à trancher (red cherry et Amano « déconseillées ») |
+| Comportement | `EATS_SHRIMP`, `EATS_SNAILS` | [en](https://en.wikipedia.org/wiki/Dwarf_loach), [fr](https://fr.wikipedia.org/wiki/Ambastaia_sidthimunki), [de](https://de.wikipedia.org/wiki/Zwergschmerle) | en : mange crustacés, insectes, escargots ; fr : préfère les proies vivantes, escargots et crevettes ; de : sert à réduire un excès d'escargots. `EATS_SNAILS` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »). `EATS_SHRIMP` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (red cherry et Amano « déconseillées ») |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CATFISH`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) ; de et fr : nage dans toutes les couches et aussi en pleine eau |
 | Couleur | `#D4A93A` | _aucune_ | choix de notre part : teinte dominante |
@@ -336,9 +336,9 @@ Identifiant `plecostomus`, Wikidata [Q3498871](https://www.wikidata.org/wiki/Q34
 |---|---|---|
 | Français | Plécostome | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Common pleco | Wikidata, alias |
-| Allemand | Pterygoplichthys pardalis | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Italien | Pterygoplichthys pardalis | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Pterygoplichthys pardalis | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Allemand | Pterygoplichthys pardalis | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Italien | Pterygoplichthys pardalis | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Pterygoplichthys pardalis | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -347,10 +347,10 @@ Identifiant `plecostomus`, Wikidata [Q3498871](https://www.wikidata.org/wiki/Q34
 | GH | 5 – 15 °d | _aucune_ | aucune source chiffrée. choix de notre part |
 | KH | 3 – 10 °d | _aucune_ | aucune source chiffrée. choix de notre part |
 | Volume minimum | 500 L | _aucune_ | aucune source chiffrée. choix de notre part : 500 L, poisson de 40 cm, à vérifier en priorité |
-| Taille adulte | 40 cm | [en](https://en.wikipedia.org/wiki/Pterygoplichthys_pardalis) | en : jusqu'à 43 cm de longueur standard. choix de notre part : 40, à trancher |
+| Taille adulte | 40 cm | [en](https://en.wikipedia.org/wiki/Pterygoplichthys_pardalis) | en : jusqu'à 43 cm de longueur standard. choix de notre part : 40, tranché par Maxime (2026-11-09), choix actuel gardé |
 | Groupe minimum | 1 | _aucune_ | aucune source chiffrée. choix de notre part : 1 |
 | Durée de vie | 15 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | _aucune_ | _aucune_ | aucune source chiffrée. Aucune étiquette retenue. `EATS_PLANTS` non retenu : à trancher (« avec précautions » avec toute plante, s'il est ajouté) |
+| Comportement | _aucune_ | _aucune_ | aucune source chiffrée. Aucune étiquette retenue. `EATS_PLANTS` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (« avec précautions » avec toute plante, s'il est ajouté) |
 | Régime | `ALGAE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CATFISH`, `CRAWL`, `BOTTOM` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#6B5B45` | _aucune_ | choix de notre part : teinte dominante |
@@ -367,9 +367,9 @@ Identifiant `loricaire`, Wikidata [Q3021022](https://www.wikidata.org/wiki/Q3021
 |---|---|---|
 | Français | Loricaire | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Common whiptail catfish | « nom ajouté par nous » (le libellé en est le nom scientifique ; nom donné par l'article en) |
-| Allemand | Rineloricaria parva | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Italien | Rineloricaria parva | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Rineloricaria parva | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Allemand | Rineloricaria parva | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Italien | Rineloricaria parva | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Rineloricaria parva | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -396,11 +396,11 @@ Identifiant `synodontis-petricola`, Wikidata [Q140281](https://www.wikidata.org/
 
 | Langue | Nom | Origine |
 |---|---|---|
-| Français | Synodontis petricola | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Anglais | Synodontis petricola | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Allemand | Synodontis petricola | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Italien | Synodontis petricola | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Synodontis petricola | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Français | Synodontis petricola | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Anglais | Synodontis petricola | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Allemand | Synodontis petricola | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Italien | Synodontis petricola | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Synodontis petricola | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -430,7 +430,7 @@ Identifiant `poisson-chat-de-verre`, Wikidata [Q13746133](https://www.wikidata.o
 | Français | Silure de verre | Wikidata, alias |
 | Anglais | Glass catfish | Wikidata, alias |
 | Allemand | Indischer Glaswels | Wikidata, alias |
-| Italien | Kryptopterus vitreolus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Kryptopterus vitreolus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 | Espagnol | Pez gato de cristal | Wikidata, alias |
 
 | Valeur | Fiche | Sources | Note |
@@ -458,11 +458,11 @@ Identifiant `sewellia`, Wikidata [Q1767177](https://www.wikidata.org/wiki/Q17671
 
 | Langue | Nom | Origine |
 |---|---|---|
-| Français | Sewellia lineolata | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Français | Sewellia lineolata | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 | Anglais | Reticulated hillstream loach | Wikidata, alias |
 | Allemand | Prachtflossensauger | Wikidata, libellé |
-| Italien | Sewellia lineolata | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Sewellia lineolata | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Sewellia lineolata | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Sewellia lineolata | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -492,8 +492,8 @@ Identifiant `arc-en-ciel-boesemani`, Wikidata [Q833254](https://www.wikidata.org
 | Français | Arc-en-ciel de Boeseman | « nom ajouté par nous » (le libellé fr est le nom scientifique ; titre de l'article fr) |
 | Anglais | Boeseman's rainbowfish | Wikidata, alias (le libellé en, « Bosemani Rainbow », est mal orthographié) |
 | Allemand | Harlekin-Regenbogenfisch | Wikidata, libellé |
-| Italien | Melanotaenia boesemani | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Melanotaenia boesemani | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Melanotaenia boesemani | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Melanotaenia boesemani | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -523,8 +523,8 @@ Identifiant `arc-en-ciel-praecox`, Wikidata [Q548082](https://www.wikidata.org/w
 | Français | Arc-en-ciel néon | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Dwarf rainbowfish | Wikidata, libellé |
 | Allemand | Diamant-Regenbogenfisch | Wikidata, libellé |
-| Italien | Melanotaenia praecox | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Melanotaenia praecox | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Melanotaenia praecox | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Melanotaenia praecox | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -554,8 +554,8 @@ Identifiant `arc-en-ciel-rouge`, Wikidata [Q59066](https://www.wikidata.org/wiki
 | Français | Arc-en-ciel rouge | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie, d'après le nom en) |
 | Anglais | Red rainbowfish | Wikidata, libellé |
 | Allemand | Lachsroter Regenbogenfisch | Wikidata, libellé |
-| Italien | Glossolepis incisus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Glossolepis incisus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Glossolepis incisus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Glossolepis incisus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -585,8 +585,8 @@ Identifiant `arc-en-ciel-filament`, Wikidata [Q2107345](https://www.wikidata.org
 | Français | Arc-en-ciel à filaments | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie, d'après le nom en) |
 | Anglais | Threadfin rainbowfish | Wikidata, libellé |
 | Allemand | Prachtregenbogenfisch | Wikidata, libellé |
-| Italien | Iriatherina werneri | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Iriatherina werneri | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Iriatherina werneri | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Iriatherina werneri | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -595,7 +595,7 @@ Identifiant `arc-en-ciel-filament`, Wikidata [Q2107345](https://www.wikidata.org
 | GH | 5 – 12 °d | [en](https://en.wikipedia.org/wiki/Threadfin_rainbowfish) | en : eau douce à moyennement dure. choix de notre part : 5–12 |
 | KH | 2 – 8 °d | _aucune_ | aucune source chiffrée. choix de notre part |
 | Volume minimum | 80 L | [en](https://en.wikipedia.org/wiki/Threadfin_rainbowfish) | en : 20 gallons (environ 76 L) conviennent, 30 gallons (environ 110 L) préférables. choix de notre part : 80 L |
-| Taille adulte | 4 cm | [en](https://en.wikipedia.org/wiki/Threadfin_rainbowfish), [fr](https://fr.wikipedia.org/wiki/Iriatherina_werneri) | en : 5 cm sans la queue ; fr : 4 cm (mâle), 3 cm (femelle). choix de notre part : 4. 4 cm : proie de tout `EATS_SMALL_FISH` (seuil 4 cm) ; à trancher (voir fin de fiche) |
+| Taille adulte | 4 cm | [en](https://en.wikipedia.org/wiki/Threadfin_rainbowfish), [fr](https://fr.wikipedia.org/wiki/Iriatherina_werneri) | en : 5 cm sans la queue ; fr : 4 cm (mâle), 3 cm (femelle). choix de notre part : 4. 4 cm : proie de tout `EATS_SMALL_FISH` (seuil 4 cm) ; tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche) |
 | Groupe minimum | 6 | [en](https://en.wikipedia.org/wiki/Threadfin_rainbowfish) | en : de préférence 6 ou plus. choix de notre part : 6 |
 | Durée de vie | 3 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
 | Comportement | `PEACEFUL`, `LONG_FINS` | [en](https://en.wikipedia.org/wiki/Threadfin_rainbowfish) | en : généralement paisible ; nageoires longues, à garder sans mordilleurs. `LONG_FINS` : à valider |
@@ -616,8 +616,8 @@ Identifiant `yeux-bleus`, Wikidata [Q1488317](https://www.wikidata.org/wiki/Q148
 | Français | Yeux bleus | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Forktail blue-eye | Wikidata, libellé |
 | Allemand | Gabelschwanz-Blauauge | Wikidata, libellé |
-| Italien | Pseudomugil furcatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Pseudomugil furcatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Pseudomugil furcatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Pseudomugil furcatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -648,7 +648,7 @@ Identifiant `medaka`, Wikidata [Q1142975](https://www.wikidata.org/wiki/Q1142975
 | Anglais | Japanese rice fish | Wikidata, libellé |
 | Allemand | Medaka | Wikidata, libellé |
 | Italien | Pesce del riso | Wikidata, alias |
-| Espagnol | Oryzias latipes | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Oryzias latipes | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -678,8 +678,8 @@ Identifiant `killi-cap-lopez`, Wikidata [Q384439](https://www.wikidata.org/wiki/
 | Français | Killi du Cap Lopez | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie, d'après le nom en) |
 | Anglais | Cape Lopez lyretail | « nom ajouté par nous » (le libellé en est le nom scientifique ; nom donné par l'article en) |
 | Allemand | Bunter Prachtkärpfling | Wikidata, libellé |
-| Italien | Aphyosemion australe | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Aphyosemion australe | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Aphyosemion australe | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Aphyosemion australe | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -709,8 +709,8 @@ Identifiant `killi-raye`, Wikidata [Q2067460](https://www.wikidata.org/wiki/Q206
 | Français | Killi rayé | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Clown killi | Wikidata, alias |
 | Allemand | Ringelhechtling | Wikidata, libellé |
-| Italien | Epiplatys annulatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Epiplatys annulatus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Epiplatys annulatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Epiplatys annulatus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -740,8 +740,8 @@ Identifiant `tetraodon-nain`, Wikidata [Q175560](https://www.wikidata.org/wiki/Q
 | Français | Tétraodon nain | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie) |
 | Anglais | Dwarf pufferfish | Wikidata, libellé |
 | Allemand | Zwerg-Kugelfisch | Wikidata, libellé |
-| Italien | Carinotetraodon travancoricus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Carinotetraodon travancoricus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Carinotetraodon travancoricus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Carinotetraodon travancoricus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -753,7 +753,7 @@ Identifiant `tetraodon-nain`, Wikidata [Q175560](https://www.wikidata.org/wiki/Q
 | Taille adulte | 3 cm | [en](https://en.wikipedia.org/wiki/Dwarf_pufferfish), [de](https://de.wikipedia.org/wiki/Zwerg-Kugelfisch) | en : 3,5 cm au maximum, moins de 2,5 cm en général ; de : 2 à 3 cm. choix de notre part : 3 |
 | Groupe minimum | 1 | [en](https://en.wikipedia.org/wiki/Dwarf_pufferfish), [de](https://de.wikipedia.org/wiki/Zwerg-Kugelfisch) | en : vit en grands groupes dans la nature ; de : peut brimer ses congénères. choix de notre part : 1 |
 | Durée de vie | 5 ans | [en](https://en.wikipedia.org/wiki/Dwarf_pufferfish) | en : environ 5 ans, d'après des aquariophiles. choix de notre part : 5 |
-| Comportement | `EATS_SHRIMP`, `EATS_SNAILS`, `FIN_NIPPER`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Dwarf_pufferfish), [de](https://de.wikipedia.org/wiki/Zwerg-Kugelfisch) | en : mange de petits escargots d'eau douce et des crevettes ; de : escargots, pas particulièrement agressif mais peut brimer ses congénères. `EATS_SNAILS` retenu : à trancher (tout escargot « déconseillé »). `EATS_SHRIMP` retenu : à trancher (red cherry et Amano « déconseillées »). `FIN_NIPPER` retenu, sans source (connaissance aquariophile courante) : à trancher (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés »). `TERRITORIAL` : à valider. `EATS_SMALL_FISH` non retenu : à trancher (26 poissons de 4 cm ou moins « déconseillés », s'il est ajouté) |
+| Comportement | `EATS_SHRIMP`, `EATS_SNAILS`, `FIN_NIPPER`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Dwarf_pufferfish), [de](https://de.wikipedia.org/wiki/Zwerg-Kugelfisch) | en : mange de petits escargots d'eau douce et des crevettes ; de : escargots, pas particulièrement agressif mais peut brimer ses congénères. `EATS_SNAILS` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »). `EATS_SHRIMP` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (red cherry et Amano « déconseillées »). `FIN_NIPPER` retenu, sans source (connaissance aquariophile courante) : tranché par Maxime (2026-11-09), choix actuel gardé (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés »). `TERRITORIAL` : à valider. `EATS_SMALL_FISH` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (26 poissons de 4 cm ou moins « déconseillés », s'il est ajouté) |
 | Régime | `CARNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CICHLID`, `SLOW`, `MIDDLE` | _aucune_ | choix de notre part (affichage) ; ce n'est pas un cichlidé mais un Tétraodontidé, la silhouette de cichlidé ne le représente qu'approximativement |
 | Couleur | `#C8C840` | _aucune_ | choix de notre part : teinte dominante |
@@ -771,8 +771,8 @@ Identifiant `gobie-paon`, Wikidata [Q2056231](https://www.wikidata.org/wiki/Q205
 | Français | Gobie paon | « nom ajouté par nous » (le libellé fr est le nom scientifique ; nom courant d'aquariophilie, d'après le nom en) |
 | Anglais | Peacock gudgeon | Wikidata, alias |
 | Allemand | Pastellgrundel | Wikidata, libellé |
-| Italien | Tateurndina ocellicauda | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Tateurndina ocellicauda | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Tateurndina ocellicauda | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Tateurndina ocellicauda | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -784,7 +784,7 @@ Identifiant `gobie-paon`, Wikidata [Q2056231](https://www.wikidata.org/wiki/Q205
 | Taille adulte | 7,5 cm | [en](https://en.wikipedia.org/wiki/Peacock_gudgeon) | en : 7,5 cm (mâle), 5 cm (femelle) |
 | Groupe minimum | 2 | _aucune_ | aucune source chiffrée. choix de notre part : 2 (un couple) |
 | Durée de vie | 5 ans | _aucune_ | aucune source chiffrée. choix de notre part : 5, à vérifier en priorité |
-| Comportement | `PEACEFUL`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Peacock_gudgeon), [de](https://de.wikipedia.org/wiki/Pastellgrundel) | en : paisible, mâles parfois territoriaux entre eux ; de : discret et paisible, mais parfois il mordille les nageoires des petits poissons. `PEACEFUL` et `TERRITORIAL` : à valider. `FIN_NIPPER` non retenu : à trancher (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés », s'il est ajouté) |
+| Comportement | `PEACEFUL`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Peacock_gudgeon), [de](https://de.wikipedia.org/wiki/Pastellgrundel) | en : paisible, mâles parfois territoriaux entre eux ; de : discret et paisible, mais parfois il mordille les nageoires des petits poissons. `PEACEFUL` et `TERRITORIAL` : à valider. `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés », s'il est ajouté) |
 | Régime | `CARNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CICHLID`, `SLOW`, `BOTTOM` | _aucune_ | choix de notre part (affichage) ; ce n'est pas un cichlidé mais un Eleotridae, la silhouette de cichlidé ne le représente qu'approximativement |
 | Couleur | `#4A90C8` | _aucune_ | choix de notre part : teinte dominante |
@@ -802,8 +802,8 @@ Identifiant `bichir`, Wikidata [Q1515914](https://www.wikidata.org/wiki/Q1515914
 | Français | Polyptère du Sénégal | Wikidata, alias |
 | Anglais | Senegal bichir | « nom ajouté par nous » (le libellé en est le nom scientifique ; nom courant d'aquariophilie) |
 | Allemand | Senegal-Flösselhecht | Wikidata, libellé |
-| Italien | Polypterus senegalus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Polypterus senegalus | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Polypterus senegalus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Polypterus senegalus | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -815,7 +815,7 @@ Identifiant `bichir`, Wikidata [Q1515914](https://www.wikidata.org/wiki/Q1515914
 | Taille adulte | 45 cm | [en](https://en.wikipedia.org/wiki/Polypterus_senegalus), [fr](https://fr.wikipedia.org/wiki/Polypterus_senegalus), [de](https://de.wikipedia.org/wiki/Senegal-Fl%C3%B6sselhecht) | en : 48 cm en captivité (70 cm dans la nature) ; fr : idem ; de : environ 50 cm. choix de notre part : 45 |
 | Groupe minimum | 1 | _aucune_ | aucune source chiffrée. choix de notre part : 1 |
 | Durée de vie | 10 ans | [en](https://en.wikipedia.org/wiki/Polypterus_senegalus) | en : 10 à 15 ans en captivité. choix de notre part : 10 |
-| Comportement | `EATS_SMALL_FISH`, `EATS_SHRIMP` | [en](https://en.wikipedia.org/wiki/Polypterus_senegalus), [fr](https://fr.wikipedia.org/wiki/Polypterus_senegalus) | en et fr : prédateur, avale tout animal vivant ou mort qui tient dans sa gueule ; seule sa lenteur l'empêche de vider un bac de petits poissons. `EATS_SMALL_FISH` et `EATS_SHRIMP` retenus : à trancher (26 poissons de 4 cm ou moins et les crevettes « déconseillés »). `EATS_SNAILS` non retenu : à trancher (tout escargot « déconseillé », s'il est ajouté) |
+| Comportement | `EATS_SMALL_FISH`, `EATS_SHRIMP` | [en](https://en.wikipedia.org/wiki/Polypterus_senegalus), [fr](https://fr.wikipedia.org/wiki/Polypterus_senegalus) | en et fr : prédateur, avale tout animal vivant ou mort qui tient dans sa gueule ; seule sa lenteur l'empêche de vider un bac de petits poissons. `EATS_SMALL_FISH` et `EATS_SHRIMP` retenus : tranché par Maxime (2026-11-09), choix actuel gardé (26 poissons de 4 cm ou moins et les crevettes « déconseillés »). `EATS_SNAILS` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé », s'il est ajouté) |
 | Régime | `CARNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CATFISH`, `SLOW`, `BOTTOM` | _aucune_ | choix de notre part (affichage) ; ce n'est pas un silure mais un Polypteridae, la silhouette de silure ne le représente qu'approximativement |
 | Couleur | `#8C8A6B` | _aucune_ | choix de notre part : teinte dominante |
@@ -833,8 +833,8 @@ Identifiant `poisson-elephant`, Wikidata [Q945393](https://www.wikidata.org/wiki
 | Français | Poisson-éléphant | Wikidata, libellé |
 | Anglais | Peters' elephantnose fish | Wikidata, libellé |
 | Allemand | Elefantenrüsselfisch | Wikidata, libellé |
-| Italien | Gnathonemus petersii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
-| Espagnol | Gnathonemus petersii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Italien | Gnathonemus petersii | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
+| Espagnol | Gnathonemus petersii | « nom ajouté par nous », tranché par Maxime (2026-11-09), choix actuel gardé (nom scientifique faute de nom courant sourcé) |
 
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
@@ -853,23 +853,23 @@ Identifiant `poisson-elephant`, Wikidata [Q945393](https://www.wikidata.org/wiki
 
 Sources : [fr](https://fr.wikipedia.org/wiki/Poisson-%C3%A9l%C3%A9phant) · [en](https://en.wikipedia.org/wiki/Peters's_elephantnose_fish) · [de](https://de.wikipedia.org/wiki/Elefantenr%C3%BCsselfisch)
 
-## Points à trancher
+## Points tranchés (Maxime, 2026-11-09 : tous les choix actuels sont gardés)
 
 Les étiquettes `EATS_SNAILS`, `EATS_SHRIMP`, `EATS_SMALL_FISH` et `FIN_NIPPER` pèsent le plus sur les verdicts de ce lot. Un `EATS_SMALL_FISH` rend « déconseillé » tout poisson de 4 cm ou moins : 26 fiches une fois ce lot publié, soit 20 déjà en base (Néon bleu, Cardinalis, Otocinclus, Néon noir, Tétra amande, Néon rose, Nannostomus marginatus, Poisson-hachette, Faux tétra néon, Tétra de Rio, Guppy Endler, Hétérandria, Rasbora galaxy, Danio choprae, Rasbora moustique, Rasbora espei, Rasbora nain, Néon du pauvre, Danio vert, Gourami grogneur) et 6 de ce lot (corydoras pygmée, corydoras sel et poivre, arc-en-ciel à filaments, médaka, killi rayé, tétraodon nain). Un `EATS_SHRIMP` rend « déconseillée » toute crevette (red cherry, Amano). Un `FIN_NIPPER` rend « déconseillé » tout voisin portant `LONG_FINS` (guppy, combattant, scalaire, arc-en-ciel à filaments). `EATS_SNAILS` rend « déconseillé » tout escargot : aucune fiche d'escargot n'est encore en base, l'effet ne se verra qu'au lot suivant. `TERRITORIAL` ne donne que « avec précautions » entre deux poissons de la même espèce.
 
-- **Loche-clown** : `EATS_SNAILS` retenu : à trancher (tout escargot « déconseillé »). Sources : en (mange les physes, apprécié pour cela) et fr (mollusques aquatiques au menu). `TERRITORIAL` non retenu (de : territorial avec l'âge). Volume (600 L, soit 3 × 200 L d'après fr) et taille (20 cm) : choix de notre part, à vérifier en priorité.
-- **Loche pakistanaise (botia-yoyo)** : `EATS_SNAILS` retenu par jugement de notre part, comme les autres botiidés : à trancher (tout escargot « déconseillé »). Aucun des trois articles (fr, en, de) ne parle de son régime.
-- **Loche-clown, crevettes** : `EATS_SHRIMP` non retenu (en et fr ne citent que les escargots ; connaissance aquariophile courante : elle s'attaque aux petites crevettes). Effet : sans le tag, red cherry et Amano restent « Vont bien » à côté. S'il est ajouté : red cherry et Amano « Déconseillées ». Précédent : Maxime a tranché « Pas de tag » pour le combattant (2026-11-06) : `EATS_SHRIMP` rend toute crevette « Déconseillée », Amano comprise. À trancher.
-- **Loche pakistanaise (botia-yoyo), crevettes** : `EATS_SHRIMP` non retenu (aucune source sur son régime ; connaissance aquariophile courante : comme les autres botiidés, elle s'attaque aux petites crevettes). Effet : sans le tag, red cherry et Amano restent « Vont bien » à côté. S'il est ajouté : red cherry et Amano « Déconseillées ». Précédent : Maxime a tranché « Pas de tag » pour le combattant (2026-11-06) : `EATS_SHRIMP` rend toute crevette « Déconseillée », Amano comprise. À trancher.
-- **Arc-en-ciel à filaments, taille** : 4 cm (fr : 4 cm mâle, 3 cm femelle ; en : 5 cm sans la queue), donc proie de tout `EATS_SMALL_FISH` (seuil de 4 cm inclus) : « Déconseillé » à côté de l'oscar, du macropode, du bichir, etc. Effet : à 5 cm (en), il ne serait plus une proie et serait « Vont bien » à côté d'eux. À trancher : 4 ou 5 cm.
-- **Loche naine** : `EATS_SNAILS` retenu : à trancher (tout escargot « déconseillé »), `EATS_SHRIMP` retenu : à trancher (red cherry et Amano « déconseillées »). Sources : en (escargots et crustacés) ; fr (escargots et crevettes, proies préférées) ; de (sert à réduire un excès d'escargots).
-- **Tétraodon nain** : `EATS_SNAILS` retenu : à trancher (tout escargot « déconseillé »), `EATS_SHRIMP` retenu : à trancher (red cherry et Amano « déconseillées »), sources en (petits escargots et crevettes en captivité) et de (escargots). `FIN_NIPPER` retenu, sans source (connaissance aquariophile courante) : à trancher (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés »). `EATS_SMALL_FISH` non retenu : à trancher (26 poissons de 4 cm ou moins « déconseillés », s'il est ajouté). `TERRITORIAL` retenu (de : brime ses congénères), à valider. Un seul exemplaire suffit (`minGroup` 1) : choix de notre part.
-- **Bichir** : `EATS_SMALL_FISH` et `EATS_SHRIMP` retenus : à trancher (26 poissons de 4 cm ou moins et les crevettes « déconseillés »), sources en et fr (prédateur, avale tout ce qui tient dans sa gueule). `EATS_SNAILS` non retenu : à trancher (tout escargot « déconseillé », s'il est ajouté).
-- **Gobie paon** : `FIN_NIPPER` non retenu : à trancher (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés », s'il est ajouté). de dit qu'il mordille parfois les nageoires de petits poissons ; en et de le disent paisible.
-- **Plécostome** : taille (40 cm) : à trancher (en : jusqu'à 43 cm de longueur standard). Volume (500 L), durée de vie (15 ans) et plages d'eau : choix de notre part sans source, à vérifier en priorité. `EATS_PLANTS` non retenu : à trancher (« avec précautions » avec toute plante, s'il est ajouté). Il n'est pas sur la liste des espèces envahissantes de l'Union, mais il l'est dans plusieurs pays hors Union : le relâcher dans le milieu naturel est à proscrire.
+- **Loche-clown** : `EATS_SNAILS` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »). Sources : en (mange les physes, apprécié pour cela) et fr (mollusques aquatiques au menu). `TERRITORIAL` non retenu (de : territorial avec l'âge). Volume (600 L, soit 3 × 200 L d'après fr) et taille (20 cm) : choix de notre part, à vérifier en priorité.
+- **Loche pakistanaise (botia-yoyo)** : `EATS_SNAILS` retenu par jugement de notre part, comme les autres botiidés : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »). Aucun des trois articles (fr, en, de) ne parle de son régime.
+- **Loche-clown, crevettes** : `EATS_SHRIMP` non retenu (en et fr ne citent que les escargots ; connaissance aquariophile courante : elle s'attaque aux petites crevettes). Effet : sans le tag, red cherry et Amano restent « Vont bien » à côté. S'il est ajouté : red cherry et Amano « Déconseillées ». Précédent : Maxime a tranché « Pas de tag » pour le combattant (2026-11-06) : `EATS_SHRIMP` rend toute crevette « Déconseillée », Amano comprise. Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Loche pakistanaise (botia-yoyo), crevettes** : `EATS_SHRIMP` non retenu (aucune source sur son régime ; connaissance aquariophile courante : comme les autres botiidés, elle s'attaque aux petites crevettes). Effet : sans le tag, red cherry et Amano restent « Vont bien » à côté. S'il est ajouté : red cherry et Amano « Déconseillées ». Précédent : Maxime a tranché « Pas de tag » pour le combattant (2026-11-06) : `EATS_SHRIMP` rend toute crevette « Déconseillée », Amano comprise. Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Arc-en-ciel à filaments, taille** : 4 cm (fr : 4 cm mâle, 3 cm femelle ; en : 5 cm sans la queue), donc proie de tout `EATS_SMALL_FISH` (seuil de 4 cm inclus) : « Déconseillé » à côté de l'oscar, du macropode, du bichir, etc. Effet : à 5 cm (en), il ne serait plus une proie et serait « Vont bien » à côté d'eux. Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Loche naine** : `EATS_SNAILS` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »), `EATS_SHRIMP` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (red cherry et Amano « déconseillées »). Sources : en (escargots et crustacés) ; fr (escargots et crevettes, proies préférées) ; de (sert à réduire un excès d'escargots).
+- **Tétraodon nain** : `EATS_SNAILS` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »), `EATS_SHRIMP` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (red cherry et Amano « déconseillées »), sources en (petits escargots et crevettes en captivité) et de (escargots). `FIN_NIPPER` retenu, sans source (connaissance aquariophile courante) : tranché par Maxime (2026-11-09), choix actuel gardé (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés »). `EATS_SMALL_FISH` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (26 poissons de 4 cm ou moins « déconseillés », s'il est ajouté). `TERRITORIAL` retenu (de : brime ses congénères), à valider. Un seul exemplaire suffit (`minGroup` 1) : choix de notre part.
+- **Bichir** : `EATS_SMALL_FISH` et `EATS_SHRIMP` retenus : tranché par Maxime (2026-11-09), choix actuel gardé (26 poissons de 4 cm ou moins et les crevettes « déconseillés »), sources en et fr (prédateur, avale tout ce qui tient dans sa gueule). `EATS_SNAILS` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé », s'il est ajouté).
+- **Gobie paon** : `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés », s'il est ajouté). de dit qu'il mordille parfois les nageoires de petits poissons ; en et de le disent paisible.
+- **Plécostome** : taille (40 cm) : tranché par Maxime (2026-11-09), choix actuel gardé (en : jusqu'à 43 cm de longueur standard). Volume (500 L), durée de vie (15 ans) et plages d'eau : choix de notre part sans source, à vérifier en priorité. `EATS_PLANTS` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (« avec précautions » avec toute plante, s'il est ajouté). Il n'est pas sur la liste des espèces envahissantes de l'Union, mais il l'est dans plusieurs pays hors Union : le relâcher dans le milieu naturel est à proscrire.
 - **Poisson-éléphant** : `TERRITORIAL` retenu (en et fr : territorial envers sa propre espèce sauf dans 400 L), à valider. Pas de `PEACEFUL`.
 - **Synodontis, eau dure** : le synodontis a un pH de 7,5 à 9 et un GH et un KH élevés, choix de notre part, à vérifier en priorité : dans un bac d'eau douce, il ressortira « déconseillé » sur le pH ou le GH.
-- **Noms scientifiques faute de nom courant** : le nom scientifique est repris, aucun nom courant sourcé n'ayant été trouvé, pour *Corydoras aeneus* (es), *Corydoras paleatus* (es), *Corydoras sterbai* (it/es), *Corydoras pygmaeus* (it/es), *Corydoras trilineatus* (it/es), *Corydoras habrosus* (it/es), *Chromobotia macracanthus* (it), *Pangio kuhlii* (it/es), *Botia almorhae* (it/es), *Ambastaia sidthimunki* (it/es), *Pterygoplichthys pardalis* (de/it/es), *Rineloricaria parva* (de/it/es), *Kryptopterus vitreolus* (it), *Sewellia lineolata* (fr/it/es), *Melanotaenia boesemani* (it/es), *Melanotaenia praecox* (it/es), *Glossolepis incisus* (it/es), *Iriatherina werneri* (it/es), *Pseudomugil furcatus* (it/es), *Oryzias latipes* (es), *Aphyosemion australe* (it/es), *Epiplatys annulatus* (it/es), *Carinotetraodon travancoricus* (it/es), *Tateurndina ocellicauda* (it/es), *Polypterus senegalus* (it/es), *Gnathonemus petersii* (it/es) ; les cinq langues pour *Synodontis petricola* ; it/es de la plupart des autres espèces (voir les tableaux de noms). À trancher : les garder ou fournir un nom.
-- **Noms ajoutés par nous** (fr) : « Corydoras poivré », « Corydoras de Sterba », « Corydoras pygmée », « Loche naine », « Plécostome », « Loricaire », « Arc-en-ciel de Boeseman », « Arc-en-ciel néon », « Arc-en-ciel rouge », « Arc-en-ciel à filaments », « Yeux bleus », « Killi du Cap Lopez », « Killi rayé », « Tétraodon nain », « Gobie paon » ; (en) : « Common whiptail catfish », « Cape Lopez lyretail », « Senegal bichir ». À trancher : les garder ou les remplacer.
-- **Familles d'affichage** : `CYPRINID` pour les arcs-en-ciel, les yeux bleus et le médaka (ce ne sont pas des cyprinidés), `LIVEBEARER` pour les deux killis (ce sont des ovipares), `CICHLID` pour le tétraodon nain et le gobie paon, `CATFISH` pour le bichir et le poisson-éléphant (silhouettes approchées, à la demande de la liste). À trancher : les garder, ou prévoir des familles propres.
-- **Pas d'étiquette** pour le plécostome, le loricaire, le synodontis, le silure de verre, la sewellia, l'arc-en-ciel rouge et les yeux bleus : aucune source nette n'en décrit le comportement (arc-en-ciel rouge : de dit les mâles parfois territoriaux, `TERRITORIAL` non retenu). À trancher : les garder ainsi, ou en ajouter.
+- **Noms scientifiques faute de nom courant** : le nom scientifique est repris, aucun nom courant sourcé n'ayant été trouvé, pour *Corydoras aeneus* (es), *Corydoras paleatus* (es), *Corydoras sterbai* (it/es), *Corydoras pygmaeus* (it/es), *Corydoras trilineatus* (it/es), *Corydoras habrosus* (it/es), *Chromobotia macracanthus* (it), *Pangio kuhlii* (it/es), *Botia almorhae* (it/es), *Ambastaia sidthimunki* (it/es), *Pterygoplichthys pardalis* (de/it/es), *Rineloricaria parva* (de/it/es), *Kryptopterus vitreolus* (it), *Sewellia lineolata* (fr/it/es), *Melanotaenia boesemani* (it/es), *Melanotaenia praecox* (it/es), *Glossolepis incisus* (it/es), *Iriatherina werneri* (it/es), *Pseudomugil furcatus* (it/es), *Oryzias latipes* (es), *Aphyosemion australe* (it/es), *Epiplatys annulatus* (it/es), *Carinotetraodon travancoricus* (it/es), *Tateurndina ocellicauda* (it/es), *Polypterus senegalus* (it/es), *Gnathonemus petersii* (it/es) ; les cinq langues pour *Synodontis petricola* ; it/es de la plupart des autres espèces (voir les tableaux de noms). Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Noms ajoutés par nous** (fr) : « Corydoras poivré », « Corydoras de Sterba », « Corydoras pygmée », « Loche naine », « Plécostome », « Loricaire », « Arc-en-ciel de Boeseman », « Arc-en-ciel néon », « Arc-en-ciel rouge », « Arc-en-ciel à filaments », « Yeux bleus », « Killi du Cap Lopez », « Killi rayé », « Tétraodon nain », « Gobie paon » ; (en) : « Common whiptail catfish », « Cape Lopez lyretail », « Senegal bichir ». Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Familles d'affichage** : `CYPRINID` pour les arcs-en-ciel, les yeux bleus et le médaka (ce ne sont pas des cyprinidés), `LIVEBEARER` pour les deux killis (ce sont des ovipares), `CICHLID` pour le tétraodon nain et le gobie paon, `CATFISH` pour le bichir et le poisson-éléphant (silhouettes approchées, à la demande de la liste). Tranché par Maxime (2026-11-09) : choix actuel gardé.
+- **Pas d'étiquette** pour le plécostome, le loricaire, le synodontis, le silure de verre, la sewellia, l'arc-en-ciel rouge et les yeux bleus : aucune source nette n'en décrit le comportement (arc-en-ciel rouge : de dit les mâles parfois territoriaux, `TERRITORIAL` non retenu). Tranché par Maxime (2026-11-09) : choix actuel gardé.
