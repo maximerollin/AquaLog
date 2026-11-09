@@ -1,6 +1,6 @@
-# Encyclopédie : les 15 premières fiches, à valider
+# Encyclopédie : les 15 premières fiches, validées
 
-Ces fiches sont des **brouillons à valider avant publication**. Les valeurs ont été écrites par nous, à partir des connaissances aquariophiles courantes, puis confrontées aux articles Wikipédia (fr, en, de, et it/es pour les crevettes) liés dans chaque fiche. Aucune base de données ni fiche d'application concurrente n'a été consultée ou copiée.
+Ces fiches ont été **validées par Maxime le 2026-11-09**, valeurs « à vérifier en priorité » comprises. Les valeurs ont été écrites par nous, à partir des connaissances aquariophiles courantes, puis confrontées aux articles Wikipédia (fr, en, de, et it/es pour les crevettes) liés dans chaque fiche. Aucune base de données ni fiche d'application concurrente n'a été consultée ou copiée.
 
 **Ce qui est sourcé et ce qui ne l'est pas.** Toutes les valeurs n'ont pas deux sources. Dans chaque tableau, la colonne « Note » rapporte ce que dit chaque article cité (« fr (infobox) » = la fiche aquariophile de l'article français), puis, quand la valeur retenue n'est pas celle d'une source, le marque « choix de notre part ». Une valeur sans aucune source chiffrée porte « aucune source chiffrée » ; les plus fragiles sont marquées « à vérifier en priorité ». La plupart des KH, plusieurs volumes minimums et groupes minimums sont des choix de notre part.
 
@@ -12,7 +12,7 @@ Les dessins (`drawing`) sont ajoutés plus tard (tâche 8). La couleur sert à t
 
 ## Néon bleu (*Paracheirodon innesi*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `neon`, Wikidata [Q131431](https://www.wikidata.org/wiki/Q131431). Tempérament : Paisible, vit en banc serré au milieu du bac.
 
@@ -43,7 +43,7 @@ Sources : [en](https://en.wikipedia.org/wiki/Neon_tetra) · [fr](https://fr.wiki
 
 ## Cardinalis (*Paracheirodon axelrodi*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `cardinalis`, Wikidata [Q590731](https://www.wikidata.org/wiki/Q590731). Tempérament : Paisible, banc coloré, veut une eau chaude et douce.
 
@@ -74,7 +74,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Paracheirodon_axelrodi) · [de](htt
 
 ## Guppy (*Poecilia reticulata*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `guppy`, Wikidata [Q178202](https://www.wikidata.org/wiki/Q178202). Tempérament : Paisible et vif, grandes nageoires fragiles.
 
@@ -105,7 +105,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Poecilia_reticulata) · [en](https:
 
 ## Platy (*Xiphophorus maculatus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `platy`, Wikidata [Q1162971](https://www.wikidata.org/wiki/Q1162971). Tempérament : Paisible, robuste, idéal pour débuter.
 
@@ -136,7 +136,7 @@ Sources : [en](https://en.wikipedia.org/wiki/Southern_platyfish) · [fr](https:/
 
 ## Molly (*Poecilia sphenops*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `molly`, Wikidata [Q177832](https://www.wikidata.org/wiki/Q177832). Tempérament : Paisible, veut une eau dure et un peu de végétal.
 
@@ -167,7 +167,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Poecilia_sphenops) · [de](https://
 
 ## Combattant (*Betta splendens*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `betta`, Wikidata [Q549](https://www.wikidata.org/wiki/Q549). Tempérament : Mâle seul : agressif envers ses congénères et les poissons lents à longues nageoires.
 
@@ -198,7 +198,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Combattant) · [en](https://en.wiki
 
 ## Corydoras panda (*Corydoras panda*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `corydoras-panda`, Wikidata [Q387817](https://www.wikidata.org/wiki/Q387817). Tempérament : Paisible, fouille le sable en groupe.
 
@@ -229,7 +229,7 @@ Sources : [de](https://de.wikipedia.org/wiki/Panda-Panzerwels) · [en](https://e
 
 ## Ancistrus (*Ancistrus cirrhosus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `ancistrus`, Wikidata [Q135004](https://www.wikidata.org/wiki/Q135004). Tempérament : Paisible avec les autres, les mâles défendent leur cachette.
 
@@ -251,7 +251,7 @@ Identifiant `ancistrus`, Wikidata [Q135004](https://www.wikidata.org/wiki/Q13500
 | Taille adulte | 12 cm | [de](https://de.wikipedia.org/wiki/Ancistrus_cirrhosus), [en-genre](https://en.wikipedia.org/wiki/Ancistrus), [en](https://en.wikipedia.org/wiki/Ancistrus_cirrhosus) | de : jusqu'à 12 cm ; en (genre) : mâles 15 cm, femelles 12 cm ; en : 9,1 cm (LS) |
 | Groupe minimum | 1 | _aucune_ | aucune source. choix de notre part : peut vivre seul |
 | Durée de vie | 10 ans | [en-genre](https://en.wikipedia.org/wiki/Ancistrus) | en (genre) : jusqu'à 12 ans. choix de notre part : 10 |
-| Comportement | `TERRITORIAL` | _aucune_ | aucune source. choix de notre part, à valider : les mâles défendent leur cachette |
+| Comportement | `TERRITORIAL` | _aucune_ | aucune source. choix de notre part, validé par Maxime (2026-11-09) : les mâles défendent leur cachette |
 | Régime | `ALGAE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CATFISH`, `CRAWL`, `BOTTOM` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#5D5348` | _aucune_ | choix de notre part : teinte dominante |
@@ -260,7 +260,7 @@ Sources : [en-genre](https://en.wikipedia.org/wiki/Ancistrus) · [de](https://de
 
 ## Scalaire (*Pterophyllum scalare*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `scalaire`, Wikidata [Q827441](https://www.wikidata.org/wiki/Q827441). Tempérament : Calme, mais chasse les petits poissons et les crevettes une fois adulte.
 
@@ -291,7 +291,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Scalaire_%28poisson%29) · [en](htt
 
 ## Gourami nain (*Trichogaster lalius*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `gourami-nain`, Wikidata [Q244123](https://www.wikidata.org/wiki/Q244123). Tempérament : Paisible avec les autres, les mâles se battent entre eux.
 
@@ -322,7 +322,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Gourami_nain) · [en](https://en.wi
 
 ## Danio zébré (*Danio rerio*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `danio-zebre`, Wikidata [Q169444](https://www.wikidata.org/wiki/Q169444). Tempérament : Très vif, nage en banc près de la surface.
 
@@ -353,7 +353,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Danio_rerio) · [de](https://de.wik
 
 ## Rasbora arlequin (*Trigonostigma heteromorpha*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `rasbora-arlequin`, Wikidata [Q28599939](https://www.wikidata.org/wiki/Q28599939). Tempérament : Paisible, banc discret entre les plantes.
 
@@ -384,7 +384,7 @@ Sources : [en](https://en.wikipedia.org/wiki/Harlequin_rasbora) · [fr](https://
 
 ## Crevette red cherry (*Neocaridina davidi*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `red-cherry`, Wikidata [Q119167133](https://www.wikidata.org/wiki/Q119167133). Tempérament : Paisible, nettoie le bac et se reproduit facilement.
 
@@ -415,7 +415,7 @@ Sources : [it](https://it.wikipedia.org/wiki/Neocaridina_davidi) · [es](https:/
 
 ## Crevette d'Amano (*Caridina multidentata*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `amano`, Wikidata [Q609311](https://www.wikidata.org/wiki/Q609311). Tempérament : Paisible avec les poissons, grande mangeuse d'algues, parfois brusque avec les autres crevettes.
 
@@ -446,7 +446,7 @@ Sources : [en](https://en.wikipedia.org/wiki/Caridina_multidentata) · [fr](http
 
 ## Otocinclus (*Otocinclus vittatus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `otocinclus`, Wikidata [Q1879261](https://www.wikidata.org/wiki/Q1879261). Tempérament : Paisible, broute les algues sur les vitres et les feuilles.
 
