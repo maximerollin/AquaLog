@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { feedbackRpcStatus, parseFeedbackRequest } from "./service.ts";
+import { feedbackRpcStatus, parseFeedbackRequest, userTokenStatus } from "./service.ts";
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
@@ -26,10 +26,13 @@ Deno.serve(async (request) => {
   if (authorization.startsWith("Bearer ")) {
     // verify_jwt is off: the token is checked here so anonymous calls can pass through.
     const client = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      auth: { persistSession: false, autoRefreshToken: false },
       global: { headers: { Authorization: authorization } },
     });
     const { data, error: userError } = await client.auth.getUser(authorization.slice("Bearer ".length));
-    if (userError || !data.user) return new Response("Unauthorized", { status: 401 });
+    const tokenStatus = userTokenStatus(userError ?? (data.user ? null : { status: 401 }));
+    if (tokenStatus === 401) return new Response("Unauthorized", { status: 401 });
+    if (tokenStatus === 500) return new Response("Feedback unavailable", { status: 500 });
     ({ error } = await client.rpc("submit_product_feedback", common));
   } else {
     if (feedback.installId === undefined) return new Response("Invalid feedback", { status: 400 });

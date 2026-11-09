@@ -1,4 +1,4 @@
-import { feedbackRpcStatus, parseFeedbackRequest } from "./service.ts";
+import { feedbackRpcStatus, parseFeedbackRequest, userTokenStatus } from "./service.ts";
 
 const uuid = "123e4567-e89b-12d3-a456-426614174000";
 
@@ -46,4 +46,12 @@ Deno.test("RPC errors expose only stable HTTP outcomes", () => {
   if (feedbackRpcStatus("P0001") !== 429) throw new Error("rate mapping changed");
   if (feedbackRpcStatus("22023") !== 400) throw new Error("input mapping changed");
   if (feedbackRpcStatus("XX000") !== 500) throw new Error("internal errors must fail closed");
+});
+
+Deno.test("only a rejected token is a 401", () => {
+  if (userTokenStatus(null) !== null) throw new Error("valid token flagged");
+  if (userTokenStatus({ status: 401 }) !== 401) throw new Error("401 not mapped");
+  if (userTokenStatus({ status: 403 }) !== 401) throw new Error("403 not mapped");
+  if (userTokenStatus({ name: "AuthRetryableFetchError" }) !== 500) throw new Error("transport error must be 500");
+  if (userTokenStatus({ status: 503 }) !== 500) throw new Error("5xx must be 500");
 });

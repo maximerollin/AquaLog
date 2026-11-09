@@ -52,3 +52,9 @@ export function feedbackRpcStatus(code: string | undefined): number {
   if (code === "22023") return 400;
   return 500;
 }
+
+/** null: token valid. 401: the auth server rejected it. 500: any other failure (outage), never a 401. */
+export function userTokenStatus(error: { status?: number; name?: string } | null): 401 | 500 | null {
+  if (error === null) return null;
+  return error.status === 401 || error.status === 403 ? 401 : 500;
+}
