@@ -489,6 +489,7 @@
     <string name="habitants_reason_too_cold">Zu kalt</string>
     <string name="habitants_reason_eats_small_fish">Jagt Kleine</string>
     <string name="habitants_reason_eats_shrimp">Frisst Garnelen</string>
+    <string name="habitants_reason_eats_snails">Frisst Schnecken</string>
     <string name="habitants_reason_fin_nipping">Zupft Flossen</string>
     <string name="habitants_reason_territorial">Revierbildend</string>
     <string name="habitants_reason_eats_plants">Frisst Pflanzen</string>
@@ -502,6 +503,7 @@
     <string name="habitants_explain_too_cold">Wasser zu kalt</string>
     <string name="habitants_explain_eats_small_fish">kleine Fische könnten gefressen werden</string>
     <string name="habitants_explain_eats_shrimp">Garnelen könnten gefressen werden</string>
+    <string name="habitants_explain_eats_snails">Schnecken könnten gefressen werden</string>
     <string name="habitants_explain_fin_nipping">lange Flossen könnten angeknabbert werden</string>
     <string name="habitants_explain_territorial">revierbildend gegenüber Artgenossen</string>
     <string name="habitants_explain_eats_plants">Pflanzen könnten gefressen werden</string>

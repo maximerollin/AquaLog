@@ -88,7 +88,7 @@ class AddInhabitantStateTest {
             assertTrue("neon" in searchSpecies(species, query, "fr", null).map { it.id }, query)
         }
         assertTrue("neon" in searchSpecies(species, "neon", "en", null).map { it.id })
-        assertEquals(listOf("cardinalis", "neon"), searchSpecies(species, "paracheirodon", "fr", null).map { it.id }.sorted())
+        assertEquals(listOf("cardinalis", "neon", "neon-vert"), searchSpecies(species, "paracheirodon", "fr", null).map { it.id }.sorted())
         assertEquals(emptyList(), searchSpecies(species, "zzz", "fr", null))
         assertEquals(species.size, searchSpecies(species, "  ", "fr", null).size)
     }
@@ -96,7 +96,8 @@ class AddInhabitantStateTest {
     @Test
     fun `the kind chips filter`() {
         val shrimps = searchSpecies(species, "", "fr", SpeciesKind.SHRIMP)
-        assertEquals(setOf("red-cherry", "amano"), shrimps.map { it.id }.toSet())
+        assertTrue(setOf("red-cherry", "amano").all { id -> shrimps.any { it.id == id } })
+        assertTrue(shrimps.all { it.kind == SpeciesKind.SHRIMP })
         assertEquals(emptyList(), searchSpecies(species, "neon", "fr", SpeciesKind.SHRIMP))
         assertTrue(searchSpecies(species, "", "fr", SpeciesKind.FISH).all { it.kind == SpeciesKind.FISH })
     }

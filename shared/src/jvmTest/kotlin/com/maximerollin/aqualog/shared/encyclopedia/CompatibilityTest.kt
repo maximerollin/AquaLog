@@ -92,6 +92,14 @@ class CompatibilityTest {
     }
 
     @Test
+    fun `a snail eater is fine with its own kind`() {
+        val helena = species("helena", kind = SpeciesKind.SNAIL, tags = setOf(SpeciesTag.EATS_SNAILS), size = 2.0, minVolume = 20, minGroup = 1)
+        val a = assess(helena, present = listOf(PresentGroup(helena, helena.family, 3)))
+        assertEquals(CriterionStatus.OK, a.check(CriterionKind.COHABITATION).status)
+        assertEquals(Fit.GOOD, a.fit)
+    }
+
+    @Test
     fun `just outside a range is CAUTION, far outside is PROBLEM`() {
         val guppy = species("guppy", gh = ValueRange(6.0, 20.0))
         val near = assess(guppy, r = readings(gh = 5.0)).check(CriterionKind.GH)
@@ -182,5 +190,24 @@ class CompatibilityTest {
         assertEquals(Reason.FIN_NIPPING, assess(betta, present = listOf(PresentGroup(barb, barb.family, 6))).check(CriterionKind.COHABITATION).reason)
         // custom species (no Species) are skipped
         assertEquals(CriterionStatus.OK, assess(neon, present = listOf(PresentGroup(null, DrawingFamily.TETRA, 3))).check(CriterionKind.COHABITATION).status)
+    }
+
+    @Test
+    fun `eats snails is detected both ways`() {
+        val snail = species("nerite", kind = SpeciesKind.SNAIL)
+        val loach = species("loach", tags = setOf(SpeciesTag.EATS_SNAILS), size = 10.0)
+        val forward = assess(loach, present = listOf(PresentGroup(snail, snail.family, 3))).check(CriterionKind.COHABITATION)
+        assertEquals(Reason.EATS_SNAILS, forward.reason)
+        assertEquals(Fit.BAD, assess(loach, present = listOf(PresentGroup(snail, snail.family, 3))).fit)
+        val reverse = assess(snail, present = listOf(PresentGroup(loach, loach.family, 3)))
+        assertEquals(Reason.EATS_SNAILS, reverse.check(CriterionKind.COHABITATION).reason)
+        assertEquals(Fit.BAD, reverse.fit)
+    }
+
+    @Test
+    fun `eats snails ignores shrimp`() {
+        val shrimp = species("cherry", kind = SpeciesKind.SHRIMP)
+        val loach = species("loach", tags = setOf(SpeciesTag.EATS_SNAILS), size = 10.0)
+        assertEquals(CriterionStatus.OK, assess(loach, present = listOf(PresentGroup(shrimp, shrimp.family, 5))).check(CriterionKind.COHABITATION).status)
     }
 }

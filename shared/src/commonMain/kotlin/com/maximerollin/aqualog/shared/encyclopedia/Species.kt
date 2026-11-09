@@ -12,7 +12,7 @@ enum class DrawingFamily { TETRA, LIVEBEARER, CICHLID, LABYRINTH, CYPRINID, CATF
 
 enum class MotionFamily { SCHOOL, BOTTOM, GLIDE, CRAWL, SLOW }
 
-enum class SpeciesTag { EATS_SMALL_FISH, EATS_SHRIMP, FIN_NIPPER, LONG_FINS, TERRITORIAL, EATS_PLANTS, PEACEFUL }
+enum class SpeciesTag { EATS_SMALL_FISH, EATS_SHRIMP, EATS_SNAILS, FIN_NIPPER, LONG_FINS, TERRITORIAL, EATS_PLANTS, PEACEFUL }
 
 enum class Diet { OMNIVORE, HERBIVORE, CARNIVORE, ALGAE }
 
@@ -60,7 +60,17 @@ fun speciesProblems(species: List<Species>): List<String> {
     species.groupBy { it.wikidata }.filterValues { it.size > 1 }.forEach { (qid, same) ->
         problems += "${same.joinToString { it.id }}: duplicate wikidata $qid"
     }
+    for (language in SPECIES_LANGUAGES) {
+        species.groupBy { it.names[language]?.trim()?.lowercase() }.forEach { (name, same) ->
+            if (name != null && name.isNotEmpty() && same.size > 1) {
+                problems += "${same.joinToString { it.id }}: duplicate $language name '${same.first().names[language]}'"
+            }
+        }
+    }
     for (s in species) {
+        for ((language, name) in s.names) {
+            if (name.isNotEmpty() && name.first().isLowerCase()) problems += "${s.id}: $language name starts lowercase"
+        }
         if (!kebabCase.matches(s.id)) problems += "${s.id}: id is not kebab-case"
         val missing = SPECIES_LANGUAGES.filter { s.names[it].isNullOrBlank() }
         if (missing.isNotEmpty()) problems += "${s.id}: missing names $missing"

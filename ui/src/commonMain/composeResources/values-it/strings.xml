@@ -489,6 +489,7 @@
     <string name="habitants_reason_too_cold">Troppo fredda</string>
     <string name="habitants_reason_eats_small_fish">Caccia piccoli</string>
     <string name="habitants_reason_eats_shrimp">Mangia gamberetti</string>
+    <string name="habitants_reason_eats_snails">Mangia lumache</string>
     <string name="habitants_reason_fin_nipping">Morde pinne</string>
     <string name="habitants_reason_territorial">Territoriale</string>
     <string name="habitants_reason_eats_plants">Mangia piante</string>
@@ -502,6 +503,7 @@
     <string name="habitants_explain_too_cold">acqua troppo fredda</string>
     <string name="habitants_explain_eats_small_fish">i pesci piccoli rischiano di essere mangiati</string>
     <string name="habitants_explain_eats_shrimp">i gamberetti rischiano di essere mangiati</string>
+    <string name="habitants_explain_eats_snails">le lumache rischiano di essere mangiate</string>
     <string name="habitants_explain_fin_nipping">le pinne lunghe rischiano di essere morse</string>
     <string name="habitants_explain_territorial">territoriale con i suoi simili</string>
     <string name="habitants_explain_eats_plants">le piante rischiano di essere mangiate</string>

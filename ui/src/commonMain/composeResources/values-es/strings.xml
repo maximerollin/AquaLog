@@ -489,6 +489,7 @@
     <string name="habitants_reason_too_cold">Muy fría</string>
     <string name="habitants_reason_eats_small_fish">Caza pequeños</string>
     <string name="habitants_reason_eats_shrimp">Come gambas</string>
+    <string name="habitants_reason_eats_snails">Come caracoles</string>
     <string name="habitants_reason_fin_nipping">Muerde aletas</string>
     <string name="habitants_reason_territorial">Territorial</string>
     <string name="habitants_reason_eats_plants">Come plantas</string>
@@ -502,6 +503,7 @@
     <string name="habitants_explain_too_cold">agua demasiado fría</string>
     <string name="habitants_explain_eats_small_fish">los peces pequeños pueden ser comidos</string>
     <string name="habitants_explain_eats_shrimp">las gambas pueden ser comidas</string>
+    <string name="habitants_explain_eats_snails">los caracoles pueden ser comidos</string>
     <string name="habitants_explain_fin_nipping">las aletas largas pueden ser mordidas</string>
     <string name="habitants_explain_territorial">territorial con los de su especie</string>
     <string name="habitants_explain_eats_plants">las plantas pueden ser comidas</string>
