@@ -2105,7 +2105,8 @@ class HomeViewModel(
                         it.copy(accountInvitationPrompt = AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION)
                     }
                 }
-                if (draft.editingSessionId == null) showPistesAfterSave(recorded)
+                val isNewSession = draft.editingSessionId == null
+                val pistesAdvices = if (isNewSession) showPistesAfterSave(recorded) else null
                 runCatching { taskCompleter.completeLinked(recorded, previousTypes) }
                 recordProductEvent(
                     ProductEvent.SessionSaved(
@@ -2113,16 +2114,21 @@ class HomeViewModel(
                     ),
                 )
                 if (isFirstSession) recordProductEvent(ProductEvent.FirstSessionSaved)
-                if (draft.editingSessionId == null) reviewCoordinator?.onSuccessfulSession()
+                if (isNewSession) {
+                    // Calm: no advice for this Session (unknown counts as not calm) and not a cycling tank.
+                    val cycling = mutableUiState.value.setup?.aquarium?.profile == AquariumProfile.CYCLING
+                    reviewCoordinator?.onNewSessionSaved(calm = pistesAdvices?.isEmpty() == true && !cycling)
+                }
             }.onFailure {
                 updateRapidSession { it.copy(isSaving = false, saveError = true) }
             }
         }
     }
 
-    private fun showPistesAfterSave(recorded: RecordedSession) {
+    /** Shows the advices for a new Session and returns them; null when they cannot be computed. */
+    private fun showPistesAfterSave(recorded: RecordedSession): List<DatedPisteAdvice>? {
         val state = mutableUiState.value
-        val setup = state.setup?.takeIf { it.aquarium.id == recorded.session.aquariumId } ?: return
+        val setup = state.setup?.takeIf { it.aquarium.id == recorded.session.aquariumId } ?: return null
         // A water change in this very Session already answers the overdue one.
         val overdue = recorded.maintenanceActions.none { it.type == MaintenanceActionType.WATER_CHANGE } &&
             overdueLinkedAction(state.tasks.pendingOccurrences, setup.aquarium.id, MaintenanceActionType.WATER_CHANGE, today())
@@ -2133,6 +2139,7 @@ class HomeViewModel(
             overdue,
         )
         mutableUiState.update { it.copy(pistesAfterSave = advices) }
+        return advices
     }
 
     fun dismissPistes() = mutableUiState.update { it.copy(pistesAfterSave = emptyList()) }

@@ -14,6 +14,7 @@ import com.maximerollin.aqualog.shared.ReviewCoordinator
 import com.maximerollin.aqualog.shared.ReviewEligibilityPolicy
 import com.maximerollin.aqualog.shared.ReviewHistory
 import com.maximerollin.aqualog.shared.ReviewHistoryStore
+import com.maximerollin.aqualog.shared.storedReviewHistory
 import java.lang.ref.WeakReference
 
 internal class AndroidReviewHistoryStore(context: Context) : ReviewHistoryStore {
@@ -22,25 +23,37 @@ internal class AndroidReviewHistoryStore(context: Context) : ReviewHistoryStore 
         Context.MODE_PRIVATE,
     )
 
-    override fun load() = ReviewHistory(
-        successfulSessionCount = preferences.getInt(successCountKey, 0),
-        firstSuccessfulSessionAtEpochMillis = preferences.getLong(firstSuccessKey, missingTimestamp)
+    override fun load() = storedReviewHistory(
+        newSessionCount = preferences.getInt(
+            newSessionCountKey,
+            preferences.getInt(legacySuccessCountKey, 0),
+        ),
+        pending = preferences.getBoolean(pendingKey, false),
+        lastRequestedAtEpochMillis = preferences.getLong(lastRequestedKey, missingTimestamp)
             .takeUnless { it == missingTimestamp },
-        requested = preferences.getBoolean(requestedKey, false),
+        discoverySeen = preferences.getBoolean(discoverySeenKey, false),
+        legacyRequested = preferences.getBoolean(legacyRequestedKey, false),
+        nowEpochMillis = System.currentTimeMillis(),
     )
 
     override fun save(updated: ReviewHistory) {
         preferences.edit()
-            .putInt(successCountKey, updated.successfulSessionCount)
-            .putLong(firstSuccessKey, updated.firstSuccessfulSessionAtEpochMillis ?: missingTimestamp)
-            .putBoolean(requestedKey, updated.requested)
+            .putInt(newSessionCountKey, updated.newSessionCount)
+            .putBoolean(pendingKey, updated.pending)
+            .putLong(lastRequestedKey, updated.lastRequestedAtEpochMillis ?: missingTimestamp)
+            .putBoolean(discoverySeenKey, updated.discoverySeen)
+            // The legacy flag is now carried by the request date; drop it once that date is stored.
+            .remove(legacyRequestedKey)
             .apply()
     }
 
     private companion object {
-        const val successCountKey = "successful-session-count"
-        const val firstSuccessKey = "first-success-at"
-        const val requestedKey = "review-requested"
+        const val newSessionCountKey = "new-session-count"
+        const val legacySuccessCountKey = "successful-session-count"
+        const val pendingKey = "review-pending"
+        const val lastRequestedKey = "review-last-requested-at"
+        const val discoverySeenKey = "review-discovery-seen"
+        const val legacyRequestedKey = "review-requested"
         const val missingTimestamp = Long.MIN_VALUE
     }
 }
