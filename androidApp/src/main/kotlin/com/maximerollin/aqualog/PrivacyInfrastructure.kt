@@ -13,17 +13,18 @@ import com.maximerollin.aqualog.shared.InAppReviewGateway
 import com.maximerollin.aqualog.shared.ReviewCoordinator
 import com.maximerollin.aqualog.shared.ReviewEligibilityPolicy
 import com.maximerollin.aqualog.shared.ReviewHistory
-import com.maximerollin.aqualog.shared.ReviewHistoryStore
-import com.maximerollin.aqualog.shared.storedReviewHistory
+import com.maximerollin.aqualog.shared.MigratingReviewHistoryStore
+import com.maximerollin.aqualog.shared.RawReviewValues
+import com.maximerollin.aqualog.shared.ReviewValuesStorage
 import java.lang.ref.WeakReference
 
-internal class AndroidReviewHistoryStore(context: Context) : ReviewHistoryStore {
+internal class AndroidReviewValuesStorage(context: Context) : ReviewValuesStorage {
     private val preferences = context.applicationContext.getSharedPreferences(
         "aqualog-review-eligibility",
         Context.MODE_PRIVATE,
     )
 
-    override fun load() = storedReviewHistory(
+    override fun read() = RawReviewValues(
         newSessionCount = preferences.getInt(
             newSessionCountKey,
             preferences.getInt(legacySuccessCountKey, 0),
@@ -33,15 +34,14 @@ internal class AndroidReviewHistoryStore(context: Context) : ReviewHistoryStore 
             .takeUnless { it == missingTimestamp },
         discoverySeen = preferences.getBoolean(discoverySeenKey, false),
         legacyRequested = preferences.getBoolean(legacyRequestedKey, false),
-        nowEpochMillis = System.currentTimeMillis(),
     )
 
-    override fun save(updated: ReviewHistory) {
+    override fun write(history: ReviewHistory) {
         preferences.edit()
-            .putInt(newSessionCountKey, updated.newSessionCount)
-            .putBoolean(pendingKey, updated.pending)
-            .putLong(lastRequestedKey, updated.lastRequestedAtEpochMillis ?: missingTimestamp)
-            .putBoolean(discoverySeenKey, updated.discoverySeen)
+            .putInt(newSessionCountKey, history.newSessionCount)
+            .putBoolean(pendingKey, history.pending)
+            .putLong(lastRequestedKey, history.lastRequestedAtEpochMillis ?: missingTimestamp)
+            .putBoolean(discoverySeenKey, history.discoverySeen)
             // The legacy flag is now carried by the request date; drop it once that date is stored.
             .remove(legacyRequestedKey)
             .apply()
@@ -84,7 +84,7 @@ internal fun androidReviewCoordinator(
     telemetry: ProductTelemetry = DisabledProductTelemetry,
 ) = ReviewCoordinator(
     policy = ReviewEligibilityPolicy(),
-    store = AndroidReviewHistoryStore(context),
+    store = MigratingReviewHistoryStore(AndroidReviewValuesStorage(context), currentTimeMillis),
     gateway = GooglePlayInAppReviewGateway(activity, telemetry),
     currentTimeMillis = currentTimeMillis,
 )

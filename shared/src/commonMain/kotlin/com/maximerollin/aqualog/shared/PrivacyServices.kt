@@ -145,6 +145,42 @@ fun storedReviewHistory(
     discoverySeen = discoverySeen,
 )
 
+/** Raw persisted review values, before the legacy "already requested" flag is folded into a date. */
+data class RawReviewValues(
+    val newSessionCount: Int,
+    val pending: Boolean,
+    val lastRequestedAtEpochMillis: Long?,
+    val discoverySeen: Boolean,
+    val legacyRequested: Boolean,
+)
+
+interface ReviewValuesStorage {
+    fun read(): RawReviewValues
+    fun write(history: ReviewHistory)
+}
+
+/** Loads through [storedReviewHistory] and persists a derived legacy request date at once, so it stays fixed. */
+class MigratingReviewHistoryStore(
+    private val storage: ReviewValuesStorage,
+    private val currentTimeMillis: () -> Long,
+) : ReviewHistoryStore {
+    override fun load(): ReviewHistory {
+        val raw = storage.read()
+        val history = storedReviewHistory(
+            newSessionCount = raw.newSessionCount,
+            pending = raw.pending,
+            lastRequestedAtEpochMillis = raw.lastRequestedAtEpochMillis,
+            discoverySeen = raw.discoverySeen,
+            legacyRequested = raw.legacyRequested,
+            nowEpochMillis = currentTimeMillis(),
+        )
+        if (raw.legacyRequested) storage.write(history)
+        return history
+    }
+
+    override fun save(updated: ReviewHistory) = storage.write(updated)
+}
+
 enum class ReviewPrompt { NONE, DISCOVERY, DIRECT }
 
 class ReviewEligibilityPolicy(

@@ -181,5 +181,26 @@ class PrivacyServicesTest {
         assertEquals(ReviewPrompt.DISCOVERY, fixture.coordinator.pendingPrompt())
     }
 
+    @Test
+    fun `a derived legacy request date is persisted once and stays the same across loads`() {
+        var raw = RawReviewValues(3, false, null, false, legacyRequested = true)
+        val storage = object : ReviewValuesStorage {
+            override fun read() = raw
+            override fun write(history: ReviewHistory) {
+                raw = RawReviewValues(
+                    history.newSessionCount, history.pending, history.lastRequestedAtEpochMillis,
+                    history.discoverySeen, legacyRequested = false,
+                )
+            }
+        }
+        var now = 1_000L
+        val store = MigratingReviewHistoryStore(storage) { now }
+
+        assertEquals(1_000L, store.load().lastRequestedAtEpochMillis)
+        now = 1_000L + 30.days
+        assertEquals(1_000L, store.load().lastRequestedAtEpochMillis)
+        assertFalse(raw.legacyRequested)
+    }
+
     private val Int.days: Long get() = this * 24 * 60 * 60 * 1_000L
 }
