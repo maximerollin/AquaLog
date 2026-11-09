@@ -133,8 +133,9 @@ open class AquaLogApplication : Application() {
         createCrashReporter(this, observabilityConfiguration)
     }
     open val feedbackGateway: FeedbackGateway by lazy {
-        createFeedbackGateway(observabilityConfiguration, accountSessionProvider)
+        createFeedbackGateway(observabilityConfiguration, accountSessionProvider, feedbackInstallIds)
     }
+    internal open val feedbackInstallIds: FeedbackInstallIdStore by lazy { AndroidFeedbackInstallIdStore(this) }
 
     open val accountCoordinator: AccountActivationCoordinator
         get() {
@@ -158,6 +159,7 @@ open class AquaLogApplication : Application() {
             deletionCredentialStorage = secureTokenStorage,
             reauthenticationGateway = SupabaseAuthGateway(this, configuration, secureTokenStorage),
             generateOperationKey = { UUID.randomUUID().toString() },
+            onAccountDeleted = { feedbackInstallIds.clear() },
         )
     }
 

@@ -33,6 +33,7 @@ import com.maximerollin.aqualog.shared.DisabledProductTelemetry
 import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.FeedbackCoordinator
 import com.maximerollin.aqualog.shared.FeedbackGateway
+import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.GraphPeriod
 import com.maximerollin.aqualog.shared.MaintenanceAction
 import com.maximerollin.aqualog.shared.MaintenanceActionInput
@@ -929,7 +930,7 @@ class HomeViewModel(
         viewModelScope.launch {
             val delivered = runCatching {
                 feedbackCoordinator.submit(VoluntaryFeedback(message))
-            }.getOrDefault(false)
+            }.getOrDefault(FeedbackOutcome.FAILED) == FeedbackOutcome.SENT
             mutableUiState.update { state ->
                 state.copy(
                     feedback = state.feedback.copy(

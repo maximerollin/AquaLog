@@ -21,6 +21,7 @@ import com.maximerollin.aqualog.shared.LifetimeProOffer
 import com.maximerollin.aqualog.shared.BillingLaunchResult
 import com.maximerollin.aqualog.shared.CloudAccountDeletionResult
 import com.maximerollin.aqualog.shared.FeedbackGateway
+import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.PlayPurchaseUpdate
 import com.maximerollin.aqualog.shared.PortableDataService
 import com.maximerollin.aqualog.shared.ProBillingGateway
@@ -69,7 +70,7 @@ class TestAquaLogApplication : AquaLogApplication() {
         adapter = AllowlistedAnalyticsAdapter(analyticsPayloads::add),
         enabled = true,
     )
-    override val feedbackGateway: FeedbackGateway = FeedbackGateway(recordedFeedback::add)
+    override val feedbackGateway: FeedbackGateway = FeedbackGateway { recordedFeedback.add(it); FeedbackOutcome.SENT }
     private var verifiedProEntitlement: ProEntitlement? = null
 
     override fun onCreate() {

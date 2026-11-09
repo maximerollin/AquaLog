@@ -56,13 +56,18 @@ class PrivacyServicesTest {
         val analytics = mutableListOf<AnalyticsPayload>()
         val feedback = mutableListOf<VoluntaryFeedback>()
         val coordinator = FeedbackCoordinator(
-            gateway = FeedbackGateway(feedback::add),
+            gateway = FeedbackGateway { feedback += it; FeedbackOutcome.SENT },
         )
 
         coordinator.submit(VoluntaryFeedback("The task reminder was late"))
 
         assertEquals(listOf("The task reminder was late"), feedback.map(VoluntaryFeedback::message))
         assertTrue(analytics.isEmpty())
+    }
+
+    @Test
+    fun `disabled feedback gateway reports unavailable`() = runTest {
+        assertEquals(FeedbackOutcome.UNAVAILABLE, DisabledFeedbackGateway.submit(VoluntaryFeedback("Hello")))
     }
 
     @Test

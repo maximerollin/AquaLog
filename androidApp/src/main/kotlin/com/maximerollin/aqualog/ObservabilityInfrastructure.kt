@@ -17,6 +17,7 @@ import com.maximerollin.aqualog.shared.DisabledCrashReporter
 import com.maximerollin.aqualog.shared.DisabledFeedbackGateway
 import com.maximerollin.aqualog.shared.DisabledProductTelemetry
 import com.maximerollin.aqualog.shared.FeedbackGateway
+import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.ProductAnalyticsSchema
 import com.maximerollin.aqualog.shared.ProductTelemetry
 import com.maximerollin.aqualog.shared.RawTechnicalFailure
@@ -173,44 +174,84 @@ private class AquaLogTechnicalFailure(kind: String) : RuntimeException("AquaLog 
 internal fun createFeedbackGateway(
     config: ObservabilityConfiguration,
     sessionProvider: SyncSessionProvider,
+    installIds: FeedbackInstallIdStore,
 ): FeedbackGateway = if (config.hasFeedback) {
-    AuthenticatedFeedbackGateway(config.feedbackUrl, sessionProvider)
+    SupabaseFeedbackGateway(config.feedbackUrl, sessionProvider, installIds, BuildConfig.VERSION_NAME)
 } else {
     DisabledFeedbackGateway
 }
 
-internal class AuthenticatedFeedbackGateway(
+/** Sends feedback with the account when there is one, anonymously (install id) otherwise. */
+internal class SupabaseFeedbackGateway(
     private val endpoint: String,
     private val sessionProvider: SyncSessionProvider,
+    private val installIds: FeedbackInstallIdStore,
+    private val appVersion: String,
     private val transport: FeedbackTransport = HttpFeedbackTransport,
 ) : FeedbackGateway {
-    override suspend fun submit(feedback: VoluntaryFeedback): Boolean {
-        val session = sessionProvider.currentSession() ?: return false
-        return transport.post(endpoint, session.accessToken, feedback.message)
+    override suspend fun submit(feedback: VoluntaryFeedback): FeedbackOutcome {
+        val session = sessionProvider.currentSession()
+        if (session == null) return anonymous(feedback)
+
+        val first = post(feedback, session.accessToken)
+        if (first != HTTP_UNAUTHORIZED) return outcome(first)
+
+        // The token was rejected: refresh once, then fall back to anonymous rather than lose the feedback.
+        val refreshed = sessionProvider.refreshSession(session) ?: return anonymous(feedback)
+        val second = post(feedback, refreshed.accessToken)
+        return if (second == HTTP_UNAUTHORIZED) anonymous(feedback) else outcome(second)
+    }
+
+    private suspend fun anonymous(feedback: VoluntaryFeedback): FeedbackOutcome =
+        outcome(post(feedback, accessToken = null))
+
+    private suspend fun post(feedback: VoluntaryFeedback, accessToken: String?): Int {
+        val body = JSONObject()
+            .put("message", feedback.message)
+            .put("kind", feedback.kind.wireValue)
+            .put("appVersion", appVersion)
+        feedback.speciesId?.let { body.put("speciesId", it) }
+        feedback.language?.let { body.put("language", it) }
+        if (accessToken == null) body.put("installId", installIds.getOrCreate())
+        return transport.post(endpoint, accessToken, body)
+    }
+
+    private fun outcome(code: Int): FeedbackOutcome = when (code) {
+        in 200..299 -> FeedbackOutcome.SENT
+        HTTP_TOO_MANY_REQUESTS -> FeedbackOutcome.RATE_LIMITED
+        else -> FeedbackOutcome.FAILED
+    }
+
+    private companion object {
+        const val HTTP_UNAUTHORIZED = 401
+        const val HTTP_TOO_MANY_REQUESTS = 429
     }
 }
 
 internal fun interface FeedbackTransport {
-    suspend fun post(endpoint: String, accessToken: String, message: String): Boolean
+    /** Returns the HTTP status code, or -1 on an IO error. A null token sends no Authorization header. */
+    suspend fun post(endpoint: String, accessToken: String?, body: JSONObject): Int
 }
 
 private object HttpFeedbackTransport : FeedbackTransport {
-    override suspend fun post(endpoint: String, accessToken: String, message: String): Boolean = withContext(Dispatchers.IO) {
-        val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
-            requestMethod = "POST"
-            connectTimeout = 10_000
-            readTimeout = 10_000
-            doOutput = true
-            setRequestProperty("Authorization", "Bearer $accessToken")
-            setRequestProperty("Content-Type", "application/json")
-        }
+    override suspend fun post(endpoint: String, accessToken: String?, body: JSONObject): Int = withContext(Dispatchers.IO) {
         try {
-            connection.outputStream.use { output ->
-                output.write(JSONObject(mapOf("message" to message)).toString().toByteArray())
+            val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+                requestMethod = "POST"
+                connectTimeout = 10_000
+                readTimeout = 10_000
+                doOutput = true
+                if (accessToken != null) setRequestProperty("Authorization", "Bearer $accessToken")
+                setRequestProperty("Content-Type", "application/json")
             }
-            connection.responseCode in 200..299
-        } finally {
-            connection.disconnect()
+            try {
+                connection.outputStream.use { output -> output.write(body.toString().toByteArray()) }
+                connection.responseCode
+            } finally {
+                connection.disconnect()
+            }
+        } catch (_: java.io.IOException) {
+            -1
         }
     }
 }

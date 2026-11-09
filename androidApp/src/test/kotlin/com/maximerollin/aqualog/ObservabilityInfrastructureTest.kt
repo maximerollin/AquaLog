@@ -9,12 +9,16 @@ import com.maximerollin.aqualog.shared.SyncSessionProvider
 import com.maximerollin.aqualog.shared.TechnicalComponent
 import com.maximerollin.aqualog.shared.TechnicalFailure
 import com.maximerollin.aqualog.shared.TechnicalFailureKind
+import com.maximerollin.aqualog.shared.FeedbackKind
+import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.VoluntaryFeedback
+import org.json.JSONObject
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -128,31 +132,136 @@ class ObservabilityInfrastructureTest {
         assertEquals(1, captured.size)
     }
 
-    @Test
-    fun `feedback adapter sends only the voluntary message with the authenticated session`() = runTest {
-        val requests = mutableListOf<Triple<String, String, String>>()
-        val gateway = AuthenticatedFeedbackGateway(
+    private class Post(val endpoint: String, val token: String?, val body: JSONObject)
+
+    private class FakeInstallIds : FeedbackInstallIdStore {
+        override fun getOrCreate() = "install-1"
+        override fun clear() = Unit
+    }
+
+    private fun gateway(
+        session: SyncSession?,
+        refreshed: SyncSession? = null,
+        codes: List<Int>,
+        posts: MutableList<Post>,
+        refreshes: MutableList<SyncSession> = mutableListOf(),
+    ): SupabaseFeedbackGateway {
+        val queue = codes.toMutableList()
+        return SupabaseFeedbackGateway(
             endpoint = "https://example.supabase.co/functions/v1/submit-feedback",
             sessionProvider = object : SyncSessionProvider {
-                override suspend fun currentSession() = SyncSession("account-1", "access-token")
+                override suspend fun currentSession() = session
+                override suspend fun refreshSession(expiredSession: SyncSession): SyncSession? {
+                    refreshes += expiredSession
+                    return refreshed
+                }
             },
-            transport = FeedbackTransport { endpoint, token, message ->
-                requests += Triple(endpoint, token, message)
-                true
+            installIds = FakeInstallIds(),
+            appVersion = "1.2.3",
+            transport = FeedbackTransport { endpoint, token, body ->
+                posts += Post(endpoint, token, body)
+                queue.removeAt(0)
             },
         )
+    }
 
-        assertTrue(gateway.submit(VoluntaryFeedback("Please improve reminders")))
-        assertEquals(
-            listOf(
-                Triple(
-                    "https://example.supabase.co/functions/v1/submit-feedback",
-                    "access-token",
-                    "Please improve reminders",
-                ),
-            ),
-            requests,
-        )
+    @Test
+    fun `feedback with a session carries the token and no install id`() = runTest {
+        val posts = mutableListOf<Post>()
+        val outcome = gateway(SyncSession("a", "access-token"), codes = listOf(204), posts = posts)
+            .submit(VoluntaryFeedback("Please improve reminders", FeedbackKind.IDEA, language = "fr"))
+
+        assertEquals(FeedbackOutcome.SENT, outcome)
+        assertEquals(1, posts.size)
+        assertEquals("access-token", posts[0].token)
+        assertEquals("https://example.supabase.co/functions/v1/submit-feedback", posts[0].endpoint)
+        assertFalse(posts[0].body.has("installId"))
+    }
+
+    @Test
+    fun `feedback without a session is anonymous with the install id`() = runTest {
+        val posts = mutableListOf<Post>()
+        val outcome = gateway(null, codes = listOf(204), posts = posts).submit(VoluntaryFeedback("Hello"))
+
+        assertEquals(FeedbackOutcome.SENT, outcome)
+        assertEquals(1, posts.size)
+        assertNull(posts[0].token)
+        assertEquals("install-1", posts[0].body.getString("installId"))
+    }
+
+    @Test
+    fun `a refused token is refreshed once and retried`() = runTest {
+        val posts = mutableListOf<Post>()
+        val refreshes = mutableListOf<SyncSession>()
+        val outcome = gateway(
+            SyncSession("a", "old"),
+            refreshed = SyncSession("a", "new"),
+            codes = listOf(401, 204),
+            posts = posts,
+            refreshes = refreshes,
+        ).submit(VoluntaryFeedback("Hello"))
+
+        assertEquals(FeedbackOutcome.SENT, outcome)
+        assertEquals(1, refreshes.size)
+        assertEquals(listOf<String?>("old", "new"), posts.map { it.token })
+        assertFalse(posts[1].body.has("installId"))
+    }
+
+    @Test
+    fun `a token refused twice falls back to anonymous`() = runTest {
+        val posts = mutableListOf<Post>()
+        val outcome = gateway(
+            SyncSession("a", "old"),
+            refreshed = SyncSession("a", "new"),
+            codes = listOf(401, 401, 204),
+            posts = posts,
+        ).submit(VoluntaryFeedback("Hello"))
+
+        assertEquals(FeedbackOutcome.SENT, outcome)
+        assertEquals(listOf<String?>("old", "new", null), posts.map { it.token })
+        assertEquals("install-1", posts[2].body.getString("installId"))
+    }
+
+    @Test
+    fun `a refused token without a refreshed session falls back to anonymous`() = runTest {
+        val posts = mutableListOf<Post>()
+        val outcome = gateway(SyncSession("a", "old"), refreshed = null, codes = listOf(401, 204), posts = posts)
+            .submit(VoluntaryFeedback("Hello"))
+
+        assertEquals(FeedbackOutcome.SENT, outcome)
+        assertEquals(listOf<String?>("old", null), posts.map { it.token })
+    }
+
+    @Test
+    fun `http codes map to outcomes`() = runTest {
+        suspend fun outcome(code: Int) =
+            gateway(null, codes = listOf(code), posts = mutableListOf()).submit(VoluntaryFeedback("Hello"))
+
+        assertEquals(FeedbackOutcome.SENT, outcome(204))
+        assertEquals(FeedbackOutcome.RATE_LIMITED, outcome(429))
+        assertEquals(FeedbackOutcome.FAILED, outcome(-1))
+        assertEquals(FeedbackOutcome.FAILED, outcome(500))
+        assertEquals(FeedbackOutcome.FAILED, outcome(400))
+    }
+
+    @Test
+    fun `the body carries only the allowed fields`() = runTest {
+        val posts = mutableListOf<Post>()
+        gateway(SyncSession("a", "t"), codes = listOf(204, 204), posts = posts).apply {
+            submit(VoluntaryFeedback("Hello", FeedbackKind.SPECIES, speciesId = "neon-tetra", language = "fr"))
+            submit(VoluntaryFeedback("Hello"))
+        }
+
+        val full = posts[0].body
+        assertEquals(setOf("message", "kind", "speciesId", "appVersion", "language"), full.keys().asSequence().toSet())
+        assertEquals("species", full.getString("kind"))
+        assertEquals("neon-tetra", full.getString("speciesId"))
+        assertEquals("1.2.3", full.getString("appVersion"))
+        assertEquals("fr", full.getString("language"))
+
+        val minimal = posts[1].body
+        assertEquals(setOf("message", "kind", "appVersion"), minimal.keys().asSequence().toSet())
+        assertEquals("other", minimal.getString("kind"))
     }
 
     private fun configuration(

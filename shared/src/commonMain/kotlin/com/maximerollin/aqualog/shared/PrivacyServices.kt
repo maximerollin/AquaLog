@@ -81,25 +81,40 @@ object TechnicalFailureSchema {
     }
 }
 
-data class VoluntaryFeedback(val message: String) {
+enum class FeedbackKind(val wireValue: String) {
+    BUG("bug"),
+    TRANSLATION("translation"),
+    SPECIES("species"),
+    IDEA("idea"),
+    OTHER("other"),
+}
+
+data class VoluntaryFeedback(
+    val message: String,
+    val kind: FeedbackKind = FeedbackKind.OTHER,
+    val speciesId: String? = null,
+    val language: String? = null,
+) {
     init {
         require(message.isNotBlank()) { "Feedback cannot be blank" }
         require(message.length <= 2_000) { "Feedback is limited to 2,000 characters" }
     }
 }
 
+enum class FeedbackOutcome { SENT, RATE_LIMITED, FAILED, UNAVAILABLE }
+
 fun interface FeedbackGateway {
-    suspend fun submit(feedback: VoluntaryFeedback): Boolean
+    suspend fun submit(feedback: VoluntaryFeedback): FeedbackOutcome
 }
 
 class FeedbackCoordinator(
     private val gateway: FeedbackGateway,
 ) {
-    suspend fun submit(feedback: VoluntaryFeedback): Boolean = gateway.submit(feedback)
+    suspend fun submit(feedback: VoluntaryFeedback): FeedbackOutcome = gateway.submit(feedback)
 }
 
 object DisabledFeedbackGateway : FeedbackGateway {
-    override suspend fun submit(feedback: VoluntaryFeedback) = false
+    override suspend fun submit(feedback: VoluntaryFeedback) = FeedbackOutcome.UNAVAILABLE
 }
 
 data class ReviewHistory(
