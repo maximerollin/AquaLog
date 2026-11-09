@@ -2611,5 +2611,1028 @@
     "zone": "MIDDLE",
     "color": 4286362434,
     "drawing": null
+  },
+  {
+    "id": "ramirezi",
+    "wikidata": "Q260468",
+    "scientificName": "Mikrogeophagus ramirezi",
+    "names": {
+      "fr": "Ramirezi",
+      "en": "Ram cichlid",
+      "de": "Südamerikanischer Schmetterlingsbuntbarsch",
+      "it": "Mikrogeophagus ramirezi",
+      "es": "Mikrogeophagus ramirezi"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "SLOW",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 26.0,
+      "max": 29.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 5.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 6.0,
+    "minGroup": 2,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 3,
+    "zone": "BOTTOM",
+    "color": 4283409369,
+    "drawing": null
+  },
+  {
+    "id": "apistogramma-cacatuoides",
+    "wikidata": "Q265787",
+    "scientificName": "Apistogramma cacatuoides",
+    "names": {
+      "fr": "Apistogramma cacatuoides",
+      "en": "Apistogramma cacatuoides",
+      "de": "Kakadu-Zwergbuntbarsch",
+      "it": "Apistogramma cacatuoides",
+      "es": "Apistogramma cacatuoides"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "SLOW",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 6.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 8.0,
+    "minGroup": 3,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "BOTTOM",
+    "color": 4294938368,
+    "drawing": null
+  },
+  {
+    "id": "apistogramma-agassizii",
+    "wikidata": "Q390808",
+    "scientificName": "Apistogramma agassizii",
+    "names": {
+      "fr": "Apistogramma agassizii",
+      "en": "Agassiz's dwarf cichlid",
+      "de": "Agassiz’ Zwergbuntbarsch",
+      "it": "Apistogramma agassizii",
+      "es": "Apistogramma agassizii"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "SLOW",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 4.0
+    },
+    "minVolumeLiters": 40,
+    "adultSizeCm": 7.0,
+    "minGroup": 3,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "BOTTOM",
+    "color": 4280191205,
+    "drawing": null
+  },
+  {
+    "id": "discus",
+    "wikidata": "Q3091839",
+    "scientificName": "Symphysodon aequifasciatus",
+    "names": {
+      "fr": "Discus commun",
+      "en": "Discus",
+      "de": "Symphysodon aequifasciatus",
+      "it": "Symphysodon aequifasciatus",
+      "es": "Symphysodon aequifasciatus"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 27.0,
+      "max": 31.0
+    },
+    "gh": {
+      "min": 1.0,
+      "max": 8.0
+    },
+    "kh": {
+      "min": 0.0,
+      "max": 4.0
+    },
+    "minVolumeLiters": 250,
+    "adultSizeCm": 15.0,
+    "minGroup": 5,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "MIDDLE",
+    "color": 4293284096,
+    "drawing": null
+  },
+  {
+    "id": "kribensis",
+    "wikidata": "Q839683",
+    "scientificName": "Pelvicachromis pulcher",
+    "names": {
+      "fr": "Pelmato",
+      "en": "Kribensis",
+      "de": "Purpurprachtbarsch",
+      "it": "Pelvicachromis pulcher",
+      "es": "Pelvicachromis pulcher"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "SLOW",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 6.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 10.0,
+    "minGroup": 2,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "BOTTOM",
+    "color": 4292352864,
+    "drawing": null
+  },
+  {
+    "id": "oscar",
+    "wikidata": "Q3442",
+    "scientificName": "Astronotus ocellatus",
+    "names": {
+      "fr": "Oscar",
+      "en": "Oscar",
+      "de": "Pfauenaugenbuntbarsch",
+      "it": "Astronotus ocellatus",
+      "es": "Astronotus ocellatus"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 400,
+    "adultSizeCm": 35.0,
+    "minGroup": 1,
+    "tags": [
+      "EATS_SMALL_FISH",
+      "EATS_SHRIMP",
+      "EATS_SNAILS",
+      "TERRITORIAL",
+      "EATS_PLANTS"
+    ],
+    "diet": "CARNIVORE",
+    "lifespanYears": 12,
+    "zone": "MIDDLE",
+    "color": 4284301367,
+    "drawing": null
+  },
+  {
+    "id": "labidochromis-jaune",
+    "wikidata": "Q258797",
+    "scientificName": "Labidochromis caeruleus",
+    "names": {
+      "fr": "Labidochromis jaune",
+      "en": "Electric yellow cichlid",
+      "de": "Labidochromis caeruleus",
+      "it": "Labidochromis caeruleus",
+      "es": "Labidochromis caeruleus"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 7.5,
+      "max": 8.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 8.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 6.0,
+      "max": 15.0
+    },
+    "minVolumeLiters": 150,
+    "adultSizeCm": 10.0,
+    "minGroup": 5,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "MIDDLE",
+    "color": 4294826037,
+    "drawing": null
+  },
+  {
+    "id": "neolamprologus-multifasciatus",
+    "wikidata": "Q1541499",
+    "scientificName": "Neolamprologus multifasciatus",
+    "names": {
+      "fr": "Neolamprologus multifasciatus",
+      "en": "Many-banded shell dweller",
+      "de": "Vielgestreifter Schneckenbuntbarsch",
+      "it": "Neolamprologus multifasciatus",
+      "es": "Neolamprologus multifasciatus"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "SLOW",
+    "ph": {
+      "min": 7.5,
+      "max": 8.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 8.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 6.0,
+      "max": 15.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 5.0,
+    "minGroup": 6,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "BOTTOM",
+    "color": 4288776319,
+    "drawing": null
+  },
+  {
+    "id": "bolivien",
+    "wikidata": "Q891383",
+    "scientificName": "Mikrogeophagus altispinosus",
+    "names": {
+      "fr": "Bolivien",
+      "en": "Ruby crown cichlid",
+      "de": "Bolivianischer Schmetterlingsbuntbarsch",
+      "it": "Mikrogeophagus altispinosus",
+      "es": "Mikrogeophagus altispinosus"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "SLOW",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 6.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 8.0,
+    "minGroup": 2,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "BOTTOM",
+    "color": 4281944491,
+    "drawing": null
+  },
+  {
+    "id": "acara-bleu",
+    "wikidata": "Q3583",
+    "scientificName": "Andinoacara pulcher",
+    "names": {
+      "fr": "Acara bleu",
+      "en": "Blue acara",
+      "de": "Blaupunktbuntbarsch",
+      "it": "Acara blu",
+      "es": "Andinoacara pulcher"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.5,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 20.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 10.0,
+      "max": 25.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 250,
+    "adultSizeCm": 15.0,
+    "minGroup": 2,
+    "tags": [
+      "EATS_SHRIMP",
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "MIDDLE",
+    "color": 4279592384,
+    "drawing": null
+  },
+  {
+    "id": "cichlide-gorge-de-feu",
+    "wikidata": "Q3705",
+    "scientificName": "Thorichthys meeki",
+    "names": {
+      "fr": "Cichlide gorge de feu",
+      "en": "Firemouth cichlid",
+      "de": "Feuermaulbuntbarsch",
+      "it": "Thorichthys meeki",
+      "es": "Boca de fuego"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.5,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 8.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 200,
+    "adultSizeCm": 15.0,
+    "minGroup": 2,
+    "tags": [
+      "EATS_SHRIMP",
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "BOTTOM",
+    "color": 4292030255,
+    "drawing": null
+  },
+  {
+    "id": "cichlide-zebre",
+    "wikidata": "Q3546",
+    "scientificName": "Amatitlania nigrofasciata",
+    "names": {
+      "fr": "Nigro",
+      "en": "Convict Cichlid",
+      "de": "Zebrabuntbarsch",
+      "it": "Amatitlania nigrofasciata",
+      "es": "Amatitlania nigrofasciata"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.8,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 10.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "minVolumeLiters": 120,
+    "adultSizeCm": 12.0,
+    "minGroup": 2,
+    "tags": [
+      "EATS_SHRIMP",
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "BOTTOM",
+    "color": 4284572001,
+    "drawing": null
+  },
+  {
+    "id": "nannacara",
+    "wikidata": "Q3666",
+    "scientificName": "Nannacara anomala",
+    "names": {
+      "fr": "Nannacara",
+      "en": "Goldeneye cichlid",
+      "de": "Glänzender Zwergbuntbarsch",
+      "it": "Nannacara anomala",
+      "es": "Nannacara anomala"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "SLOW",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 6.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 6.0,
+    "minGroup": 2,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "BOTTOM",
+    "color": 4285046584,
+    "drawing": null
+  },
+  {
+    "id": "aulonocara-jacobfreibergi",
+    "wikidata": "Q168662",
+    "scientificName": "Aulonocara jacobfreibergi",
+    "names": {
+      "fr": "Aulonocara jacobfreibergi",
+      "en": "Aulonocara jacobfreibergi",
+      "de": "Aulonocara jacobfreibergi",
+      "it": "Aulonocara jacobfreibergi",
+      "es": "Aulonocara jacobfreibergi"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 7.5,
+      "max": 8.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 9.0,
+      "max": 19.0
+    },
+    "kh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "minVolumeLiters": 200,
+    "adultSizeCm": 15.0,
+    "minGroup": 4,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "MIDDLE",
+    "color": 4278356177,
+    "drawing": null
+  },
+  {
+    "id": "pseudotropheus-saulosi",
+    "wikidata": "Q265801",
+    "scientificName": "Chindongo saulosi",
+    "names": {
+      "fr": "Pseudotropheus saulosi",
+      "en": "Pseudotropheus saulosi",
+      "de": "Chindongo saulosi",
+      "it": "Pseudotropheus saulosi",
+      "es": "Pseudotropheus saulosi"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 7.5,
+      "max": 8.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 8.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 6.0,
+      "max": 15.0
+    },
+    "minVolumeLiters": 200,
+    "adultSizeCm": 8.0,
+    "minGroup": 6,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "MIDDLE",
+    "color": 4278228903,
+    "drawing": null
+  },
+  {
+    "id": "badis",
+    "wikidata": "Q882379",
+    "scientificName": "Badis badis",
+    "names": {
+      "fr": "Perche bleue",
+      "en": "Blue perch",
+      "de": "Blaubarsch",
+      "it": "Badis badis",
+      "es": "Badis badis"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "SLOW",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 40,
+    "adultSizeCm": 7.0,
+    "minGroup": 2,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "CARNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4279858898,
+    "drawing": null
+  },
+  {
+    "id": "gourami-perle",
+    "wikidata": "Q14505073",
+    "scientificName": "Trichopodus leerii",
+    "names": {
+      "fr": "Gourami perlé",
+      "en": "Pearl gourami",
+      "de": "Mosaikfadenfisch",
+      "it": "Trichopodus leerii",
+      "es": "Trichopodus leerii"
+    },
+    "kind": "FISH",
+    "family": "LABYRINTH",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 12.0,
+    "minGroup": 1,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "SURFACE",
+    "color": 4285160141,
+    "drawing": null
+  },
+  {
+    "id": "gourami-bleu",
+    "wikidata": "Q10866107",
+    "scientificName": "Trichopodus trichopterus",
+    "names": {
+      "fr": "Gourami bleu",
+      "en": "Three spot gourami",
+      "de": "Gepunkteter Fadenfisch",
+      "it": "Trichopodus trichopterus",
+      "es": "Trichopodus trichopterus"
+    },
+    "kind": "FISH",
+    "family": "LABYRINTH",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 150,
+    "adultSizeCm": 12.0,
+    "minGroup": 1,
+    "tags": [
+      "EATS_SHRIMP",
+      "FIN_NIPPER",
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "SURFACE",
+    "color": 4282339765,
+    "drawing": null
+  },
+  {
+    "id": "gourami-miel",
+    "wikidata": "Q1230573",
+    "scientificName": "Trichogaster chuna",
+    "names": {
+      "fr": "Gourami miel",
+      "en": "Honey gourami",
+      "de": "Honiggurami",
+      "it": "Trichogaster chuna",
+      "es": "Gurami miel"
+    },
+    "kind": "FISH",
+    "family": "LABYRINTH",
+    "motion": "SLOW",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 4.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 5.0,
+    "minGroup": 1,
+    "tags": [
+      "TERRITORIAL",
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "SURFACE",
+    "color": 4294947584,
+    "drawing": null
+  },
+  {
+    "id": "gourami-grogneur",
+    "wikidata": "Q943624",
+    "scientificName": "Trichopsis pumila",
+    "names": {
+      "fr": "Gourami grogneur",
+      "en": "Pygmy gourami",
+      "de": "Knurrender Zwerggurami",
+      "it": "Trichopsis pumila",
+      "es": "Trichopsis pumila"
+    },
+    "kind": "FISH",
+    "family": "LABYRINTH",
+    "motion": "SLOW",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 25.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 55,
+    "adultSizeCm": 4.0,
+    "minGroup": 2,
+    "tags": [
+      "EATS_SHRIMP",
+      "TERRITORIAL",
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "SURFACE",
+    "color": 4290804011,
+    "drawing": null
+  },
+  {
+    "id": "macropode",
+    "wikidata": "Q304256",
+    "scientificName": "Macropodus opercularis",
+    "names": {
+      "fr": "Macropode",
+      "en": "Paradise fish",
+      "de": "Makropode",
+      "it": "Macropodus opercularis",
+      "es": "Macropodus opercularis"
+    },
+    "kind": "FISH",
+    "family": "LABYRINTH",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 20.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 8.0,
+    "minGroup": 1,
+    "tags": [
+      "EATS_SMALL_FISH",
+      "EATS_SHRIMP",
+      "TERRITORIAL"
+    ],
+    "diet": "CARNIVORE",
+    "lifespanYears": 6,
+    "zone": "SURFACE",
+    "color": 4293212469,
+    "drawing": null
+  },
+  {
+    "id": "gourami-embrasseur",
+    "wikidata": "Q218891",
+    "scientificName": "Helostoma temminckii",
+    "names": {
+      "fr": "Gourami embrasseur",
+      "en": "Kissing gourami",
+      "de": "Küssender Gurami",
+      "it": "Gurami sbaciucchione",
+      "es": "Helostoma temminckii"
+    },
+    "kind": "FISH",
+    "family": "LABYRINTH",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.8,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 300,
+    "adultSizeCm": 25.0,
+    "minGroup": 2,
+    "tags": [
+      "TERRITORIAL",
+      "EATS_PLANTS"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "MIDDLE",
+    "color": 4294217649,
+    "drawing": null
+  },
+  {
+    "id": "gourami-chocolat",
+    "wikidata": "Q1536867",
+    "scientificName": "Sphaerichthys osphromenoides",
+    "names": {
+      "fr": "Gourami chocolat",
+      "en": "Chocolate gourami",
+      "de": "Schokoladengurami",
+      "it": "Sphaerichthys osphromenoides",
+      "es": "Gurami chocolate"
+    },
+    "kind": "FISH",
+    "family": "LABYRINTH",
+    "motion": "SLOW",
+    "ph": {
+      "min": 5.5,
+      "max": 6.5
+    },
+    "temperatureC": {
+      "min": 25.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 1.0,
+      "max": 5.0
+    },
+    "kh": {
+      "min": 0.0,
+      "max": 3.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 6.0,
+    "minGroup": 3,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4285353025,
+    "drawing": null
+  },
+  {
+    "id": "gourami-lune",
+    "wikidata": "Q1037493",
+    "scientificName": "Trichopodus microlepis",
+    "names": {
+      "fr": "Gourami lune",
+      "en": "Moonlight gourami",
+      "de": "Mondscheinfadenfisch",
+      "it": "Gurami chiaro di luna",
+      "es": "Trichogaster microlepis"
+    },
+    "kind": "FISH",
+    "family": "LABYRINTH",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 150,
+    "adultSizeCm": 15.0,
+    "minGroup": 1,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "SURFACE",
+    "color": 4289773253,
+    "drawing": null
   }
 ]
