@@ -22,6 +22,15 @@ Account deletion requests remove the RevenueCat customer before completing Supab
 retry on failure. Deleting account data does not cancel an active Google Play subscription; that is
 managed through Google Play. See [RevenueCat setup](revenuecat-setup.md) for the external validation protocol.
 
+## Feedback and reviews
+
+Users can send a feedback message to the developer, with or without an account. Signed-in feedback is
+stored against the account. Anonymous feedback is stored with a random install identifier generated on
+the device, which is used only for rate limiting. Each message also carries its kind, the app version,
+the app language and, optionally, a species identifier. Anonymous messages are not linked to any
+account and are not deleted by account deletion; the device clears its install identifier when the
+account is deleted. Do not write personal information in a message.
+
 ## Operational notifications
 
 LogSnag receives closed payment lifecycle categories from authenticated server webhooks and review-flow request events from release builds. Sandbox payments use a separate channel without push notifications. No account ID, email, store receipt, Aquarium content or free text is included. Review requests do not establish that a dialog was shown or an opinion published. The hosted privacy policy must disclose LogSnag before distribution. See [setup](revenuecat-setup.md).

@@ -10,6 +10,8 @@ La publication est manuelle (`workflow_dispatch`) et dépend de la réussite de 
 
 **Ordre de déploiement — appliquer les migrations backend avant de publier l’app.** Avant tout `workflow_dispatch` de publication, appliquer sur le Supabase de production toutes les migrations versionnées de `supabase/migrations/` (`supabase db push`), en particulier `20261104100000_aquarium_photos.sql` (lot 4 : bucket `aquarium-photos`, colonne `photo_id`) et `20261105100000_inhabitants.sql` (lot 5 : table `inhabitants`). L’app lit `inhabitants` à chaque synchronisation : publiée avant la migration, chaque pull échoue et toute la synchronisation s’arrête. Vérifier dans le tableau de bord Supabase que la table `inhabitants` existe avant de lancer la publication.
 
+**Avis et commentaires — déployer la migration et la fonction avant l’app.** Avant de publier une app qui envoie les nouveaux champs (type, espèce, version, langue, identifiant d’installation), appliquer la migration `20261110100000_product_feedback_context.sql` (`supabase db push`), puis déployer la fonction Edge `submit-feedback` (`supabase functions deploy submit-feedback`). La fonction a `verify_jwt = false` : elle vérifie elle-même le jeton Bearer (`401` s’il est invalide) et accepte sans jeton un retour anonyme portant un identifiant d’installation.
+
 Protections attendues :
 
 - `google-play-test` : branches de déploiement limitées à `main` et `integration/aqualog-v1` ;

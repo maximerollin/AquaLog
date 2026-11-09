@@ -76,7 +76,7 @@ entrypoint = "./functions/verify-pro-purchase/index.ts"
 
 [functions.submit-feedback]
 enabled = true
-verify_jwt = true
+verify_jwt = false
 entrypoint = "./functions/submit-feedback/index.ts"
 
 [functions.revenuecat-webhook]
