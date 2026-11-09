@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(35);
+select plan(37);
 
 insert into auth.users (id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -91,6 +91,10 @@ select throws_ok(
     $$select public.submit_product_feedback('x', 'other', null, null, 'français')$$,
     '22023', 'invalid feedback', 'bad language is rejected'
 );
+select throws_ok(
+    $$select public.submit_product_feedback(repeat('x', 1990) || repeat(' ', 20))$$,
+    '22023', 'invalid feedback', 'padded over-long message is rejected with 22023'
+);
 reset role;
 select is(
     (select kind from public.product_feedback where message = 'plain'),
@@ -131,6 +135,10 @@ select throws_ok(
 select throws_ok(
     $$select public.submit_anonymous_feedback('aaaaaaaa-0000-0000-0000-000000000002', 'x', 'other', null, null, 'français')$$,
     '22023', 'invalid feedback', 'anonymous bad language is rejected'
+);
+select throws_ok(
+    $$select public.submit_anonymous_feedback('aaaaaaaa-0000-0000-0000-000000000002', repeat('x', 1990) || repeat(' ', 20))$$,
+    '22023', 'invalid feedback', 'anonymous padded over-long message is rejected with 22023'
 );
 select throws_ok(
     $$select public.submit_anonymous_feedback(null, 'x')$$,

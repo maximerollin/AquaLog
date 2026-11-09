@@ -40,7 +40,7 @@ begin
     if caller is null then
         raise exception using errcode = '42501', message = 'authentication required';
     end if;
-    if feedback_message is null or char_length(btrim(feedback_message)) not between 1 and 2000
+    if feedback_message is null or char_length(btrim(feedback_message)) not between 1 and 2000 or char_length(feedback_message) > 2000
        or feedback_kind is null or feedback_kind not in ('bug', 'translation', 'species', 'idea', 'other')
        or (feedback_species_id is not null and (feedback_species_id !~ '^[a-z0-9]+(-[a-z0-9]+)*$' or char_length(feedback_species_id) > 64))
        or (feedback_app_version is not null and char_length(feedback_app_version) > 32)
@@ -75,7 +75,7 @@ set search_path = public, pg_temp
 as $$
 begin
     if feedback_install_id is null
-       or feedback_message is null or char_length(btrim(feedback_message)) not between 1 and 2000
+       or feedback_message is null or char_length(btrim(feedback_message)) not between 1 and 2000 or char_length(feedback_message) > 2000
        or feedback_kind is null or feedback_kind not in ('bug', 'translation', 'species', 'idea', 'other')
        or (feedback_species_id is not null and (feedback_species_id !~ '^[a-z0-9]+(-[a-z0-9]+)*$' or char_length(feedback_species_id) > 64))
        or (feedback_app_version is not null and char_length(feedback_app_version) > 32)
