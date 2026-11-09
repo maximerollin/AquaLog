@@ -1,6 +1,6 @@
-# Encyclopédie, lot 5b, lot 4 : silures, loches et autres, à valider
+# Encyclopédie, lot 5b, lot 4 : silures, loches et autres, validées
 
-Ces 27 fiches de silures, de loches, d'arcs-en-ciel, de killis et de quelques poissons divers (tétraodon nain, gobie paon, bichir, poisson-éléphant) sont des **brouillons** : elles attendent la validation de Maxime (cases « à valider » ci-dessous), valeurs « à vérifier en priorité » comprises. Les valeurs ont été écrites par nous, à partir des connaissances aquariophiles courantes, puis confrontées aux articles Wikipédia (fr, en, de, quand ils existent) liés dans chaque fiche. Aucune base de données ni fiche d'application concurrente n'a été consultée ou copiée.
+Ces 27 fiches de silures, de loches, d'arcs-en-ciel, de killis et de quelques poissons divers (tétraodon nain, gobie paon, bichir, poisson-éléphant) ont été **validées par Maxime le 2026-11-09**, valeurs « à vérifier en priorité » comprises. Les valeurs ont été écrites par nous, à partir des connaissances aquariophiles courantes, puis confrontées aux articles Wikipédia (fr, en, de, quand ils existent) liés dans chaque fiche. Aucune base de données ni fiche d'application concurrente n'a été consultée ou copiée.
 
 **Ce qui est sourcé et ce qui ne l'est pas.** Toutes les valeurs n'ont pas deux sources, et beaucoup d'articles Wikipédia sur ces espèces sont des ébauches sans chiffre d'élevage (plécostome, loricaire, synodontis, silure de verre, sewellia, yeux bleus, loche pakistanaise). Dans chaque tableau, la colonne « Note » rapporte ce que dit chaque article cité (« fr » = l'article français, etc.), puis, quand la valeur retenue n'est pas celle d'une source, le marque « choix de notre part ». Une valeur sans aucune source chiffrée porte « aucune source chiffrée » ; les plus fragiles sont marquées « à vérifier en priorité ». Les durées de vie, les KH et beaucoup de volumes et de groupes minimums sont des choix de notre part.
 
@@ -18,7 +18,7 @@ Les dessins (`drawing`) sont ajoutés plus tard (tâche 7). La couleur sert à t
 
 ## Corydoras bronze (*Corydoras aeneus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `corydoras-bronze`, Wikidata [Q741269](https://www.wikidata.org/wiki/Q741269). Tempérament : Paisible, fouille le fond en groupe ; le plus rustique et le plus facile des corydoras.
 
@@ -40,7 +40,7 @@ Identifiant `corydoras-bronze`, Wikidata [Q741269](https://www.wikidata.org/wiki
 | Taille adulte | 7 cm | [en](https://en.wikipedia.org/wiki/Bronze_corydoras), [de](https://de.wikipedia.org/wiki/Metallpanzerwels) | en : 6,5 cm (mâle), 7 cm (femelle). choix de notre part : 7 |
 | Groupe minimum | 6 | [fr](https://fr.wikipedia.org/wiki/Corydoras_aeneus) | fr : environ 5 à 6 individus. choix de notre part : 6 |
 | Durée de vie | 10 ans | [en](https://en.wikipedia.org/wiki/Bronze_corydoras) | en : 10 ans en moyenne |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Corydoras_aeneus) | fr : ignore les autres habitants de l'aquarium. `PEACEFUL` : à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Corydoras_aeneus) | fr : ignore les autres habitants de l'aquarium. `PEACEFUL` : validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CATFISH`, `BOTTOM`, `BOTTOM` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#A47C48` | _aucune_ | choix de notre part : teinte dominante |
@@ -49,7 +49,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Corydoras_aeneus) · [en](https://e
 
 ## Corydoras poivré (*Corydoras paleatus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `corydoras-paleatus`, Wikidata [Q863850](https://www.wikidata.org/wiki/Q863850). Tempérament : Paisible, supporte l'eau fraîche ; fouille le sable en groupe.
 
@@ -80,7 +80,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Corydoras_paleatus) · [en](https:/
 
 ## Corydoras de Sterba (*Corydoras sterbai*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `corydoras-sterbai`, Wikidata [Q965336](https://www.wikidata.org/wiki/Q965336). Tempérament : Paisible, de petite taille, apprécie un bac plutôt chaud ; vit en groupe.
 
@@ -102,7 +102,7 @@ Identifiant `corydoras-sterbai`, Wikidata [Q965336](https://www.wikidata.org/wik
 | Taille adulte | 6 cm | [en](https://en.wikipedia.org/wiki/Sterba's_corydoras), [fr](https://fr.wikipedia.org/wiki/Corydoras_sterbai) | en : 5,1 à 6,6 cm ; fr : 5 à 6 cm. choix de notre part : 6 |
 | Groupe minimum | 6 | [en](https://en.wikipedia.org/wiki/Sterba's_corydoras), [fr](https://fr.wikipedia.org/wiki/Corydoras_sterbai) | en : 5 individus ou plus ; fr : 5 ou 6. choix de notre part : 6 |
 | Durée de vie | 10 ans | _aucune_ | aucune source chiffrée. choix de notre part (comme les autres corydoras), à vérifier en priorité |
-| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Sterba's_corydoras) | en : poisson de banc, rustique. `PEACEFUL` : à valider (aucune source ne le dit mot pour mot) |
+| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Sterba's_corydoras) | en : poisson de banc, rustique. `PEACEFUL` : validé par Maxime (2026-11-09) (aucune source ne le dit mot pour mot) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CATFISH`, `BOTTOM`, `BOTTOM` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#4A4E57` | _aucune_ | choix de notre part : teinte dominante |
@@ -111,7 +111,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Corydoras_sterbai) · [en](https://
 
 ## Corydoras pygmée (*Corydoras pygmaeus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `corydoras-pygmee`, Wikidata [Q244281](https://www.wikidata.org/wiki/Q244281). Tempérament : Minuscule et paisible ; nage en banc, y compris à mi-hauteur, et s'accommode d'un petit bac.
 
@@ -142,7 +142,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Corydoras_pygmaeus) · [en](https:/
 
 ## Corydoras à trois bandes (*Corydoras trilineatus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `corydoras-trilineatus`, Wikidata [Q1257383](https://www.wikidata.org/wiki/Q1257383). Tempérament : Discret, aime les cachettes et les plantes basses ; vit en groupe.
 
@@ -164,7 +164,7 @@ Identifiant `corydoras-trilineatus`, Wikidata [Q1257383](https://www.wikidata.or
 | Taille adulte | 6 cm | [en](https://en.wikipedia.org/wiki/Threestripe_corydoras), [de](https://de.wikipedia.org/wiki/Dreibinden-Panzerwels) | en : jusqu'à 6,4 cm ; de : mâle 5 cm, femelle 6 cm. choix de notre part : 6 |
 | Groupe minimum | 6 | [fr](https://fr.wikipedia.org/wiki/Corydoras_%C3%A0_trois_bandes), [de](https://de.wikipedia.org/wiki/Dreibinden-Panzerwels) | fr : 6 minimum, 10 plus approprié ; de : au moins 5. choix de notre part : 6 |
 | Durée de vie | 8 ans | [fr](https://fr.wikipedia.org/wiki/Corydoras_%C3%A0_trois_bandes), [de](https://de.wikipedia.org/wiki/Dreibinden-Panzerwels) | fr : plus de 5 ans ; de : 5 à 10 ans. choix de notre part : 8 |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Corydoras_%C3%A0_trois_bandes) | fr : corydoras discret. `PEACEFUL` : à valider (aucune source ne le dit mot pour mot) |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Corydoras_%C3%A0_trois_bandes) | fr : corydoras discret. `PEACEFUL` : validé par Maxime (2026-11-09) (aucune source ne le dit mot pour mot) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CATFISH`, `BOTTOM`, `BOTTOM` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#9AA0A6` | _aucune_ | choix de notre part : teinte dominante |
@@ -173,7 +173,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Corydoras_%C3%A0_trois_bandes) · [
 
 ## Corydoras sel et poivre (*Corydoras habrosus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `corydoras-habrosus`, Wikidata [Q1851707](https://www.wikidata.org/wiki/Q1851707). Tempérament : Minuscule et paisible ; groupe nombreux obligatoire.
 
@@ -204,7 +204,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Corydoras_habrosus) · [en](https:/
 
 ## Loche-clown (*Chromobotia macracanthus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `botia-clown`, Wikidata [Q841395](https://www.wikidata.org/wiki/Q841395). Tempérament : Grégaire, actif, vit plus de vingt ans et dépasse 20 cm ; il lui faut un très grand bac, en groupe.
 
@@ -235,7 +235,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Chromobotia_macracanthus) · [en](h
 
 ## Kuhli (*Pangio kuhlii*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `kuhli`, Wikidata [Q115045](https://www.wikidata.org/wiki/Q115045). Tempérament : Paisible et nocturne, vit enfoui dans le sable ou sous les décors ; bac fermé (il saute).
 
@@ -257,7 +257,7 @@ Identifiant `kuhli`, Wikidata [Q115045](https://www.wikidata.org/wiki/Q115045). 
 | Taille adulte | 10 cm | [fr](https://fr.wikipedia.org/wiki/Pangio_kuhlii), [de](https://de.wikipedia.org/wiki/Geflecktes_Dornauge) | fr : 8 à 12 cm ; de : jusqu'à 8 cm. choix de notre part : 10 |
 | Groupe minimum | 5 | _aucune_ | aucune source chiffrée. choix de notre part : 5 |
 | Durée de vie | 10 ans | [en](https://en.wikipedia.org/wiki/Kuhli_loach) | en : jusqu'à 14 ans, près de 10 ans en général. choix de notre part : 10 |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Pangio_kuhlii), [en](https://en.wikipedia.org/wiki/Kuhli_loach) | fr : sociable envers ses congénères et d'autres poissons ; en : s'entend bien avec ses congénères et les autres. `PEACEFUL` : à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Pangio_kuhlii), [en](https://en.wikipedia.org/wiki/Kuhli_loach) | fr : sociable envers ses congénères et d'autres poissons ; en : s'entend bien avec ses congénères et les autres. `PEACEFUL` : validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CATFISH`, `CRAWL`, `BOTTOM` | _aucune_ | choix de notre part (affichage) ; forme d'anguille, vit près du fond et enfoui |
 | Couleur | `#B8864B` | _aucune_ | choix de notre part : teinte dominante |
@@ -266,7 +266,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Pangio_kuhlii) · [en](https://en.w
 
 ## Loche pakistanaise (*Botia almorhae*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `botia-yoyo`, Wikidata [Q1802036](https://www.wikidata.org/wiki/Q1802036). Tempérament : Actif et sociable entre loches ; supporte mal la solitude. Les sources sur cette espèce sont très courtes.
 
@@ -297,7 +297,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Botia_almorhae) · [en](https://en.
 
 ## Loche naine (*Ambastaia sidthimunki*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `botia-nain`, Wikidata [Q28656882](https://www.wikidata.org/wiki/Q28656882). Tempérament : Très actif et sociable, nage dans toutes les couches ; connu comme mangeur d'escargots.
 
@@ -328,7 +328,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Ambastaia_sidthimunki) · [en](http
 
 ## Plécostome (*Pterygoplichthys pardalis*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `plecostomus`, Wikidata [Q3498871](https://www.wikidata.org/wiki/Q3498871). Tempérament : Grand mangeur d'algues, adulte de 40 cm ; il lui faut un très grand bac. Ne jamais le relâcher dans le milieu naturel.
 
@@ -359,7 +359,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Pterygoplichthys_pardalis) · [en](
 
 ## Loricaire (*Rineloricaria parva*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `loricaire`, Wikidata [Q3021022](https://www.wikidata.org/wiki/Q3021022). Tempérament : Calme, en forme de brindille, broute le fond ; le couple défend un territoire au moment de la ponte.
 
@@ -390,7 +390,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Rineloricaria_parva) · [en](https:
 
 ## Synodontis petricola (*Synodontis petricola*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `synodontis-petricola`, Wikidata [Q140281](https://www.wikidata.org/wiki/Q140281). Tempérament : Silure du lac Tanganyika, à l'eau dure et basique ; mange algues et petits invertébrés.
 
@@ -421,7 +421,7 @@ Sources : [en](https://en.wikipedia.org/wiki/Synodontis_petricola) · [de](https
 
 ## Silure de verre (*Kryptopterus vitreolus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `poisson-chat-de-verre`, Wikidata [Q13746133](https://www.wikidata.org/wiki/Q13746133). Tempérament : Transparent, sociable, timide ; vit en banc. Presque toujours pêché dans la nature.
 
@@ -452,7 +452,7 @@ Sources : [en](https://en.wikipedia.org/wiki/Kryptopterus_vitreolus)
 
 ## Sewellia lineolata (*Sewellia lineolata*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `sewellia`, Wikidata [Q1767177](https://www.wikidata.org/wiki/Q1767177). Tempérament : Loche de torrent : eau fraîche, courant fort et très oxygénée, en groupe ; exigeante sur la qualité de l'eau.
 
@@ -483,7 +483,7 @@ Sources : [en](https://en.wikipedia.org/wiki/Sewellia_lineolata) · [de](https:/
 
 ## Arc-en-ciel de Boeseman (*Melanotaenia boesemani*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `arc-en-ciel-boesemani`, Wikidata [Q833254](https://www.wikidata.org/wiki/Q833254). Tempérament : Paisible, nage en banc, grand et actif ; il lui faut de la place.
 
@@ -505,7 +505,7 @@ Identifiant `arc-en-ciel-boesemani`, Wikidata [Q833254](https://www.wikidata.org
 | Taille adulte | 11 cm | [fr](https://fr.wikipedia.org/wiki/Melanotaenia_boesemani) | fr : environ 10 à 12 cm. choix de notre part : 11 |
 | Groupe minimum | 6 | [fr](https://fr.wikipedia.org/wiki/Melanotaenia_boesemani) | fr : groupe de 6 |
 | Durée de vie | 8 ans | [en](https://en.wikipedia.org/wiki/Boeseman's_rainbowfish), [fr](https://fr.wikipedia.org/wiki/Melanotaenia_boesemani) | en : 5–8 ans en moyenne, jusqu'à 13–15 ; fr : 6 à 8 ans. choix de notre part : 8 |
-| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Boeseman's_rainbowfish) | en : « peaceful demeanor ». `PEACEFUL` : à valider |
+| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Boeseman's_rainbowfish) | en : « peaceful demeanor ». `PEACEFUL` : validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CYPRINID`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#D9833A` | _aucune_ | choix de notre part : teinte dominante |
@@ -514,7 +514,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Melanotaenia_boesemani) · [en](htt
 
 ## Arc-en-ciel néon (*Melanotaenia praecox*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `arc-en-ciel-praecox`, Wikidata [Q548082](https://www.wikidata.org/wiki/Q548082). Tempérament : Paisible et actif, de petite taille pour un arc-en-ciel ; saute, bac couvert.
 
@@ -545,7 +545,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Melanotaenia_praecox) · [en](https
 
 ## Arc-en-ciel rouge (*Glossolepis incisus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `arc-en-ciel-rouge`, Wikidata [Q59066](https://www.wikidata.org/wiki/Q59066). Tempérament : Grand arc-en-ciel de banc ; les mâles dominants rivalisent entre eux.
 
@@ -576,7 +576,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Glossolepis_incisus) · [en](https:
 
 ## Arc-en-ciel à filaments (*Iriatherina werneri*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `arc-en-ciel-filament`, Wikidata [Q2107345](https://www.wikidata.org/wiki/Q2107345). Tempérament : Minuscule et délicat, aux nageoires en filaments ; à garder sans mordilleurs, en petit groupe.
 
@@ -598,7 +598,7 @@ Identifiant `arc-en-ciel-filament`, Wikidata [Q2107345](https://www.wikidata.org
 | Taille adulte | 4 cm | [en](https://en.wikipedia.org/wiki/Threadfin_rainbowfish), [fr](https://fr.wikipedia.org/wiki/Iriatherina_werneri) | en : 5 cm sans la queue ; fr : 4 cm (mâle), 3 cm (femelle). choix de notre part : 4. 4 cm : proie de tout `EATS_SMALL_FISH` (seuil 4 cm) ; tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche) |
 | Groupe minimum | 6 | [en](https://en.wikipedia.org/wiki/Threadfin_rainbowfish) | en : de préférence 6 ou plus. choix de notre part : 6 |
 | Durée de vie | 3 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `PEACEFUL`, `LONG_FINS` | [en](https://en.wikipedia.org/wiki/Threadfin_rainbowfish) | en : généralement paisible ; nageoires longues, à garder sans mordilleurs. `LONG_FINS` : à valider |
+| Comportement | `PEACEFUL`, `LONG_FINS` | [en](https://en.wikipedia.org/wiki/Threadfin_rainbowfish) | en : généralement paisible ; nageoires longues, à garder sans mordilleurs. `LONG_FINS` : validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CYPRINID`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#7FB0C9` | _aucune_ | choix de notre part : teinte dominante |
@@ -607,7 +607,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Iriatherina_werneri) · [en](https:
 
 ## Yeux bleus (*Pseudomugil furcatus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `yeux-bleus`, Wikidata [Q1488317](https://www.wikidata.org/wiki/Q1488317). Tempérament : Petit nageur actif, facile à entretenir ; il aime nager, donc un bac assez long.
 
@@ -638,7 +638,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Pseudomugil_furcatus) · [en](https
 
 ## Médaka (*Oryzias latipes*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `medaka`, Wikidata [Q1142975](https://www.wikidata.org/wiki/Q1142975). Tempérament : Rustique et paisible, supporte des températures fraîches ; vit près de la surface.
 
@@ -669,7 +669,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Oryzias_latipes) · [en](https://en
 
 ## Killi du Cap Lopez (*Aphyosemion australe*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `killi-cap-lopez`, Wikidata [Q384439](https://www.wikidata.org/wiki/Q384439). Tempérament : Calme, vit en harem (un mâle, plusieurs femelles) avec des cachettes ; saute, bac couvert.
 
@@ -700,7 +700,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Aphyosemion_australe) · [en](https
 
 ## Killi rayé (*Epiplatys annulatus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `killi-raye`, Wikidata [Q2067460](https://www.wikidata.org/wiki/Q2067460). Tempérament : Minuscule et paisible, vit près de la surface ; les mâles se mesurent entre eux sans se blesser.
 
@@ -722,7 +722,7 @@ Identifiant `killi-raye`, Wikidata [Q2067460](https://www.wikidata.org/wiki/Q206
 | Taille adulte | 3,5 cm | [fr](https://fr.wikipedia.org/wiki/Epiplatys_annulatus) | fr : 3 à 3,5 cm |
 | Groupe minimum | 5 | _aucune_ | aucune source chiffrée. choix de notre part : 5 |
 | Durée de vie | 2 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `PEACEFUL`, `TERRITORIAL` | [fr](https://fr.wikipedia.org/wiki/Epiplatys_annulatus) | fr : poisson paisible, petite territorialité entre mâles. `PEACEFUL` et `TERRITORIAL` : à valider |
+| Comportement | `PEACEFUL`, `TERRITORIAL` | [fr](https://fr.wikipedia.org/wiki/Epiplatys_annulatus) | fr : poisson paisible, petite territorialité entre mâles. `PEACEFUL` et `TERRITORIAL` : validé par Maxime (2026-11-09) |
 | Régime | `CARNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `LIVEBEARER`, `GLIDE`, `SURFACE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#D2A679` | _aucune_ | choix de notre part : teinte dominante |
@@ -731,7 +731,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Epiplatys_annulatus) · [en](https:
 
 ## Tétraodon nain (*Carinotetraodon travancoricus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetraodon-nain`, Wikidata [Q175560](https://www.wikidata.org/wiki/Q175560). Tempérament : Minuscule, curieux et vorace ; mange escargots et crevettes, mordille les nageoires et peut s'en prendre à ses congénères.
 
@@ -753,7 +753,7 @@ Identifiant `tetraodon-nain`, Wikidata [Q175560](https://www.wikidata.org/wiki/Q
 | Taille adulte | 3 cm | [en](https://en.wikipedia.org/wiki/Dwarf_pufferfish), [de](https://de.wikipedia.org/wiki/Zwerg-Kugelfisch) | en : 3,5 cm au maximum, moins de 2,5 cm en général ; de : 2 à 3 cm. choix de notre part : 3 |
 | Groupe minimum | 1 | [en](https://en.wikipedia.org/wiki/Dwarf_pufferfish), [de](https://de.wikipedia.org/wiki/Zwerg-Kugelfisch) | en : vit en grands groupes dans la nature ; de : peut brimer ses congénères. choix de notre part : 1 |
 | Durée de vie | 5 ans | [en](https://en.wikipedia.org/wiki/Dwarf_pufferfish) | en : environ 5 ans, d'après des aquariophiles. choix de notre part : 5 |
-| Comportement | `EATS_SHRIMP`, `EATS_SNAILS`, `FIN_NIPPER`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Dwarf_pufferfish), [de](https://de.wikipedia.org/wiki/Zwerg-Kugelfisch) | en : mange de petits escargots d'eau douce et des crevettes ; de : escargots, pas particulièrement agressif mais peut brimer ses congénères. `EATS_SNAILS` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »). `EATS_SHRIMP` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (red cherry et Amano « déconseillées »). `FIN_NIPPER` retenu, sans source (connaissance aquariophile courante) : tranché par Maxime (2026-11-09), choix actuel gardé (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés »). `TERRITORIAL` : à valider. `EATS_SMALL_FISH` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (26 poissons de 4 cm ou moins « déconseillés », s'il est ajouté) |
+| Comportement | `EATS_SHRIMP`, `EATS_SNAILS`, `FIN_NIPPER`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Dwarf_pufferfish), [de](https://de.wikipedia.org/wiki/Zwerg-Kugelfisch) | en : mange de petits escargots d'eau douce et des crevettes ; de : escargots, pas particulièrement agressif mais peut brimer ses congénères. `EATS_SNAILS` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »). `EATS_SHRIMP` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (red cherry et Amano « déconseillées »). `FIN_NIPPER` retenu, sans source (connaissance aquariophile courante) : tranché par Maxime (2026-11-09), choix actuel gardé (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés »). `TERRITORIAL` : validé par Maxime (2026-11-09). `EATS_SMALL_FISH` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (26 poissons de 4 cm ou moins « déconseillés », s'il est ajouté) |
 | Régime | `CARNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CICHLID`, `SLOW`, `MIDDLE` | _aucune_ | choix de notre part (affichage) ; ce n'est pas un cichlidé mais un Tétraodontidé, la silhouette de cichlidé ne le représente qu'approximativement |
 | Couleur | `#C8C840` | _aucune_ | choix de notre part : teinte dominante |
@@ -762,7 +762,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Carinotetraodon_travancoricus) · [
 
 ## Gobie paon (*Tateurndina ocellicauda*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `gobie-paon`, Wikidata [Q2056231](https://www.wikidata.org/wiki/Q2056231). Tempérament : Paisible, discret, aime les caches (tuyaux, grottes) ; les mâles se disputent le territoire de ponte.
 
@@ -784,7 +784,7 @@ Identifiant `gobie-paon`, Wikidata [Q2056231](https://www.wikidata.org/wiki/Q205
 | Taille adulte | 7,5 cm | [en](https://en.wikipedia.org/wiki/Peacock_gudgeon) | en : 7,5 cm (mâle), 5 cm (femelle) |
 | Groupe minimum | 2 | _aucune_ | aucune source chiffrée. choix de notre part : 2 (un couple) |
 | Durée de vie | 5 ans | _aucune_ | aucune source chiffrée. choix de notre part : 5, à vérifier en priorité |
-| Comportement | `PEACEFUL`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Peacock_gudgeon), [de](https://de.wikipedia.org/wiki/Pastellgrundel) | en : paisible, mâles parfois territoriaux entre eux ; de : discret et paisible, mais parfois il mordille les nageoires des petits poissons. `PEACEFUL` et `TERRITORIAL` : à valider. `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés », s'il est ajouté) |
+| Comportement | `PEACEFUL`, `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Peacock_gudgeon), [de](https://de.wikipedia.org/wiki/Pastellgrundel) | en : paisible, mâles parfois territoriaux entre eux ; de : discret et paisible, mais parfois il mordille les nageoires des petits poissons. `PEACEFUL` et `TERRITORIAL` : validé par Maxime (2026-11-09). `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés », s'il est ajouté) |
 | Régime | `CARNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CICHLID`, `SLOW`, `BOTTOM` | _aucune_ | choix de notre part (affichage) ; ce n'est pas un cichlidé mais un Eleotridae, la silhouette de cichlidé ne le représente qu'approximativement |
 | Couleur | `#4A90C8` | _aucune_ | choix de notre part : teinte dominante |
@@ -793,7 +793,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Tateurndina_ocellicauda) · [en](ht
 
 ## Polyptère du Sénégal (*Polypterus senegalus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `bichir`, Wikidata [Q1515914](https://www.wikidata.org/wiki/Q1515914). Tempérament : Prédateur nocturne, lent mais vorace ; avale tout ce qui tient dans sa gueule. Bac fermé.
 
@@ -824,7 +824,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Polypterus_senegalus) · [en](https
 
 ## Poisson-éléphant (*Gnathonemus petersii*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `poisson-elephant`, Wikidata [Q945393](https://www.wikidata.org/wiki/Q945393). Tempérament : Timide, nocturne, il fouille le sable avec sa « trompe » ; territorial envers ses congénères sauf dans un très grand bac.
 
@@ -846,7 +846,7 @@ Identifiant `poisson-elephant`, Wikidata [Q945393](https://www.wikidata.org/wiki
 | Taille adulte | 23 cm | [en](https://en.wikipedia.org/wiki/Peters's_elephantnose_fish), [fr](https://fr.wikipedia.org/wiki/Poisson-%C3%A9l%C3%A9phant) | en : 23–25 cm en moyenne ; fr : 23–25 cm, 35 cm au maximum sans la queue. choix de notre part : 23 |
 | Groupe minimum | 1 | [en](https://en.wikipedia.org/wiki/Peters's_elephantnose_fish), [fr](https://fr.wikipedia.org/wiki/Poisson-%C3%A9l%C3%A9phant) | en : agressif envers ses congénères sauf au-dessus de 400 L ; fr : pas plus d'un poisson-éléphant sauf dans 400 L. choix de notre part : 1 |
 | Durée de vie | 8 ans | [en](https://en.wikipedia.org/wiki/Peters's_elephantnose_fish) | en : 6 à 10 ans. choix de notre part : 8 |
-| Comportement | `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Peters's_elephantnose_fish), [fr](https://fr.wikipedia.org/wiki/Poisson-%C3%A9l%C3%A9phant) | en : généralement docile, mais territorial envers sa propre espèce ; fr : de même. `TERRITORIAL` : à valider. Pas de `PEACEFUL` : choix de notre part |
+| Comportement | `TERRITORIAL` | [en](https://en.wikipedia.org/wiki/Peters's_elephantnose_fish), [fr](https://fr.wikipedia.org/wiki/Poisson-%C3%A9l%C3%A9phant) | en : généralement docile, mais territorial envers sa propre espèce ; fr : de même. `TERRITORIAL` : validé par Maxime (2026-11-09). Pas de `PEACEFUL` : choix de notre part |
 | Régime | `CARNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `CATFISH`, `SLOW`, `BOTTOM` | _aucune_ | choix de notre part (affichage) ; ce n'est pas un silure mais un Mormyridae, la silhouette de silure ne le représente qu'approximativement |
 | Couleur | `#3E3A36` | _aucune_ | choix de notre part : teinte dominante |
@@ -863,11 +863,11 @@ Les étiquettes `EATS_SNAILS`, `EATS_SHRIMP`, `EATS_SMALL_FISH` et `FIN_NIPPER` 
 - **Loche pakistanaise (botia-yoyo), crevettes** : `EATS_SHRIMP` non retenu (aucune source sur son régime ; connaissance aquariophile courante : comme les autres botiidés, elle s'attaque aux petites crevettes). Effet : sans le tag, red cherry et Amano restent « Vont bien » à côté. S'il est ajouté : red cherry et Amano « Déconseillées ». Précédent : Maxime a tranché « Pas de tag » pour le combattant (2026-11-06) : `EATS_SHRIMP` rend toute crevette « Déconseillée », Amano comprise. Tranché par Maxime (2026-11-09) : choix actuel gardé.
 - **Arc-en-ciel à filaments, taille** : 4 cm (fr : 4 cm mâle, 3 cm femelle ; en : 5 cm sans la queue), donc proie de tout `EATS_SMALL_FISH` (seuil de 4 cm inclus) : « Déconseillé » à côté de l'oscar, du macropode, du bichir, etc. Effet : à 5 cm (en), il ne serait plus une proie et serait « Vont bien » à côté d'eux. Tranché par Maxime (2026-11-09) : choix actuel gardé.
 - **Loche naine** : `EATS_SNAILS` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »), `EATS_SHRIMP` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (red cherry et Amano « déconseillées »). Sources : en (escargots et crustacés) ; fr (escargots et crevettes, proies préférées) ; de (sert à réduire un excès d'escargots).
-- **Tétraodon nain** : `EATS_SNAILS` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »), `EATS_SHRIMP` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (red cherry et Amano « déconseillées »), sources en (petits escargots et crevettes en captivité) et de (escargots). `FIN_NIPPER` retenu, sans source (connaissance aquariophile courante) : tranché par Maxime (2026-11-09), choix actuel gardé (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés »). `EATS_SMALL_FISH` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (26 poissons de 4 cm ou moins « déconseillés », s'il est ajouté). `TERRITORIAL` retenu (de : brime ses congénères), à valider. Un seul exemplaire suffit (`minGroup` 1) : choix de notre part.
+- **Tétraodon nain** : `EATS_SNAILS` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé »), `EATS_SHRIMP` retenu : tranché par Maxime (2026-11-09), choix actuel gardé (red cherry et Amano « déconseillées »), sources en (petits escargots et crevettes en captivité) et de (escargots). `FIN_NIPPER` retenu, sans source (connaissance aquariophile courante) : tranché par Maxime (2026-11-09), choix actuel gardé (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés »). `EATS_SMALL_FISH` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (26 poissons de 4 cm ou moins « déconseillés », s'il est ajouté). `TERRITORIAL` retenu (de : brime ses congénères), validé par Maxime (2026-11-09). Un seul exemplaire suffit (`minGroup` 1) : choix de notre part.
 - **Bichir** : `EATS_SMALL_FISH` et `EATS_SHRIMP` retenus : tranché par Maxime (2026-11-09), choix actuel gardé (26 poissons de 4 cm ou moins et les crevettes « déconseillés »), sources en et fr (prédateur, avale tout ce qui tient dans sa gueule). `EATS_SNAILS` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (tout escargot « déconseillé », s'il est ajouté).
 - **Gobie paon** : `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (guppy, combattant, scalaire et arc-en-ciel à filaments « déconseillés », s'il est ajouté). de dit qu'il mordille parfois les nageoires de petits poissons ; en et de le disent paisible.
 - **Plécostome** : taille (40 cm) : tranché par Maxime (2026-11-09), choix actuel gardé (en : jusqu'à 43 cm de longueur standard). Volume (500 L), durée de vie (15 ans) et plages d'eau : choix de notre part sans source, à vérifier en priorité. `EATS_PLANTS` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé (« avec précautions » avec toute plante, s'il est ajouté). Il n'est pas sur la liste des espèces envahissantes de l'Union, mais il l'est dans plusieurs pays hors Union : le relâcher dans le milieu naturel est à proscrire.
-- **Poisson-éléphant** : `TERRITORIAL` retenu (en et fr : territorial envers sa propre espèce sauf dans 400 L), à valider. Pas de `PEACEFUL`.
+- **Poisson-éléphant** : `TERRITORIAL` retenu (en et fr : territorial envers sa propre espèce sauf dans 400 L), validé par Maxime (2026-11-09). Pas de `PEACEFUL`.
 - **Synodontis, eau dure** : le synodontis a un pH de 7,5 à 9 et un GH et un KH élevés, choix de notre part, à vérifier en priorité : dans un bac d'eau douce, il ressortira « déconseillé » sur le pH ou le GH.
 - **Noms scientifiques faute de nom courant** : le nom scientifique est repris, aucun nom courant sourcé n'ayant été trouvé, pour *Corydoras aeneus* (es), *Corydoras paleatus* (es), *Corydoras sterbai* (it/es), *Corydoras pygmaeus* (it/es), *Corydoras trilineatus* (it/es), *Corydoras habrosus* (it/es), *Chromobotia macracanthus* (it), *Pangio kuhlii* (it/es), *Botia almorhae* (it/es), *Ambastaia sidthimunki* (it/es), *Pterygoplichthys pardalis* (de/it/es), *Rineloricaria parva* (de/it/es), *Kryptopterus vitreolus* (it), *Sewellia lineolata* (fr/it/es), *Melanotaenia boesemani* (it/es), *Melanotaenia praecox* (it/es), *Glossolepis incisus* (it/es), *Iriatherina werneri* (it/es), *Pseudomugil furcatus* (it/es), *Oryzias latipes* (es), *Aphyosemion australe* (it/es), *Epiplatys annulatus* (it/es), *Carinotetraodon travancoricus* (it/es), *Tateurndina ocellicauda* (it/es), *Polypterus senegalus* (it/es), *Gnathonemus petersii* (it/es) ; les cinq langues pour *Synodontis petricola* ; it/es de la plupart des autres espèces (voir les tableaux de noms). Tranché par Maxime (2026-11-09) : choix actuel gardé.
 - **Noms ajoutés par nous** (fr) : « Corydoras poivré », « Corydoras de Sterba », « Corydoras pygmée », « Loche naine », « Plécostome », « Loricaire », « Arc-en-ciel de Boeseman », « Arc-en-ciel néon », « Arc-en-ciel rouge », « Arc-en-ciel à filaments », « Yeux bleus », « Killi du Cap Lopez », « Killi rayé », « Tétraodon nain », « Gobie paon » ; (en) : « Common whiptail catfish », « Cape Lopez lyretail », « Senegal bichir ». Tranché par Maxime (2026-11-09) : choix actuel gardé.

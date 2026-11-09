@@ -1,6 +1,6 @@
-# Encyclopédie, lot 5b, lot 1 : characins, à valider
+# Encyclopédie, lot 5b, lot 1 : characins, validées
 
-Ces 23 fiches de characins sont des **brouillons** : elles attendent la validation de Maxime (cases « à valider » ci-dessous), valeurs « à vérifier en priorité » comprises. Les valeurs ont été écrites par nous, à partir des connaissances aquariophiles courantes, puis confrontées aux articles Wikipédia (fr, en, de, quand ils existent) liés dans chaque fiche. Aucune base de données ni fiche d'application concurrente n'a été consultée ou copiée.
+Ces 23 fiches de characins ont été **validées par Maxime le 2026-11-09**, valeurs « à vérifier en priorité » comprises. Les valeurs ont été écrites par nous, à partir des connaissances aquariophiles courantes, puis confrontées aux articles Wikipédia (fr, en, de, quand ils existent) liés dans chaque fiche. Aucune base de données ni fiche d'application concurrente n'a été consultée ou copiée.
 
 **Ce qui est sourcé et ce qui ne l'est pas.** Toutes les valeurs n'ont pas deux sources, et plusieurs articles Wikipédia sur ces espèces sont des ébauches sans chiffre d'élevage. Dans chaque tableau, la colonne « Note » rapporte ce que dit chaque article cité (« fr (infobox) » = la fiche aquariophile de l'article français ; « réglementation autrichienne » = le tableau de la loi autrichienne sur la détention des poissons d'ornement repris par l'article allemand, qui donne des plages légales très larges et non des conseils d'élevage), puis, quand la valeur retenue n'est pas celle d'une source, le marque « choix de notre part ». Une valeur sans aucune source chiffrée porte « aucune source chiffrée » ; les plus fragiles sont marquées « à vérifier en priorité ». Les durées de vie, les KH et plusieurs volumes et groupes minimums sont des choix de notre part.
 
@@ -15,7 +15,7 @@ Les dessins (`drawing`) sont ajoutés plus tard (tâche 7). La couleur sert à t
 
 ## Néon noir (*Hyphessobrycon herbertaxelrodi*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `neon-noir`, Wikidata [Q265081](https://www.wikidata.org/wiki/Q265081). Tempérament : Paisible, vit en banc au milieu du bac.
 
@@ -37,7 +37,7 @@ Identifiant `neon-noir`, Wikidata [Q265081](https://www.wikidata.org/wiki/Q26508
 | Taille adulte | 3,5 cm | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_herbertaxelrodi) | fr : 3–4 cm (texte), 2,5–4 cm (infobox) |
 | Groupe minimum | 10 | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_herbertaxelrodi) | fr (texte) : une dizaine au minimum ; fr (infobox) : 5 minimum. choix de notre part : 10 |
 | Durée de vie | 4 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_herbertaxelrodi) | fr : « très paisible », grégaire ; à ne pas mêler aux gros poissons. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_herbertaxelrodi) | fr : « très paisible », grégaire ; à ne pas mêler aux gros poissons. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_herbertaxelrodi) | fr (infobox) : omnivore |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#3E3E3E` | _aucune_ | choix de notre part : teinte dominante |
@@ -46,7 +46,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_herbertaxelrodi) · 
 
 ## Tétra nez rouge (*Hemigrammus bleheri*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-nez-rouge`, Wikidata [Q110858627](https://www.wikidata.org/wiki/Q110858627). Tempérament : Paisible, banc serré au milieu du bac.
 
@@ -68,7 +68,7 @@ Identifiant `tetra-nez-rouge`, Wikidata [Q110858627](https://www.wikidata.org/wi
 | Taille adulte | 5 cm | _aucune_ | aucune source chiffrée. choix de notre part : 5 cm |
 | Groupe minimum | 10 | _aucune_ | aucune source chiffrée. choix de notre part : 10, comme les autres tétras de banc |
 | Durée de vie | 5 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Hemigrammus_bleheri) | fr : poisson populaire en aquariophilie, sans mention d'agressivité. choix de notre part, à valider. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Hemigrammus_bleheri) | fr : poisson populaire en aquariophilie, sans mention d'agressivité. choix de notre part, validé par Maxime (2026-11-09). Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#E57373` | _aucune_ | choix de notre part : teinte dominante |
@@ -77,7 +77,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Hemigrammus_bleheri)
 
 ## Tétra citron (*Hyphessobrycon pulchripinnis*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-citron`, Wikidata [Q206507](https://www.wikidata.org/wiki/Q206507). Tempérament : Paisible, banc au milieu du bac.
 
@@ -99,7 +99,7 @@ Identifiant `tetra-citron`, Wikidata [Q206507](https://www.wikidata.org/wiki/Q20
 | Taille adulte | 4,5 cm | [fr](https://fr.wikipedia.org/wiki/T%C3%A9tra_citron), [de](https://de.wikipedia.org/wiki/Zitronensalmler) | fr (infobox) : 4–5 cm ; de : 5 cm |
 | Groupe minimum | 8 | [en](https://en.wikipedia.org/wiki/Lemon_tetra), [de](https://de.wikipedia.org/wiki/Zitronensalmler) | en : 6 minimum ; de : au moins 10. choix de notre part : 8 |
 | Durée de vie | 5 ans | [en](https://en.wikipedia.org/wiki/Lemon_tetra), [de](https://de.wikipedia.org/wiki/Zitronensalmler) | en : jusqu'à 8 ans, 6 plus typique ; de : 4 ans. choix de notre part : 5 |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/T%C3%A9tra_citron), [en](https://en.wikipedia.org/wiki/Lemon_tetra) | fr (infobox) : sociabilité bonne ; en : poisson de banc, robuste. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/T%C3%A9tra_citron), [en](https://en.wikipedia.org/wiki/Lemon_tetra) | fr (infobox) : sociabilité bonne ; en : poisson de banc, robuste. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/T%C3%A9tra_citron) | fr (infobox) : omnivore |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#F9E04B` | _aucune_ | choix de notre part : teinte dominante |
@@ -108,7 +108,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/T%C3%A9tra_citron) · [en](https://
 
 ## Tétra serpae (*Hyphessobrycon eques*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-serpae`, Wikidata [Q629430](https://www.wikidata.org/wiki/Q629430). Tempérament : Vif et mordilleur : s'attaque aux nageoires longues.
 
@@ -130,7 +130,7 @@ Identifiant `tetra-serpae`, Wikidata [Q629430](https://www.wikidata.org/wiki/Q62
 | Taille adulte | 4,5 cm | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_eques), [en](https://en.wikipedia.org/wiki/Serpae_tetra) | fr : 4–5 cm (infobox), 4 cm en moyenne (texte) ; en : 4 cm de longueur standard |
 | Groupe minimum | 8 | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_eques), [de](https://de.wikipedia.org/wiki/Blutsalmler) | fr : grégaire ; de : grégaire mais besoin d'une distance entre congénères. choix de notre part : 8, un groupe nombreux calme les bagarres |
 | Durée de vie | 5 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `FIN_NIPPER` | [en](https://en.wikipedia.org/wiki/Serpae_tetra), [de](https://de.wikipedia.org/wiki/Blutsalmler) | en : « notoirement agressif » envers ses congénères et les autres poissons ; de : agressions entre congénères, parfois des nageoires mordues. `FIN_NIPPER` : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche). Pas de `PEACEFUL`. Étiquettes : choix de notre part, à valider |
+| Comportement | `FIN_NIPPER` | [en](https://en.wikipedia.org/wiki/Serpae_tetra), [de](https://de.wikipedia.org/wiki/Blutsalmler) | en : « notoirement agressif » envers ses congénères et les autres poissons ; de : agressions entre congénères, parfois des nageoires mordues. `FIN_NIPPER` : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche). Pas de `PEACEFUL`. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_eques) | fr (infobox) : omnivore |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#D84315` | _aucune_ | choix de notre part : teinte dominante |
@@ -139,7 +139,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_eques) · [en](https
 
 ## Tétra amande (*Hyphessobrycon amandae*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-ember`, Wikidata [Q923185](https://www.wikidata.org/wiki/Q923185). Tempérament : Paisible et très petit, banc au milieu du bac ; craint les gros voisins.
 
@@ -161,7 +161,7 @@ Identifiant `tetra-ember`, Wikidata [Q923185](https://www.wikidata.org/wiki/Q923
 | Taille adulte | 2 cm | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_amandae), [en](https://en.wikipedia.org/wiki/Ember_tetra), [de](https://de.wikipedia.org/wiki/Funkensalmler) | fr : environ 2 cm ; en : 2–3 cm ; de : 1,7–2 cm |
 | Groupe minimum | 10 | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_amandae), [en](https://en.wikipedia.org/wiki/Ember_tetra) | fr : 10 minimum (6 idéal minimum dans une autre phrase) ; en : 6 minimum, 9–10 recommandé. choix de notre part : 10 |
 | Durée de vie | 3 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_amandae), [en](https://en.wikipedia.org/wiki/Ember_tetra) | fr : poissons calmes et pas trop gros comme voisins ; en : stressé par les gros poissons. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_amandae), [en](https://en.wikipedia.org/wiki/Ember_tetra) | fr : poissons calmes et pas trop gros comme voisins ; en : stressé par les gros poissons. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_amandae) | fr : omnivore à tendance carnivore |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#FF6D00` | _aucune_ | choix de notre part : teinte dominante |
@@ -170,7 +170,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_amandae) · [en](htt
 
 ## Tétra-empereur (*Nematobrycon palmeri*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-empereur`, Wikidata [Q239480](https://www.wikidata.org/wiki/Q239480). Tempérament : Placide : à ne pas mêler aux espèces trop vives.
 
@@ -192,7 +192,7 @@ Identifiant `tetra-empereur`, Wikidata [Q239480](https://www.wikidata.org/wiki/Q
 | Taille adulte | 5 cm | [en](https://en.wikipedia.org/wiki/Nematobrycon_palmeri), [de](https://de.wikipedia.org/wiki/Kaisersalmler) | en : 4,2 cm ; de : 5–8 cm. choix de notre part : 5 |
 | Groupe minimum | 8 | [de](https://de.wikipedia.org/wiki/Kaisersalmler) | de : petits groupes de 8 à 12 |
 | Durée de vie | 5 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Nematobrycon_palmeri), [de](https://de.wikipedia.org/wiki/Kaisersalmler) | en : placide, dérangé par les espèces turbulentes ; de : mâles dominants parfois territoriaux, `TERRITORIAL` non retenu (ne joue qu'entre individus de la même espèce). Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Nematobrycon_palmeri), [de](https://de.wikipedia.org/wiki/Kaisersalmler) | en : placide, dérangé par les espèces turbulentes ; de : mâles dominants parfois territoriaux, `TERRITORIAL` non retenu (ne joue qu'entre individus de la même espèce). Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Nematobrycon_palmeri) | en : omnivore |
 | Dessin, nage, zone | `TETRA`, `GLIDE`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#3F51B5` | _aucune_ | choix de notre part : teinte dominante |
@@ -201,7 +201,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/T%C3%A9tra-empereur) · [en](https:
 
 ## Tétra diamant (*Moenkhausia pittieri*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-diamant`, Wikidata [Q13222859](https://www.wikidata.org/wiki/Q13222859). Tempérament : Paisible et vif, banc au milieu du bac.
 
@@ -223,7 +223,7 @@ Identifiant `tetra-diamant`, Wikidata [Q13222859](https://www.wikidata.org/wiki/
 | Taille adulte | 6 cm | _aucune_ | aucune source chiffrée dans les articles lus. choix de notre part : 6 cm |
 | Groupe minimum | 8 | [de](https://de.wikipedia.org/wiki/Brillantsalmler) | de : « lebhafter Schwarmfisch ». choix de notre part : 8 |
 | Durée de vie | 5 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `PEACEFUL` | [de](https://de.wikipedia.org/wiki/Brillantsalmler) | de : poisson de banc vif, sans mention d'agressivité. choix de notre part, à valider. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [de](https://de.wikipedia.org/wiki/Brillantsalmler) | de : poisson de banc vif, sans mention d'agressivité. choix de notre part, validé par Maxime (2026-11-09). Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [de](https://de.wikipedia.org/wiki/Brillantsalmler) | de : crustacés, insectes et larves ; omnivore en aquarium : choix de notre part |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#B0BEC5` | _aucune_ | choix de notre part : teinte dominante |
@@ -232,7 +232,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/T%C3%A9tra_diamant) · [en](https:/
 
 ## Tétra du Congo (*Phenacogrammus interruptus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-congo`, Wikidata [Q530817](https://www.wikidata.org/wiki/Q530817). Tempérament : Paisible mais vif, il a besoin de place pour nager.
 
@@ -254,7 +254,7 @@ Identifiant `tetra-congo`, Wikidata [Q530817](https://www.wikidata.org/wiki/Q530
 | Taille adulte | 9 cm | [de](https://de.wikipedia.org/wiki/Blauer_Kongosalmler) | de : jusqu'à 12 cm. choix de notre part : 9 cm (mâles adultes en bac) |
 | Groupe minimum | 10 | [fr](https://fr.wikipedia.org/wiki/Phenacogrammus_interruptus) | fr : une dizaine d'individus minimum |
 | Durée de vie | 8 ans | [de](https://de.wikipedia.org/wiki/Blauer_Kongosalmler) | de : 8 à 10 ans au maximum. choix de notre part : 8 |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Phenacogrammus_interruptus) | fr : « poisson paisible mais plutôt vif ». Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Phenacogrammus_interruptus) | fr : « poisson paisible mais plutôt vif ». Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#42A5F5` | _aucune_ | choix de notre part : teinte dominante |
@@ -263,7 +263,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Phenacogrammus_interruptus) · [en]
 
 ## Tétra veuve noire (*Gymnocorymbus ternetzi*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-veuve-noire`, Wikidata [Q519849](https://www.wikidata.org/wiki/Q519849). Tempérament : Paisible mais vif ; peut devenir agressif en trop petit groupe.
 
@@ -285,7 +285,7 @@ Identifiant `tetra-veuve-noire`, Wikidata [Q519849](https://www.wikidata.org/wik
 | Taille adulte | 6 cm | [fr](https://fr.wikipedia.org/wiki/Gymnocorymbus_ternetzi), [en](https://en.wikipedia.org/wiki/Black_tetra), [de](https://de.wikipedia.org/wiki/Trauermantelsalmler) | fr : jusqu'à 7 cm (femelle) ; en : 7,5 cm ; de : 5,5 cm. choix de notre part : 6 |
 | Groupe minimum | 6 | [fr](https://fr.wikipedia.org/wiki/Gymnocorymbus_ternetzi), [de](https://de.wikipedia.org/wiki/Trauermantelsalmler) | fr : 6 minimum, 10 bien plus approprié ; de : au moins 5 |
 | Durée de vie | 4 ans | [en](https://en.wikipedia.org/wiki/Black_tetra) | en : 3 à 5 ans en captivité |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Gymnocorymbus_ternetzi), [de](https://de.wikipedia.org/wiki/Trauermantelsalmler) | fr : paisible mais assez vif, agressif ou craintif en trop petit nombre ; de : paisible. `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Gymnocorymbus_ternetzi), [de](https://de.wikipedia.org/wiki/Trauermantelsalmler) | fr : paisible mais assez vif, agressif ou craintif en trop petit nombre ; de : paisible. `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/Gymnocorymbus_ternetzi), [en](https://en.wikipedia.org/wiki/Black_tetra) | fr (infobox) : omnivore ; en : proies vivantes et surgelées acceptées |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#616161` | _aucune_ | choix de notre part : teinte dominante |
@@ -294,7 +294,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Gymnocorymbus_ternetzi) · [en](htt
 
 ## Tétra cuivré (*Hasemania nana*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-cuivre`, Wikidata [Q855167](https://www.wikidata.org/wiki/Q855167). Tempérament : Paisible et sociable, en groupe.
 
@@ -316,7 +316,7 @@ Identifiant `tetra-cuivre`, Wikidata [Q855167](https://www.wikidata.org/wiki/Q85
 | Taille adulte | 4,5 cm | [fr](https://fr.wikipedia.org/wiki/Hasemania_nana), [en](https://en.wikipedia.org/wiki/Silvertip_tetra) | fr : 4–5 cm ; en : 5 cm |
 | Groupe minimum | 6 | [fr](https://fr.wikipedia.org/wiki/Hasemania_nana) | fr : six individus pour 50 L |
 | Durée de vie | 4 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Hasemania_nana), [en](https://en.wikipedia.org/wiki/Silvertip_tetra) | fr : paisible, en groupe, avec des espèces calmes ; en : peut devenir territorial (sans source datée), `TERRITORIAL` non retenu. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Hasemania_nana), [en](https://en.wikipedia.org/wiki/Silvertip_tetra) | fr : paisible, en groupe, avec des espèces calmes ; en : peut devenir territorial (sans source datée), `TERRITORIAL` non retenu. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/Hasemania_nana) | fr (infobox) : omnivore |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#D4A24C` | _aucune_ | choix de notre part : teinte dominante |
@@ -325,7 +325,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Hasemania_nana) · [en](https://en.
 
 ## Pristella (*Pristella maxillaris*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `pristella`, Wikidata [Q540539](https://www.wikidata.org/wiki/Q540539). Tempérament : Paisible, banc au milieu du bac.
 
@@ -347,7 +347,7 @@ Identifiant `pristella`, Wikidata [Q540539](https://www.wikidata.org/wiki/Q54053
 | Taille adulte | 4,5 cm | [fr](https://fr.wikipedia.org/wiki/Pristella_maxillaris), [de](https://de.wikipedia.org/wiki/Sternflecksalmler) | fr : 5 cm au maximum (mâles 3,5, femelles 4,5) ; de : femelles 4,5 cm, mâles 3,5 cm |
 | Groupe minimum | 6 | _aucune_ | aucune source chiffrée. choix de notre part : 6 |
 | Durée de vie | 4 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Pristella_maxillaris) | fr : « n'est pas agressif », respecte le décor. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Pristella_maxillaris) | fr : « n'est pas agressif », respecte le décor. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#CDBF8A` | _aucune_ | choix de notre part : teinte dominante |
@@ -356,7 +356,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Pristella_maxillaris) · [en](https
 
 ## Tétra de Buenos Aires (*Hyphessobrycon anisitsi*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-buenos-aires`, Wikidata [Q1687707](https://www.wikidata.org/wiki/Q1687707). Tempérament : Robuste mais mordilleur : à ne pas mêler aux poissons à longues nageoires.
 
@@ -378,7 +378,7 @@ Identifiant `tetra-buenos-aires`, Wikidata [Q1687707](https://www.wikidata.org/w
 | Taille adulte | 7 cm | [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra) | en : jusqu'à 7,5 cm. choix de notre part : 7 |
 | Groupe minimum | 6 | [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra), [de](https://de.wikipedia.org/wiki/Rautenflecksalmler) | en : 5 ou plus réduit l'agressivité ; de : au moins 5. choix de notre part : 6 |
 | Durée de vie | 5 ans | [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra) | en : 5 à 6 ans |
-| Comportement | `FIN_NIPPER`, `EATS_PLANTS` | [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra) | en : mordille les nageoires longues des voisins s'il est mal nourri, grignote parfois les plantes. `FIN_NIPPER` et `EATS_PLANTS` : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche). Étiquettes : choix de notre part, à valider |
+| Comportement | `FIN_NIPPER`, `EATS_PLANTS` | [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra) | en : mordille les nageoires longues des voisins s'il est mal nourri, grignote parfois les plantes. `FIN_NIPPER` et `EATS_PLANTS` : tranché par Maxime (2026-11-09), choix actuel gardé (voir fin de fiche). Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra) | en : omnivore |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#90A4AE` | _aucune_ | choix de notre part : teinte dominante |
@@ -387,7 +387,7 @@ Sources : [en](https://en.wikipedia.org/wiki/Buenos_Aires_tetra) · [de](https:/
 
 ## Néon rose (*Hemigrammus erythrozonus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-lumiere`, Wikidata [Q844602](https://www.wikidata.org/wiki/Q844602). Tempérament : Paisible et vif, banc au milieu du bac.
 
@@ -409,7 +409,7 @@ Identifiant `tetra-lumiere`, Wikidata [Q844602](https://www.wikidata.org/wiki/Q8
 | Taille adulte | 4 cm | [fr](https://fr.wikipedia.org/wiki/N%C3%A9on_rose), [de](https://de.wikipedia.org/wiki/Gl%C3%BChlichtsalmler) | fr (infobox) : 4,5 cm ; de : mâles 4,5 cm, femelles 3,5 cm. choix de notre part : 4 |
 | Groupe minimum | 8 | [fr](https://fr.wikipedia.org/wiki/N%C3%A9on_rose), [en](https://en.wikipedia.org/wiki/Hemigrammus_erythrozonus) | fr : 8 à 10 minimum ; en : 4 minimum, 8 et plus pour qu'ils se sentent en sécurité. choix de notre part : 8 |
 | Durée de vie | 4 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/N%C3%A9on_rose), [en](https://en.wikipedia.org/wiki/Hemigrammus_erythrozonus), [de](https://de.wikipedia.org/wiki/Gl%C3%BChlichtsalmler) | fr : pacifique et paisible ; en : espèce de bac communautaire ; de : « friedfertige Schwarmfische ». Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/N%C3%A9on_rose), [en](https://en.wikipedia.org/wiki/Hemigrammus_erythrozonus), [de](https://de.wikipedia.org/wiki/Gl%C3%BChlichtsalmler) | fr : pacifique et paisible ; en : espèce de bac communautaire ; de : « friedfertige Schwarmfische ». Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/N%C3%A9on_rose) | fr (infobox) : omnivore |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#FF8A65` | _aucune_ | choix de notre part : teinte dominante |
@@ -418,7 +418,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/N%C3%A9on_rose) · [en](https://en.
 
 ## Tétra fantôme noir (*Hyphessobrycon megalopterus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-fantome-noir`, Wikidata [Q912897](https://www.wikidata.org/wiki/Q912897). Tempérament : Paisible, vif et grégaire ; les mâles tiennent de petits territoires.
 
@@ -440,7 +440,7 @@ Identifiant `tetra-fantome-noir`, Wikidata [Q912897](https://www.wikidata.org/wi
 | Taille adulte | 4,5 cm | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_megalopterus), [de](https://de.wikipedia.org/wiki/Schwarzer_Phantomsalmler), [en](https://en.wikipedia.org/wiki/Black_phantom_tetra) | fr : 4,5 cm ; de : 4,5–5 cm ; en : 4,4 cm (1,75 in) |
 | Groupe minimum | 10 | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_megalopterus), [de](https://de.wikipedia.org/wiki/Schwarzer_Phantomsalmler) | de : groupe d'une douzaine d'individus, jamais seul ni par paire ; fr (infobox) : 10 individus. choix de notre part : 10 |
 | Durée de vie | 4 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_megalopterus), [de](https://de.wikipedia.org/wiki/Schwarzer_Phantomsalmler) | fr : paisible ; de : les mâles défendent de petits territoires par des parades ritualisées, `TERRITORIAL` non retenu. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_megalopterus), [de](https://de.wikipedia.org/wiki/Schwarzer_Phantomsalmler) | fr : paisible ; de : les mâles défendent de petits territoires par des parades ritualisées, `TERRITORIAL` non retenu. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_megalopterus) | fr (infobox) : omnivore |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#546E7A` | _aucune_ | choix de notre part : teinte dominante |
@@ -449,7 +449,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Hyphessobrycon_megalopterus) · [en
 
 ## Poisson-crayon (*Nannostomus beckfordi*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `poisson-crayon`, Wikidata [Q582640](https://www.wikidata.org/wiki/Q582640). Tempérament : Paisible, nage en petit banc près du feuillage.
 
@@ -471,7 +471,7 @@ Identifiant `poisson-crayon`, Wikidata [Q582640](https://www.wikidata.org/wiki/Q
 | Taille adulte | 6 cm | _aucune_ | aucune source chiffrée dans les articles lus. choix de notre part : 6 cm |
 | Groupe minimum | 8 | [de](https://de.wikipedia.org/wiki/L%C3%A4ngsbandziersalmler) | de : au moins huit exemplaires |
 | Durée de vie | 5 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `PEACEFUL` | [de](https://de.wikipedia.org/wiki/L%C3%A4ngsbandziersalmler) | de : convient au bac communautaire, espèce la plus facile du genre. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [de](https://de.wikipedia.org/wiki/L%C3%A4ngsbandziersalmler) | de : convient au bac communautaire, espèce la plus facile du genre. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#C48A3F` | _aucune_ | choix de notre part : teinte dominante |
@@ -480,7 +480,7 @@ Sources : [en](https://en.wikipedia.org/wiki/Nannostomus_beckfordi) · [de](http
 
 ## Nannostomus marginatus (*Nannostomus marginatus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `nannostomus-marginatus`, Wikidata [Q244445](https://www.wikidata.org/wiki/Q244445). Tempérament : Très petit et paisible, craint les voisins turbulents.
 
@@ -502,7 +502,7 @@ Identifiant `nannostomus-marginatus`, Wikidata [Q244445](https://www.wikidata.or
 | Taille adulte | 3,5 cm | [en](https://en.wikipedia.org/wiki/Nannostomus_marginatus) | en : l'un des plus petits du genre, sans chiffre lisible. choix de notre part : 3,5 cm, à vérifier en priorité |
 | Groupe minimum | 8 | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
 | Durée de vie | 4 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Nannostomus_marginatus) | en : espèce d'aquarium populaire depuis le début du XXe siècle. choix de notre part, à valider. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Nannostomus_marginatus) | en : espèce d'aquarium populaire depuis le début du XXe siècle. choix de notre part, validé par Maxime (2026-11-09). Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#C48A3F` | _aucune_ | choix de notre part : teinte dominante |
@@ -511,7 +511,7 @@ Sources : [en](https://en.wikipedia.org/wiki/Nannostomus_marginatus) · [de](htt
 
 ## Poisson-hachette (*Carnegiella strigata*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `poisson-hachette`, Wikidata [Q430284](https://www.wikidata.org/wiki/Q430284). Tempérament : Paisible, nage sous la surface, saute hors de l'eau : bac couvert.
 
@@ -533,7 +533,7 @@ Identifiant `poisson-hachette`, Wikidata [Q430284](https://www.wikidata.org/wiki
 | Taille adulte | 3,5 cm | [fr](https://fr.wikipedia.org/wiki/Carnegiella_strigata), [de](https://de.wikipedia.org/wiki/Marmorierter_Beilbauchfisch) | fr : jusqu'à 35 mm hors queue ; de : environ 4 cm. choix de notre part : 3,5 |
 | Groupe minimum | 6 | [fr](https://fr.wikipedia.org/wiki/Carnegiella_strigata), [de](https://de.wikipedia.org/wiki/Marmorierter_Beilbauchfisch) | fr : grégaire, petits groupes ; de : à partir de cinq individus. choix de notre part : 6 |
 | Durée de vie | 4 ans | _aucune_ | aucune source chiffrée. choix de notre part, à vérifier en priorité |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Carnegiella_strigata) | fr : sociable, sensible aux variations de qualité de l'eau, plutôt pour aquariophiles expérimentés. `PEACEFUL` : à valider. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Carnegiella_strigata) | fr : sociable, sensible aux variations de qualité de l'eau, plutôt pour aquariophiles expérimentés. `PEACEFUL` : validé par Maxime (2026-11-09). Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `CARNIVORE` | [fr](https://fr.wikipedia.org/wiki/Carnegiella_strigata) | fr : se nourrit surtout d'insectes attrapés à la surface |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `SURFACE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#B0A090` | _aucune_ | choix de notre part : teinte dominante |
@@ -542,7 +542,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Carnegiella_strigata) · [en](https
 
 ## Faux tétra néon (*Paracheirodon simulans*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `neon-vert`, Wikidata [Q882676](https://www.wikidata.org/wiki/Q882676). Tempérament : Paisible, minuscule, banc serré au milieu du bac.
 
@@ -564,7 +564,7 @@ Identifiant `neon-vert`, Wikidata [Q882676](https://www.wikidata.org/wiki/Q88267
 | Taille adulte | 2,5 cm | [fr](https://fr.wikipedia.org/wiki/Paracheirodon_simulans), [en](https://en.wikipedia.org/wiki/Green_neon_tetra), [de](https://de.wikipedia.org/wiki/Blauer_Neon) | fr : 2 cm ; en : 1–2 cm ; de : 3–3,5 cm. choix de notre part : 2,5 |
 | Groupe minimum | 10 | [fr](https://fr.wikipedia.org/wiki/Paracheirodon_simulans), [de](https://de.wikipedia.org/wiki/Blauer_Neon) | fr : une dizaine au minimum ; de : 10 et plus |
 | Durée de vie | 5 ans | [de](https://de.wikipedia.org/wiki/Blauer_Neon) | de : cinq ans au maximum |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Paracheirodon_simulans), [de](https://de.wikipedia.org/wiki/Blauer_Neon) | fr : « très paisible », grégaire ; de : espèce pacifique. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Paracheirodon_simulans), [de](https://de.wikipedia.org/wiki/Blauer_Neon) | fr : « très paisible », grégaire ; de : espèce pacifique. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/Paracheirodon_simulans) | fr (infobox) : flocons, artémias, nourriture vivante : omnivore |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#2E9E8F` | _aucune_ | choix de notre part : teinte dominante |
@@ -573,7 +573,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Paracheirodon_simulans) · [en](htt
 
 ## Poisson-pingouin (*Thayeria boehlkei*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-pingouin`, Wikidata [Q979948](https://www.wikidata.org/wiki/Q979948). Tempérament : Paisible et vif, nage en biais près de la surface.
 
@@ -595,7 +595,7 @@ Identifiant `tetra-pingouin`, Wikidata [Q979948](https://www.wikidata.org/wiki/Q
 | Taille adulte | 6 cm | _aucune_ | aucune source chiffrée dans les articles lus. choix de notre part : 6 cm |
 | Groupe minimum | 6 | [en](https://en.wikipedia.org/wiki/Thayeria_boehlkei) | en : mieux gardé en groupe, sans chiffre. choix de notre part : 6 |
 | Durée de vie | 5 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `PEACEFUL` | [de](https://de.wikipedia.org/wiki/Schr%C3%A4gschwimmer), [en](https://en.wikipedia.org/wiki/Thayeria_boehlkei) | de : « lebhafter und friedlicher Schwarmfisch » ; en : à garder avec des poissons paisibles non prédateurs. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [de](https://de.wikipedia.org/wiki/Schr%C3%A4gschwimmer), [en](https://en.wikipedia.org/wiki/Thayeria_boehlkei) | de : « lebhafter und friedlicher Schwarmfisch » ; en : à garder avec des poissons paisibles non prédateurs. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [de](https://de.wikipedia.org/wiki/Schr%C3%A4gschwimmer) | de : petits crustacés, insectes, vers flottants : omnivore en aquarium, choix de notre part |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `SURFACE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#8D8D8D` | _aucune_ | choix de notre part : teinte dominante |
@@ -604,7 +604,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Poisson-pingouin) · [en](https://e
 
 ## Feu de position (*Hemigrammus ocellifer*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-feu-de-position`, Wikidata [Q257894](https://www.wikidata.org/wiki/Q257894). Tempérament : Paisible et grégaire, plus tolérant que les autres Hemigrammus.
 
@@ -626,7 +626,7 @@ Identifiant `tetra-feu-de-position`, Wikidata [Q257894](https://www.wikidata.org
 | Taille adulte | 4,5 cm | [fr](https://fr.wikipedia.org/wiki/Hemigrammus_ocellifer) | fr : jusqu'à 5 cm. choix de notre part : 4,5 |
 | Groupe minimum | 6 | [fr](https://fr.wikipedia.org/wiki/Hemigrammus_ocellifer), [de](https://de.wikipedia.org/wiki/Schlusslichtsalmler) | fr : a besoin d'un groupe, sans chiffre ; de : au moins 5. choix de notre part : 6 |
 | Durée de vie | 4 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Hemigrammus_ocellifer), [de](https://de.wikipedia.org/wiki/Schlusslichtsalmler) | fr : paisible et grégaire ; de : « friedfertige Schwarmfische ». Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Hemigrammus_ocellifer), [de](https://de.wikipedia.org/wiki/Schlusslichtsalmler) | fr : paisible et grégaire ; de : « friedfertige Schwarmfische ». Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [de](https://de.wikipedia.org/wiki/Schlusslichtsalmler) | de : petits crustacés et insectes : omnivore en aquarium, choix de notre part |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#B8A77A` | _aucune_ | choix de notre part : teinte dominante |
@@ -635,7 +635,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Hemigrammus_ocellifer) · [en](http
 
 ## Tétra de Rio (*Hyphessobrycon flammeus*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-flamme`, Wikidata [Q969545](https://www.wikidata.org/wiki/Q969545). Tempérament : Paisible mais vif, banc au milieu du bac.
 
@@ -657,7 +657,7 @@ Identifiant `tetra-flamme`, Wikidata [Q969545](https://www.wikidata.org/wiki/Q96
 | Taille adulte | 3,5 cm | [fr](https://fr.wikipedia.org/wiki/T%C3%A9tra_de_Rio), [en](https://en.wikipedia.org/wiki/Flame_tetra), [de](https://de.wikipedia.org/wiki/Roter_von_Rio) | fr (infobox) : 3,5 cm ; en : 2,5 cm (longueur standard) ; de : 4 cm |
 | Groupe minimum | 8 | [fr](https://fr.wikipedia.org/wiki/T%C3%A9tra_de_Rio), [de](https://de.wikipedia.org/wiki/Roter_von_Rio) | fr (infobox) : 10 minimum ; de : au moins 5. choix de notre part : 8 |
 | Durée de vie | 4 ans | [de](https://de.wikipedia.org/wiki/Roter_von_Rio) | de : 4 ans au maximum |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/T%C3%A9tra_de_Rio), [en](https://en.wikipedia.org/wiki/Flame_tetra), [de](https://de.wikipedia.org/wiki/Roter_von_Rio) | fr : paisible mais vif ; en : poisson de banc paisible ; de : disputes possibles avec de vieux poissons agressifs. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/T%C3%A9tra_de_Rio), [en](https://en.wikipedia.org/wiki/Flame_tetra), [de](https://de.wikipedia.org/wiki/Roter_von_Rio) | fr : paisible mais vif ; en : poisson de banc paisible ; de : disputes possibles avec de vieux poissons agressifs. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [en](https://en.wikipedia.org/wiki/Flame_tetra) | en : omnivore |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#E64A19` | _aucune_ | choix de notre part : teinte dominante |
@@ -666,7 +666,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/T%C3%A9tra_de_Rio) · [en](https://
 
 ## Nageoires sanglantes (*Aphyocharax anisitsi*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-nageoires-rouges`, Wikidata [Q1505634](https://www.wikidata.org/wiki/Q1505634). Tempérament : Paisible et robuste, banc au milieu du bac.
 
@@ -688,7 +688,7 @@ Identifiant `tetra-nageoires-rouges`, Wikidata [Q1505634](https://www.wikidata.o
 | Taille adulte | 5 cm | [fr](https://fr.wikipedia.org/wiki/Aphyocharax_anisitsi), [de](https://de.wikipedia.org/wiki/Rotflossensalmler) | fr : 5 cm ; de : jusqu'à 5 cm |
 | Groupe minimum | 8 | [fr](https://fr.wikipedia.org/wiki/Aphyocharax_anisitsi), [de](https://de.wikipedia.org/wiki/Rotflossensalmler) | fr : apprécie la vie en banc, une quinzaine d'individus ; de : au moins 5. choix de notre part : 8 |
 | Durée de vie | 4 ans | _aucune_ | aucune source chiffrée. choix de notre part |
-| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Aphyocharax_anisitsi) | fr : espèce tolérante, aucun problème signalé. `FIN_NIPPER` non retenu : choix de notre part. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [fr](https://fr.wikipedia.org/wiki/Aphyocharax_anisitsi) | fr : espèce tolérante, aucun problème signalé. `FIN_NIPPER` non retenu : choix de notre part. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | [fr](https://fr.wikipedia.org/wiki/Aphyocharax_anisitsi) | fr : poissons omnivores |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#C76B5E` | _aucune_ | choix de notre part : teinte dominante |
@@ -697,7 +697,7 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Aphyocharax_anisitsi) · [en](https
 
 ## Tétra aux yeux rouges (*Moenkhausia sanctaefilomenae*)
 
-- [ ] à valider
+- [x] validée par Maxime (2026-11-09)
 
 Identifiant `tetra-yeux-rouges`, Wikidata [Q1544489](https://www.wikidata.org/wiki/Q1544489). Tempérament : Robuste et très actif : peut déranger les espèces lentes.
 
@@ -719,7 +719,7 @@ Identifiant `tetra-yeux-rouges`, Wikidata [Q1544489](https://www.wikidata.org/wi
 | Taille adulte | 6 cm | [en](https://en.wikipedia.org/wiki/Redeye_tetra) | en : jusqu'à 7 cm. choix de notre part : 6 |
 | Groupe minimum | 8 | [de](https://de.wikipedia.org/wiki/Rotaugen-Moenkhausia) | de : moins de 8 est à éviter |
 | Durée de vie | 5 ans | [en](https://en.wikipedia.org/wiki/Redeye_tetra) | en : environ 5 ans |
-| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Redeye_tetra), [de](https://de.wikipedia.org/wiki/Rotaugen-Moenkhausia) | en : généralement paisible, mordille parfois les nageoires même en groupe ; de : paisible et facile à associer. `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé. Étiquettes : choix de notre part, à valider |
+| Comportement | `PEACEFUL` | [en](https://en.wikipedia.org/wiki/Redeye_tetra), [de](https://de.wikipedia.org/wiki/Rotaugen-Moenkhausia) | en : généralement paisible, mordille parfois les nageoires même en groupe ; de : paisible et facile à associer. `FIN_NIPPER` non retenu : tranché par Maxime (2026-11-09), choix actuel gardé. Étiquettes : choix de notre part, validé par Maxime (2026-11-09) |
 | Régime | `OMNIVORE` | _aucune_ | choix de notre part |
 | Dessin, nage, zone | `TETRA`, `SCHOOL`, `MIDDLE` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#B0BEC5` | _aucune_ | choix de notre part : teinte dominante |
