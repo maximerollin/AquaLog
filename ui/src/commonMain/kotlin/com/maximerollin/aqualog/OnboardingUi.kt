@@ -1304,15 +1304,17 @@ private fun FeedbackDialog(
                     }
                 }
                 state.speciesName?.let { Text(stringResource(Res.string.feedback_species_line, it), style = MaterialTheme.typography.bodyMedium) }
+                // A separate label wraps at word boundaries; a floating label breaks mid-word in a narrow field at large font scales.
+                val messageLabel = stringResource(Res.string.feedback_message_label)
+                Text(messageLabel, style = MaterialTheme.typography.labelLarge)
                 OutlinedTextField(
                     value = state.message,
                     onValueChange = onMessageChanged,
-                    label = { Text(stringResource(Res.string.feedback_message_label)) },
                     supportingText = {
                         Text(stringResource(Res.string.feedback_character_count, state.message.length))
                     },
                     minLines = 4,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = messageLabel },
                 )
                 state.outcome?.let { outcome ->
                     val (text, color) = when (outcome) {
