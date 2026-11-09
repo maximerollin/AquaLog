@@ -3634,5 +3634,1133 @@
     "zone": "SURFACE",
     "color": 4289773253,
     "drawing": null
+  },
+  {
+    "id": "corydoras-bronze",
+    "wikidata": "Q741269",
+    "scientificName": "Corydoras aeneus",
+    "names": {
+      "fr": "Corydoras bronze",
+      "en": "Bronze corydoras",
+      "de": "Metallpanzerwels",
+      "it": "Coridora bronzino",
+      "es": "Corydoras aeneus"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "BOTTOM",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 7.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "BOTTOM",
+    "color": 4288969800,
+    "drawing": null
+  },
+  {
+    "id": "corydoras-paleatus",
+    "wikidata": "Q863850",
+    "scientificName": "Corydoras paleatus",
+    "names": {
+      "fr": "Corydoras poivré",
+      "en": "Peppered corydoras",
+      "de": "Marmorierter Panzerwels",
+      "it": "Coridora paleato",
+      "es": "Corydoras paleatus"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "BOTTOM",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 20.0,
+      "max": 25.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 7.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "BOTTOM",
+    "color": 4288580458,
+    "drawing": null
+  },
+  {
+    "id": "corydoras-sterbai",
+    "wikidata": "Q965336",
+    "scientificName": "Corydoras sterbai",
+    "names": {
+      "fr": "Corydoras de Sterba",
+      "en": "Sterba's corydoras",
+      "de": "Sterbas Panzerwels",
+      "it": "Corydoras sterbai",
+      "es": "Corydoras sterbai"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "BOTTOM",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 6.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "BOTTOM",
+    "color": 4283059799,
+    "drawing": null
+  },
+  {
+    "id": "corydoras-pygmee",
+    "wikidata": "Q244281",
+    "scientificName": "Corydoras pygmaeus",
+    "names": {
+      "fr": "Corydoras pygmée",
+      "en": "Pygmy corydoras",
+      "de": "Zwergpanzerwels",
+      "it": "Corydoras pygmaeus",
+      "es": "Corydoras pygmaeus"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 40,
+    "adultSizeCm": 3.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4289243296,
+    "drawing": null
+  },
+  {
+    "id": "corydoras-trilineatus",
+    "wikidata": "Q1257383",
+    "scientificName": "Corydoras trilineatus",
+    "names": {
+      "fr": "Corydoras à trois bandes",
+      "en": "Threestripe corydoras",
+      "de": "Dreibinden-Panzerwels",
+      "it": "Corydoras trilineatus",
+      "es": "Corydoras trilineatus"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "BOTTOM",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 5.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 6.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "BOTTOM",
+    "color": 4288323750,
+    "drawing": null
+  },
+  {
+    "id": "corydoras-habrosus",
+    "wikidata": "Q1851707",
+    "scientificName": "Corydoras habrosus",
+    "names": {
+      "fr": "Corydoras sel et poivre",
+      "en": "Salt and pepper catfish",
+      "de": "Marmorierter Zwergpanzerwels",
+      "it": "Corydoras habrosus",
+      "es": "Corydoras habrosus"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "BOTTOM",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 50,
+    "adultSizeCm": 3.5,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "BOTTOM",
+    "color": 4290095500,
+    "drawing": null
+  },
+  {
+    "id": "botia-clown",
+    "wikidata": "Q841395",
+    "scientificName": "Chromobotia macracanthus",
+    "names": {
+      "fr": "Loche-clown",
+      "en": "Clown loach",
+      "de": "Prachtschmerle",
+      "it": "Chromobotia macracanthus",
+      "es": "Botia payaso"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "BOTTOM",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 600,
+    "adultSizeCm": 20.0,
+    "minGroup": 4,
+    "tags": [
+      "EATS_SNAILS"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 20,
+    "zone": "BOTTOM",
+    "color": 4293429547,
+    "drawing": null
+  },
+  {
+    "id": "kuhli",
+    "wikidata": "Q115045",
+    "scientificName": "Pangio kuhlii",
+    "names": {
+      "fr": "Kuhli",
+      "en": "Kuhli Loach",
+      "de": "Geflecktes Dornauge",
+      "it": "Pangio kuhlii",
+      "es": "Pangio kuhlii"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "CRAWL",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 6.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 10.0,
+    "minGroup": 5,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "BOTTOM",
+    "color": 4290283083,
+    "drawing": null
+  },
+  {
+    "id": "botia-yoyo",
+    "wikidata": "Q1802036",
+    "scientificName": "Botia almorhae",
+    "names": {
+      "fr": "Loche pakistanaise",
+      "en": "Yoyo loach",
+      "de": "Netzschmerle",
+      "it": "Botia almorhae",
+      "es": "Botia almorhae"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "BOTTOM",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 250,
+    "adultSizeCm": 15.0,
+    "minGroup": 5,
+    "tags": [
+      "EATS_SNAILS"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "BOTTOM",
+    "color": 4288450426,
+    "drawing": null
+  },
+  {
+    "id": "botia-nain",
+    "wikidata": "Q28656882",
+    "scientificName": "Ambastaia sidthimunki",
+    "names": {
+      "fr": "Loche naine",
+      "en": "Dwarf loach",
+      "de": "Zwergschmerle",
+      "it": "Ambastaia sidthimunki",
+      "es": "Ambastaia sidthimunki"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 25.0,
+      "max": 29.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 6.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 6.0,
+    "minGroup": 6,
+    "tags": [
+      "EATS_SHRIMP",
+      "EATS_SNAILS"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "MIDDLE",
+    "color": 4292127034,
+    "drawing": null
+  },
+  {
+    "id": "plecostomus",
+    "wikidata": "Q3498871",
+    "scientificName": "Pterygoplichthys pardalis",
+    "names": {
+      "fr": "Plécostome",
+      "en": "Common pleco",
+      "de": "Pterygoplichthys pardalis",
+      "it": "Pterygoplichthys pardalis",
+      "es": "Pterygoplichthys pardalis"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "CRAWL",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 500,
+    "adultSizeCm": 40.0,
+    "minGroup": 1,
+    "tags": [],
+    "diet": "ALGAE",
+    "lifespanYears": 15,
+    "zone": "BOTTOM",
+    "color": 4285225797,
+    "drawing": null
+  },
+  {
+    "id": "loricaire",
+    "wikidata": "Q3021022",
+    "scientificName": "Rineloricaria parva",
+    "names": {
+      "fr": "Loricaire",
+      "en": "Common whiptail catfish",
+      "de": "Rineloricaria parva",
+      "it": "Rineloricaria parva",
+      "es": "Rineloricaria parva"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "CRAWL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 11.0,
+    "minGroup": 1,
+    "tags": [],
+    "diet": "HERBIVORE",
+    "lifespanYears": 8,
+    "zone": "BOTTOM",
+    "color": 4287329109,
+    "drawing": null
+  },
+  {
+    "id": "synodontis-petricola",
+    "wikidata": "Q140281",
+    "scientificName": "Synodontis petricola",
+    "names": {
+      "fr": "Synodontis petricola",
+      "en": "Synodontis petricola",
+      "de": "Synodontis petricola",
+      "it": "Synodontis petricola",
+      "es": "Synodontis petricola"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "BOTTOM",
+    "ph": {
+      "min": 7.5,
+      "max": 9.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 6.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 6.0,
+      "max": 15.0
+    },
+    "minVolumeLiters": 200,
+    "adultSizeCm": 13.0,
+    "minGroup": 3,
+    "tags": [],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "BOTTOM",
+    "color": 4286210632,
+    "drawing": null
+  },
+  {
+    "id": "poisson-chat-de-verre",
+    "wikidata": "Q13746133",
+    "scientificName": "Kryptopterus vitreolus",
+    "names": {
+      "fr": "Silure de verre",
+      "en": "Glass catfish",
+      "de": "Indischer Glaswels",
+      "it": "Kryptopterus vitreolus",
+      "es": "Pez gato de cristal"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 7.0,
+    "minGroup": 6,
+    "tags": [],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "MIDDLE",
+    "color": 4291811548,
+    "drawing": null
+  },
+  {
+    "id": "sewellia",
+    "wikidata": "Q1767177",
+    "scientificName": "Sewellia lineolata",
+    "names": {
+      "fr": "Sewellia lineolata",
+      "en": "Reticulated hillstream loach",
+      "de": "Prachtflossensauger",
+      "it": "Sewellia lineolata",
+      "es": "Sewellia lineolata"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "CRAWL",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 20.0,
+      "max": 24.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 6.0,
+    "minGroup": 8,
+    "tags": [],
+    "diet": "ALGAE",
+    "lifespanYears": 5,
+    "zone": "BOTTOM",
+    "color": 4287458891,
+    "drawing": null
+  },
+  {
+    "id": "arc-en-ciel-boesemani",
+    "wikidata": "Q833254",
+    "scientificName": "Melanotaenia boesemani",
+    "names": {
+      "fr": "Arc-en-ciel de Boeseman",
+      "en": "Boeseman's rainbowfish",
+      "de": "Harlekin-Regenbogenfisch",
+      "it": "Melanotaenia boesemani",
+      "es": "Melanotaenia boesemani"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.5,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 8.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 4.0,
+      "max": 12.0
+    },
+    "minVolumeLiters": 300,
+    "adultSizeCm": 11.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "MIDDLE",
+    "color": 4292444986,
+    "drawing": null
+  },
+  {
+    "id": "arc-en-ciel-praecox",
+    "wikidata": "Q548082",
+    "scientificName": "Melanotaenia praecox",
+    "names": {
+      "fr": "Arc-en-ciel néon",
+      "en": "Dwarf rainbowfish",
+      "de": "Diamant-Regenbogenfisch",
+      "it": "Melanotaenia praecox",
+      "es": "Melanotaenia praecox"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.5,
+      "max": 7.8
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 4.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 6.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4282355666,
+    "drawing": null
+  },
+  {
+    "id": "arc-en-ciel-rouge",
+    "wikidata": "Q59066",
+    "scientificName": "Glossolepis incisus",
+    "names": {
+      "fr": "Arc-en-ciel rouge",
+      "en": "Red rainbowfish",
+      "de": "Lachsroter Regenbogenfisch",
+      "it": "Glossolepis incisus",
+      "es": "Glossolepis incisus"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.5,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 4.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 300,
+    "adultSizeCm": 12.0,
+    "minGroup": 6,
+    "tags": [],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4292363055,
+    "drawing": null
+  },
+  {
+    "id": "arc-en-ciel-filament",
+    "wikidata": "Q2107345",
+    "scientificName": "Iriatherina werneri",
+    "names": {
+      "fr": "Arc-en-ciel à filaments",
+      "en": "Threadfin rainbowfish",
+      "de": "Prachtregenbogenfisch",
+      "it": "Iriatherina werneri",
+      "es": "Iriatherina werneri"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 4.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL",
+      "LONG_FINS"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 3,
+    "zone": "MIDDLE",
+    "color": 4286558409,
+    "drawing": null
+  },
+  {
+    "id": "yeux-bleus",
+    "wikidata": "Q1488317",
+    "scientificName": "Pseudomugil furcatus",
+    "names": {
+      "fr": "Yeux bleus",
+      "en": "Forktail blue-eye",
+      "de": "Gabelschwanz-Blauauge",
+      "it": "Pseudomugil furcatus",
+      "es": "Pseudomugil furcatus"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 7.0,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 6.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 4.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 5.0,
+    "minGroup": 6,
+    "tags": [],
+    "diet": "OMNIVORE",
+    "lifespanYears": 3,
+    "zone": "MIDDLE",
+    "color": 4293117531,
+    "drawing": null
+  },
+  {
+    "id": "medaka",
+    "wikidata": "Q1142975",
+    "scientificName": "Oryzias latipes",
+    "names": {
+      "fr": "Médaka",
+      "en": "Japanese rice fish",
+      "de": "Medaka",
+      "it": "Pesce del riso",
+      "es": "Oryzias latipes"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 7.0,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 18.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 9.0,
+      "max": 19.0
+    },
+    "kh": {
+      "min": 4.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 40,
+    "adultSizeCm": 3.5,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 2,
+    "zone": "SURFACE",
+    "color": 4293963840,
+    "drawing": null
+  },
+  {
+    "id": "killi-cap-lopez",
+    "wikidata": "Q384439",
+    "scientificName": "Aphyosemion australe",
+    "names": {
+      "fr": "Killi du Cap Lopez",
+      "en": "Cape Lopez lyretail",
+      "de": "Bunter Prachtkärpfling",
+      "it": "Aphyosemion australe",
+      "es": "Aphyosemion australe"
+    },
+    "kind": "FISH",
+    "family": "LIVEBEARER",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.0,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 21.0,
+      "max": 25.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "minVolumeLiters": 40,
+    "adultSizeCm": 6.0,
+    "minGroup": 3,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "CARNIVORE",
+    "lifespanYears": 3,
+    "zone": "MIDDLE",
+    "color": 4287453755,
+    "drawing": null
+  },
+  {
+    "id": "killi-raye",
+    "wikidata": "Q2067460",
+    "scientificName": "Epiplatys annulatus",
+    "names": {
+      "fr": "Killi rayé",
+      "en": "Clown killi",
+      "de": "Ringelhechtling",
+      "it": "Epiplatys annulatus",
+      "es": "Epiplatys annulatus"
+    },
+    "kind": "FISH",
+    "family": "LIVEBEARER",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 1.0,
+      "max": 8.0
+    },
+    "kh": {
+      "min": 0.0,
+      "max": 4.0
+    },
+    "minVolumeLiters": 30,
+    "adultSizeCm": 3.5,
+    "minGroup": 5,
+    "tags": [
+      "PEACEFUL",
+      "TERRITORIAL"
+    ],
+    "diet": "CARNIVORE",
+    "lifespanYears": 2,
+    "zone": "SURFACE",
+    "color": 4291995257,
+    "drawing": null
+  },
+  {
+    "id": "tetraodon-nain",
+    "wikidata": "Q175560",
+    "scientificName": "Carinotetraodon travancoricus",
+    "names": {
+      "fr": "Tétraodon nain",
+      "en": "Dwarf pufferfish",
+      "de": "Zwerg-Kugelfisch",
+      "it": "Carinotetraodon travancoricus",
+      "es": "Carinotetraodon travancoricus"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "SLOW",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 40,
+    "adultSizeCm": 3.0,
+    "minGroup": 1,
+    "tags": [
+      "EATS_SHRIMP",
+      "EATS_SNAILS",
+      "FIN_NIPPER",
+      "TERRITORIAL"
+    ],
+    "diet": "CARNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4291348544,
+    "drawing": null
+  },
+  {
+    "id": "gobie-paon",
+    "wikidata": "Q2056231",
+    "scientificName": "Tateurndina ocellicauda",
+    "names": {
+      "fr": "Gobie paon",
+      "en": "Peacock gudgeon",
+      "de": "Pastellgrundel",
+      "it": "Tateurndina ocellicauda",
+      "es": "Tateurndina ocellicauda"
+    },
+    "kind": "FISH",
+    "family": "CICHLID",
+    "motion": "SLOW",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 4.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 7.5,
+    "minGroup": 2,
+    "tags": [
+      "PEACEFUL",
+      "TERRITORIAL"
+    ],
+    "diet": "CARNIVORE",
+    "lifespanYears": 5,
+    "zone": "BOTTOM",
+    "color": 4283076808,
+    "drawing": null
+  },
+  {
+    "id": "bichir",
+    "wikidata": "Q1515914",
+    "scientificName": "Polypterus senegalus",
+    "names": {
+      "fr": "Polyptère du Sénégal",
+      "en": "Senegal bichir",
+      "de": "Senegal-Flösselhecht",
+      "it": "Polypterus senegalus",
+      "es": "Polypterus senegalus"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "SLOW",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 400,
+    "adultSizeCm": 45.0,
+    "minGroup": 1,
+    "tags": [
+      "EATS_SMALL_FISH",
+      "EATS_SHRIMP"
+    ],
+    "diet": "CARNIVORE",
+    "lifespanYears": 10,
+    "zone": "BOTTOM",
+    "color": 4287400555,
+    "drawing": null
+  },
+  {
+    "id": "poisson-elephant",
+    "wikidata": "Q945393",
+    "scientificName": "Gnathonemus petersii",
+    "names": {
+      "fr": "Poisson-éléphant",
+      "en": "Peters' elephantnose fish",
+      "de": "Elefantenrüsselfisch",
+      "it": "Gnathonemus petersii",
+      "es": "Gnathonemus petersii"
+    },
+    "kind": "FISH",
+    "family": "CATFISH",
+    "motion": "SLOW",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 25.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 200,
+    "adultSizeCm": 23.0,
+    "minGroup": 1,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "CARNIVORE",
+    "lifespanYears": 8,
+    "zone": "BOTTOM",
+    "color": 4282268214,
+    "drawing": null
   }
 ]
