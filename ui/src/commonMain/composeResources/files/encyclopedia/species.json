@@ -2535,7 +2535,7 @@
     "names": {
       "fr": "Barbus de Schwanenfeld",
       "en": "Tinfoil barb",
-      "de": "Barbonymus schwanenfeldii",
+      "de": "Barbonymus schwanefeldii",
       "it": "Barbo di Schwanenfeld",
       "es": "Barbo de Schwanenfeld"
     },
@@ -3602,7 +3602,7 @@
       "en": "Moonlight gourami",
       "de": "Mondscheinfadenfisch",
       "it": "Gurami chiaro di luna",
-      "es": "Trichogaster microlepis"
+      "es": "Trichopodus microlepis"
     },
     "kind": "FISH",
     "family": "LABYRINTH",
@@ -5242,7 +5242,7 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 22.0,
+      "min": 20.0,
       "max": 28.0
     },
     "gh": null,
@@ -5276,7 +5276,7 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 20.0,
+      "min": 18.0,
       "max": 28.0
     },
     "gh": null,
@@ -5310,7 +5310,7 @@
       "max": 8.0
     },
     "temperatureC": {
-      "min": 21.0,
+      "min": 20.0,
       "max": 28.0
     },
     "gh": null,
@@ -5344,7 +5344,7 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 22.0,
+      "min": 20.0,
       "max": 28.0
     },
     "gh": null,
@@ -5378,7 +5378,7 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 22.0,
+      "min": 20.0,
       "max": 28.0
     },
     "gh": null,
@@ -5412,7 +5412,7 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 22.0,
+      "min": 20.0,
       "max": 28.0
     },
     "gh": null,
@@ -5582,7 +5582,7 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 22.0,
+      "min": 20.0,
       "max": 28.0
     },
     "gh": null,
@@ -5616,7 +5616,7 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 22.0,
+      "min": 20.0,
       "max": 28.0
     },
     "gh": null,
@@ -5684,7 +5684,7 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 22.0,
+      "min": 18.0,
       "max": 28.0
     },
     "gh": null,
@@ -5718,7 +5718,7 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 20.0,
+      "min": 18.0,
       "max": 28.0
     },
     "gh": null,
@@ -5922,7 +5922,7 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 22.0,
+      "min": 20.0,
       "max": 28.0
     },
     "gh": null,
@@ -5956,7 +5956,7 @@
       "max": 7.5
     },
     "temperatureC": {
-      "min": 22.0,
+      "min": 20.0,
       "max": 28.0
     },
     "gh": null,

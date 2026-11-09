@@ -10,7 +10,7 @@ Ces 37 fiches (4 crevettes, 7 escargots et 26 plantes d'aquarium) sont des **bro
 
 **Comment les valeurs ont été choisies :** les plages (pH, température, GH, KH) sont celles qu'un bac d'amateur typique doit tenir, pas les extrêmes que l'espèce supporte dans la nature. Quand les sources divergent, on retient une plage prudente entre elles. Rappel des règles du verdict : une valeur hors plage d'un écart inférieur à 10 % de la largeur de la plage donne « avec précautions », au-delà « déconseillé ». Les plantes ne reçoivent ni verdict de volume ni verdict de groupe, ni avertissement de cyclage (réservé aux poissons).
 
-**Étiquettes de comportement.** Seule la helena porte une étiquette de prédation : `EATS_SNAILS`, déjà utilisée par l'oscar, la loche-clown, la loche pakistanaise, la loche naine et le tétraodon nain (en base). Elle rend « déconseillé » tout escargot : les 11 de ce lot (la helena elle-même comprise : une seconde helena dans un bac qui en a déjà une est « déconseillée ») ; et, dans l'autre sens, la helena est « déconseillée » avec les cinq mangeurs d'escargots déjà en base. Les autres crevettes et escargots portent `PEACEFUL` (à valider) ou rien ; les plantes n'ont aucune étiquette (`EATS_PLANTS` ne vise que des poissons ou, éventuellement, des escargots : non retenu ici).
+**Étiquettes de comportement.** Seule la helena porte une étiquette de prédation : `EATS_SNAILS`, déjà utilisée par l'oscar, la loche-clown, la loche pakistanaise, la loche naine et le tétraodon nain (en base). Elle rend « déconseillé » tout escargot : les 7 escargots de ce lot (la helena comprise ; mais une helena à côté d'autres helenas va bien : la prédation ne s'applique pas à sa propre espèce) ; et, dans l'autre sens, la helena est « déconseillée » avec les cinq mangeurs d'escargots déjà en base. Les autres crevettes et escargots portent `PEACEFUL` (à valider) ou rien ; les plantes n'ont aucune étiquette (`EATS_PLANTS` ne vise que des poissons ou, éventuellement, des escargots : non retenu ici).
 
 **Noms :** libellé Wikidata (fr/en/de/it/es) d'abord, sinon un alias Wikidata, sinon le nom courant en aquariophilie, marqué « nom ajouté par nous ». Quand le libellé Wikidata est le nom scientifique, il est considéré comme absent. Les libellés Wikidata en minuscule ont reçu une majuscule initiale. Quand l'article Wikipédia donne le nom courant, la ligne l'indique (« nom donné par l'article en »). Pour de nombreuses plantes, aucun nom courant n'a été trouvé : le nom du genre ou le nom scientifique est repris, à trancher. Les noms sont uniques dans chaque langue (le contrôle du validateur couvre aussi les 113 fiches déjà publiées). Le nom français de la fougère de Java (« Fougère de Java ») est un nom ajouté par nous, le libellé Wikidata fr étant le nom scientifique.
 
@@ -354,7 +354,7 @@ Identifiant `helena`, Wikidata [Q106170753](https://www.wikidata.org/wiki/Q10617
 | Taille adulte | 2,5 cm | [en](https://en.wikipedia.org/wiki/Anentome_helena), [de](https://de.wikipedia.org/wiki/Raubturmdeckelschnecke) | en : 18–32 mm, souvent moins en aquarium ; de : 18 à 28 mm de haut. choix de notre part : 2,5 |
 | Groupe minimum | 1 | [fr](https://fr.wikipedia.org/wiki/Anentome_helena) | fr : sexes séparés sans dimorphisme, il faut plusieurs individus pour espérer une ponte. choix de notre part : 1 |
 | Durée de vie | 2 ans | _aucune_ | aucune source chiffrée. choix de notre part : 2, à vérifier en priorité |
-| Comportement | `EATS_SNAILS` | [en](https://en.wikipedia.org/wiki/Anentome_helena), [fr](https://fr.wikipedia.org/wiki/Anentome_helena), [de](https://de.wikipedia.org/wiki/Raubturmdeckelschnecke) | en : carnivore, mange vers et escargots, utilisé pour limiter les petits escargots indésirables ; fr : mange physes, planorbes, mélanoïdes ; de : vit surtout de charogne, mais mange aussi d'autres escargots et leurs pontes. `EATS_SNAILS` retenu : à trancher (tout escargot « déconseillé » : les 11 de ce lot, la helena comprise, et la helena « déconseillée » avec l'oscar, la loche-clown, la loche pakistanaise, la loche naine et le tétraodon nain) |
+| Comportement | `EATS_SNAILS` | [en](https://en.wikipedia.org/wiki/Anentome_helena), [fr](https://fr.wikipedia.org/wiki/Anentome_helena), [de](https://de.wikipedia.org/wiki/Raubturmdeckelschnecke) | en : carnivore, mange vers et escargots, utilisé pour limiter les petits escargots indésirables ; fr : mange physes, planorbes, mélanoïdes ; de : vit surtout de charogne, mais mange aussi d'autres escargots et leurs pontes. `EATS_SNAILS` retenu : à trancher (tout autre escargot « déconseillé » : les 6 autres escargots de ce lot, et la helena « déconseillée » avec l'oscar, la loche-clown, la loche pakistanaise, la loche naine et le tétraodon nain) |
 | Régime | `CARNIVORE` | [en](https://en.wikipedia.org/wiki/Anentome_helena), [fr](https://fr.wikipedia.org/wiki/Anentome_helena), [de](https://de.wikipedia.org/wiki/Raubturmdeckelschnecke) | en, fr et de : carnivore ; `CARNIVORE` |
 | Dessin, nage, zone | `SNAIL`, `CRAWL`, `BOTTOM` | _aucune_ | choix de notre part (affichage) |
 | Couleur | `#C9A227` | _aucune_ | choix de notre part : teinte dominante |
@@ -378,7 +378,7 @@ Identifiant `anubias`, Wikidata [Q112520](https://www.wikidata.org/wiki/Q112520)
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6 – 7,5 | _aucune_ | aucune source chiffrée. choix de notre part : 6–7,5 |
-| Température | 22 – 28 °C | [en](https://en.wikipedia.org/wiki/Anubias_barteri), [fr](https://fr.wikipedia.org/wiki/Anubias_barteri) | en : préfère 22–28 °C ; fr : 22 à 28 °C |
+| Température | 20 – 28 °C | [en](https://en.wikipedia.org/wiki/Anubias_barteri), [fr](https://fr.wikipedia.org/wiki/Anubias_barteri) | en : préfère 22–28 °C ; fr : 22 à 28 °C. Abaissé à 20 °C (avant : 22) : tolérance des plantes robustes en bac domestique, pour ne pas déconseiller un bac non chauffé à 19–20 °C — choix de notre part |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -409,7 +409,7 @@ Identifiant `fougere-de-java`, Wikidata [Q15314697](https://www.wikidata.org/wik
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6 – 7,5 | _aucune_ | aucune source chiffrée. choix de notre part : 6–7,5 |
-| Température | 20 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 20–28 |
+| Température | 18 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 18–28. Abaissé à 18 °C (avant : 20) : tolérance des plantes robustes en bac domestique, pour ne pas déconseiller un bac non chauffé à 19–20 °C — choix de notre part |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -440,7 +440,7 @@ Identifiant `mousse-de-java`, Wikidata [Q630569](https://www.wikidata.org/wiki/Q
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6 – 8 | _aucune_ | aucune source chiffrée. choix de notre part : 6–8 |
-| Température | 21 – 28 °C | [en](https://en.wikipedia.org/wiki/Taxiphyllum_barbieri), [fr](https://fr.wikipedia.org/wiki/Taxiphyllum_barbieri) | en : pousse mieux entre 20 et 30 °C ; fr : optimum 21–24 °C, supporte 29–32 °C. choix de notre part : 21–28 |
+| Température | 20 – 28 °C | [en](https://en.wikipedia.org/wiki/Taxiphyllum_barbieri), [fr](https://fr.wikipedia.org/wiki/Taxiphyllum_barbieri) | en : pousse mieux entre 20 et 30 °C ; fr : optimum 21–24 °C, supporte 29–32 °C. choix de notre part : 20–28. Abaissé à 20 °C (avant : 21) : tolérance des plantes robustes en bac domestique, pour ne pas déconseiller un bac non chauffé à 19–20 °C — choix de notre part |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -471,7 +471,7 @@ Identifiant `cryptocoryne-wendtii`, Wikidata [Q4241189](https://www.wikidata.org
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6 – 7,5 | _aucune_ | aucune source chiffrée. choix de notre part : 6–7,5 |
-| Température | 22 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 22–28 |
+| Température | 20 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 20–28. Abaissé à 20 °C (avant : 22) : tolérance des plantes robustes en bac domestique, pour ne pas déconseiller un bac non chauffé à 19–20 °C — choix de notre part |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -502,7 +502,7 @@ Identifiant `cryptocoryne-parva`, Wikidata [Q15339070](https://www.wikidata.org/
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6 – 7,5 | _aucune_ | aucune source chiffrée. choix de notre part : 6–7,5 |
-| Température | 22 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 22–28 |
+| Température | 20 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 20–28. Abaissé à 20 °C (avant : 22) : tolérance des plantes robustes en bac domestique, pour ne pas déconseiller un bac non chauffé à 19–20 °C — choix de notre part |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -533,7 +533,7 @@ Identifiant `echinodorus`, Wikidata [Q476284](https://www.wikidata.org/wiki/Q476
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6,5 – 7,5 | _aucune_ | aucune source chiffrée. choix de notre part : 6,5–7,5 |
-| Température | 22 – 28 °C | [de](https://de.wikipedia.org/wiki/Grisebachs_Schwertpflanze) | de : pousse au mieux entre 22 et 28 °C |
+| Température | 20 – 28 °C | [de](https://de.wikipedia.org/wiki/Grisebachs_Schwertpflanze) | de : pousse au mieux entre 22 et 28 °C. Abaissé à 20 °C (avant : 22) : tolérance des plantes robustes en bac domestique, pour ne pas déconseiller un bac non chauffé à 19–20 °C — choix de notre part |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -688,7 +688,7 @@ Identifiant `hygrophila-difformis`, Wikidata [Q1431832](https://www.wikidata.org
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6 – 7,5 | [de](https://de.wikipedia.org/wiki/Indischer_Wasserstern) | de : grande tolérance au pH. choix de notre part : 6–7,5 |
-| Température | 22 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 22–28 |
+| Température | 20 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 20–28. Abaissé à 20 °C (avant : 22) : tolérance des plantes robustes en bac domestique, pour ne pas déconseiller un bac non chauffé à 19–20 °C — choix de notre part |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -719,7 +719,7 @@ Identifiant `limnophila`, Wikidata [Q1768430](https://www.wikidata.org/wiki/Q176
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6 – 7,5 | _aucune_ | aucune source chiffrée. choix de notre part : 6–7,5 |
-| Température | 22 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 22–28 |
+| Température | 20 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 20–28. Abaissé à 20 °C (avant : 22) : tolérance des plantes robustes en bac domestique, pour ne pas déconseiller un bac non chauffé à 19–20 °C — choix de notre part |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -781,7 +781,7 @@ Identifiant `rotala`, Wikidata [Q2569339](https://www.wikidata.org/wiki/Q2569339
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6 – 7,5 | _aucune_ | aucune source chiffrée. choix de notre part : 6–7,5 |
-| Température | 22 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 22–28 |
+| Température | 18 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 18–28. Abaissé à 18 °C (avant : 22) : tolérance des plantes robustes en bac domestique, pour ne pas déconseiller un bac non chauffé à 19–20 °C — choix de notre part |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -812,7 +812,7 @@ Identifiant `bacopa`, Wikidata [Q1767137](https://www.wikidata.org/wiki/Q1767137
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6 – 7,5 | _aucune_ | aucune source chiffrée. choix de notre part : 6–7,5 |
-| Température | 20 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 20–28 |
+| Température | 18 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 18–28. Abaissé à 18 °C (avant : 20) : tolérance des plantes robustes en bac domestique, pour ne pas déconseiller un bac non chauffé à 19–20 °C — choix de notre part |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -998,7 +998,7 @@ Identifiant `staurogyne`, Wikidata [Q15368979](https://www.wikidata.org/wiki/Q15
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6 – 7,5 | _aucune_ | aucune source chiffrée. choix de notre part : 6–7,5 |
-| Température | 22 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 22–28 |
+| Température | 20 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 20–28. Abaissé à 20 °C (avant : 22) : tolérance des plantes robustes en bac domestique, pour ne pas déconseiller un bac non chauffé à 19–20 °C — choix de notre part |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -1029,7 +1029,7 @@ Identifiant `aponogeton`, Wikidata [Q1786857](https://www.wikidata.org/wiki/Q178
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6 – 7,5 | _aucune_ | aucune source chiffrée. choix de notre part : 6–7,5 |
-| Température | 22 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 22–28 |
+| Température | 20 – 28 °C | _aucune_ | aucune source chiffrée. choix de notre part : 20–28. Abaissé à 20 °C (avant : 22) : tolérance des plantes robustes en bac domestique, pour ne pas déconseiller un bac non chauffé à 19–20 °C — choix de notre part |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -1153,7 +1153,7 @@ Identifiant `lotus-tigre`, Wikidata [Q161111](https://www.wikidata.org/wiki/Q161
 | Valeur | Fiche | Sources | Note |
 |---|---|---|---|
 | pH | 6 – 7,5 | _aucune_ | aucune source chiffrée. choix de notre part : 6–7,5 |
-| Température | 22 – 28 °C | [en](https://en.wikipedia.org/wiki/Nymphaea_lotus) | en : cultivé sous forte lumière en eau chaude de 22 à 28 °C |
+| Température | 22 – 28 °C | [en](https://en.wikipedia.org/wiki/Nymphaea_lotus) | en : cultivé sous forte lumière en eau chaude de 22 à 28 °C. Plancher gardé à 22 °C : la plante tropicale cesse de pousser nettement en dessous de 21 °C ; à trancher (voir fin de fiche) |
 | GH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | KH | _aucun_ | _aucune_ | aucune valeur retenue : plante tolérante, laissée vide |
 | Volume minimum | _aucun_ | _aucune_ | plante : champ laissé vide (pas de verdict de volume) |
@@ -1171,12 +1171,14 @@ Sources : [fr](https://fr.wikipedia.org/wiki/Nymphaea_lotus) · [en](https://en.
 
 La seule étiquette qui pèse sur les verdicts de ce lot est `EATS_SNAILS` (helena). Les autres points sont des noms, des classements d'affichage et des espèces envahissantes hors de l'Union.
 
-- **Helena** : `EATS_SNAILS` retenu : à trancher (tout escargot « déconseillé » : les 11 de ce lot, la helena comprise, et la helena « déconseillée » avec l'oscar, la loche-clown, la loche pakistanaise, la loche naine et le tétraodon nain). Sources : en (carnivore, mange vers et escargots, sert à limiter les petits escargots), fr (mange physes, planorbes, mélanoïdes) et de (carnivore, charogne, autres escargots et leurs pontes). Sans cette étiquette, aucune cohabitation d'escargots ne serait avertie.
+- **Helena** : `EATS_SNAILS` retenu : à trancher (tout autre escargot « déconseillé » : les 6 autres escargots de ce lot, et la helena « déconseillée » avec l'oscar, la loche-clown, la loche pakistanaise, la loche naine et le tétraodon nain). Sources : en (carnivore, mange vers et escargots, sert à limiter les petits escargots), fr (mange physes, planorbes, mélanoïdes) et de (carnivore, charogne, autres escargots et leurs pontes). Sans cette étiquette, aucune cohabitation d'escargots ne serait avertie.
 - **Espèces envahissantes hors de l'Union** : Planorbe rouge (de : échappée d'aquariums, établie presque partout dans le monde), Mélanoïde (en et de : établie hors de son aire par les aquariophiles, supplante des escargots locaux), Physe (en : supplante les escargots locaux), Vallisnérie (en : décrite comme envahissante (section « Invasive species »)), Élodée dense (en et fr : envahissante là où l'hiver ne gèle pas), Hygrophila polysperma (fr : envahissante dans d'autres régions chaudes), Limnophila sessiliflora (en : envahissante aux États-Unis), Grenouillette d'Amazonie (en et de : envahissante en Amérique du Nord et au Chili). Aucune n'est sur la liste de l'Union (règlement 1143/2014), mais elles gênent ailleurs. Envahissante hors de l'Union : à trancher (garder la fiche ou l'écarter). L'égeria (*Egeria densa*) est le cas le plus net : l'article en la dit parfois retirée de la vente.
 - **Noms scientifiques faute de nom courant** : le nom scientifique est repris, aucun nom courant sourcé n'ayant été trouvé, pour *Atyopsis moluccensis* (it/es), *Palaemonetes paludosus* (de/it/es), *Atya gabonensis* (it/es), *Neritina natalensis* (it/es), *Clithon corona* (de/it/es), *Planorbella duryi* (it/es), *Planorbarius corneus* (it), *Melanoides tuberculata* (it/es), *Physella acuta* (it/es), *Anentome helena* (it/es), *Leptochilus pteropus* (it/es), *Taxiphyllum barbieri* (it/es), *Cryptocoryne wendtii* (fr/de/it/es), *Cryptocoryne parva* (les cinq langues), *Echinodorus grisebachii* (it/es), *Vallisneria spiralis* (it/es), *Vallisneria americana* (de/it/es), *Egeria densa* (it/es), *Hygrophila polysperma* (fr/it/es), *Hygrophila difformis* (fr/it/es), *Limnophila sessiliflora* (les cinq langues), *Ludwigia repens* (fr/de/it/es), *Rotala rotundifolia* (les cinq langues), *Bacopa caroliniana* (les cinq langues), *Lemna minor* (es), *Limnobium laevigatum* (it/es), *Aegagropila linnaei* (es), *Hydrocotyle tripartita* (les cinq langues), *Staurogyne repens* (les cinq langues), *Aponogeton crispus* (fr/en/it/es), *Sagittaria subulata* (en/it/es), *Eleocharis acicularis* (en/it/es), *Riccia fluitans* (it/es), *Nymphaea lotus* (it). À trancher : les garder ou fournir un nom.
 - **Noms de genre faute de nom courant** : « Anubias » (cinq langues), « Échinodorus » (fr) et « Sagittaire » (fr) reprennent le nom du genre. À trancher : les garder ou les remplacer.
 - **Noms ajoutés par nous** (fr) : « Crevette crystal red », « Crevette fantôme », « Crevette vampire », « Néritine zébrée », « Nérite couronnée », « Planorbe rouge », « Planorbe cornée », « Mélanoïde », « Physe », « Escargot assassin », « Fougère de Java », « Grenouillette d'Amazonie », « Mousse de Java », « Élodée dense » ; (en) : « Bamboo shrimp », « Vampire shrimp », « Horned nerite », « Common duckweed », « Ghost shrimp », « Zebra nerite », « Seminole rams-horn », « Acute bladder snail », « Assassin snail », « Java fern », « Amazon sword plant », « Indian waterweed », « Water wisteria », « Amazon frogbit », « Floating crystalwort » ; (de) : « Bienengarnele », « Zebrarennschnecke », « Raubturmdeckelschnecke », « Javafarn ». À trancher : les garder ou les remplacer.
 - **Marimo** : le marimo est une algue, classée « plante » pour l'affichage : à trancher (classé « plante »).
+- **Plantes, plancher de température** : les planchers de 12 plantes ont été abaissés (mousse de Java, anubias, bacopa, Cryptocoryne wendtii et parva, échinodorus, Hygrophila difformis, Limnophila, rotala, staurogyne, aponogeton à 18–20 °C ; fougère de Java à 18 °C), pour qu'un bac non chauffé à 19–20 °C ne les affiche pas « Trop froid » : choix de notre part, à valider. Effet : à 19 °C elles ressortent « Vont bien » au lieu de « Déconseillé » (ou « avec précautions »). Les sources citées pour l'anubias (en, fr : 22–28 °C) et l'échinodorus (de : au mieux 22–28 °C) donnent un optimum, pas une tolérance.
+- **Lotus tigré, plancher de température** : plancher gardé à 22 °C (source en : eau chaude de 22 à 28 °C ; plante tropicale qui cesse de pousser nettement sous 21 °C). Effet : dans un bac non chauffé à 19–20 °C, elle ressort « Déconseillé » (« Trop froid »). À trancher : le garder, ou l'abaisser à 20 °C.
 - **Plantes : GH, KH, volume** laissés vides, pH et températures larges : voir l'introduction. Choix de notre part, à valider : les plages de GH et de KH demanderaient une source (aucun article Wikipédia consulté n'en donne une sûre).
 - **Crevette crystal red** : le crystal red est une sélection de *Caridina cantonensis* (même espèce sauvage, nommée crevette abeille en anglais). Sa fiche suit l'espèce, à valider ; pH, GH et KH (eau très douce) sont des choix de notre part, à vérifier en priorité.
 - **Nérite couronnée (*Clithon corona*)** : l'article en ne donne aucune valeur et dit qu'elle vit aussi en eau saumâtre ; toutes ses valeurs sont à vérifier en priorité.

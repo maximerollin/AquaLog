@@ -79,6 +79,7 @@ class EncyclopediaFileTest {
         val anubias = species.single { it.id == "anubias" }
         val setup = AquariumSetup(Aquarium("a", "Neuf", 20.0, VolumeUnit.LITERS, 0L, AquariumProfile.CYCLING), emptyList())
         val assessment = assessSpecies(anubias, setup, emptyList(), emptyList(), anubias.minGroup)
+        assertTrue(assessment.checks.isNotEmpty())
         assertFalse(assessment.cyclingWarning)
         assertTrue(assessment.checks.none { it.kind == CriterionKind.VOLUME || it.kind == CriterionKind.GROUP })
     }

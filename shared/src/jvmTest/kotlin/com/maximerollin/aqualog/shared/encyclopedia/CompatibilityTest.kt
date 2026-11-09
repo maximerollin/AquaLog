@@ -92,6 +92,14 @@ class CompatibilityTest {
     }
 
     @Test
+    fun `a snail eater is fine with its own kind`() {
+        val helena = species("helena", kind = SpeciesKind.SNAIL, tags = setOf(SpeciesTag.EATS_SNAILS), size = 2.0, minVolume = 20, minGroup = 1)
+        val a = assess(helena, present = listOf(PresentGroup(helena, helena.family, 3)))
+        assertEquals(CriterionStatus.OK, a.check(CriterionKind.COHABITATION).status)
+        assertEquals(Fit.GOOD, a.fit)
+    }
+
+    @Test
     fun `just outside a range is CAUTION, far outside is PROBLEM`() {
         val guppy = species("guppy", gh = ValueRange(6.0, 20.0))
         val near = assess(guppy, r = readings(gh = 5.0)).check(CriterionKind.GH)

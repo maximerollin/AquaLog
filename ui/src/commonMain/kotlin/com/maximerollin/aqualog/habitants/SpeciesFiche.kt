@@ -156,7 +156,7 @@ internal fun SpeciesFiche(
         Column {
             Text(stringResource(Res.string.habitants_fact_size, formatter.number(species.adultSizeCm, 1)))
             if (species.kind != SpeciesKind.PLANT) Text(pluralStringResource(Res.plurals.habitants_fact_lifespan, species.lifespanYears, species.lifespanYears))
-            Text(stringResource(Res.string.habitants_fact_group, species.minGroup))
+            if (species.kind != SpeciesKind.PLANT) Text(stringResource(Res.string.habitants_fact_group, species.minGroup))
         }
         Column {
             CarnetSectionTitle(stringResource(Res.string.habitants_count_title))

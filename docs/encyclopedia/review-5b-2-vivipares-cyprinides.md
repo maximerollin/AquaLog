@@ -705,7 +705,7 @@ Identifiant `barbus-schwanenfeldi`, Wikidata [Q2427972](https://www.wikidata.org
 |---|---|---|
 | Français | Barbus de Schwanenfeld | « nom ajouté par nous » |
 | Anglais | Tinfoil barb | Wikidata, libellé |
-| Allemand | Barbonymus schwanenfeldii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
+| Allemand | Barbonymus schwanefeldii | « nom ajouté par nous », à trancher (nom scientifique faute de nom courant sourcé) |
 | Italien | Barbo di Schwanenfeld | Wikidata, alias |
 | Espagnol | Barbo de Schwanenfeld | « nom ajouté par nous » |
 
