@@ -185,7 +185,7 @@ enum class ReviewPrompt { NONE, DISCOVERY, DIRECT }
 
 class ReviewEligibilityPolicy(
     private val minimumNewSessions: Int = 5,
-    private val cooldownMillis: Long = 90 * REVIEW_DAY_MILLIS,
+    private val cooldownMillis: Long = 30 * REVIEW_DAY_MILLIS,
 ) {
     init {
         require(minimumNewSessions > 0)

@@ -35,7 +35,7 @@ The install identifier is backed up with the app's data by Android backup and is
 app's storage. Do not write personal information in a message.
 
 Aquagenda asks for a Google Play review on the fifth calm new Session (no value out of range, not a
-Cycling Aquarium), then at most every 90 days. The first time, a one-time dialog explains the request
+Cycling Aquarium), then at most every 30 days. The first time, a one-time dialog explains the request
 and its « Laisser un avis » button opens the Google Play page of the app; later requests use Google's
 own in-app window. The app never asks about the user's opinion first and does not learn whether a
 review was written. Settings also offer a « Noter Aquagenda » entry.

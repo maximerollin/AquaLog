@@ -13,7 +13,7 @@ Deux besoins proches, traités ensemble parce qu'ils touchent tous deux les rég
 ## 2. Objectifs, non-objectifs, anti-objectifs
 
 **Objectifs**
-- La fenêtre de notation Google s'ouvre, au plus une fois tous les 90 jours, après une Session qui s'est bien passée, à partir de la 5ᵉ.
+- La fenêtre de notation Google s'ouvre, au plus une fois tous les 30 jours, après une Session qui s'est bien passée, à partir de la 5ᵉ.
 - Un message « Votre avis compte » l'annonce la première fois, comme dans Yams.
 - « Noter Aquagenda » reste disponible dans les réglages.
 - « Envoyer des commentaires » marche **avec ou sans compte**, porte un **type**, et peut s'ouvrir depuis une fiche espèce, pré-rempli.
@@ -60,13 +60,13 @@ Deux besoins proches, traités ensemble parce qu'ils touchent tous deux les rég
   - aucune valeur de cette Session ne sort de sa plage indicative ;
   - l'Aquarium n'est pas en Cyclage.
 - Si la 5ᵉ Session ne remplit pas ces conditions, la suivante qui les remplit pose l'attente (choix de Claude).
-- **Délai** (Maxime) : au moins **90 jours** entre deux demandes.
+- **Délai** (Maxime) : au moins **30 jours** entre deux demandes (décision de Maxime du 09/11/2026 : 30 jours au lieu de 90).
 - La règle est une **fonction pure testée** (comme `shouldRequestInAppReview` dans Yams) : attente posée, nombre de Sessions, date de la dernière demande, maintenant.
 
 **Déroulé** (sur le modèle de Yams, choix de Claude pour les détails) :
 - Au retour sur l'accueil avec un avis en attente et éligible :
   - **la première fois** : un message « Votre avis compte » s'affiche sur l'accueil (Maxime : « je la veux »). Il dit qu'on peut noter maintenant ou plus tard depuis les réglages. Deux boutons : « Laisser un avis » ouvre la fenêtre Google ; « Plus tard » ferme. Dans les deux cas, le message ne reviendra plus, et la date de demande est enregistrée ;
-  - **les fois suivantes** (après 90 jours) : l'app demande directement la fenêtre Google, sans message.
+  - **les fois suivantes** (après 30 jours) : l'app demande directement la fenêtre Google, sans message.
 - La fenêtre Google passe par Play Core (`ReviewManager` : `requestReviewFlow` puis `launchReviewFlow`) ; les échecs sont ignorés ; sur desktop, rien.
 - Google applique son propre quota : la fenêtre peut ne pas s'afficher. L'app ne commente pas le résultat.
 
@@ -77,8 +77,8 @@ Deux besoins proches, traités ensemble parce qu'ils touchent tous deux les rég
 **Comptage et cycle de vie** (choix de Claude) :
 - Le compteur reste le compteur local existant : il augmente à chaque **nouvelle** Session enregistrée sur cet appareil. Les modifications, imports et Sessions reçues par synchronisation ne comptent pas. Un utilisateur déjà installé garde son compteur : s'il a déjà 5 Sessions, la prochaine Session réussie pose l'attente.
 - L'attente reste posée jusqu'à la demande (app tuée ou pas de retour à l'accueil : elle attend le prochain passage).
-- Le délai de 90 jours part de la dernière **demande** : message affiché (quel que soit le bouton choisi) ou fenêtre Google demandée.
-- **Utilisateurs déjà sollicités** par l'ancienne règle (`requested = true`, sans date) : la date de leur demande est fixée au jour de la mise à jour ; ils seront éligibles 90 jours plus tard, et verront alors le message « Votre avis compte » une fois, comme tout le monde.
+- Le délai de 30 jours part de la dernière **demande** : message affiché (quel que soit le bouton choisi) ou fenêtre Google demandée.
+- **Utilisateurs déjà sollicités** par l'ancienne règle (`requested = true`, sans date) : la date de leur demande est fixée au jour de la mise à jour ; ils seront éligibles 30 jours plus tard, et verront alors le message « Votre avis compte » une fois, comme tout le monde.
 - Android sans Play Store : la fenêtre Google échoue sans bruit ; « Noter Aquagenda » ouvre l'URL https de la fiche Play.
 
 ### 4.2 Commentaires au développeur (#42)

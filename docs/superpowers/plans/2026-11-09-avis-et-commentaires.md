@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:**
-- Ask for a Google Play review at the right moment: from the 5th calm Session, at most every 90 days, announced once by « Votre avis compte ».
+- Ask for a Google Play review at the right moment: from the 5th calm Session, at most every 30 days, announced once by « Votre avis compte ».
 - Let anyone send typed feedback, with or without an account, including from a species fiche.
 
 **Architecture:**
@@ -58,7 +58,7 @@
    - Expected: pending only at the 6th; never while Cycling.
    - Test: in Task 5.
 5. **A user already asked by the old rule** (`review-requested = true`, no date).
-   - Expected: no prompt until 90 days after the update; then the discovery dialog shows once.
+   - Expected: no prompt until 30 days after the update; then the discovery dialog shows once.
    - Test: in Task 5.
 
 ---
@@ -222,7 +222,7 @@
 - Produces:
   - `data class ReviewHistory(val newSessionCount: Int, val pending: Boolean, val lastRequestedAtEpochMillis: Long?, val discoverySeen: Boolean)`.
   - `fun storedReviewHistory(newSessionCount: Int, pending: Boolean, lastRequestedAtEpochMillis: Long?, discoverySeen: Boolean, legacyRequested: Boolean, nowEpochMillis: Long): ReviewHistory`. When `legacyRequested && lastRequestedAtEpochMillis == null`, it sets `lastRequestedAtEpochMillis = nowEpochMillis`.
-  - `class ReviewEligibilityPolicy(minimumNewSessions: Int = 5, cooldownMillis: Long = 90 * DAY_MILLIS)`:
+  - `class ReviewEligibilityPolicy(minimumNewSessions: Int = 5, cooldownMillis: Long = 30 * DAY_MILLIS)`:
     - `fun shouldMarkPending(history: ReviewHistory, calm: Boolean, nowEpochMillis: Long): Boolean`;
     - `fun prompt(history: ReviewHistory, nowEpochMillis: Long): ReviewPrompt`.
   - `enum class ReviewPrompt { NONE, DISCOVERY, DIRECT }`.
@@ -237,13 +237,13 @@
   - 4 calm Sessions → not pending; the 5th calm → pending, `prompt` = `DISCOVERY`;
   - 5th not calm, 6th calm → pending only after the 6th (Review Focus 4);
   - Cycling is passed as `calm = false` → never pending;
-  - after `onDiscoveryAnswered(false)`: no gateway call, `prompt` = `NONE`; 89 days later, a calm Session → not pending; 90 days later → pending with `prompt` = `DIRECT`;
+  - after `onDiscoveryAnswered(false)`: no gateway call, `prompt` = `NONE`; 29 days later, a calm Session → not pending; 30 days later → pending with `prompt` = `DIRECT`;
   - `onDiscoveryAnswered(true)` and `requestDirect()` call the gateway once each;
-  - `storedReviewHistory(legacyRequested = true, lastRequestedAt = null, now)` → `lastRequestedAt = now`; then nothing for 90 days, then `DISCOVERY`, since `discoverySeen` is false (Review Focus 5).
+  - `storedReviewHistory(legacyRequested = true, lastRequestedAt = null, now)` → `lastRequestedAt = now`; then nothing for 30 days, then `DISCOVERY`, since `discoverySeen` is false (Review Focus 5).
 - [ ] **Step 2: Run** `./gradlew :shared:jvmTest --tests '*PrivacyServicesTest*'`. Expected: FAIL.
 - [ ] **Step 3: Implement**, with `AndroidReviewHistoryStore` loading through `storedReviewHistory`. Keep `GooglePlayInAppReviewGateway` as is (telemetry + LogSnag).
 - [ ] **Step 4: Run** `./gradlew :shared:jvmTest :androidApp:testDebugUnitTest`. Expected: PASS.
-- [ ] **Step 5: Commit** `feat(review): ask from the 5th calm Session, every 90 days`.
+- [ ] **Step 5: Commit** `feat(review): ask from the 5th calm Session, every 30 days`.
 
 ### Task 6: Review on the home and « Noter Aquagenda »
 

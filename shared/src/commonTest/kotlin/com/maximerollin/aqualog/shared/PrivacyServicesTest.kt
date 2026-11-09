@@ -125,7 +125,7 @@ class PrivacyServicesTest {
     }
 
     @Test
-    fun `after a declined discovery the review waits 90 days then asks directly`() {
+    fun `after a declined discovery the review waits 30 days then asks directly`() {
         val fixture = ReviewFixture(ReviewHistory(4, false, null, false))
         fixture.coordinator.onNewSessionSaved(calm = true)
 
@@ -135,11 +135,11 @@ class PrivacyServicesTest {
         assertTrue(fixture.history.discoverySeen)
         assertEquals(1_000L, fixture.history.lastRequestedAtEpochMillis)
 
-        fixture.now = 1_000L + 89.days
+        fixture.now = 1_000L + 29.days
         fixture.coordinator.onNewSessionSaved(calm = true)
         assertFalse(fixture.history.pending)
 
-        fixture.now = 1_000L + 90.days
+        fixture.now = 1_000L + 30.days
         fixture.coordinator.onNewSessionSaved(calm = true)
         assertTrue(fixture.history.pending)
         assertEquals(ReviewPrompt.DIRECT, fixture.coordinator.pendingPrompt())
@@ -171,11 +171,11 @@ class PrivacyServicesTest {
         )
         assertEquals(1_000L, history.lastRequestedAtEpochMillis)
 
-        val fixture = ReviewFixture(history.copy(newSessionCount = 10), now = 1_000L + 89.days)
+        val fixture = ReviewFixture(history.copy(newSessionCount = 10), now = 1_000L + 29.days)
         fixture.coordinator.onNewSessionSaved(calm = true)
         assertFalse(fixture.history.pending)
 
-        fixture.now = 1_000L + 90.days
+        fixture.now = 1_000L + 30.days
         fixture.coordinator.onNewSessionSaved(calm = true)
         assertTrue(fixture.history.pending)
         assertEquals(ReviewPrompt.DISCOVERY, fixture.coordinator.pendingPrompt())

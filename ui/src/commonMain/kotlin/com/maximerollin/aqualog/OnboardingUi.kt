@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
 import com.maximerollin.aqualog.home.HabitantsSheet
 import com.maximerollin.aqualog.shared.encyclopedia.Species
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
 import java.util.Locale as JavaLocale
 import kotlin.coroutines.cancellation.CancellationException
@@ -47,6 +48,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -72,6 +74,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -1272,6 +1275,9 @@ private fun FeedbackKind.labelResource(): StringResource = when (this) {
     FeedbackKind.OTHER -> Res.string.feedback_kind_other
 }
 
+/** A decorative glyph, not a word: the chip's label carries the meaning. */
+private const val SELECTED_MARK = "✓"
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FeedbackDialog(
@@ -1299,7 +1305,18 @@ private fun FeedbackDialog(
                             selected = state.kind == kind,
                             onClick = { onKindSelected(kind) },
                             label = { Text(stringResource(kind.labelResource())) },
-                            modifier = Modifier.heightIn(min = 48.dp),
+                            // Selection is shown by a filled container and a check mark, not by colour alone.
+                            leadingIcon = if (state.kind == kind) {
+                                { Text(SELECTED_MARK, fontWeight = FontWeight.Bold) }
+                            } else {
+                                null
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                            modifier = Modifier.heightIn(min = 48.dp).semantics { role = Role.RadioButton },
                         )
                     }
                 }
