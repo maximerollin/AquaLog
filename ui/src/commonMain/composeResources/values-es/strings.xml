@@ -573,4 +573,9 @@
     <string name="feedback_rate_limited">Demasiados mensajes en este momento, inténtelo de nuevo más tarde.</string>
     <string name="feedback_failed">El mensaje no se envió. Se conserva: inténtelo de nuevo más tarde.</string>
     <string name="feedback_report_species">Informar de un error</string>
+    <string name="review_discovery_title">Tu opinión cuenta</string>
+    <string name="review_discovery_text">Si Aquagenda te ayuda, deja una reseña en Google Play: ayuda a otros acuaristas a encontrarla. También podrás hacerlo más tarde desde los ajustes.</string>
+    <string name="review_discovery_confirm">Dejar una reseña</string>
+    <string name="review_discovery_later">Más tarde</string>
+    <string name="rate_app">Valorar Aquagenda</string>
 </resources>

@@ -573,4 +573,9 @@
     <string name="feedback_rate_limited">Too many messages right now, try again later.</string>
     <string name="feedback_failed">The message was not sent. It is kept: try again later.</string>
     <string name="feedback_report_species">Report an error</string>
+    <string name="review_discovery_title">Your opinion matters</string>
+    <string name="review_discovery_text">If Aquagenda helps you, leave a review on Google Play: it helps other aquarium keepers find it. You can also do it later from the settings.</string>
+    <string name="review_discovery_confirm">Leave a review</string>
+    <string name="review_discovery_later">Later</string>
+    <string name="rate_app">Rate Aquagenda</string>
 </resources>

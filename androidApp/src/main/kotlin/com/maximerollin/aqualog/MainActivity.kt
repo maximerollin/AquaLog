@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -85,6 +86,7 @@ class MainActivity : ComponentActivity() {
                     externalLinks = ExternalLinks(BuildConfig.PRIVACY_URL, BuildConfig.SUPPORT_URL) { url ->
                         if (url.startsWith("https://")) startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                     },
+                    rateApp = ::openStoreListing,
                 )
             }
         }
@@ -105,6 +107,16 @@ class MainActivity : ComponentActivity() {
         val aquariumId = intent.getStringExtra(EXTRA_WIDGET_AQUARIUM_ID)
         setIntent(Intent(this, MainActivity::class.java))
         homeViewModel.openFromWidget(aquariumId, target)
+    }
+
+    /** Opens Aquagenda's Google Play page: the store app when present, the web page otherwise. */
+    private fun openStoreListing() {
+        val id = packageName
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$id")))
+        } catch (_: ActivityNotFoundException) {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$id")))
+        }
     }
 
     private fun handleAuthenticationIntent(intent: Intent?) {

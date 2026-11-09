@@ -57,6 +57,7 @@ import com.maximerollin.aqualog.shared.RapidSessionContext
 import com.maximerollin.aqualog.shared.RapidSessionInput
 import com.maximerollin.aqualog.shared.RecordedSession
 import com.maximerollin.aqualog.shared.ReviewCoordinator
+import com.maximerollin.aqualog.shared.ReviewPrompt
 import com.maximerollin.aqualog.shared.SessionEditInput
 import com.maximerollin.aqualog.shared.SessionUsage
 import com.maximerollin.aqualog.shared.SyncFailureCategory
@@ -405,6 +406,8 @@ data class HomeUiState(
     /** False until the dismissals of the displayed Aquarium were read, so a dismissed card never flashes. */
     val cycledDismissalsLoaded: Boolean = false,
     val accountInvitationPrompt: AccountInvitationPrompt = AccountInvitationPrompt.NONE,
+    /** The one-time « Votre avis compte » dialog; never shown over another prompt. */
+    val reviewDiscoveryVisible: Boolean = false,
     val account: AccountUiState = AccountUiState(),
     val sessionDetail: RecordedSession? = null,
     val sessionDetailReturnsToTimeline: Boolean = false,
@@ -2118,6 +2121,7 @@ class HomeViewModel(
                     // Calm: no advice for this Session (unknown counts as not calm) and not a cycling tank.
                     val cycling = mutableUiState.value.setup?.aquarium?.profile == AquariumProfile.CYCLING
                     reviewCoordinator?.onNewSessionSaved(calm = pistesAdvices?.isEmpty() == true && !cycling)
+                    maybeAskForReview()
                 }
             }.onFailure {
                 updateRapidSession { it.copy(isSaving = false, saveError = true) }
@@ -2142,7 +2146,36 @@ class HomeViewModel(
         return advices
     }
 
-    fun dismissPistes() = mutableUiState.update { it.copy(pistesAfterSave = emptyList()) }
+    fun dismissPistes() {
+        mutableUiState.update { it.copy(pistesAfterSave = emptyList()) }
+        maybeAskForReview()
+    }
+
+    /**
+     * Asks for a review when one is due and nothing else is asking: the first request shows our dialog, the later
+     * ones go straight to Google. Called when a new Session is saved and when the prompts that follow it close.
+     */
+    fun maybeAskForReview() {
+        val coordinator = reviewCoordinator ?: return
+        val state = mutableUiState.value
+        if (state.reviewDiscoveryVisible ||
+            state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION ||
+            state.pistesAfterSave.isNotEmpty()
+        ) {
+            return
+        }
+        when (coordinator.pendingPrompt()) {
+            ReviewPrompt.NONE -> Unit
+            ReviewPrompt.DISCOVERY -> mutableUiState.update { it.copy(reviewDiscoveryVisible = true) }
+            // Google's window must not open over the account screens.
+            ReviewPrompt.DIRECT -> if (state.account.step == AccountStep.HIDDEN) coordinator.requestDirect()
+        }
+    }
+
+    fun answerReviewDiscovery(leaveReview: Boolean) {
+        mutableUiState.update { it.copy(reviewDiscoveryVisible = false) }
+        reviewCoordinator?.onDiscoveryAnswered(leaveReview)
+    }
 
     fun continueAfterSessionConfirmation() {
         val coordinator = accountCoordinator ?: return
@@ -2155,6 +2188,7 @@ class HomeViewModel(
                     mutableUiState.update {
                         it.copy(account = AccountUiState(AccountStep.INVITATION))
                     }
+                    maybeAskForReview()
                 }
                 .onFailure {
                     mutableUiState.update { it.copy(accountInvitationPrompt = prompt) }
@@ -2164,7 +2198,10 @@ class HomeViewModel(
 
     fun openAccountMethods() = updateAccount { it.copy(step = AccountStep.METHODS, error = null) }
 
-    fun dismissAccount() = updateAccount { AccountUiState() }
+    fun dismissAccount() {
+        updateAccount { AccountUiState() }
+        maybeAskForReview()
+    }
 
     fun openMagicEmail() = updateAccount { it.copy(step = AccountStep.MAGIC_EMAIL, error = null) }
 

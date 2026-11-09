@@ -22,6 +22,7 @@ fun AquaLogApp(
     onExportData: () -> Unit,
     onImportData: () -> Unit,
     externalLinks: ExternalLinks,
+    rateApp: (() -> Unit)? = null,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     // A notification tap brings back a home computed on an earlier day.
@@ -36,6 +37,7 @@ fun AquaLogApp(
             onExportData = onExportData,
             onImportData = onImportData,
             externalLinks = externalLinks,
+            rateApp = rateApp,
             modifier = Modifier.padding(contentPadding).consumeWindowInsets(contentPadding),
         )
     }

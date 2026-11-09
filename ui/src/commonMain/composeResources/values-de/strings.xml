@@ -573,4 +573,9 @@
     <string name="feedback_rate_limited">Gerade zu viele Nachrichten, versuchen Sie es später erneut.</string>
     <string name="feedback_failed">Die Nachricht wurde nicht gesendet. Sie bleibt erhalten: versuchen Sie es später erneut.</string>
     <string name="feedback_report_species">Fehler melden</string>
+    <string name="review_discovery_title">Ihre Meinung zählt</string>
+    <string name="review_discovery_text">Wenn Aquagenda Ihnen hilft, hinterlassen Sie eine Bewertung bei Google Play: So finden andere Aquarianer die App leichter. Sie können das auch später in den Einstellungen tun.</string>
+    <string name="review_discovery_confirm">Bewertung abgeben</string>
+    <string name="review_discovery_later">Später</string>
+    <string name="rate_app">Aquagenda bewerten</string>
 </resources>

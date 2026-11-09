@@ -31,6 +31,11 @@ the app language and, optionally, a species identifier. Anonymous messages are n
 account and are not deleted by account deletion; the device clears its install identifier when the
 account is deleted. Do not write personal information in a message.
 
+Aquagenda asks for a Google Play review on the fifth calm new Session (no value out of range, not a
+Cycling Aquarium), then at most every 90 days. The first time, a one-time dialog explains the request
+before Google's own window; the app never asks about the user's opinion first and does not learn
+whether a review was written. Settings also offer a « Noter Aquagenda » entry.
+
 ## Operational notifications
 
 LogSnag receives closed payment lifecycle categories from authenticated server webhooks and review-flow request events from release builds. Sandbox payments use a separate channel without push notifications. No account ID, email, store receipt, Aquarium content or free text is included. Review requests do not establish that a dialog was shown or an opinion published. The hosted privacy policy must disclose LogSnag before distribution. See [setup](revenuecat-setup.md).

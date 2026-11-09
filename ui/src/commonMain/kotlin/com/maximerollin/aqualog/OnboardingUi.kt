@@ -92,6 +92,7 @@ fun AquaLogContent(
     onExportData: () -> Unit = {},
     onImportData: () -> Unit = {},
     externalLinks: ExternalLinks = ExternalLinks(),
+    rateApp: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     when {
@@ -138,7 +139,7 @@ fun AquaLogContent(
             onContinue = viewModel::closeProPaywall,
             modifier = modifier,
         )
-        state.setup != null -> AquariumShell(state, viewModel, onExportData, externalLinks, modifier)
+        state.setup != null -> AquariumShell(state, viewModel, onExportData, externalLinks, rateApp, modifier)
         state.step == OnboardingStep.WELCOME -> WelcomeScreen(
             state = state.portableData,
             onContinue = viewModel::startOnboarding,
@@ -282,6 +283,7 @@ private fun AquariumShell(
     viewModel: HomeViewModel,
     onExportData: () -> Unit,
     externalLinks: ExternalLinks,
+    rateApp: (() -> Unit)?,
     modifier: Modifier,
 ) {
     Scaffold(
@@ -330,6 +332,7 @@ private fun AquariumShell(
                 onRequestImport = viewModel::requestPortableImport,
                 viewModel = viewModel,
                 externalLinks = externalLinks,
+                rateApp = rateApp,
                 modifier = contentModifier,
             )
         }
@@ -384,6 +387,7 @@ private fun PortableDataSettings(
     onRequestImport: () -> Unit,
     viewModel: HomeViewModel,
     externalLinks: ExternalLinks,
+    rateApp: (() -> Unit)?,
     modifier: Modifier,
 ) {
     val proActive = proState.purchaseStatus == ProPurchaseStatus.ACTIVE
@@ -530,6 +534,7 @@ private fun PortableDataSettings(
         }
         moreSection(Res.string.more_section_help) {
             moreItem { MoreRow(stringResource(Res.string.send_feedback), onClick = viewModel::openFeedback) }
+            rateApp?.let { moreItem { MoreRow(stringResource(Res.string.rate_app), onClick = it) } }
             moreItem {
                 MoreRow(
                     stringResource(Res.string.privacy_policy),

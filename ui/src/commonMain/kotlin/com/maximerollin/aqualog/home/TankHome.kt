@@ -334,6 +334,26 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     }
     PhotoSheets(state, viewModel, snackbar)
     if (state.pistesAfterSave.isNotEmpty()) PistesSheet(state.pistesAfterSave, viewModel.today(), viewModel::dismissPistes)
+    if (state.reviewDiscoveryVisible) {
+        androidx.compose.material3.AlertDialog(
+            // Dismissing is « Plus tard »: no answer is asked, and Google's window is not opened.
+            onDismissRequest = { viewModel.answerReviewDiscovery(leaveReview = false) },
+            title = { Text(stringResource(Res.string.review_discovery_title)) },
+            text = { Text(stringResource(Res.string.review_discovery_text)) },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.answerReviewDiscovery(leaveReview = true) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) { Text(stringResource(Res.string.review_discovery_confirm)) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { viewModel.answerReviewDiscovery(leaveReview = false) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) { Text(stringResource(Res.string.review_discovery_later)) }
+            },
+        )
+    }
     if (showHabitants) {
         HabitantsSheet(
             groups = state.inhabitants,
