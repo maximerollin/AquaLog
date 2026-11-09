@@ -926,6 +926,7 @@ class HomeViewModel(
 
     fun dismissFeedback() {
         mutableUiState.update { it.copy(feedback = FeedbackUiState()) }
+        maybeAskForReview()
     }
 
     fun updateFeedback(value: String) {
@@ -2120,7 +2121,9 @@ class HomeViewModel(
                 if (isNewSession) {
                     // Calm: no advice for this Session (unknown counts as not calm) and not a cycling tank.
                     val cycling = mutableUiState.value.setup?.aquarium?.profile == AquariumProfile.CYCLING
-                    reviewCoordinator?.onNewSessionSaved(calm = pistesAdvices?.isEmpty() == true && !cycling)
+                    val calm = pistesAdvices?.isEmpty() == true && !cycling
+                    lastNewSessionCalm = calm
+                    reviewCoordinator?.onNewSessionSaved(calm)
                     maybeAskForReview()
                 }
             }.onFailure {
@@ -2146,29 +2149,37 @@ class HomeViewModel(
         return advices
     }
 
-    fun dismissPistes() {
-        mutableUiState.update { it.copy(pistesAfterSave = emptyList()) }
-        maybeAskForReview()
-    }
+    // The pistes sheet only follows a non-calm Session, so closing it never asks for a review.
+    fun dismissPistes() = mutableUiState.update { it.copy(pistesAfterSave = emptyList()) }
+
+    /** Whether the latest new Session saved in this process was calm: a stored pending prompt may only follow such a Session. */
+    private var lastNewSessionCalm = false
 
     /**
      * Asks for a review when one is due and nothing else is asking: the first request shows our dialog, the later
-     * ones go straight to Google. Called when a new Session is saved and when the prompts that follow it close.
+     * ones go straight to Google. Only right after a calm Session saved in this process, once nothing else asks.
      */
     fun maybeAskForReview() {
         val coordinator = reviewCoordinator ?: return
+        if (!lastNewSessionCalm) return
         val state = mutableUiState.value
-        if (state.reviewDiscoveryVisible ||
+        if (state.reviewDiscoveryVisible || state.feedback.isOpen ||
             state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION ||
             state.pistesAfterSave.isNotEmpty()
         ) {
             return
         }
         when (coordinator.pendingPrompt()) {
-            ReviewPrompt.NONE -> Unit
-            ReviewPrompt.DISCOVERY -> mutableUiState.update { it.copy(reviewDiscoveryVisible = true) }
+            ReviewPrompt.NONE -> lastNewSessionCalm = false
+            ReviewPrompt.DISCOVERY -> {
+                lastNewSessionCalm = false
+                mutableUiState.update { it.copy(reviewDiscoveryVisible = true) }
+            }
             // Google's window must not open over the account screens.
-            ReviewPrompt.DIRECT -> if (state.account.step == AccountStep.HIDDEN) coordinator.requestDirect()
+            ReviewPrompt.DIRECT -> if (state.account.step == AccountStep.HIDDEN) {
+                lastNewSessionCalm = false
+                coordinator.requestDirect()
+            }
         }
     }
 
