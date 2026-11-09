@@ -489,6 +489,7 @@
     <string name="habitants_reason_too_cold">Trop froid</string>
     <string name="habitants_reason_eats_small_fish">Chasse petits</string>
     <string name="habitants_reason_eats_shrimp">Mange crevettes</string>
+    <string name="habitants_reason_eats_snails">Mange escargots</string>
     <string name="habitants_reason_fin_nipping">Mordille nageoires</string>
     <string name="habitants_reason_territorial">Territorial</string>
     <string name="habitants_reason_eats_plants">Mange plantes</string>
@@ -502,6 +503,7 @@
     <string name="habitants_explain_too_cold">eau trop froide</string>
     <string name="habitants_explain_eats_small_fish">les petits poissons risquent d'être mangés</string>
     <string name="habitants_explain_eats_shrimp">les crevettes risquent d'être mangées</string>
+    <string name="habitants_explain_eats_snails">les escargots risquent d'être mangés</string>
     <string name="habitants_explain_fin_nipping">les longues nageoires risquent d'être mordillées</string>
     <string name="habitants_explain_territorial">territorial avec ses congénères</string>
     <string name="habitants_explain_eats_plants">les plantes risquent d'être mangées</string>

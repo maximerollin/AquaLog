@@ -15,7 +15,7 @@ enum class CriterionKind { VOLUME, PH, TEMPERATURE, GH, KH, COHABITATION, GROUP 
 
 enum class Reason {
     TANK_TOO_SMALL, WATER_TOO_HARD, WATER_TOO_SOFT, PH_TOO_HIGH, PH_TOO_LOW, TOO_WARM, TOO_COLD,
-    EATS_SMALL_FISH, EATS_SHRIMP, FIN_NIPPING, TERRITORIAL, EATS_PLANTS, GROUP_TOO_SMALL,
+    EATS_SMALL_FISH, EATS_SHRIMP, EATS_SNAILS, FIN_NIPPING, TERRITORIAL, EATS_PLANTS, GROUP_TOO_SMALL,
 }
 
 data class CriterionCheck(
@@ -116,6 +116,7 @@ private fun conflicts(actor: Species, victim: Species, presentId: String): List<
         val tags = actor.tags
         if (SpeciesTag.EATS_SMALL_FISH in tags && victim.kind == SpeciesKind.FISH && victim.adultSizeCm <= PREY_MAX_SIZE_CM) add(check(CriterionStatus.PROBLEM, Reason.EATS_SMALL_FISH))
         if (SpeciesTag.EATS_SHRIMP in tags && victim.kind == SpeciesKind.SHRIMP) add(check(CriterionStatus.PROBLEM, Reason.EATS_SHRIMP))
+        if (SpeciesTag.EATS_SNAILS in tags && victim.kind == SpeciesKind.SNAIL) add(check(CriterionStatus.PROBLEM, Reason.EATS_SNAILS))
         if (SpeciesTag.FIN_NIPPER in tags && SpeciesTag.LONG_FINS in victim.tags) add(check(CriterionStatus.PROBLEM, Reason.FIN_NIPPING))
         if (SpeciesTag.TERRITORIAL in tags && actor.id == victim.id) add(check(CriterionStatus.CAUTION, Reason.TERRITORIAL))
         if (SpeciesTag.EATS_PLANTS in tags && victim.kind == SpeciesKind.PLANT) add(check(CriterionStatus.CAUTION, Reason.EATS_PLANTS))

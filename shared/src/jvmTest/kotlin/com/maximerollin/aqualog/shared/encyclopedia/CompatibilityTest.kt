@@ -183,4 +183,23 @@ class CompatibilityTest {
         // custom species (no Species) are skipped
         assertEquals(CriterionStatus.OK, assess(neon, present = listOf(PresentGroup(null, DrawingFamily.TETRA, 3))).check(CriterionKind.COHABITATION).status)
     }
+
+    @Test
+    fun `eats snails is detected both ways`() {
+        val snail = species("nerite", kind = SpeciesKind.SNAIL)
+        val loach = species("loach", tags = setOf(SpeciesTag.EATS_SNAILS), size = 10.0)
+        val forward = assess(loach, present = listOf(PresentGroup(snail, snail.family, 3))).check(CriterionKind.COHABITATION)
+        assertEquals(Reason.EATS_SNAILS, forward.reason)
+        assertEquals(Fit.BAD, assess(loach, present = listOf(PresentGroup(snail, snail.family, 3))).fit)
+        val reverse = assess(snail, present = listOf(PresentGroup(loach, loach.family, 3)))
+        assertEquals(Reason.EATS_SNAILS, reverse.check(CriterionKind.COHABITATION).reason)
+        assertEquals(Fit.BAD, reverse.fit)
+    }
+
+    @Test
+    fun `eats snails ignores shrimp`() {
+        val shrimp = species("cherry", kind = SpeciesKind.SHRIMP)
+        val loach = species("loach", tags = setOf(SpeciesTag.EATS_SNAILS), size = 10.0)
+        assertEquals(CriterionStatus.OK, assess(loach, present = listOf(PresentGroup(shrimp, shrimp.family, 5))).check(CriterionKind.COHABITATION).status)
+    }
 }

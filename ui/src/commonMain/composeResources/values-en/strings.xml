@@ -489,6 +489,7 @@
     <string name="habitants_reason_too_cold">Too cold</string>
     <string name="habitants_reason_eats_small_fish">Hunts small</string>
     <string name="habitants_reason_eats_shrimp">Eats shrimp</string>
+    <string name="habitants_reason_eats_snails">Eats snails</string>
     <string name="habitants_reason_fin_nipping">Fin nipping</string>
     <string name="habitants_reason_territorial">Territorial</string>
     <string name="habitants_reason_eats_plants">Eats plants</string>
@@ -502,6 +503,7 @@
     <string name="habitants_explain_too_cold">water too cold</string>
     <string name="habitants_explain_eats_small_fish">small fish risk being eaten</string>
     <string name="habitants_explain_eats_shrimp">shrimp risk being eaten</string>
+    <string name="habitants_explain_eats_snails">snails risk being eaten</string>
     <string name="habitants_explain_fin_nipping">long fins risk being nipped</string>
     <string name="habitants_explain_territorial">territorial with its own kind</string>
     <string name="habitants_explain_eats_plants">plants risk being eaten</string>

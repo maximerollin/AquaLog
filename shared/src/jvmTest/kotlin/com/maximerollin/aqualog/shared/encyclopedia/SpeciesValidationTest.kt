@@ -25,6 +25,8 @@ class SpeciesValidationTest {
         "minVolumeLiters":$minVolume,"adultSizeCm":$adultSize,"minGroup":$minGroup,"tags":["PEACEFUL"],"diet":"OMNIVORE",
         "lifespanYears":$lifespan,"zone":"MIDDLE","color":$color,"drawing":null}"""
 
+    private fun otherNames(n: String) = """{"fr":"$n","en":"$n","de":"$n","it":"$n","es":"$n"}"""
+
     private fun problems(vararg entries: String) = speciesProblems(decodeSpecies("[${entries.joinToString(",")}]"))
 
     private fun assertOneProblemNaming(id: String, problems: List<String>) {
@@ -44,9 +46,9 @@ class SpeciesValidationTest {
         assertFailsWith<SerializationException> { decodeSpecies("[${entry(family = "WHALE")}]") }
     }
 
-    @Test fun duplicateId() = assertOneProblemNaming("neon", problems(entry(), entry(wikidata = "Q1")))
+    @Test fun duplicateId() = assertOneProblemNaming("neon", problems(entry(), entry(wikidata = "Q1", names = otherNames("Autre"))))
 
-    @Test fun duplicateWikidata() = assertOneProblemNaming("neon-2", problems(entry(), entry(id = "neon-2")))
+    @Test fun duplicateWikidata() = assertOneProblemNaming("neon-2", problems(entry(), entry(id = "neon-2", names = otherNames("Autre"))))
 
     @Test fun idNotKebabCase() {
         for (id in listOf("Neon", "neon_tetra", "neon--tetra", "-neon", "néon")) assertOneProblemNaming(id, problems(entry(id = id)))
@@ -85,5 +87,15 @@ class SpeciesValidationTest {
 
     @Test fun colorMustBeOpaque() {
         for (c in listOf(0x00FF8F00L, 0x80FF8F00L, 0x1FFFF8F00L)) assertOneProblemNaming("neon", problems(entry(color = c)))
+    }
+
+    @Test fun sameNameInOneLanguageIsAProblem() {
+        val ps = problems(entry(), entry(id = "neon-2", wikidata = "Q1"))
+        assertTrue(ps.any { "duplicate fr name 'Néon'" in it }, ps.toString())
+    }
+
+    @Test fun lowercaseNameIsAProblem() {
+        val ps = problems(entry(names = """{"fr":"Néon","en":"Neon","de":"neon","it":"Neon","es":"Neon"}"""))
+        assertTrue(ps.any { "de name starts lowercase" in it }, ps.toString())
     }
 }

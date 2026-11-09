@@ -64,6 +64,7 @@ import com.maximerollin.aqualog.shared.encyclopedia.Fit
 import com.maximerollin.aqualog.shared.encyclopedia.PresentGroup
 import com.maximerollin.aqualog.shared.encyclopedia.Reason
 import com.maximerollin.aqualog.shared.encyclopedia.Species
+import com.maximerollin.aqualog.shared.encyclopedia.SpeciesKind
 import com.maximerollin.aqualog.shared.encyclopedia.ValueRange
 import com.maximerollin.aqualog.shared.encyclopedia.assessSpecies
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
@@ -154,7 +155,7 @@ internal fun SpeciesFiche(
         }
         Column {
             Text(stringResource(Res.string.habitants_fact_size, formatter.number(species.adultSizeCm, 1)))
-            Text(pluralStringResource(Res.plurals.habitants_fact_lifespan, species.lifespanYears, species.lifespanYears))
+            if (species.kind != SpeciesKind.PLANT) Text(pluralStringResource(Res.plurals.habitants_fact_lifespan, species.lifespanYears, species.lifespanYears))
             Text(stringResource(Res.string.habitants_fact_group, species.minGroup))
         }
         Column {
@@ -361,6 +362,7 @@ internal fun Reason.label(): String = stringResource(
         Reason.TOO_COLD -> Res.string.habitants_reason_too_cold
         Reason.EATS_SMALL_FISH -> Res.string.habitants_reason_eats_small_fish
         Reason.EATS_SHRIMP -> Res.string.habitants_reason_eats_shrimp
+        Reason.EATS_SNAILS -> Res.string.habitants_reason_eats_snails
         Reason.FIN_NIPPING -> Res.string.habitants_reason_fin_nipping
         Reason.TERRITORIAL -> Res.string.habitants_reason_territorial
         Reason.EATS_PLANTS -> Res.string.habitants_reason_eats_plants
@@ -381,6 +383,7 @@ private fun Reason.explanation(): String = stringResource(
         Reason.TOO_COLD -> Res.string.habitants_explain_too_cold
         Reason.EATS_SMALL_FISH -> Res.string.habitants_explain_eats_small_fish
         Reason.EATS_SHRIMP -> Res.string.habitants_explain_eats_shrimp
+        Reason.EATS_SNAILS -> Res.string.habitants_explain_eats_snails
         Reason.FIN_NIPPING -> Res.string.habitants_explain_fin_nipping
         Reason.TERRITORIAL -> Res.string.habitants_explain_territorial
         Reason.EATS_PLANTS -> Res.string.habitants_explain_eats_plants
