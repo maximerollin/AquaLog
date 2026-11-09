@@ -675,7 +675,7 @@
     "lifespanYears": 4,
     "zone": "MIDDLE",
     "color": 4282269246,
-    "drawing": null
+    "drawing": "species_neon_noir"
   },
   {
     "id": "tetra-nez-rouge",
@@ -717,7 +717,7 @@
     "lifespanYears": 5,
     "zone": "MIDDLE",
     "color": 4293227379,
-    "drawing": null
+    "drawing": "species_tetra_nez_rouge"
   },
   {
     "id": "tetra-citron",
@@ -843,7 +843,7 @@
     "lifespanYears": 3,
     "zone": "MIDDLE",
     "color": 4294929664,
-    "drawing": null
+    "drawing": "species_tetra_ember"
   },
   {
     "id": "tetra-empereur",
@@ -1642,7 +1642,7 @@
     "lifespanYears": 4,
     "zone": "MIDDLE",
     "color": 4293282329,
-    "drawing": null
+    "drawing": "species_xipho"
   },
   {
     "id": "endler",
@@ -1684,7 +1684,7 @@
     "lifespanYears": 2,
     "zone": "MIDDLE",
     "color": 4294942720,
-    "drawing": null
+    "drawing": "species_endler"
   },
   {
     "id": "platy-variatus",
@@ -1854,7 +1854,7 @@
     "lifespanYears": 20,
     "zone": "MIDDLE",
     "color": 4294930499,
-    "drawing": null
+    "drawing": "species_poisson_rouge"
   },
   {
     "id": "barbus-de-sumatra",
@@ -1896,7 +1896,7 @@
     "lifespanYears": 5,
     "zone": "MIDDLE",
     "color": 4294551589,
-    "drawing": null
+    "drawing": "species_barbus_de_sumatra"
   },
   {
     "id": "barbus-cerise",
@@ -1938,7 +1938,7 @@
     "lifespanYears": 4,
     "zone": "MIDDLE",
     "color": 4292030255,
-    "drawing": null
+    "drawing": "species_barbus_cerise"
   },
   {
     "id": "barbus-odessa",
@@ -2106,7 +2106,7 @@
     "lifespanYears": 3,
     "zone": "MIDDLE",
     "color": 4280191205,
-    "drawing": null
+    "drawing": "species_rasbora_galaxy"
   },
   {
     "id": "danio-choprae",
@@ -2316,7 +2316,7 @@
     "lifespanYears": 3,
     "zone": "MIDDLE",
     "color": 4294947584,
-    "drawing": null
+    "drawing": "species_vairon_de_chine"
   },
   {
     "id": "labeo-frenatus",
@@ -2652,7 +2652,7 @@
     "lifespanYears": 3,
     "zone": "BOTTOM",
     "color": 4283409369,
-    "drawing": null
+    "drawing": "species_ramirezi"
   },
   {
     "id": "apistogramma-cacatuoides",
@@ -2694,7 +2694,7 @@
     "lifespanYears": 5,
     "zone": "BOTTOM",
     "color": 4294938368,
-    "drawing": null
+    "drawing": "species_apistogramma_cacatuoides"
   },
   {
     "id": "apistogramma-agassizii",
@@ -2778,7 +2778,7 @@
     "lifespanYears": 10,
     "zone": "MIDDLE",
     "color": 4293284096,
-    "drawing": null
+    "drawing": "species_discus"
   },
   {
     "id": "kribensis",
@@ -2820,7 +2820,7 @@
     "lifespanYears": 5,
     "zone": "BOTTOM",
     "color": 4292352864,
-    "drawing": null
+    "drawing": "species_kribensis"
   },
   {
     "id": "oscar",
@@ -3331,7 +3331,7 @@
     "lifespanYears": 8,
     "zone": "SURFACE",
     "color": 4285160141,
-    "drawing": null
+    "drawing": "species_gourami_perle"
   },
   {
     "id": "gourami-bleu",
@@ -3675,7 +3675,7 @@
     "lifespanYears": 10,
     "zone": "BOTTOM",
     "color": 4288969800,
-    "drawing": null
+    "drawing": "species_corydoras_bronze"
   },
   {
     "id": "corydoras-paleatus",
@@ -3927,7 +3927,7 @@
     "lifespanYears": 20,
     "zone": "BOTTOM",
     "color": 4293429547,
-    "drawing": null
+    "drawing": "species_botia_clown"
   },
   {
     "id": "kuhli",
@@ -3969,7 +3969,7 @@
     "lifespanYears": 10,
     "zone": "BOTTOM",
     "color": 4290283083,
-    "drawing": null
+    "drawing": "species_kuhli"
   },
   {
     "id": "botia-yoyo",
@@ -4801,7 +4801,7 @@
     "lifespanYears": 2,
     "zone": "BOTTOM",
     "color": 4291176488,
-    "drawing": null
+    "drawing": "species_crevette_crystal_red"
   },
   {
     "id": "crevette-bambou",
@@ -4969,7 +4969,7 @@
     "lifespanYears": 2,
     "zone": "BOTTOM",
     "color": 4287458879,
-    "drawing": null
+    "drawing": "species_neritine"
   },
   {
     "id": "nerite-couronnee",
