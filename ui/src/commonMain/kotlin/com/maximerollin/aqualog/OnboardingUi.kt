@@ -28,6 +28,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,6 +45,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -66,10 +69,14 @@ import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.AccountDeletionPhase
+import com.maximerollin.aqualog.shared.FeedbackKind
+import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
@@ -185,7 +192,8 @@ fun AquaLogContent(
         FeedbackDialog(
             state = state.feedback,
             onMessageChanged = viewModel::updateFeedback,
-            onSubmit = viewModel::submitFeedback,
+            onKindSelected = viewModel::selectFeedbackKind,
+            onSubmit = { viewModel.submitFeedback(androidx.compose.ui.text.intl.Locale.current.toLanguageTag()) },
             onDismiss = viewModel::dismissFeedback,
         )
     }
@@ -1250,10 +1258,20 @@ private fun AccountSettingsUiState.localizedSafeDetail(): String? = safeMessage?
     )
 } ?: safeDetail
 
+private fun FeedbackKind.labelResource(): StringResource = when (this) {
+    FeedbackKind.BUG -> Res.string.feedback_kind_bug
+    FeedbackKind.TRANSLATION -> Res.string.feedback_kind_translation
+    FeedbackKind.SPECIES -> Res.string.feedback_kind_species
+    FeedbackKind.IDEA -> Res.string.feedback_kind_idea
+    FeedbackKind.OTHER -> Res.string.feedback_kind_other
+}
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FeedbackDialog(
     state: FeedbackUiState,
     onMessageChanged: (String) -> Unit,
+    onKindSelected: (FeedbackKind) -> Unit,
     onSubmit: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -1261,11 +1279,25 @@ private fun FeedbackDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(Res.string.feedback_title)) },
         text = {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Text(
                     stringResource(Res.string.feedback_privacy_explanation),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FeedbackKind.entries.forEach { kind ->
+                        FilterChip(
+                            selected = state.kind == kind,
+                            onClick = { onKindSelected(kind) },
+                            label = { Text(stringResource(kind.labelResource())) },
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        )
+                    }
+                }
+                state.speciesName?.let { Text(stringResource(Res.string.feedback_species_line, it), style = MaterialTheme.typography.bodyMedium) }
                 OutlinedTextField(
                     value = state.message,
                     onValueChange = onMessageChanged,
@@ -1276,11 +1308,14 @@ private fun FeedbackDialog(
                     minLines = 4,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                if (state.wasSubmitted) {
-                    Text(stringResource(Res.string.feedback_sent), color = MaterialTheme.colorScheme.primary)
-                }
-                if (state.isUnavailable) {
-                    Text(stringResource(Res.string.feedback_unavailable), color = MaterialTheme.colorScheme.error)
+                state.outcome?.let { outcome ->
+                    val (text, color) = when (outcome) {
+                        FeedbackOutcome.SENT -> Res.string.feedback_sent to MaterialTheme.colorScheme.primary
+                        FeedbackOutcome.RATE_LIMITED -> Res.string.feedback_rate_limited to MaterialTheme.colorScheme.error
+                        FeedbackOutcome.FAILED -> Res.string.feedback_failed to MaterialTheme.colorScheme.error
+                        FeedbackOutcome.UNAVAILABLE -> Res.string.feedback_unavailable to MaterialTheme.colorScheme.error
+                    }
+                    Text(stringResource(text), color = color, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                 }
             }
         },

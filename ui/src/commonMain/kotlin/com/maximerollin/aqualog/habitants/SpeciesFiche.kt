@@ -52,6 +52,7 @@ import com.maximerollin.aqualog.label
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.FeedbackKind
 import com.maximerollin.aqualog.shared.Inhabitant
 import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.OnboardingPresets
@@ -185,6 +186,10 @@ internal fun SpeciesFiche(
             )
         }
         if (add.saveFailed) Text(stringResource(Res.string.habitants_add_failed), color = MaterialTheme.colorScheme.error)
+        TextButton(
+            onClick = { viewModel.openFeedback(FeedbackKind.SPECIES, species.id, name) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+        ) { Text(stringResource(Res.string.feedback_report_species)) }
         Spacer(Modifier.height(16.dp))
     }
 }

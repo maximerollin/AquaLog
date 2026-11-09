@@ -180,10 +180,10 @@
     <string name="settings_placeholder">Konto-, Einheiten- und Darstellungseinstellungen werden in den entsprechenden Slices hinzugefügt.</string>
     <string name="feedback_title">Feedback senden</string>
     <string name="send_feedback">Feedback senden</string>
-    <string name="feedback_privacy_explanation">Nur die Nachricht, die Sie unten eingeben, wird übermittelt. Aquagenda fügt keine Wasserwerte, gespeicherten Notizen oder Beobachtungen, Aquariennamen, E-Mail-Adressen, Fotos oder Analysekennungen hinzu. Vermeiden Sie es, persönliche Daten hinzuzufügen, die Sie nicht weitergeben möchten.</string>
+    <string name="feedback_privacy_explanation">Ihre Nachricht, ihr Typ, die App-Version und die Sprache (bei einer Steckbrief-Meldung auch die Art) werden gesendet. Ohne Konto begrenzt eine zufällige Gerätekennung die Anzahl der Sendungen. Aquagenda fügt niemals Ihre Wasserwerte, Notizen, Aquariennamen, Fotos, E-Mail-Adresse oder Analysekennungen hinzu.</string>
     <string name="feedback_message_label">Feedback-Nachricht</string>
     <string name="feedback_character_count">%1$d/2000</string>
-    <string name="feedback_sent">Feedback gesendet. Danke schön.</string>
+    <string name="feedback_sent">Nachricht gesendet. Danke schön.</string>
     <string name="feedback_unavailable">Die Feedback-Übermittlung ist in diesem Build nicht konfiguriert. Ihre Nachricht wurde nicht gesendet.</string>
     <string name="sync_status_synced">✓ Synchronisiert</string>
     <string name="sync_status_pending">○ Synchronisierung steht aus</string>
@@ -564,4 +564,13 @@
     <string name="habitants_family_plant">Pflanze</string>
     <plurals name="habitants_badge_problems"><item quantity="one">✗ %1$d Problem</item><item quantity="other">✗ %1$d Probleme</item></plurals>
     <plurals name="habitants_fact_lifespan"><item quantity="one">Lebensdauer: %1$d Jahr</item><item quantity="other">Lebensdauer: %1$d Jahre</item></plurals>
+    <string name="feedback_kind_bug">Fehler</string>
+    <string name="feedback_kind_translation">Übersetzungsfehler</string>
+    <string name="feedback_kind_species">Fehler im Steckbrief</string>
+    <string name="feedback_kind_idea">Idee</string>
+    <string name="feedback_kind_other">Sonstiges</string>
+    <string name="feedback_species_line">Art: %1$s</string>
+    <string name="feedback_rate_limited">Gerade zu viele Nachrichten, versuchen Sie es später erneut.</string>
+    <string name="feedback_failed">Die Nachricht wurde nicht gesendet. Sie bleibt erhalten: versuchen Sie es später erneut.</string>
+    <string name="feedback_report_species">Fehler melden</string>
 </resources>

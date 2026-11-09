@@ -33,6 +33,7 @@ import com.maximerollin.aqualog.shared.DisabledProductTelemetry
 import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.FeedbackCoordinator
 import com.maximerollin.aqualog.shared.FeedbackGateway
+import com.maximerollin.aqualog.shared.FeedbackKind
 import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.GraphPeriod
 import com.maximerollin.aqualog.shared.MaintenanceAction
@@ -292,8 +293,10 @@ data class PortableDataUiState(
 data class FeedbackUiState(
     val isOpen: Boolean = false,
     val message: String = "",
-    val wasSubmitted: Boolean = false,
-    val isUnavailable: Boolean = false,
+    val kind: FeedbackKind = FeedbackKind.OTHER,
+    val speciesId: String? = null,
+    val speciesName: String? = null,
+    val outcome: FeedbackOutcome? = null,
 )
 
 enum class AccountSettingsDialog { NONE, LOGOUT, DELETE, PRIVACY, SUPPORT }
@@ -904,8 +907,18 @@ class HomeViewModel(
         }
     }
 
-    fun openFeedback() {
-        mutableUiState.update { it.copy(feedback = FeedbackUiState(isOpen = true)) }
+    fun openFeedback(
+        kind: FeedbackKind = FeedbackKind.OTHER,
+        speciesId: String? = null,
+        speciesName: String? = null,
+    ) {
+        mutableUiState.update {
+            it.copy(feedback = FeedbackUiState(isOpen = true, kind = kind, speciesId = speciesId, speciesName = speciesName))
+        }
+    }
+
+    fun selectFeedbackKind(kind: FeedbackKind) {
+        mutableUiState.update { it.copy(feedback = it.feedback.copy(kind = kind, outcome = null)) }
     }
 
     fun dismissFeedback() {
@@ -917,26 +930,23 @@ class HomeViewModel(
             state.copy(
                 feedback = state.feedback.copy(
                     message = value.take(2_000),
-                    wasSubmitted = false,
-                    isUnavailable = false,
+                    outcome = null,
                 ),
             )
         }
     }
 
-    fun submitFeedback() {
-        val message = mutableUiState.value.feedback.message
-        if (message.isBlank()) return
+    fun submitFeedback(language: String) {
+        val current = mutableUiState.value.feedback
+        if (current.message.isBlank()) return
+        val feedback = VoluntaryFeedback(current.message, current.kind, current.speciesId, language)
         viewModelScope.launch {
-            val delivered = runCatching {
-                feedbackCoordinator.submit(VoluntaryFeedback(message))
-            }.getOrDefault(FeedbackOutcome.FAILED) == FeedbackOutcome.SENT
+            val outcome = runCatching { feedbackCoordinator.submit(feedback) }.getOrDefault(FeedbackOutcome.FAILED)
             mutableUiState.update { state ->
                 state.copy(
                     feedback = state.feedback.copy(
-                        message = if (delivered) "" else state.feedback.message,
-                        wasSubmitted = delivered,
-                        isUnavailable = !delivered,
+                        message = if (outcome == FeedbackOutcome.SENT) "" else state.feedback.message,
+                        outcome = outcome,
                     ),
                 )
             }

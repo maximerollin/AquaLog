@@ -180,10 +180,10 @@
     <string name="settings_placeholder">Las configuraciones de cuenta, unidades y apariencia se agregarán en sus secciones dedicadas.</string>
     <string name="feedback_title">Enviar comentarios</string>
     <string name="send_feedback">Enviar comentarios</string>
-    <string name="feedback_privacy_explanation">Sólo se envía el mensaje que escriba a continuación. Aquagenda no adjunta valores del agua, notas u observaciones guardadas, nombres de acuarios, direcciones de correo electrónico, fotografías ni identificadores analíticos. Evite agregar datos personales que no desee compartir.</string>
+    <string name="feedback_privacy_explanation">Se envían su mensaje, su tipo, la versión de la app y su idioma (y la especie en el caso de una ficha). Sin cuenta, un identificador aleatorio del dispositivo limita los envíos. Aquagenda nunca adjunta sus valores del agua, notas, nombres de acuarios, fotografías, dirección de correo electrónico ni identificadores analíticos.</string>
     <string name="feedback_message_label">Mensaje de retroalimentación</string>
     <string name="feedback_character_count">%1$d/2000</string>
-    <string name="feedback_sent">Comentarios enviados. Gracias.</string>
+    <string name="feedback_sent">Mensaje enviado. Gracias.</string>
     <string name="feedback_unavailable">La entrega de comentarios no está configurada en esta compilación. Tu mensaje no fue enviado.</string>
     <string name="sync_status_synced">✓ Sincronizado</string>
     <string name="sync_status_pending">○ Sincronización pendiente</string>
@@ -564,4 +564,13 @@
     <string name="habitants_family_plant">Planta</string>
     <plurals name="habitants_badge_problems"><item quantity="one">✗ %1$d problema</item><item quantity="other">✗ %1$d problemas</item></plurals>
     <plurals name="habitants_fact_lifespan"><item quantity="one">Esperanza de vida: %1$d año</item><item quantity="other">Esperanza de vida: %1$d años</item></plurals>
+    <string name="feedback_kind_bug">Error</string>
+    <string name="feedback_kind_translation">Error de traducción</string>
+    <string name="feedback_kind_species">Error en la ficha</string>
+    <string name="feedback_kind_idea">Idea</string>
+    <string name="feedback_kind_other">Otro</string>
+    <string name="feedback_species_line">Especie: %1$s</string>
+    <string name="feedback_rate_limited">Demasiados mensajes en este momento, inténtelo de nuevo más tarde.</string>
+    <string name="feedback_failed">El mensaje no se envió. Se conserva: inténtelo de nuevo más tarde.</string>
+    <string name="feedback_report_species">Informar de un error</string>
 </resources>
