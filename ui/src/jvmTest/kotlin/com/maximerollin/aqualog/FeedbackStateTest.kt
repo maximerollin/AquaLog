@@ -10,6 +10,7 @@ import com.maximerollin.aqualog.shared.createAquaLogDatabase
 import com.maximerollin.aqualog.shared.createJvmDatabaseBuilder
 import java.nio.file.Files
 import java.util.UUID
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
@@ -108,5 +109,30 @@ class FeedbackStateTest {
         assertEquals(FeedbackKind.BUG, fixture.feedback.kind)
         assertEquals("Bonjour", fixture.feedback.message)
         fixture.close()
+    }
+
+    @Test
+    fun `a second submit while one is in flight is ignored`() = runTest {
+        val release = CompletableDeferred<Unit>()
+        val sent = mutableListOf<VoluntaryFeedback>()
+        val directory = Files.createTempDirectory("aqualog-feedback-vm")
+        val database = createAquaLogDatabase(createJvmDatabaseBuilder(directory.resolve("aqualog.db").toString()))
+        val viewModel = HomeViewModel(
+            RoomAquariumRepository(database, { UUID.randomUUID().toString() }, { 1_700_000_000_000L }),
+            feedbackGateway = FeedbackGateway { sent += it; release.await(); FeedbackOutcome.SENT },
+        )
+        viewModel.openFeedback()
+        viewModel.updateFeedback("Bonjour")
+
+        viewModel.submitFeedback("fr")
+        assertTrue(viewModel.uiState.value.feedback.isSending)
+        viewModel.submitFeedback("fr")
+        release.complete(Unit)
+
+        assertEquals(1, sent.size)
+        assertEquals(false, viewModel.uiState.value.feedback.isSending)
+        assertEquals(FeedbackOutcome.SENT, viewModel.uiState.value.feedback.outcome)
+        viewModel.viewModelScope.coroutineContext.job.cancelAndJoin()
+        database.close()
     }
 }

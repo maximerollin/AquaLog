@@ -203,7 +203,25 @@ class ReviewPromptStateTest {
     }
 
     @Test
-    fun `leaving a review asks Google`() = runTest {
+    fun `leaving a review opens the store page and never calls the review API`() = runTest {
+        val fixture = Fixture(ReviewHistory(4, false, null, false))
+        fixture.start()
+        fixture.saveNewSession()
+        fixture.await { fixture.state.reviewDiscoveryVisible }
+        var storeOpened = 0
+
+        fixture.viewModel.answerReviewDiscovery(leaveReview = true, openStorePage = { storeOpened += 1 })
+
+        assertFalse(fixture.state.reviewDiscoveryVisible)
+        assertEquals(0, fixture.requests)
+        assertEquals(1, storeOpened)
+        assertTrue(fixture.stored.discoverySeen)
+        assertEquals(1_700_000_000_000L, fixture.stored.lastRequestedAtEpochMillis)
+        fixture.close()
+    }
+
+    @Test
+    fun `leaving a review without a store page falls back to the gateway`() = runTest {
         val fixture = Fixture(ReviewHistory(4, false, null, false))
         fixture.start()
         fixture.saveNewSession()
@@ -211,7 +229,6 @@ class ReviewPromptStateTest {
 
         fixture.viewModel.answerReviewDiscovery(leaveReview = true)
 
-        assertFalse(fixture.state.reviewDiscoveryVisible)
         assertEquals(1, fixture.requests)
         fixture.close()
     }

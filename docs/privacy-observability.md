@@ -34,8 +34,11 @@ component, and optional synchronization category; no user identifier is set.
 ## Voluntary feedback and reviews
 
 Feedback uses `FeedbackGateway`, never `ProductTelemetry` or `CrashReporter`.
-The Settings dialog explains exactly what is submitted and reminds the user not
-to type personal details. `DisabledFeedbackGateway` makes the missing delivery
+The dialog explains exactly what is submitted (message, type, app version, app
+language and, from a species page, the species) and that a random device
+identifier limits sends without an account; it states that Aquagenda never
+attaches water values, notes, Aquarium names, photos, email address or
+analytics identifiers. `DisabledFeedbackGateway` makes the missing delivery
 integration visible and does not claim the message was sent. When
 `AQUALOG_FEEDBACK_URL` (or the configured Supabase Edge URL) exists, the
 dedicated `submit-feedback` function accepts the message, its type, the app
@@ -48,8 +51,9 @@ id is a random identifier used only for that limit.
 Review eligibility is stored locally. On the fifth calm new Session (no value out
 of range, not a Cycling Aquarium; editing a Session never counts), then at most
 every 90 days, Aquagenda asks for a review. The first time, a one-time
-« Votre avis compte » dialog explains it and offers « Laisser un avis » or
-« Plus tard »; later requests call Google Play In-App Review directly. There is
+« Votre avis compte » dialog explains it and offers « Laisser un avis »
+(which opens the Google Play page, not the In-App Review API) or « Plus tard »;
+later 90-day requests call Google Play In-App Review directly. There is
 no satisfaction pre-question. The request date is persisted before the native
 request so recreation or retries cannot prompt repeatedly. Settings also offer
 « Noter Aquagenda », which opens the store page. The review-flow LogSnag

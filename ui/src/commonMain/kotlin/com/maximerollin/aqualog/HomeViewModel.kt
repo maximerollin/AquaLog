@@ -298,6 +298,7 @@ data class FeedbackUiState(
     val speciesId: String? = null,
     val speciesName: String? = null,
     val outcome: FeedbackOutcome? = null,
+    val isSending: Boolean = false,
 )
 
 enum class AccountSettingsDialog { NONE, LOGOUT, DELETE, PRIVACY, SUPPORT }
@@ -942,8 +943,9 @@ class HomeViewModel(
 
     fun submitFeedback(language: String) {
         val current = mutableUiState.value.feedback
-        if (current.message.isBlank()) return
+        if (current.message.isBlank() || current.isSending) return
         val feedback = VoluntaryFeedback(current.message, current.kind, current.speciesId, language)
+        mutableUiState.update { it.copy(feedback = it.feedback.copy(isSending = true, outcome = null)) }
         viewModelScope.launch {
             val outcome = runCatching { feedbackCoordinator.submit(feedback) }.getOrDefault(FeedbackOutcome.FAILED)
             mutableUiState.update { state ->
@@ -951,6 +953,7 @@ class HomeViewModel(
                     feedback = state.feedback.copy(
                         message = if (outcome == FeedbackOutcome.SENT) "" else state.feedback.message,
                         outcome = outcome,
+                        isSending = false,
                     ),
                 )
             }
@@ -2183,9 +2186,15 @@ class HomeViewModel(
         }
     }
 
-    fun answerReviewDiscovery(leaveReview: Boolean) {
+    /**
+     * Answers the first-time dialog. « Laisser un avis » opens the store page when [openStorePage] exists (Google advises
+     * against triggering the In-App Review API from a button); otherwise it falls back to the gateway.
+     */
+    fun answerReviewDiscovery(leaveReview: Boolean, openStorePage: (() -> Unit)? = null) {
         mutableUiState.update { it.copy(reviewDiscoveryVisible = false) }
-        reviewCoordinator?.onDiscoveryAnswered(leaveReview)
+        val viaStore = leaveReview && openStorePage != null
+        reviewCoordinator?.onDiscoveryAnswered(leaveReview && !viaStore)
+        if (viaStore) openStorePage?.invoke()
     }
 
     fun continueAfterSessionConfirmation() {

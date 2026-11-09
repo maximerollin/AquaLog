@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
         (application as AquaLogApplication).proPurchaseCoordinator(this)
     }
     private val reviewCoordinator by lazy {
-        (application as AquaLogApplication).reviewCoordinator(this)
+        (application as AquaLogApplication).reviewCoordinator()
     }
     private val homeViewModel: HomeViewModel by viewModels {
         val application = application as AquaLogApplication
@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        (application as AquaLogApplication).attachReviewActivity(this)
         proPurchaseCoordinator
         setContent {
             AquaLogTheme {
@@ -93,6 +94,11 @@ class MainActivity : ComponentActivity() {
         handleAuthenticationIntent(intent)
         // A recreation still carries the launch intent, whose extras were already handled.
         if (savedInstanceState == null) handleWidgetIntent(intent)
+    }
+
+    override fun onDestroy() {
+        (application as AquaLogApplication).detachReviewActivity(this)
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {

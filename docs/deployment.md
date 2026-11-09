@@ -10,7 +10,22 @@ La publication est manuelle (`workflow_dispatch`) et dépend de la réussite de 
 
 **Ordre de déploiement — appliquer les migrations backend avant de publier l’app.** Avant tout `workflow_dispatch` de publication, appliquer sur le Supabase de production toutes les migrations versionnées de `supabase/migrations/` (`supabase db push`), en particulier `20261104100000_aquarium_photos.sql` (lot 4 : bucket `aquarium-photos`, colonne `photo_id`) et `20261105100000_inhabitants.sql` (lot 5 : table `inhabitants`). L’app lit `inhabitants` à chaque synchronisation : publiée avant la migration, chaque pull échoue et toute la synchronisation s’arrête. Vérifier dans le tableau de bord Supabase que la table `inhabitants` existe avant de lancer la publication.
 
-**Avis et commentaires — déployer la migration et la fonction avant l’app.** Avant de publier une app qui envoie les nouveaux champs (type, espèce, version, langue, identifiant d’installation), appliquer la migration `20261110100000_product_feedback_context.sql` (`supabase db push`), puis déployer la fonction Edge `submit-feedback` (`supabase functions deploy submit-feedback`). La fonction a `verify_jwt = false` : elle vérifie elle-même le jeton Bearer (`401` s’il est invalide) et accepte sans jeton un retour anonyme portant un identifiant d’installation.
+**Avis et commentaires — déployer la migration et la fonction avant l’app.** Avant de publier une app qui envoie les nouveaux champs (type, espèce, version, langue, identifiant d’installation), appliquer la migration `20261110100000_product_feedback_context.sql` (`supabase db push`), puis déployer la fonction Edge `submit-feedback` (`supabase functions deploy submit-feedback --no-verify-jwt`, explicite, sans se reposer sur `config.toml` seul). La fonction vérifie elle-même le jeton Bearer (`401` s’il est invalide) et accepte sans jeton un retour anonyme portant un identifiant d’installation.
+
+Contrôle après déploiement (`$URL` = `https://<projet>.supabase.co/functions/v1/submit-feedback`) :
+
+```bash
+# Corps vide, sans authentification : 400
+curl -s -o /dev/null -w '%{http_code}\n' -X POST "$URL" -H 'Content-Type: application/json' -d '{}'
+# Retour anonyme valide : 204 (puis supprimer la ligne en SQL : delete from product_feedback where message = 'smoke test';)
+curl -s -o /dev/null -w '%{http_code}\n' -X POST "$URL" -H 'Content-Type: application/json' \
+  -d "{\"message\":\"smoke test\",\"installId\":\"$(uuidgen | tr A-Z a-z)\"}"
+# Jeton invalide + corps valide : 401
+curl -s -o /dev/null -w '%{http_code}\n' -X POST "$URL" -H 'Content-Type: application/json' -H 'Authorization: Bearer garbage' \
+  -d "{\"message\":\"smoke test\",\"installId\":\"$(uuidgen | tr A-Z a-z)\"}"
+```
+
+Attendu : `400`, `204`, `401`. Supprimer la ligne `smoke test` créée par le deuxième appel avant de poursuivre.
 
 Protections attendues :
 
@@ -38,6 +53,11 @@ Configuration publique de l’app transmise comme secrets GitHub :
 Les groupes Supabase/PostHog/Firebase/LogSnag doivent être complets ou entièrement absents ; la publication exige Supabase, RevenueCat et les URLs de confidentialité/support. Le workflow choisit `AQUALOG_DISTRIBUTION_TRACK`, `versionCode=GITHUB_RUN_NUMBER`, `versionName=0.1.<run>`. Maintenir un versionCode supérieur à toute version déjà téléversée et conserver la même clé d’upload. Un premier téléversement manuel et les formalités Play Console peuvent être nécessaires avant l’accès API. Les secrets serveur RevenueCat/LogSnag et service_role restent exclusivement dans Supabase : voir [configuration des achats](revenuecat-setup.md).
 
 Le debug porte le même package, mais sa signature diffère normalement de Play : il ne peut pas cohabiter avec l’app du store. Préserver les données via export avant un changement d’installation nécessitant une désinstallation ; aucune suppression automatique n’est prévue. Les anciens packages `.dev`/`.beta` ne sont pas migrés automatiquement.
+
+## Liste de contrôle de publication
+
+- Mettre à jour la politique de confidentialité hébergée (retours utilisateur avec ou sans compte, identifiant d’installation aléatoire, demande d’avis Google Play) avant la mise en ligne.
+- Mettre à jour le formulaire « Sécurité des données » de la Play Console : contenu généré par l’utilisateur (retours envoyés au développeur) et identifiant aléatoire de l’appareil pour les retours sans compte.
 
 ## Qualification locale
 

@@ -16,7 +16,6 @@ import com.maximerollin.aqualog.shared.ReviewHistory
 import com.maximerollin.aqualog.shared.MigratingReviewHistoryStore
 import com.maximerollin.aqualog.shared.RawReviewValues
 import com.maximerollin.aqualog.shared.ReviewValuesStorage
-import java.lang.ref.WeakReference
 
 internal class AndroidReviewValuesStorage(context: Context) : ReviewValuesStorage {
     private val preferences = context.applicationContext.getSharedPreferences(
@@ -58,11 +57,13 @@ internal class AndroidReviewValuesStorage(context: Context) : ReviewValuesStorag
     }
 }
 
-internal class GooglePlayInAppReviewGateway(activity: Activity, private val telemetry: ProductTelemetry = DisabledProductTelemetry) : InAppReviewGateway {
-    private val activityReference = WeakReference(activity)
-
+/** Resolves the Activity at request time: the coordinator outlives the Activity across rotations and theme changes. */
+internal class GooglePlayInAppReviewGateway(
+    private val currentActivity: () -> Activity?,
+    private val telemetry: ProductTelemetry = DisabledProductTelemetry,
+) : InAppReviewGateway {
     override fun requestReview() {
-        val activity = activityReference.get() ?: return
+        val activity = currentActivity() ?: return
         val manager = ReviewManagerFactory.create(activity.applicationContext)
         manager.requestReviewFlow().addOnCompleteListener { request ->
             if (request.isSuccessful) {
@@ -79,12 +80,17 @@ internal class GooglePlayInAppReviewGateway(activity: Activity, private val tele
 
 internal fun androidReviewCoordinator(
     context: Context,
-    activity: Activity,
+    currentActivity: () -> Activity?,
     currentTimeMillis: () -> Long = System::currentTimeMillis,
     telemetry: ProductTelemetry = DisabledProductTelemetry,
-) = ReviewCoordinator(
-    policy = ReviewEligibilityPolicy(),
-    store = MigratingReviewHistoryStore(AndroidReviewValuesStorage(context), currentTimeMillis),
-    gateway = GooglePlayInAppReviewGateway(activity, telemetry),
-    currentTimeMillis = currentTimeMillis,
-)
+): ReviewCoordinator {
+    val store = MigratingReviewHistoryStore(AndroidReviewValuesStorage(context), currentTimeMillis)
+    // Loading now fixes a legacy request date at app start after the update, not at the first new Session.
+    store.load()
+    return ReviewCoordinator(
+        policy = ReviewEligibilityPolicy(),
+        store = store,
+        gateway = GooglePlayInAppReviewGateway(currentActivity, telemetry),
+        currentTimeMillis = currentTimeMillis,
+    )
+}

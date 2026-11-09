@@ -185,6 +185,17 @@ open class AquaLogApplication : Application() {
         return defaultProPurchaseCoordinator
     }
 
-    open fun reviewCoordinator(activity: Activity): ReviewCoordinator =
-        androidReviewCoordinator(this, activity, telemetry = productTelemetry)
+    /** The live MainActivity, set in onCreate and cleared in onDestroy: the review gateway resolves it per request. */
+    private var reviewActivity: java.lang.ref.WeakReference<Activity>? = null
+
+    fun attachReviewActivity(activity: Activity) {
+        reviewActivity = java.lang.ref.WeakReference(activity)
+    }
+
+    fun detachReviewActivity(activity: Activity) {
+        if (reviewActivity?.get() === activity) reviewActivity = null
+    }
+
+    open fun reviewCoordinator(): ReviewCoordinator =
+        androidReviewCoordinator(this, { reviewActivity?.get() }, telemetry = productTelemetry)
 }

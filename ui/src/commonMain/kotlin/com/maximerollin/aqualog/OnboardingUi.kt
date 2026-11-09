@@ -8,7 +8,8 @@ import androidx.compose.runtime.setValue
 import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
 import com.maximerollin.aqualog.home.HabitantsSheet
 import com.maximerollin.aqualog.shared.encyclopedia.Species
-import java.util.Locale
+import androidx.compose.ui.text.intl.Locale
+import java.util.Locale as JavaLocale
 import kotlin.coroutines.cancellation.CancellationException
 import com.maximerollin.aqualog.ui.icon.*
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -194,7 +195,7 @@ fun AquaLogContent(
             state = state.feedback,
             onMessageChanged = viewModel::updateFeedback,
             onKindSelected = viewModel::selectFeedbackKind,
-            onSubmit = { viewModel.submitFeedback(androidx.compose.ui.text.intl.Locale.current.toLanguageTag()) },
+            onSubmit = { viewModel.submitFeedback(feedbackLanguage(Locale.current.language)) },
             onDismiss = viewModel::dismissFeedback,
         )
     }
@@ -319,7 +320,7 @@ private fun AquariumShell(
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding)
         when (state.destination) {
-            MainDestination.TANK -> TankHome(state, viewModel, contentModifier)
+            MainDestination.TANK -> TankHome(state, viewModel, contentModifier, rateApp)
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
             MainDestination.TRENDS -> TrendsScreen(state, viewModel, contentModifier)
             MainDestination.MORE -> PortableDataSettings(
@@ -584,7 +585,7 @@ private fun PortableDataSettings(
         HabitantsSheet(
             groups = homeState.inhabitants,
             encyclopedia = encyclopedia,
-            language = remember { Locale.getDefault().language },
+            language = remember { JavaLocale.getDefault().language },
             onRemove = viewModel::removeInhabitants,
             onAdd = {
                 showHabitants = false
@@ -1327,7 +1328,7 @@ private fun FeedbackDialog(
         confirmButton = {
             TextButton(
                 onClick = onSubmit,
-                enabled = state.message.isNotBlank(),
+                enabled = state.message.isNotBlank() && !state.isSending,
                 modifier = Modifier.testTag("submit-feedback").heightIn(min = 48.dp),
             ) {
                 Text(stringResource(Res.string.send_feedback))
