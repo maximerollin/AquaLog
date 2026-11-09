@@ -1,6 +1,18 @@
 package com.maximerollin.aqualog.encyclopedia
 
+import com.maximerollin.aqualog.shared.Aquarium
+import com.maximerollin.aqualog.shared.AquariumProfile
+import com.maximerollin.aqualog.shared.AquariumSetup
+import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.Inhabitant
+import com.maximerollin.aqualog.shared.LatestReading
+import com.maximerollin.aqualog.shared.OnboardingPresets
+import com.maximerollin.aqualog.shared.ParameterDefinition
+import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.shared.encyclopedia.CriterionKind
+import com.maximerollin.aqualog.shared.encyclopedia.CriterionStatus
+import com.maximerollin.aqualog.shared.encyclopedia.Reason
+import com.maximerollin.aqualog.shared.encyclopedia.assessSpecies
 import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
 import com.maximerollin.aqualog.shared.encyclopedia.speciesProblems
 import java.io.File
@@ -45,5 +57,19 @@ class EncyclopediaFileTest {
         assertEquals("Mon poisson", inhabitant(null, "Mon poisson").displayName(species, "en"))
         assertEquals(s.id, inhabitant(s.id, null).displayName(null, "en"))
         assertEquals("gone", inhabitant("gone", null).displayName(species, "en"))
+    }
+
+    @Test fun poissonRougeIsTooColdForATropicalTank() {
+        val goldfish = species.single { it.id == "poisson-rouge" }
+        val temperature = ParameterDefinition(
+            "d-temperature", "a", BuiltInParameter.TEMPERATURE, true, 0,
+            OnboardingPresets.presetUnit(BuiltInParameter.TEMPERATURE), 1, null, null,
+        )
+        val setup = AquariumSetup(Aquarium("a", "Tropical", 200.0, VolumeUnit.LITERS, 0L, AquariumProfile.ESTABLISHED), listOf(temperature))
+        val readings = listOf(LatestReading("d-temperature", 28.0, 0L))
+        val check = assessSpecies(goldfish, setup, readings, emptyList(), goldfish.minGroup)
+            .checks.single { it.kind == CriterionKind.TEMPERATURE }
+        assertEquals(CriterionStatus.PROBLEM, check.status)
+        assertEquals(Reason.TOO_WARM, check.reason)
     }
 }

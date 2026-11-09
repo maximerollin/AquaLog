@@ -1601,5 +1601,1015 @@
     "zone": "MIDDLE",
     "color": 4289773253,
     "drawing": null
+  },
+  {
+    "id": "xipho",
+    "wikidata": "Q272188",
+    "scientificName": "Xiphophorus hellerii",
+    "names": {
+      "fr": "Xipho",
+      "en": "Swordtail",
+      "de": "Schwertträger",
+      "it": "Portaspada",
+      "es": "Portaespada"
+    },
+    "kind": "FISH",
+    "family": "LIVEBEARER",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.8,
+      "max": 7.8
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 10.0,
+      "max": 25.0
+    },
+    "kh": {
+      "min": 4.0,
+      "max": 12.0
+    },
+    "minVolumeLiters": 150,
+    "adultSizeCm": 10.0,
+    "minGroup": 5,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4293282329,
+    "drawing": null
+  },
+  {
+    "id": "endler",
+    "wikidata": "Q1340577",
+    "scientificName": "Poecilia wingei",
+    "names": {
+      "fr": "Guppy Endler",
+      "en": "Endler's guppy",
+      "de": "Endlers Guppy",
+      "it": "Endler",
+      "es": "Guppy endler"
+    },
+    "kind": "FISH",
+    "family": "LIVEBEARER",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.8,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 8.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 4.0,
+      "max": 12.0
+    },
+    "minVolumeLiters": 40,
+    "adultSizeCm": 3.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 2,
+    "zone": "MIDDLE",
+    "color": 4294942720,
+    "drawing": null
+  },
+  {
+    "id": "platy-variatus",
+    "wikidata": "Q265715",
+    "scientificName": "Xiphophorus variatus",
+    "names": {
+      "fr": "Platy varié",
+      "en": "Variatus platy",
+      "de": "Papageienkärpfling",
+      "it": "Platy variatus",
+      "es": "Platy variatus"
+    },
+    "kind": "FISH",
+    "family": "LIVEBEARER",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 7.0,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 18.0,
+      "max": 25.0
+    },
+    "gh": {
+      "min": 9.0,
+      "max": 19.0
+    },
+    "kh": {
+      "min": 4.0,
+      "max": 12.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 6.0,
+    "minGroup": 5,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 3,
+    "zone": "MIDDLE",
+    "color": 4280723098,
+    "drawing": null
+  },
+  {
+    "id": "molly-voile",
+    "wikidata": "Q906572",
+    "scientificName": "Poecilia latipinna",
+    "names": {
+      "fr": "Molly voile",
+      "en": "Sailfin molly",
+      "de": "Breitflossenkärpfling",
+      "it": "Molly dalla pinna a vela",
+      "es": "Molly de vela"
+    },
+    "kind": "FISH",
+    "family": "LIVEBEARER",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 7.0,
+      "max": 8.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 10.0,
+      "max": 25.0
+    },
+    "kh": {
+      "min": 6.0,
+      "max": 15.0
+    },
+    "minVolumeLiters": 200,
+    "adultSizeCm": 12.0,
+    "minGroup": 4,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 3,
+    "zone": "MIDDLE",
+    "color": 4281812815,
+    "drawing": null
+  },
+  {
+    "id": "heterandria",
+    "wikidata": "Q244221",
+    "scientificName": "Heterandria formosa",
+    "names": {
+      "fr": "Hétérandria",
+      "en": "Least killifish",
+      "de": "Zwergkärpfling",
+      "it": "Heterandria",
+      "es": "Heterandria"
+    },
+    "kind": "FISH",
+    "family": "LIVEBEARER",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 7.0,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 18.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 8.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 4.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 20,
+    "adultSizeCm": 3.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 2,
+    "zone": "MIDDLE",
+    "color": 4287458915,
+    "drawing": null
+  },
+  {
+    "id": "poisson-rouge",
+    "wikidata": "Q123141",
+    "scientificName": "Carassius auratus",
+    "names": {
+      "fr": "Poisson rouge",
+      "en": "Goldfish",
+      "de": "Goldfisch",
+      "it": "Pesce rosso",
+      "es": "Pez dorado"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.5,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 15.0,
+      "max": 23.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 12.0
+    },
+    "minVolumeLiters": 150,
+    "adultSizeCm": 20.0,
+    "minGroup": 2,
+    "tags": [
+      "EATS_SMALL_FISH",
+      "EATS_SHRIMP",
+      "EATS_PLANTS"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 20,
+    "zone": "MIDDLE",
+    "color": 4294930499,
+    "drawing": null
+  },
+  {
+    "id": "barbus-de-sumatra",
+    "wikidata": "Q28599883",
+    "scientificName": "Puntigrus tetrazona",
+    "names": {
+      "fr": "Barbus de Sumatra",
+      "en": "Tiger barb",
+      "de": "Sumatrabarbe",
+      "it": "Barbo di Sumatra",
+      "es": "Barbo de Sumatra"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 6.0,
+    "minGroup": 8,
+    "tags": [
+      "FIN_NIPPER"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4294551589,
+    "drawing": null
+  },
+  {
+    "id": "barbus-cerise",
+    "wikidata": "Q637598",
+    "scientificName": "Puntius titteya",
+    "names": {
+      "fr": "Barbus cerise",
+      "en": "Cherry barb",
+      "de": "Bitterlingsbarbe",
+      "it": "Barbo ciliegia",
+      "es": "Barbo cereza"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 5.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4292030255,
+    "drawing": null
+  },
+  {
+    "id": "barbus-odessa",
+    "wikidata": "Q1628938",
+    "scientificName": "Pethia padamya",
+    "names": {
+      "fr": "Barbus odessa",
+      "en": "Odessa barb",
+      "de": "Odessabarbe",
+      "it": "Barbo di Odessa",
+      "es": "Barbo odessa"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 80,
+    "adultSizeCm": 7.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4291176488,
+    "drawing": null
+  },
+  {
+    "id": "barbus-rose",
+    "wikidata": "Q844624",
+    "scientificName": "Pethia conchonius",
+    "names": {
+      "fr": "Barbus rose",
+      "en": "Rosy barb",
+      "de": "Prachtbarbe",
+      "it": "Barbo rosa",
+      "es": "Barbo rosa"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 18.0,
+      "max": 25.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 19.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 100,
+    "adultSizeCm": 8.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4293227379,
+    "drawing": null
+  },
+  {
+    "id": "barbus-denisonii",
+    "wikidata": "Q28149684",
+    "scientificName": "Sahyadria denisonii",
+    "names": {
+      "fr": "Barbus de Denison",
+      "en": "Denison barb",
+      "de": "Denisonbarbe",
+      "it": "Barbo di Denison",
+      "es": "Barbo de Denison"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 300,
+    "adultSizeCm": 14.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "MIDDLE",
+    "color": 4290190364,
+    "drawing": null
+  },
+  {
+    "id": "rasbora-galaxy",
+    "wikidata": "Q685364",
+    "scientificName": "Danio margaritatus",
+    "names": {
+      "fr": "Rasbora galaxy",
+      "en": "Celestial pearl danio",
+      "de": "Perlhuhnbärbling",
+      "it": "Rasbora galaxy",
+      "es": "Rasbora galaxy"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 21.0,
+      "max": 25.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 30,
+    "adultSizeCm": 2.5,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 3,
+    "zone": "MIDDLE",
+    "color": 4280191205,
+    "drawing": null
+  },
+  {
+    "id": "danio-choprae",
+    "wikidata": "Q1676526",
+    "scientificName": "Danio choprae",
+    "names": {
+      "fr": "Danio choprae",
+      "en": "Glowlight danio",
+      "de": "Rubinbärbling",
+      "it": "Danio choprae",
+      "es": "Danio choprae"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 4.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 60,
+    "adultSizeCm": 4.0,
+    "minGroup": 6,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4294937189,
+    "drawing": null
+  },
+  {
+    "id": "rasbora-moustique",
+    "wikidata": "Q2702953",
+    "scientificName": "Boraras brigittae",
+    "names": {
+      "fr": "Rasbora moustique",
+      "en": "Mosquito rasbora",
+      "de": "Moskitobärbling",
+      "it": "Rasbora moustique",
+      "es": "Rasbora mosquito"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 1.0,
+      "max": 8.0
+    },
+    "kh": {
+      "min": 0.0,
+      "max": 4.0
+    },
+    "minVolumeLiters": 30,
+    "adultSizeCm": 2.0,
+    "minGroup": 10,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "CARNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4293212469,
+    "drawing": null
+  },
+  {
+    "id": "rasbora-espei",
+    "wikidata": "Q28599938",
+    "scientificName": "Trigonostigma espei",
+    "names": {
+      "fr": "Rasbora espei",
+      "en": "Espe's rasbora",
+      "de": "Espes Keilfleckbärbling",
+      "it": "Rasbora espei",
+      "es": "Rasbora espei"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 5.0
+    },
+    "minVolumeLiters": 40,
+    "adultSizeCm": 3.0,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4294675456,
+    "drawing": null
+  },
+  {
+    "id": "rasbora-nain",
+    "wikidata": "Q765708",
+    "scientificName": "Boraras maculatus",
+    "names": {
+      "fr": "Rasbora nain",
+      "en": "Dwarf rasbora",
+      "de": "Boraras maculatus",
+      "it": "Boraras maculatus",
+      "es": "Boraras maculatus"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 5.5,
+      "max": 7.0
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 28.0
+    },
+    "gh": {
+      "min": 2.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 1.0,
+      "max": 5.0
+    },
+    "minVolumeLiters": 30,
+    "adultSizeCm": 2.0,
+    "minGroup": 10,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 4,
+    "zone": "MIDDLE",
+    "color": 4290721292,
+    "drawing": null
+  },
+  {
+    "id": "vairon-de-chine",
+    "wikidata": "Q1136461",
+    "scientificName": "Tanichthys albonubes",
+    "names": {
+      "fr": "Néon du pauvre",
+      "en": "White Cloud Mountain minnow",
+      "de": "Kardinalfisch",
+      "it": "Pesce delle Montagne della Nuvola Bianca",
+      "es": "Pez nube blanca"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 16.0,
+      "max": 24.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 54,
+    "adultSizeCm": 3.5,
+    "minGroup": 10,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 3,
+    "zone": "MIDDLE",
+    "color": 4294947584,
+    "drawing": null
+  },
+  {
+    "id": "labeo-frenatus",
+    "wikidata": "Q1431766",
+    "scientificName": "Epalzeorhynchos frenatum",
+    "names": {
+      "fr": "Labéo tricolore",
+      "en": "Rainbow shark",
+      "de": "Grüner Fransenlipper",
+      "it": "Squalo arcobaleno",
+      "es": "Tiburón arcoíris"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "BOTTOM",
+    "ph": {
+      "min": 6.5,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 24.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 11.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 200,
+    "adultSizeCm": 15.0,
+    "minGroup": 1,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "BOTTOM",
+    "color": 4284513675,
+    "drawing": null
+  },
+  {
+    "id": "labeo-bicolore",
+    "wikidata": "Q301058",
+    "scientificName": "Epalzeorhynchos bicolor",
+    "names": {
+      "fr": "Labéo bicolore",
+      "en": "Red-tailed black shark",
+      "de": "Feuerschwanz-Fransenlipper",
+      "it": "Squalo coda rossa",
+      "es": "Labeo bicolor"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "BOTTOM",
+    "ph": {
+      "min": 6.8,
+      "max": 7.8
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 26.0
+    },
+    "gh": {
+      "min": 4.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 250,
+    "adultSizeCm": 14.0,
+    "minGroup": 1,
+    "tags": [
+      "TERRITORIAL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "BOTTOM",
+    "color": 4280361249,
+    "drawing": null
+  },
+  {
+    "id": "mangeur-algues-siamois",
+    "wikidata": "Q1570265",
+    "scientificName": "Crossocheilus oblongus",
+    "names": {
+      "fr": "Mangeur d'algues siamois",
+      "en": "Siamese algae eater",
+      "de": "Siamesische Rüsselbarbe",
+      "it": "Volpe volante siamese",
+      "es": "Come algas siamés"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "GLIDE",
+    "ph": {
+      "min": 6.5,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 20.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 200,
+    "adultSizeCm": 14.0,
+    "minGroup": 3,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "ALGAE",
+    "lifespanYears": 10,
+    "zone": "BOTTOM",
+    "color": 4287458915,
+    "drawing": null
+  },
+  {
+    "id": "barbus-requin",
+    "wikidata": "Q187808",
+    "scientificName": "Balantiocheilos melanopterus",
+    "names": {
+      "fr": "Barbus requin",
+      "en": "Bala shark",
+      "de": "Haibarbe",
+      "it": "Barbo squalo",
+      "es": "Barbo tiburón"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 8.0
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 500,
+    "adultSizeCm": 30.0,
+    "minGroup": 5,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 10,
+    "zone": "MIDDLE",
+    "color": 4289773253,
+    "drawing": null
+  },
+  {
+    "id": "rasbora-ciseaux",
+    "wikidata": "Q1529385",
+    "scientificName": "Rasbora trilineata",
+    "names": {
+      "fr": "Rasbora-ciseaux",
+      "en": "Three-lined rasbora",
+      "de": "Glasbärbling",
+      "it": "Rasbora dalla coda a forbice",
+      "es": "Rasbora cola de tijera"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 23.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 4.0,
+      "max": 12.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 8.0
+    },
+    "minVolumeLiters": 150,
+    "adultSizeCm": 10.0,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 5,
+    "zone": "SURFACE",
+    "color": 4291811548,
+    "drawing": null
+  },
+  {
+    "id": "barbus-schwanenfeldi",
+    "wikidata": "Q2427972",
+    "scientificName": "Barbonymus schwanefeldii",
+    "names": {
+      "fr": "Barbus de Schwanenfeld",
+      "en": "Tinfoil barb",
+      "de": "Barbonymus schwanenfeldii",
+      "it": "Barbo di Schwanenfeld",
+      "es": "Barbo de Schwanenfeld"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 5.0,
+      "max": 15.0
+    },
+    "kh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "minVolumeLiters": 500,
+    "adultSizeCm": 30.0,
+    "minGroup": 5,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 8,
+    "zone": "MIDDLE",
+    "color": 4291811548,
+    "drawing": null
+  },
+  {
+    "id": "danio-vert",
+    "wikidata": "Q3760576",
+    "scientificName": "Microdevario kubotai",
+    "names": {
+      "fr": "Danio vert",
+      "en": "Green neon rasbora",
+      "de": "Neongrüner Zwergbärbling",
+      "it": "Danio verde",
+      "es": "Danio verde"
+    },
+    "kind": "FISH",
+    "family": "CYPRINID",
+    "motion": "SCHOOL",
+    "ph": {
+      "min": 6.0,
+      "max": 7.5
+    },
+    "temperatureC": {
+      "min": 22.0,
+      "max": 27.0
+    },
+    "gh": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "kh": {
+      "min": 2.0,
+      "max": 6.0
+    },
+    "minVolumeLiters": 30,
+    "adultSizeCm": 2.0,
+    "minGroup": 8,
+    "tags": [
+      "PEACEFUL"
+    ],
+    "diet": "OMNIVORE",
+    "lifespanYears": 3,
+    "zone": "MIDDLE",
+    "color": 4286362434,
+    "drawing": null
   }
 ]
