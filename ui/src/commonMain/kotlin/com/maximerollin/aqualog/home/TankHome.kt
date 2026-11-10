@@ -46,7 +46,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -107,11 +106,8 @@ import com.maximerollin.aqualog.ui.theme.attentionMarkColor
 import com.maximerollin.aqualog.ui.theme.levelMarkColor
 import com.maximerollin.aqualog.ui.theme.attentionTextColor
 import com.maximerollin.aqualog.shared.assistance.ReadingSample
-import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
-import com.maximerollin.aqualog.shared.encyclopedia.Species
 import java.time.Instant
 import java.util.Locale
-import kotlin.coroutines.cancellation.CancellationException
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -140,12 +136,12 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     var showPicker by remember { mutableStateOf(false) }
     var showHabitants by remember(aquarium.id) { mutableStateOf(false) }
     // null while loading, so the scene does not flash silhouettes; empty when the file is unreadable (silhouettes, species ids).
-    val encyclopedia by produceState<List<Species>?>(null) {
-        value = try { loadEncyclopedia() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() }
-    }
+    val encyclopedia by rememberEncyclopedia()
     val sprites = remember(state.inhabitants, encyclopedia) {
         encyclopedia?.let { species -> sceneSprites(state.inhabitants, species.associateBy { it.id }) }.orEmpty()
     }
+    // Every Aquarium's own scene, for the pages of the pager that are not the current one yet.
+    val pageScenes = remember(state.inhabitantsByAquarium, encyclopedia) { miniScenes(state.inhabitantsByAquarium, encyclopedia, max = 12) }
     val snackbar = remember { SnackbarHostState() }
     val currentIndex = state.aquariums.indexOfFirst { it.id == aquarium.id }.coerceAtLeast(0)
     val pager = rememberPagerState(initialPage = currentIndex) { state.aquariums.size }
@@ -188,9 +184,10 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                     state.aquariums, aquarium, pager, viewModel::openPhoto, viewModel::aquariumPhoto, viewModel::cachedAquariumPhoto,
                     onChangeAquarium = { showPicker = true },
                     habitants = SceneHabitants(
-                        sprites, decorPlants(state.inhabitants), state.inhabitantsLoaded && state.inhabitants.isEmpty(),
+                        MiniScene(sprites, decorPlants(state.inhabitants)), state.inhabitantsLoaded && state.inhabitants.isEmpty(),
                         { showHabitants = true }, viewModel::openAddInhabitant,
                     ),
+                    pageScenes = pageScenes,
                 )
             }
             item {
@@ -382,6 +379,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
             onDismiss = { showPicker = false },
             loadPhoto = viewModel::aquariumPhoto,
             cachedPhoto = viewModel::cachedAquariumPhoto,
+            inhabitantsByAquarium = state.inhabitantsByAquarium,
         )
     }
 }
@@ -398,7 +396,7 @@ internal fun pagerSyncTarget(currentIndex: Int, pageCount: Int, currentPage: Int
     currentIndex.takeIf { pageCount > 1 && it in 0 until pageCount && it != currentPage }
 
 /** The current Aquarium's inhabitants as the scene shows them, and the scene's ways into the habitants sheet. */
-private class SceneHabitants(val sprites: List<SceneSprite>, val plants: Int, val empty: Boolean, val onOpen: () -> Unit, val onAdd: () -> Unit)
+private class SceneHabitants(val scene: MiniScene, val empty: Boolean, val onOpen: () -> Unit, val onAdd: () -> Unit)
 
 /** The scene's deep water under the name block: white text keeps 4.5:1 even over the lightest fish (ScenePhysicsTest). */
 internal val HeaderScrim = Color(0xFF0F4A43).copy(alpha = .72f)
@@ -414,16 +412,19 @@ private fun AquariumScene(
     cachedPhoto: (String) -> ImageBitmap?,
     onChangeAquarium: () -> Unit,
     habitants: SceneHabitants,
+    pageScenes: Map<String, MiniScene>,
 ) {
     if (aquariums.size < 2) {
-        SceneHeader(current, onChangeAquarium, onOpenPhoto, loadPhoto, cachedPhoto, habitants)
+        SceneHeader(current, onChangeAquarium, onOpenPhoto, loadPhoto, cachedPhoto, habitants.scene, habitants)
         return
     }
     Column {
         HorizontalPager(pager, Modifier.testTag("home-pager")) { page ->
-            // The photo flow and the inhabitants belong to the current Aquarium: a page still sliding in has neither.
+            // The photo flow and the habitants sheet belong to the current Aquarium: a page still sliding in has neither,
+            // but it draws its own Aquarium's inhabitants.
             val isCurrent = aquariums[page].id == current.id
-            SceneHeader(aquariums[page], onChangeAquarium, onOpenPhoto.takeIf { isCurrent }, loadPhoto, cachedPhoto, habitants.takeIf { isCurrent })
+            val scene = if (isCurrent) habitants.scene else pageScenes[aquariums[page].id] ?: MiniScene.Empty
+            SceneHeader(aquariums[page], onChangeAquarium, onOpenPhoto.takeIf { isCurrent }, loadPhoto, cachedPhoto, scene, habitants.takeIf { isCurrent })
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center) {
             repeat(aquariums.size) { index ->
@@ -519,6 +520,7 @@ private fun SceneHeader(
     onOpenPhoto: (() -> Unit)?,
     loadPhoto: suspend (String) -> ImageBitmap?,
     cachedPhoto: (String) -> ImageBitmap?,
+    scene: MiniScene,
     habitants: SceneHabitants?,
 ) {
     // No age: createdAtEpochMillis is when the Aquarium was added to the app, not when it was set up.
@@ -540,7 +542,7 @@ private fun SceneHeader(
                 .semantics { contentDescription = habitantsLabel }
         },
     ) {
-        TankScene(aquarium, habitants?.sprites.orEmpty(), Modifier.fillMaxWidth(), habitants?.plants ?: 0)
+        TankScene(aquarium, scene.sprites, Modifier.fillMaxWidth(), scene.plants)
         Column(
             // Clear of the photo vignette (48 dp + 12 dp margin) at the top end. The scrim sits inside the same 16/12 dp
             // padding, so the click target is unchanged, and keeps the white text readable over a passing fish.
@@ -572,7 +574,7 @@ private fun SceneHeader(
             Box {
                 AquariumThumbnail(
                     aquarium, 44.dp, loadPhoto, Modifier.border(1.5.dp, Color.White, RoundedCornerShape(12.dp)), cachedPhoto,
-                    habitants?.sprites.orEmpty(), habitants?.plants ?: 0,
+                    scene.sprites, scene.plants,
                 )
                 if (aquarium.photoId == null) {
                     Box(

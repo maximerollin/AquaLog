@@ -126,6 +126,31 @@ class InhabitantRepositoryTest {
     }
 
     @Test
+    fun `present inhabitants are grouped by Aquarium and a removal updates the flow`() = runTest {
+        val f = Fixture()
+        val amazon = f.aquarium("Amazonien")
+        val reef = f.aquarium("Récif")
+        val empty = f.aquarium("Vide")
+        val neons = f.neons(amazon.id, 10)
+        val guppies = f.repository.addInhabitant(amazon.id, "guppy", null, DrawingFamily.LIVEBEARER, 2)
+        val shrimp = f.repository.addInhabitant(reef.id, null, "Crevette", DrawingFamily.SHRIMP, 5)
+        val gone = f.repository.addInhabitant(reef.id, "neon", null, DrawingFamily.TETRA, 3)
+        f.repository.removeInhabitants(gone.id, 3)
+
+        val byAquarium = f.repository.observePresentInhabitantsByAquarium().first()
+
+        assertEquals(setOf(amazon.id, reef.id), byAquarium.keys)
+        assertEquals(listOf(neons, guppies), byAquarium.getValue(amazon.id))
+        assertEquals(listOf(shrimp), byAquarium.getValue(reef.id))
+        assertEquals(null, byAquarium[empty.id])
+
+        f.repository.removeInhabitants(neons.id, 10)
+        val after = f.repository.observePresentInhabitantsByAquarium().first { it.getValue(amazon.id).size == 1 }
+        assertEquals(listOf(guppies), after.getValue(amazon.id))
+        f.database.close()
+    }
+
+    @Test
     fun `removing more than present is rejected and changes nothing`() = runTest {
         val f = Fixture()
         val aquarium = f.aquarium()

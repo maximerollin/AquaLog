@@ -393,6 +393,8 @@ data class HomeUiState(
     val inhabitants: List<Inhabitant> = emptyList(),
     /** False until [inhabitants] holds the displayed Aquarium's list, so an empty list is not mistaken for « no inhabitants ». */
     val inhabitantsLoaded: Boolean = false,
+    /** Present inhabitant groups of every Aquarium (for the thumbnails), keyed by Aquarium id; none for an empty one. */
+    val inhabitantsByAquarium: Map<String, List<Inhabitant>> = emptyMap(),
     /** Tests of the displayed Aquarium due today or overdue, earliest first. */
     val dueTests: List<DueTest> = emptyList(),
     /** The day the date-dependent home was last computed for: a new day recomposes it (see [HomeViewModel.refreshForToday]). */
@@ -551,6 +553,12 @@ class HomeViewModel(
                 }
                 savePhotoTarget()
                 photoCache.keys.retainAll(aquariums.mapNotNull { it.photoId }.toSet())
+            }
+        }
+        viewModelScope.launch {
+            // Once for the session: the list thumbnails and the home pager draw every Aquarium's own inhabitants.
+            aquariumRepository.observePresentInhabitantsByAquarium().collect { byAquarium ->
+                mutableUiState.update { it.copy(inhabitantsByAquarium = byAquarium) }
             }
         }
         viewModelScope.launch {

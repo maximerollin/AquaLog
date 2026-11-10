@@ -81,6 +81,9 @@ interface AquariumRepository {
     /** Present inhabitant groups of an Aquarium (not removed). */
     fun observeInhabitants(aquariumId: String): Flow<List<Inhabitant>> = flowOf(emptyList())
 
+    /** Present inhabitant groups of every Aquarium, keyed by Aquarium id; an Aquarium with none has no entry. */
+    fun observePresentInhabitantsByAquarium(): Flow<Map<String, List<Inhabitant>>> = flowOf(emptyMap())
+
     suspend fun addInhabitant(
         aquariumId: String,
         speciesId: String?,
@@ -552,6 +555,9 @@ class RoomAquariumRepository(
 
     override fun observeInhabitants(aquariumId: String): Flow<List<Inhabitant>> =
         inhabitantDao.observePresent(aquariumId).map { rows -> rows.map(InhabitantEntity::toDomain) }
+
+    override fun observePresentInhabitantsByAquarium(): Flow<Map<String, List<Inhabitant>>> =
+        inhabitantDao.observeAllPresent().map { rows -> rows.map(InhabitantEntity::toDomain).groupBy(Inhabitant::aquariumId) }
 
     override suspend fun addInhabitant(
         aquariumId: String,
