@@ -10,6 +10,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.currentLocalizedFormatters
 import com.maximerollin.aqualog.joinLabels
@@ -36,7 +38,12 @@ internal fun WeeklySummaryCard(summary: WeeklySummary, isPro: Boolean, onOpenPro
     val body = MaterialTheme.typography.bodyMedium
     val color = MaterialTheme.colorScheme.onBackground
     Column(modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(stringResource(Res.string.weekly_summary_title), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        Text(
+            stringResource(Res.string.weekly_summary_title),
+            modifier = Modifier.semantics { heading() },
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
         Text(
             listOfNotNull(
                 pluralStringResource(Res.plurals.weekly_summary_tests, summary.testsDone, summary.testsDone),

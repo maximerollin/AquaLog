@@ -259,7 +259,8 @@ private fun CheckRow(
         CriterionStatus.NOT_MEASURED, CriterionStatus.UNIT_NOT_COMPARED -> "–" to MaterialTheme.colorScheme.onSurfaceVariant
     }
     // The mark is spoken through the reason (or « pas encore mesuré »), so colour and symbol never carry it alone.
-    val spoken = listOfNotNull(label, detail, value, check.reason?.explanation()?.takeIf { it != detail }).joinToString(", ")
+    val spoken = listOfNotNull(label, detail, value, check.reason?.explanation()?.takeIf { it != detail })
+        .filter { it.isNotBlank() }.joinToString(", ")
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(vertical = 6.dp).clearAndSetSemantics { contentDescription = spoken },
         verticalAlignment = Alignment.CenterVertically,

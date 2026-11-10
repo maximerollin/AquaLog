@@ -1287,7 +1287,7 @@ private const val SELECTED_MARK = "✓"
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun FeedbackDialog(
+internal fun FeedbackDialog(
     state: FeedbackUiState,
     onMessageChanged: (String) -> Unit,
     onKindSelected: (FeedbackKind) -> Unit,
@@ -1314,7 +1314,7 @@ private fun FeedbackDialog(
                             label = { Text(stringResource(kind.labelResource())) },
                             // Selection is shown by a filled container and a check mark, not by colour alone.
                             leadingIcon = if (state.kind == kind) {
-                                { Text(SELECTED_MARK, fontWeight = FontWeight.Bold) }
+                                { Text(SELECTED_MARK, fontWeight = FontWeight.Bold, modifier = Modifier.clearAndSetSemantics {}) }
                             } else {
                                 null
                             },
@@ -1328,17 +1328,17 @@ private fun FeedbackDialog(
                     }
                 }
                 state.speciesName?.let { Text(stringResource(Res.string.feedback_species_line, it), style = MaterialTheme.typography.bodyMedium) }
-                // A separate label wraps at word boundaries; a floating label breaks mid-word in a narrow field at large font scales.
-                val messageLabel = stringResource(Res.string.feedback_message_label)
-                Text(messageLabel, style = MaterialTheme.typography.labelLarge)
+                // The label slot gives the field its accessible name (a separate Text or a contentDescription leaves the typed text
+                // nameless); a short label keeps it on one line, unbroken, in the narrow field at large font scales.
                 OutlinedTextField(
                     value = state.message,
                     onValueChange = onMessageChanged,
+                    label = { Text(stringResource(Res.string.feedback_message_label)) },
                     supportingText = {
                         Text(stringResource(Res.string.feedback_character_count, state.message.length))
                     },
                     minLines = 4,
-                    modifier = Modifier.fillMaxWidth().testTag("feedback-message").semantics { contentDescription = messageLabel },
+                    modifier = Modifier.fillMaxWidth().testTag("feedback-message"),
                 )
                 state.outcome?.let { outcome ->
                     val (text, color) = when (outcome) {

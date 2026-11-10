@@ -181,7 +181,7 @@
     <string name="feedback_title">Send feedback</string>
     <string name="send_feedback">Send feedback</string>
     <string name="feedback_privacy_explanation">Your message, its type, the app version and its language (and the species, when reporting from a species page) are sent. Without an account, a random device identifier limits how many messages can be sent. Aquagenda never attaches your water values, notes, Aquarium names, photos, email address or analytics identifiers.</string>
-    <string name="feedback_message_label">Feedback message</string>
+    <string name="feedback_message_label">Your message</string>
     <string name="feedback_character_count">%1$d/2000</string>
     <string name="feedback_sent">Message sent. Thank you.</string>
     <string name="feedback_unavailable">Feedback delivery is not configured in this build. Your message was not sent.</string>

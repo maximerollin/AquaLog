@@ -181,7 +181,7 @@
     <string name="feedback_title">Enviar comentarios</string>
     <string name="send_feedback">Enviar comentarios</string>
     <string name="feedback_privacy_explanation">Se envían su mensaje, su tipo, la versión de la app y su idioma (y la especie en el caso de una ficha). Sin cuenta, un identificador aleatorio del dispositivo limita los envíos. Aquagenda nunca adjunta sus valores del agua, notas, nombres de acuarios, fotografías, dirección de correo electrónico ni identificadores analíticos.</string>
-    <string name="feedback_message_label">Mensaje de retroalimentación</string>
+    <string name="feedback_message_label">Su mensaje</string>
     <string name="feedback_character_count">%1$d/2000</string>
     <string name="feedback_sent">Mensaje enviado. Gracias.</string>
     <string name="feedback_unavailable">La entrega de comentarios no está configurada en esta compilación. Tu mensaje no fue enviado.</string>
