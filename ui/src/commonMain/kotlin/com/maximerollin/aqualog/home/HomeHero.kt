@@ -72,8 +72,26 @@ import java.time.LocalDate
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** Height of the home's water hero, status bar included. */
+/** Height of the home's water hero, status bar included; it grows when its content needs more (large fonts). */
 private val HeroHeight = 430.dp
+
+/** How much of the hero's bottom the paper sheet covers. */
+internal val HeroSheetOverlap = 30.dp
+
+/** The pager dots sit this far above the hero's bottom, 10 dp clear of the sheet. */
+internal val HeroDotsBottom = HeroSheetOverlap + 10.dp
+
+/** The band the pager dots take (16 dp row) above [HeroDotsBottom]: the hero's content always stays above it. */
+private val HeroDotsBand = 16.dp
+
+/** Text on the water. */
+internal val HeroText = Color.White
+
+/**
+ * Deep water behind every text block on the hero: white keeps 4.5:1 over the lightest sprite and over a white
+ * photo (ScenePhysicsTest). The hero shade alone cannot, since the water under it can be anything.
+ */
+internal val HeroTextBacking = Color(0xFF0F4A43).copy(alpha = .75f)
 
 /** Darkens the top for the status bar and the name, and the bottom where the sheet lands. */
 private val HeroShade = Brush.verticalGradient(
@@ -109,7 +127,7 @@ fun HomeHero(
     val habitantsOpen = stringResource(Res.string.habitants_open)
     Box(
         // The water opens the habitants sheet; the name block, the camera, the card and the chip keep their own actions.
-        modifier.fillMaxWidth().height(HeroHeight).let {
+        modifier.fillMaxWidth().let {
             if (onOpenHabitants == null) {
                 it
             } else {
@@ -117,15 +135,20 @@ fun HomeHero(
             }
         },
     ) {
+        // The water fills whatever height the content takes.
         if (photo != null) {
-            Image(photo, contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            Image(photo, contentDescription = null, modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop)
         } else {
-            TankScene(aquarium, scene.sprites, Modifier.fillMaxSize(), scene.plants, animate = !still && !rememberReducedMotion())
+            TankScene(aquarium, scene.sprites, Modifier.matchParentSize(), scene.plants, animate = !still && !rememberReducedMotion())
         }
-        Box(Modifier.fillMaxSize().background(HeroShade))
-        Column(Modifier.windowInsetsPadding(WindowInsets.statusBars).padding(start = 12.dp, end = 8.dp, top = 4.dp)) {
+        Box(Modifier.matchParentSize().background(HeroShade))
+        // At least HeroHeight; with large fonts it grows, and the chip, the dots band and the sheet's overlap stay below the content.
+        Column(
+            Modifier.fillMaxWidth().heightIn(min = HeroHeight).windowInsetsPadding(WindowInsets.statusBars)
+                .padding(start = 12.dp, end = 8.dp, top = 4.dp),
+        ) {
             Row(verticalAlignment = Alignment.Top) {
-                NameBlock(aquarium, inhabitantCount, onChangeAquarium, Modifier.weight(1f))
+                Box(Modifier.weight(1f)) { NameBlock(aquarium, inhabitantCount, onChangeAquarium) }
                 val photoLabel = stringResource(if (aquarium.photoId != null) Res.string.photo_open else Res.string.photo_add, aquarium.name)
                 GlassIconButton(AquagendaIcons.Camera, photoLabel, onClick = { onOpenPhoto?.invoke() })
             }
@@ -133,21 +156,23 @@ fun HomeHero(
                 Spacer(Modifier.height(16.dp))
                 StatusCard(overview, today, onOpenStatus, Modifier.padding(start = 8.dp, end = 12.dp))
             }
-        }
-        if (inhabitantCount == 0 && onAddHabitants != null) {
-            GlassChip(
-                stringResource(Res.string.habitants_add_yours),
-                onAddHabitants,
-                // Clear of the sheet's 30 dp overlap and level with the pager dots.
-                Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 34.dp),
-            )
+            // Pushes what follows to the bottom when the content is shorter than HeroHeight.
+            Spacer(Modifier.weight(1f))
+            if (inhabitantCount == 0 && onAddHabitants != null) {
+                GlassChip(
+                    stringResource(Res.string.habitants_add_yours),
+                    onAddHabitants,
+                    Modifier.align(Alignment.End).padding(top = 8.dp, end = 4.dp),
+                )
+            }
+            Spacer(Modifier.height(HeroDotsBottom + HeroDotsBand))
         }
     }
 }
 
 /** « Salon » in Fraunces, then « 120 L · Planted / shrimp · 16 inhabitants »; one click target that changes Aquarium. */
 @Composable
-private fun NameBlock(aquarium: Aquarium, inhabitantCount: Int, onChangeAquarium: () -> Unit, modifier: Modifier) {
+private fun NameBlock(aquarium: Aquarium, inhabitantCount: Int, onChangeAquarium: () -> Unit) {
     val profile = stringResource(
         when (aquarium.profile) {
             AquariumProfile.ESTABLISHED -> Res.string.profile_established
@@ -157,16 +182,18 @@ private fun NameBlock(aquarium: Aquarium, inhabitantCount: Int, onChangeAquarium
     )
     val inhabitants = inhabitantCount.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.home_inhabitants_count, it, it) }
     Column(
-        modifier.heightIn(min = 48.dp)
+        Modifier.heightIn(min = 48.dp)
             .clickable(onClickLabel = stringResource(Res.string.home_change_aquarium), onClick = onChangeAquarium)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .background(HeroTextBacking, RoundedCornerShape(16.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Text(
             aquarium.name,
             style = MaterialTheme.typography.displaySmall.copy(
                 fontFamily = frauncesFamily(), fontWeight = FontWeight.SemiBold, fontSize = 34.sp, lineHeight = 38.sp, shadow = TextShadow,
             ),
-            color = Color.White,
+            color = HeroText,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
@@ -174,20 +201,20 @@ private fun NameBlock(aquarium: Aquarium, inhabitantCount: Int, onChangeAquarium
             listOfNotNull(aquarium.formattedVolume(), profile, inhabitants).joinToString(SEPARATOR),
             modifier = Modifier.padding(top = 4.dp),
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, shadow = TextShadow),
-            color = Color.White.copy(alpha = .85f),
+            color = HeroText,
         )
     }
 }
 
-/** Glass card: the in-range ring and « 6 of 7 in range », then the status sentence; one node for TalkBack. */
+/** Dark glass card: the in-range ring and « 6 of 7 in range », then the status sentence; one node for TalkBack. */
 @Composable
 private fun StatusCard(overview: HomeOverview, today: LocalDate, onOpen: (() -> Unit)?, modifier: Modifier) {
     val shape = RoundedCornerShape(22.dp)
     val ratio = statusRatio(overview)?.resolve()
     val status = statusText(overview, today)
     Row(
-        modifier.clip(shape)
-            .background(Color.White.copy(alpha = .16f))
+        modifier.testTag("status-card").clip(shape)
+            .background(HeroTextBacking)
             .border(1.dp, Color.White.copy(alpha = .25f), shape)
             .let { if (onOpen != null) it.clickable(role = Role.Button, onClick = onOpen) else it.semantics(mergeDescendants = true) {} }
             .heightIn(min = 48.dp)
@@ -200,7 +227,7 @@ private fun StatusCard(overview: HomeOverview, today: LocalDate, onOpen: (() -> 
             Text(
                 ratio ?: stringResource(Res.string.home_no_measurement_yet),
                 style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold),
-                color = Color.White,
+                color = HeroText,
             )
             // Before the first Measurement the summary is the title itself, with no « since »: nothing to add.
             if (ratio != null) {
@@ -208,7 +235,7 @@ private fun StatusCard(overview: HomeOverview, today: LocalDate, onOpen: (() -> 
                 Text(
                     listOfNotNull(status.summary.resolve(), since).joinToString(SEPARATOR),
                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
-                    color = Color.White,
+                    color = HeroText,
                 )
             }
         }
@@ -232,21 +259,21 @@ private fun InRangeRing(inRange: Int, measured: Int) {
             }
         }
         val fraction = "$inRange/$measured" // digits and a slash: the same in every language, like the pager's « 2 / 3 »
-        Text(fraction, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1)
+        Text(fraction, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = HeroText, maxLines = 1)
     }
 }
 
-/** A pill of white glass on the water, with a 48 dp target. */
+/** A pill of dark glass on the water, with a 48 dp target. */
 @Composable
 private fun GlassChip(label: String, onClick: () -> Unit, modifier: Modifier) {
     val pill = RoundedCornerShape(50)
     Box(modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onClick), contentAlignment = Alignment.Center) {
         Text(
             label,
-            modifier = Modifier.background(Color.White.copy(alpha = .2f), pill).border(1.dp, Color.White.copy(alpha = .3f), pill)
+            modifier = Modifier.background(HeroTextBacking, pill).border(1.dp, Color.White.copy(alpha = .3f), pill)
                 .padding(horizontal = 14.dp, vertical = 8.dp),
             style = MaterialTheme.typography.labelLarge,
-            color = Color.White,
+            color = HeroText,
         )
     }
 }

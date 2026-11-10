@@ -190,7 +190,7 @@ fun TankHome(
                     viewModel::aquariumPhoto, viewModel::cachedAquariumPhoto,
                     onChangeAquarium = { showPicker = true },
                     // The sheet's top edge, the next item, covers the water's bottom.
-                    modifier = Modifier.overlapNext(30.dp),
+                    modifier = Modifier.overlapNext(HeroSheetOverlap),
                 )
             }
             item(key = "sheet-top") { PaperSheetTop() }
@@ -392,7 +392,7 @@ private fun AquariumHeroes(
         HorizontalPager(pager, Modifier.testTag("home-pager")) { page ->
             HeroPage(aquariums[page], current, today, hero, pageScenes, pageInhabitantCounts, loadPhoto, cachedPhoto, onChangeAquarium)
         }
-        PagerDots(aquariums.size, pager.currentPage, onWater = true, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 40.dp))
+        PagerDots(aquariums.size, pager.currentPage, onWater = true, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = HeroDotsBottom))
     }
 }
 

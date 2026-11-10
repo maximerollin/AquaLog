@@ -1,5 +1,13 @@
 package com.maximerollin.aqualog.a11y
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -13,6 +21,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.HomeOverview
 import com.maximerollin.aqualog.HomeValue
 import com.maximerollin.aqualog.home.HomeHero
@@ -41,9 +51,11 @@ class HomeHeroSemanticsTest {
         val RATIO = Regex("\\d+/\\d+")
     }
 
-    private fun withEnglish(block: () -> Unit) {
+    private fun withEnglish(block: () -> Unit) = withLocale(Locale.ENGLISH, block)
+
+    private fun withLocale(locale: Locale, block: () -> Unit) {
         val previous = Locale.getDefault()
-        Locale.setDefault(Locale.ENGLISH)
+        Locale.setDefault(locale)
         try { block() } finally { Locale.setDefault(previous) }
     }
 
@@ -129,6 +141,43 @@ class HomeHeroSemanticsTest {
             onNodeWithText("in range", substring = true, useUnmergedTree = true).assertDoesNotExist()
             onNodeWithText("No measurement yet", useUnmergedTree = true).assertDoesNotExist()
             onNodeWithTag("status-ring", useUnmergedTree = true).assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun `german at 150 percent keeps the card above the sheet and the chip`() = withLocale(Locale.GERMAN) {
+        // The longest status line: one value far out of range, measured days ago.
+        val longest = sixOfSeven.copy(alertCount = 1, latestReadingAtEpochMillis = TODAY_MILLIS - 3 * 86_400_000L)
+        // 16 inhabitants: the longest context line; 0: the « add your inhabitants » chip.
+        for (inhabitants in listOf(16, 0)) {
+            runComposeUiTest {
+                setContent {
+                    AquaLogTheme(false) {
+                        CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 1.5f)) {
+                            // Unbounded height, as in the home's LazyColumn.
+                            Column(Modifier.verticalScroll(rememberScrollState())) {
+                                HomeHero(
+                                    aquarium = SALON.copy(name = "Gemeinschaftsbecken im Wohnzimmer bei der Terrasse", volume = 240.0),
+                                    overview = longest, today = TODAY, inhabitantCount = inhabitants,
+                                    scene = MiniScene.Empty, still = true, photo = null,
+                                    onChangeAquarium = {}, onOpenPhoto = {}, onOpenHabitants = {}, onAddHabitants = {},
+                                    onOpenStatus = {},
+                                    modifier = Modifier.width(360.dp).testTag("hero"),
+                                )
+                            }
+                        }
+                    }
+                }
+                val hero = onNodeWithTag("hero").fetchSemanticsNode().boundsInRoot
+                val card = onNodeWithTag("status-card").fetchSemanticsNode().boundsInRoot
+                val visibleBottom = hero.bottom - 30 * density.density
+                assertTrue(card.bottom <= visibleBottom, "inhabitants=$inhabitants card $card, hero $hero")
+                if (inhabitants == 0) {
+                    val chip = onNodeWithText("Ihre Bewohner hinzufügen").fetchSemanticsNode().boundsInRoot
+                    assertTrue(card.bottom <= chip.top, "card $card, chip $chip")
+                    assertTrue(chip.bottom <= visibleBottom, "chip $chip, hero $hero")
+                }
+            }
         }
     }
 }
