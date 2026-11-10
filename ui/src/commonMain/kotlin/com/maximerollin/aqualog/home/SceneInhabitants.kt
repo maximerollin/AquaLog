@@ -1,5 +1,10 @@
 package com.maximerollin.aqualog.home
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import com.maximerollin.aqualog.resources.Res
@@ -18,6 +23,8 @@ import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import com.maximerollin.aqualog.shared.encyclopedia.MotionFamily
 import com.maximerollin.aqualog.shared.encyclopedia.Species
 import com.maximerollin.aqualog.shared.encyclopedia.SwimZone
+import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -124,3 +131,33 @@ private fun noise(seed: Int, salt: Int): Float {
     h = h xor (h ushr 16)
     return (h ushr 8) / 16_777_216f
 }
+
+/** What an Aquarium's mini-scene draws: its sprites and its decor plants. */
+data class MiniScene(val sprites: List<SceneSprite>, val plants: Int) {
+    companion object {
+        val Empty = MiniScene(emptyList(), 0)
+    }
+}
+
+/** The mini-scene of every Aquarium with inhabitants, at most [max] sprites each; none while the encyclopedia is [encyclopedia] null (loading). */
+fun miniScenes(byAquarium: Map<String, List<Inhabitant>>, encyclopedia: List<Species>?, max: Int): Map<String, MiniScene> {
+    if (encyclopedia == null) return emptyMap()
+    val species = encyclopedia.associateBy { it.id }
+    return byAquarium.mapValues { (_, groups) -> MiniScene(sceneSprites(groups, species, max), decorPlants(groups)) }
+}
+
+/** The encyclopedia: null while loading (so a scene does not flash silhouettes), empty when the file is unreadable. */
+@Composable
+fun rememberEncyclopedia(): State<List<Species>?> = produceState<List<Species>?>(null) {
+    value = try { loadEncyclopedia() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() }
+}
+
+/** The list thumbnails' mini-scenes (40 dp: at most 3 sprites, as the small widget), by Aquarium id. */
+@Composable
+fun rememberThumbnailScenes(byAquarium: Map<String, List<Inhabitant>>): Map<String, MiniScene> {
+    val encyclopedia by rememberEncyclopedia()
+    return remember(byAquarium, encyclopedia) { miniScenes(byAquarium, encyclopedia, max = THUMBNAIL_SPRITES) }
+}
+
+/** A 40-44 dp thumbnail draws at most this many sprites (the small widget's cap). */
+internal const val THUMBNAIL_SPRITES = 3

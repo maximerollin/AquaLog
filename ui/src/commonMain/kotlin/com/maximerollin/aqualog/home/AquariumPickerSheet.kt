@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.photo.AquariumThumbnail
 import com.maximerollin.aqualog.shared.Aquarium
+import com.maximerollin.aqualog.shared.Inhabitant
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import org.jetbrains.compose.resources.stringResource
 
@@ -38,7 +39,9 @@ fun AquariumPickerSheet(
     onDismiss: () -> Unit,
     loadPhoto: suspend (String) -> ImageBitmap?,
     cachedPhoto: (String) -> ImageBitmap? = { null },
+    inhabitantsByAquarium: Map<String, List<Inhabitant>> = emptyMap(),
 ) {
+    val scenes = rememberThumbnailScenes(inhabitantsByAquarium)
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.navigationBarsPadding().padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
             CarnetSectionTitle(stringResource(Res.string.aquariums_title))
@@ -50,7 +53,8 @@ fun AquariumPickerSheet(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     RadioButton(selected = aquarium.id == currentId, onClick = null)
-                    AquariumThumbnail(aquarium, 40.dp, loadPhoto, Modifier.clearAndSetSemantics {}, cachedPhoto)
+                    val scene = scenes[aquarium.id] ?: MiniScene.Empty
+                    AquariumThumbnail(aquarium, 40.dp, loadPhoto, Modifier.clearAndSetSemantics {}, cachedPhoto, scene.sprites, scene.plants)
                     Text(aquarium.name, style = MaterialTheme.typography.bodyLarge)
                 }
             }

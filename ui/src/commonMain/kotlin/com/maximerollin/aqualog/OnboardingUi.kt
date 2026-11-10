@@ -7,6 +7,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
 import com.maximerollin.aqualog.home.HabitantsSheet
+import com.maximerollin.aqualog.home.MiniScene
+import com.maximerollin.aqualog.home.rememberThumbnailScenes
 import com.maximerollin.aqualog.shared.encyclopedia.Species
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
@@ -396,6 +398,7 @@ private fun PortableDataSettings(
 ) {
     val proActive = proState.purchaseStatus == ProPurchaseStatus.ACTIVE
     var showHabitants by remember(homeState.setup?.aquarium?.id) { mutableStateOf(false) }
+    val thumbnailScenes = rememberThumbnailScenes(homeState.inhabitantsByAquarium)
     LazyColumn(
         modifier = modifier.fillMaxSize().testTag("settings-list").padding(horizontal = 24.dp),
     ) {
@@ -421,7 +424,11 @@ private fun PortableDataSettings(
                         selected = current,
                         trailingIcon = if (current) AquagendaIcons.Check else null,
                         leading = {
-                            AquariumThumbnail(aquarium, 40.dp, viewModel::aquariumPhoto, Modifier.clearAndSetSemantics {}, viewModel::cachedAquariumPhoto)
+                            val scene = thumbnailScenes[aquarium.id] ?: MiniScene.Empty
+                            AquariumThumbnail(
+                                aquarium, 40.dp, viewModel::aquariumPhoto, Modifier.clearAndSetSemantics {}, viewModel::cachedAquariumPhoto,
+                                scene.sprites, scene.plants,
+                            )
                         },
                     )
                 }

@@ -204,6 +204,9 @@ abstract class InhabitantDao {
     )
     abstract fun observePresent(aquariumId: String): Flow<List<InhabitantEntity>>
 
+    @Query("SELECT * FROM inhabitants WHERE removedAtEpochMillis IS NULL ORDER BY addedAtEpochMillis, id")
+    abstract fun observeAllPresent(): Flow<List<InhabitantEntity>>
+
     @Query(
         "SELECT * FROM inhabitants WHERE (:aquariumId IS NULL OR aquariumId = :aquariumId) " +
             "ORDER BY addedAtEpochMillis, id",
