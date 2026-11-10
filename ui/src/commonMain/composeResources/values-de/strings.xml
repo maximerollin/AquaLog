@@ -181,7 +181,7 @@
     <string name="feedback_title">Feedback senden</string>
     <string name="send_feedback">Feedback senden</string>
     <string name="feedback_privacy_explanation">Ihre Nachricht, ihr Typ, die App-Version und die Sprache (bei einer Steckbrief-Meldung auch die Art) werden gesendet. Ohne Konto begrenzt eine zufällige Gerätekennung die Anzahl der Sendungen. Aquagenda fügt niemals Ihre Wasserwerte, Notizen, Aquariennamen, Fotos, E-Mail-Adresse oder Analysekennungen hinzu.</string>
-    <string name="feedback_message_label">Feedback-Nachricht</string>
+    <string name="feedback_message_label">Ihre Nachricht</string>
     <string name="feedback_character_count">%1$d/2000</string>
     <string name="feedback_sent">Nachricht gesendet. Danke schön.</string>
     <string name="feedback_unavailable">Die Feedback-Übermittlung ist in diesem Build nicht konfiguriert. Ihre Nachricht wurde nicht gesendet.</string>

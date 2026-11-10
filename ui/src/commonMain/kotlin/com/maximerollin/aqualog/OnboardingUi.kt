@@ -1328,14 +1328,12 @@ internal fun FeedbackDialog(
                     }
                 }
                 state.speciesName?.let { Text(stringResource(Res.string.feedback_species_line, it), style = MaterialTheme.typography.bodyMedium) }
-                // A separate label wraps at word boundaries; a floating label breaks mid-word in a narrow field at large font scales.
-                // The label stays a node of its own, read just before the field (checked with uiautomator: a node merged into the field,
-                // or a contentDescription, never reached the Android node or replaced the typed text).
-                val messageLabel = stringResource(Res.string.feedback_message_label)
-                Text(messageLabel, style = MaterialTheme.typography.labelLarge)
+                // The label slot gives the field its accessible name (a separate Text or a contentDescription leaves the typed text
+                // nameless); a short label keeps it on one line, unbroken, in the narrow field at large font scales.
                 OutlinedTextField(
                     value = state.message,
                     onValueChange = onMessageChanged,
+                    label = { Text(stringResource(Res.string.feedback_message_label)) },
                     supportingText = {
                         Text(stringResource(Res.string.feedback_character_count, state.message.length))
                     },

@@ -43,11 +43,11 @@ class FeedbackDialogSemanticsTest {
     }
 
     @Test
-    fun `the label is exactly one node of its own, read once`() {
-        withDialog(FeedbackUiState(isOpen = true)) {
-            val labelNodes = onAllNodesWithText("Feedback message").fetchSemanticsNodes()
+    fun `the label is part of the field and read once`() {
+        withDialog(FeedbackUiState(isOpen = true, message = "Hello")) {
+            val labelNodes = onAllNodesWithText("Your message").fetchSemanticsNodes()
             assertEquals(1, labelNodes.size, "the label must be read once")
-            assertEquals(null, labelNodes.single().config.getOrNull(SemanticsProperties.TestTag), "it is not the field")
+            assertEquals("feedback-message", labelNodes.single().config.getOrNull(SemanticsProperties.TestTag), "it belongs to the field")
         }
     }
 
