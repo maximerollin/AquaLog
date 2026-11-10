@@ -369,6 +369,11 @@
     <string name="home_nothing_due">Nada pendiente · próxima: %1$s el %2$s</string>
     <string name="home_no_measurement_yet">Aún no hay medición</string>
     <string name="home_status_all_in_range">Todo en el rango indicativo</string>
+    <string name="home_status_in_range_ratio">%1$d de %2$d en el rango indicativo</string>
+    <string name="home_to_do">Por hacer</string>
+    <string name="home_values_previous">Valores anteriores</string>
+    <string name="home_values_next">Valores siguientes</string>
+    <plurals name="home_inhabitants_count"><item quantity="one">%1$d habitante</item><item quantity="other">%1$d habitantes</item></plurals>
     <plurals name="series_weeks"><item quantity="one">%1$d semana de cuidado regular</item><item quantity="other">%1$d semanas de cuidado regular</item></plurals>
     <plurals name="home_status_outside_range"><item quantity="one">%1$d valor a vigilar</item><item quantity="other">%1$d valores a vigilar</item></plurals>
     <plurals name="home_status_with_alert"><item quantity="one">%1$s, %2$d muy fuera del rango</item><item quantity="other">%1$s, %2$d muy fuera del rango</item></plurals>

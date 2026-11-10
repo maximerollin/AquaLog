@@ -32,9 +32,13 @@ data class HomeOverview(
     /** The newest Measurement of an active parameter: a Session with only maintenance does not count. */
     val latestReadingAtEpochMillis: Long?,
     val alertCount: Int = 0,
+    /** Every active parameter in position order, untrimmed: [values] is the 6-value trim the widget shows. */
+    val all: List<HomeValue> = values,
 ) {
     val hasAlert: Boolean get() = alertCount > 0
     val isMeasured: Boolean get() = values.any { it.value != null }
+    val measuredCount: Int get() = all.count { it.value != null }
+    val inRangeCount: Int get() = measuredCount - outsideRangeCount
 }
 
 fun homeOverview(setup: AquariumSetup, readings: List<LatestReading>): HomeOverview {
@@ -56,7 +60,7 @@ fun homeOverview(setup: AquariumSetup, readings: List<LatestReading>): HomeOverv
     val values = all.sortedBy { if (it.level != ReadingLevel.OK) 0 else if (it.value != null) 1 else 2 }
         .take(MAX_HOME_VALUES)
         .sortedBy { it.definition.position }
-    return HomeOverview(values, all.count { it.level != ReadingLevel.OK }, latestAt, all.count { it.level == ReadingLevel.ALERT })
+    return HomeOverview(values, all.count { it.level != ReadingLevel.OK }, latestAt, all.count { it.level == ReadingLevel.ALERT }, all)
 }
 
 /** Flat when both values show the same at the parameter's precision (half a displayed step apart at most). */

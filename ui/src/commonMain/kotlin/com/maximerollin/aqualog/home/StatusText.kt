@@ -8,6 +8,7 @@ import com.maximerollin.aqualog.resources.home_measured_today
 import com.maximerollin.aqualog.resources.home_measured_yesterday
 import com.maximerollin.aqualog.resources.home_no_measurement_yet
 import com.maximerollin.aqualog.resources.home_status_all_in_range
+import com.maximerollin.aqualog.resources.home_status_in_range_ratio
 import com.maximerollin.aqualog.resources.home_status_outside_range
 import com.maximerollin.aqualog.resources.home_status_with_alert
 import java.time.LocalDate
@@ -75,3 +76,7 @@ fun statusText(overview: HomeOverview, today: LocalDate): StatusText {
     }
     return StatusText(summary, since)
 }
+
+/** « 6 sur 7 dans vos plages », or null before the first Measurement. */
+fun statusRatio(overview: HomeOverview): TextRef? =
+    if (overview.isMeasured) TextRef.Str(Res.string.home_status_in_range_ratio, listOf(overview.inRangeCount, overview.measuredCount)) else null
