@@ -159,6 +159,7 @@ class AccountControlCoordinator(
     private val operationGate: AccountOperationGate? = null,
     private val deletionCredentialStorage: DeletionRecoveryCredentialStorage? = null,
     private val reauthenticationGateway: AuthGateway? = null,
+    private val onAccountDeleted: () -> Unit = {},
     private val generateOperationKey: () -> String = { error("Deletion operation key generator is not configured") },
 ) {
     suspend fun identity(): AccountIdentity? = localData.accountIdentity()
@@ -298,6 +299,7 @@ class AccountControlCoordinator(
                 "Cloud deletion finished, but local data still needs to be removed.",
             )
         }
+        runCatching { onAccountDeleted() }
         return AccountControlResult.Deleted
     }
 

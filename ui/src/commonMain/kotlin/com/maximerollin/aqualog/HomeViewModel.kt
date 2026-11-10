@@ -33,6 +33,8 @@ import com.maximerollin.aqualog.shared.DisabledProductTelemetry
 import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.FeedbackCoordinator
 import com.maximerollin.aqualog.shared.FeedbackGateway
+import com.maximerollin.aqualog.shared.FeedbackKind
+import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.GraphPeriod
 import com.maximerollin.aqualog.shared.MaintenanceAction
 import com.maximerollin.aqualog.shared.MaintenanceActionInput
@@ -55,6 +57,7 @@ import com.maximerollin.aqualog.shared.RapidSessionContext
 import com.maximerollin.aqualog.shared.RapidSessionInput
 import com.maximerollin.aqualog.shared.RecordedSession
 import com.maximerollin.aqualog.shared.ReviewCoordinator
+import com.maximerollin.aqualog.shared.ReviewPrompt
 import com.maximerollin.aqualog.shared.SessionEditInput
 import com.maximerollin.aqualog.shared.SessionUsage
 import com.maximerollin.aqualog.shared.SyncFailureCategory
@@ -291,8 +294,11 @@ data class PortableDataUiState(
 data class FeedbackUiState(
     val isOpen: Boolean = false,
     val message: String = "",
-    val wasSubmitted: Boolean = false,
-    val isUnavailable: Boolean = false,
+    val kind: FeedbackKind = FeedbackKind.OTHER,
+    val speciesId: String? = null,
+    val speciesName: String? = null,
+    val outcome: FeedbackOutcome? = null,
+    val isSending: Boolean = false,
 )
 
 enum class AccountSettingsDialog { NONE, LOGOUT, DELETE, PRIVACY, SUPPORT }
@@ -401,6 +407,8 @@ data class HomeUiState(
     /** False until the dismissals of the displayed Aquarium were read, so a dismissed card never flashes. */
     val cycledDismissalsLoaded: Boolean = false,
     val accountInvitationPrompt: AccountInvitationPrompt = AccountInvitationPrompt.NONE,
+    /** The one-time « Votre avis compte » dialog; never shown over another prompt. */
+    val reviewDiscoveryVisible: Boolean = false,
     val account: AccountUiState = AccountUiState(),
     val sessionDetail: RecordedSession? = null,
     val sessionDetailReturnsToTimeline: Boolean = false,
@@ -903,12 +911,23 @@ class HomeViewModel(
         }
     }
 
-    fun openFeedback() {
-        mutableUiState.update { it.copy(feedback = FeedbackUiState(isOpen = true)) }
+    fun openFeedback(
+        kind: FeedbackKind = FeedbackKind.OTHER,
+        speciesId: String? = null,
+        speciesName: String? = null,
+    ) {
+        mutableUiState.update {
+            it.copy(feedback = FeedbackUiState(isOpen = true, kind = kind, speciesId = speciesId, speciesName = speciesName))
+        }
+    }
+
+    fun selectFeedbackKind(kind: FeedbackKind) {
+        mutableUiState.update { it.copy(feedback = it.feedback.copy(kind = kind, outcome = null)) }
     }
 
     fun dismissFeedback() {
         mutableUiState.update { it.copy(feedback = FeedbackUiState()) }
+        maybeAskForReview()
     }
 
     fun updateFeedback(value: String) {
@@ -916,26 +935,25 @@ class HomeViewModel(
             state.copy(
                 feedback = state.feedback.copy(
                     message = value.take(2_000),
-                    wasSubmitted = false,
-                    isUnavailable = false,
+                    outcome = null,
                 ),
             )
         }
     }
 
-    fun submitFeedback() {
-        val message = mutableUiState.value.feedback.message
-        if (message.isBlank()) return
+    fun submitFeedback(language: String) {
+        val current = mutableUiState.value.feedback
+        if (current.message.isBlank() || current.isSending) return
+        val feedback = VoluntaryFeedback(current.message, current.kind, current.speciesId, language)
+        mutableUiState.update { it.copy(feedback = it.feedback.copy(isSending = true, outcome = null)) }
         viewModelScope.launch {
-            val delivered = runCatching {
-                feedbackCoordinator.submit(VoluntaryFeedback(message))
-            }.getOrDefault(false)
+            val outcome = runCatching { feedbackCoordinator.submit(feedback) }.getOrDefault(FeedbackOutcome.FAILED)
             mutableUiState.update { state ->
                 state.copy(
                     feedback = state.feedback.copy(
-                        message = if (delivered) "" else state.feedback.message,
-                        wasSubmitted = delivered,
-                        isUnavailable = !delivered,
+                        message = if (outcome == FeedbackOutcome.SENT) "" else state.feedback.message,
+                        outcome = outcome,
+                        isSending = false,
                     ),
                 )
             }
@@ -2094,7 +2112,8 @@ class HomeViewModel(
                         it.copy(accountInvitationPrompt = AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION)
                     }
                 }
-                if (draft.editingSessionId == null) showPistesAfterSave(recorded)
+                val isNewSession = draft.editingSessionId == null
+                val pistesAdvices = if (isNewSession) showPistesAfterSave(recorded) else null
                 runCatching { taskCompleter.completeLinked(recorded, previousTypes) }
                 recordProductEvent(
                     ProductEvent.SessionSaved(
@@ -2102,16 +2121,24 @@ class HomeViewModel(
                     ),
                 )
                 if (isFirstSession) recordProductEvent(ProductEvent.FirstSessionSaved)
-                if (draft.editingSessionId == null) reviewCoordinator?.onSuccessfulSession()
+                if (isNewSession) {
+                    // Calm: no advice for this Session (unknown counts as not calm) and not a cycling tank.
+                    val cycling = mutableUiState.value.setup?.aquarium?.profile == AquariumProfile.CYCLING
+                    val calm = pistesAdvices?.isEmpty() == true && !cycling
+                    lastNewSessionCalm = calm
+                    reviewCoordinator?.onNewSessionSaved(calm)
+                    maybeAskForReview()
+                }
             }.onFailure {
                 updateRapidSession { it.copy(isSaving = false, saveError = true) }
             }
         }
     }
 
-    private fun showPistesAfterSave(recorded: RecordedSession) {
+    /** Shows the advices for a new Session and returns them; null when they cannot be computed. */
+    private fun showPistesAfterSave(recorded: RecordedSession): List<DatedPisteAdvice>? {
         val state = mutableUiState.value
-        val setup = state.setup?.takeIf { it.aquarium.id == recorded.session.aquariumId } ?: return
+        val setup = state.setup?.takeIf { it.aquarium.id == recorded.session.aquariumId } ?: return null
         // A water change in this very Session already answers the overdue one.
         val overdue = recorded.maintenanceActions.none { it.type == MaintenanceActionType.WATER_CHANGE } &&
             overdueLinkedAction(state.tasks.pendingOccurrences, setup.aquarium.id, MaintenanceActionType.WATER_CHANGE, today())
@@ -2122,9 +2149,53 @@ class HomeViewModel(
             overdue,
         )
         mutableUiState.update { it.copy(pistesAfterSave = advices) }
+        return advices
     }
 
+    // The pistes sheet only follows a non-calm Session, so closing it never asks for a review.
     fun dismissPistes() = mutableUiState.update { it.copy(pistesAfterSave = emptyList()) }
+
+    /** Whether the latest new Session saved in this process was calm: a stored pending prompt may only follow such a Session. */
+    private var lastNewSessionCalm = false
+
+    /**
+     * Asks for a review when one is due and nothing else is asking: the first request shows our dialog, the later
+     * ones go straight to Google. Only right after a calm Session saved in this process, once nothing else asks.
+     */
+    fun maybeAskForReview() {
+        val coordinator = reviewCoordinator ?: return
+        if (!lastNewSessionCalm) return
+        val state = mutableUiState.value
+        if (state.reviewDiscoveryVisible || state.feedback.isOpen ||
+            state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION ||
+            state.pistesAfterSave.isNotEmpty()
+        ) {
+            return
+        }
+        when (coordinator.pendingPrompt()) {
+            ReviewPrompt.NONE -> lastNewSessionCalm = false
+            ReviewPrompt.DISCOVERY -> {
+                lastNewSessionCalm = false
+                mutableUiState.update { it.copy(reviewDiscoveryVisible = true) }
+            }
+            // Google's window must not open over the account screens.
+            ReviewPrompt.DIRECT -> if (state.account.step == AccountStep.HIDDEN) {
+                lastNewSessionCalm = false
+                coordinator.requestDirect()
+            }
+        }
+    }
+
+    /**
+     * Answers the first-time dialog. « Laisser un avis » opens the store page when [openStorePage] exists (Google advises
+     * against triggering the In-App Review API from a button); otherwise it falls back to the gateway.
+     */
+    fun answerReviewDiscovery(leaveReview: Boolean, openStorePage: (() -> Unit)? = null) {
+        mutableUiState.update { it.copy(reviewDiscoveryVisible = false) }
+        val viaStore = leaveReview && openStorePage != null
+        reviewCoordinator?.onDiscoveryAnswered(leaveReview && !viaStore)
+        if (viaStore) openStorePage?.invoke()
+    }
 
     fun continueAfterSessionConfirmation() {
         val coordinator = accountCoordinator ?: return
@@ -2137,6 +2208,7 @@ class HomeViewModel(
                     mutableUiState.update {
                         it.copy(account = AccountUiState(AccountStep.INVITATION))
                     }
+                    maybeAskForReview()
                 }
                 .onFailure {
                     mutableUiState.update { it.copy(accountInvitationPrompt = prompt) }
@@ -2146,7 +2218,10 @@ class HomeViewModel(
 
     fun openAccountMethods() = updateAccount { it.copy(step = AccountStep.METHODS, error = null) }
 
-    fun dismissAccount() = updateAccount { AccountUiState() }
+    fun dismissAccount() {
+        updateAccount { AccountUiState() }
+        maybeAskForReview()
+    }
 
     fun openMagicEmail() = updateAccount { it.copy(step = AccountStep.MAGIC_EMAIL, error = null) }
 

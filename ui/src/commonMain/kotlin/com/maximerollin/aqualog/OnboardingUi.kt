@@ -8,7 +8,9 @@ import androidx.compose.runtime.setValue
 import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
 import com.maximerollin.aqualog.home.HabitantsSheet
 import com.maximerollin.aqualog.shared.encyclopedia.Species
-import java.util.Locale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
+import java.util.Locale as JavaLocale
 import kotlin.coroutines.cancellation.CancellationException
 import com.maximerollin.aqualog.ui.icon.*
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -28,6 +30,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,6 +47,8 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -66,10 +72,15 @@ import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.AccountDeletionPhase
+import com.maximerollin.aqualog.shared.FeedbackKind
+import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
@@ -85,6 +96,7 @@ fun AquaLogContent(
     onExportData: () -> Unit = {},
     onImportData: () -> Unit = {},
     externalLinks: ExternalLinks = ExternalLinks(),
+    rateApp: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     when {
@@ -131,7 +143,7 @@ fun AquaLogContent(
             onContinue = viewModel::closeProPaywall,
             modifier = modifier,
         )
-        state.setup != null -> AquariumShell(state, viewModel, onExportData, externalLinks, modifier)
+        state.setup != null -> AquariumShell(state, viewModel, onExportData, externalLinks, rateApp, modifier)
         state.step == OnboardingStep.WELCOME -> WelcomeScreen(
             state = state.portableData,
             onContinue = viewModel::startOnboarding,
@@ -185,7 +197,8 @@ fun AquaLogContent(
         FeedbackDialog(
             state = state.feedback,
             onMessageChanged = viewModel::updateFeedback,
-            onSubmit = viewModel::submitFeedback,
+            onKindSelected = viewModel::selectFeedbackKind,
+            onSubmit = { viewModel.submitFeedback(feedbackLanguage(Locale.current.language)) },
             onDismiss = viewModel::dismissFeedback,
         )
     }
@@ -274,6 +287,7 @@ private fun AquariumShell(
     viewModel: HomeViewModel,
     onExportData: () -> Unit,
     externalLinks: ExternalLinks,
+    rateApp: (() -> Unit)?,
     modifier: Modifier,
 ) {
     Scaffold(
@@ -309,7 +323,7 @@ private fun AquariumShell(
     ) { innerPadding ->
         val contentModifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding)
         when (state.destination) {
-            MainDestination.TANK -> TankHome(state, viewModel, contentModifier)
+            MainDestination.TANK -> TankHome(state, viewModel, contentModifier, rateApp)
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
             MainDestination.TRENDS -> TrendsScreen(state, viewModel, contentModifier)
             MainDestination.MORE -> PortableDataSettings(
@@ -322,6 +336,7 @@ private fun AquariumShell(
                 onRequestImport = viewModel::requestPortableImport,
                 viewModel = viewModel,
                 externalLinks = externalLinks,
+                rateApp = rateApp,
                 modifier = contentModifier,
             )
         }
@@ -376,6 +391,7 @@ private fun PortableDataSettings(
     onRequestImport: () -> Unit,
     viewModel: HomeViewModel,
     externalLinks: ExternalLinks,
+    rateApp: (() -> Unit)?,
     modifier: Modifier,
 ) {
     val proActive = proState.purchaseStatus == ProPurchaseStatus.ACTIVE
@@ -522,6 +538,7 @@ private fun PortableDataSettings(
         }
         moreSection(Res.string.more_section_help) {
             moreItem { MoreRow(stringResource(Res.string.send_feedback), onClick = viewModel::openFeedback) }
+            rateApp?.let { moreItem { MoreRow(stringResource(Res.string.rate_app), onClick = it) } }
             moreItem {
                 MoreRow(
                     stringResource(Res.string.privacy_policy),
@@ -571,7 +588,7 @@ private fun PortableDataSettings(
         HabitantsSheet(
             groups = homeState.inhabitants,
             encyclopedia = encyclopedia,
-            language = remember { Locale.getDefault().language },
+            language = remember { JavaLocale.getDefault().language },
             onRemove = viewModel::removeInhabitants,
             onAdd = {
                 showHabitants = false
@@ -1250,10 +1267,23 @@ private fun AccountSettingsUiState.localizedSafeDetail(): String? = safeMessage?
     )
 } ?: safeDetail
 
+private fun FeedbackKind.labelResource(): StringResource = when (this) {
+    FeedbackKind.BUG -> Res.string.feedback_kind_bug
+    FeedbackKind.TRANSLATION -> Res.string.feedback_kind_translation
+    FeedbackKind.SPECIES -> Res.string.feedback_kind_species
+    FeedbackKind.IDEA -> Res.string.feedback_kind_idea
+    FeedbackKind.OTHER -> Res.string.feedback_kind_other
+}
+
+/** A decorative glyph, not a word: the chip's label carries the meaning. */
+private const val SELECTED_MARK = "✓"
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun FeedbackDialog(
     state: FeedbackUiState,
     onMessageChanged: (String) -> Unit,
+    onKindSelected: (FeedbackKind) -> Unit,
     onSubmit: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -1261,33 +1291,63 @@ private fun FeedbackDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(Res.string.feedback_title)) },
         text = {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                Modifier.padding(16.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Text(
                     stringResource(Res.string.feedback_privacy_explanation),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FeedbackKind.entries.forEach { kind ->
+                        FilterChip(
+                            selected = state.kind == kind,
+                            onClick = { onKindSelected(kind) },
+                            label = { Text(stringResource(kind.labelResource())) },
+                            // Selection is shown by a filled container and a check mark, not by colour alone.
+                            leadingIcon = if (state.kind == kind) {
+                                { Text(SELECTED_MARK, fontWeight = FontWeight.Bold) }
+                            } else {
+                                null
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                            modifier = Modifier.heightIn(min = 48.dp).semantics { role = Role.RadioButton },
+                        )
+                    }
+                }
+                state.speciesName?.let { Text(stringResource(Res.string.feedback_species_line, it), style = MaterialTheme.typography.bodyMedium) }
+                // A separate label wraps at word boundaries; a floating label breaks mid-word in a narrow field at large font scales.
+                val messageLabel = stringResource(Res.string.feedback_message_label)
+                Text(messageLabel, style = MaterialTheme.typography.labelLarge)
                 OutlinedTextField(
                     value = state.message,
                     onValueChange = onMessageChanged,
-                    label = { Text(stringResource(Res.string.feedback_message_label)) },
                     supportingText = {
                         Text(stringResource(Res.string.feedback_character_count, state.message.length))
                     },
                     minLines = 4,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().testTag("feedback-message").semantics { contentDescription = messageLabel },
                 )
-                if (state.wasSubmitted) {
-                    Text(stringResource(Res.string.feedback_sent), color = MaterialTheme.colorScheme.primary)
-                }
-                if (state.isUnavailable) {
-                    Text(stringResource(Res.string.feedback_unavailable), color = MaterialTheme.colorScheme.error)
+                state.outcome?.let { outcome ->
+                    val (text, color) = when (outcome) {
+                        FeedbackOutcome.SENT -> Res.string.feedback_sent to MaterialTheme.colorScheme.primary
+                        FeedbackOutcome.RATE_LIMITED -> Res.string.feedback_rate_limited to MaterialTheme.colorScheme.error
+                        FeedbackOutcome.FAILED -> Res.string.feedback_failed to MaterialTheme.colorScheme.error
+                        FeedbackOutcome.UNAVAILABLE -> Res.string.feedback_unavailable to MaterialTheme.colorScheme.error
+                    }
+                    Text(stringResource(text), color = color, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                 }
             }
         },
         confirmButton = {
             TextButton(
                 onClick = onSubmit,
-                enabled = state.message.isNotBlank(),
+                enabled = state.message.isNotBlank() && !state.isSending,
                 modifier = Modifier.testTag("submit-feedback").heightIn(min = 48.dp),
             ) {
                 Text(stringResource(Res.string.send_feedback))

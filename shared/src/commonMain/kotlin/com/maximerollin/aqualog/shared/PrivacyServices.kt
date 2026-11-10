@@ -81,47 +81,130 @@ object TechnicalFailureSchema {
     }
 }
 
-data class VoluntaryFeedback(val message: String) {
+enum class FeedbackKind(val wireValue: String) {
+    BUG("bug"),
+    TRANSLATION("translation"),
+    SPECIES("species"),
+    IDEA("idea"),
+    OTHER("other"),
+}
+
+data class VoluntaryFeedback(
+    val message: String,
+    val kind: FeedbackKind = FeedbackKind.OTHER,
+    val speciesId: String? = null,
+    val language: String? = null,
+) {
     init {
         require(message.isNotBlank()) { "Feedback cannot be blank" }
         require(message.length <= 2_000) { "Feedback is limited to 2,000 characters" }
     }
 }
 
+enum class FeedbackOutcome { SENT, RATE_LIMITED, FAILED, UNAVAILABLE }
+
 fun interface FeedbackGateway {
-    suspend fun submit(feedback: VoluntaryFeedback): Boolean
+    suspend fun submit(feedback: VoluntaryFeedback): FeedbackOutcome
 }
 
 class FeedbackCoordinator(
     private val gateway: FeedbackGateway,
 ) {
-    suspend fun submit(feedback: VoluntaryFeedback): Boolean = gateway.submit(feedback)
+    suspend fun submit(feedback: VoluntaryFeedback): FeedbackOutcome = gateway.submit(feedback)
 }
 
 object DisabledFeedbackGateway : FeedbackGateway {
-    override suspend fun submit(feedback: VoluntaryFeedback) = false
+    override suspend fun submit(feedback: VoluntaryFeedback) = FeedbackOutcome.UNAVAILABLE
 }
 
+private const val REVIEW_DAY_MILLIS = 24L * 60L * 60L * 1_000L
+
 data class ReviewHistory(
-    val successfulSessionCount: Int,
-    val firstSuccessfulSessionAtEpochMillis: Long?,
-    val requested: Boolean,
+    val newSessionCount: Int,
+    val pending: Boolean,
+    val lastRequestedAtEpochMillis: Long?,
+    val discoverySeen: Boolean,
 )
 
-class ReviewEligibilityPolicy(
-    private val minimumSuccessfulSessions: Int = 3,
-    private val minimumAgeMillis: Long = 7 * 24 * 60 * 60 * 1_000L,
-) {
-    init {
-        require(minimumSuccessfulSessions > 0)
-        require(minimumAgeMillis >= 0)
+/** Builds a history from stored values; the old "already requested" flag becomes a request date. */
+fun storedReviewHistory(
+    newSessionCount: Int,
+    pending: Boolean,
+    lastRequestedAtEpochMillis: Long?,
+    discoverySeen: Boolean,
+    legacyRequested: Boolean,
+    nowEpochMillis: Long,
+) = ReviewHistory(
+    newSessionCount = newSessionCount,
+    pending = pending,
+    lastRequestedAtEpochMillis = if (legacyRequested && lastRequestedAtEpochMillis == null) {
+        nowEpochMillis
+    } else {
+        lastRequestedAtEpochMillis
+    },
+    discoverySeen = discoverySeen,
+)
+
+/** Raw persisted review values, before the legacy "already requested" flag is folded into a date. */
+data class RawReviewValues(
+    val newSessionCount: Int,
+    val pending: Boolean,
+    val lastRequestedAtEpochMillis: Long?,
+    val discoverySeen: Boolean,
+    val legacyRequested: Boolean,
+)
+
+interface ReviewValuesStorage {
+    fun read(): RawReviewValues
+    fun write(history: ReviewHistory)
+}
+
+/** Loads through [storedReviewHistory] and persists a derived legacy request date at once, so it stays fixed. */
+class MigratingReviewHistoryStore(
+    private val storage: ReviewValuesStorage,
+    private val currentTimeMillis: () -> Long,
+) : ReviewHistoryStore {
+    override fun load(): ReviewHistory {
+        val raw = storage.read()
+        val history = storedReviewHistory(
+            newSessionCount = raw.newSessionCount,
+            pending = raw.pending,
+            lastRequestedAtEpochMillis = raw.lastRequestedAtEpochMillis,
+            discoverySeen = raw.discoverySeen,
+            legacyRequested = raw.legacyRequested,
+            nowEpochMillis = currentTimeMillis(),
+        )
+        if (raw.legacyRequested) storage.write(history)
+        return history
     }
 
-    fun isEligible(history: ReviewHistory, nowEpochMillis: Long): Boolean {
-        val firstSuccess = history.firstSuccessfulSessionAtEpochMillis ?: return false
-        return !history.requested &&
-            history.successfulSessionCount >= minimumSuccessfulSessions &&
-            nowEpochMillis - firstSuccess >= minimumAgeMillis
+    override fun save(updated: ReviewHistory) = storage.write(updated)
+}
+
+enum class ReviewPrompt { NONE, DISCOVERY, DIRECT }
+
+class ReviewEligibilityPolicy(
+    private val minimumNewSessions: Int = 5,
+    private val cooldownMillis: Long = 30 * REVIEW_DAY_MILLIS,
+) {
+    init {
+        require(minimumNewSessions > 0)
+        require(cooldownMillis >= 0)
+    }
+
+    private fun cooledDown(history: ReviewHistory, nowEpochMillis: Long): Boolean =
+        history.lastRequestedAtEpochMillis?.let { nowEpochMillis - it >= cooldownMillis } ?: true
+
+    fun shouldMarkPending(history: ReviewHistory, calm: Boolean, nowEpochMillis: Long): Boolean =
+        calm &&
+            !history.pending &&
+            history.newSessionCount >= minimumNewSessions &&
+            cooledDown(history, nowEpochMillis)
+
+    fun prompt(history: ReviewHistory, nowEpochMillis: Long): ReviewPrompt = when {
+        !history.pending || !cooledDown(history, nowEpochMillis) -> ReviewPrompt.NONE
+        !history.discoverySeen -> ReviewPrompt.DISCOVERY
+        else -> ReviewPrompt.DIRECT
     }
 }
 
@@ -140,18 +223,32 @@ class ReviewCoordinator(
     private val gateway: InAppReviewGateway,
     private val currentTimeMillis: () -> Long,
 ) {
-    fun onSuccessfulSession() {
+    fun onNewSessionSaved(calm: Boolean) {
         val now = currentTimeMillis()
         val previous = store.load()
-        val updated = previous.copy(
-            successfulSessionCount = previous.successfulSessionCount + 1,
-            firstSuccessfulSessionAtEpochMillis = previous.firstSuccessfulSessionAtEpochMillis ?: now,
+        val counted = previous.copy(newSessionCount = previous.newSessionCount + 1)
+        store.save(if (policy.shouldMarkPending(counted, calm, now)) counted.copy(pending = true) else counted)
+    }
+
+    fun pendingPrompt(): ReviewPrompt = policy.prompt(store.load(), currentTimeMillis())
+
+    fun onDiscoveryAnswered(leaveReview: Boolean) {
+        record(discoverySeen = true)
+        if (leaveReview) gateway.requestReview()
+    }
+
+    fun requestDirect() {
+        record(discoverySeen = store.load().discoverySeen)
+        gateway.requestReview()
+    }
+
+    private fun record(discoverySeen: Boolean) {
+        store.save(
+            store.load().copy(
+                pending = false,
+                lastRequestedAtEpochMillis = currentTimeMillis(),
+                discoverySeen = discoverySeen,
+            ),
         )
-        if (policy.isEligible(updated, now)) {
-            store.save(updated.copy(requested = true))
-            gateway.requestReview()
-        } else {
-            store.save(updated)
-        }
     }
 }

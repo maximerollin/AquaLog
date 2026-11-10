@@ -56,7 +56,7 @@ class PrivacyServicesTest {
         val analytics = mutableListOf<AnalyticsPayload>()
         val feedback = mutableListOf<VoluntaryFeedback>()
         val coordinator = FeedbackCoordinator(
-            gateway = FeedbackGateway(feedback::add),
+            gateway = FeedbackGateway { feedback += it; FeedbackOutcome.SENT },
         )
 
         coordinator.submit(VoluntaryFeedback("The task reminder was late"))
@@ -66,25 +66,17 @@ class PrivacyServicesTest {
     }
 
     @Test
-    fun `review eligibility waits for successful use and never asks a satisfaction question`() {
-        val policy = ReviewEligibilityPolicy(
-            minimumSuccessfulSessions = 3,
-            minimumAgeMillis = 7 * 24 * 60 * 60 * 1_000L,
-        )
-        val firstSuccess = 1_000L
-
-        assertFalse(policy.isEligible(ReviewHistory(2, firstSuccess, requested = false), firstSuccess + 8.days))
-        assertFalse(policy.isEligible(ReviewHistory(3, firstSuccess, requested = false), firstSuccess + 6.days))
-        assertTrue(policy.isEligible(ReviewHistory(3, firstSuccess, requested = false), firstSuccess + 8.days))
-        assertFalse(policy.isEligible(ReviewHistory(4, firstSuccess, requested = true), firstSuccess + 9.days))
+    fun `disabled feedback gateway reports unavailable`() = runTest {
+        assertEquals(FeedbackOutcome.UNAVAILABLE, DisabledFeedbackGateway.submit(VoluntaryFeedback("Hello")))
     }
 
-    @Test
-    fun `eligible successful use directly requests the native review flow once`() {
-        var history = ReviewHistory(2, 1_000L, requested = false)
+    private class ReviewFixture(
+        var history: ReviewHistory = ReviewHistory(0, false, null, false),
+        var now: Long = 1_000L,
+    ) {
         var requests = 0
         val coordinator = ReviewCoordinator(
-            policy = ReviewEligibilityPolicy(minimumSuccessfulSessions = 3, minimumAgeMillis = 0),
+            policy = ReviewEligibilityPolicy(),
             store = object : ReviewHistoryStore {
                 override fun load() = history
                 override fun save(updated: ReviewHistory) {
@@ -92,15 +84,122 @@ class PrivacyServicesTest {
                 }
             },
             gateway = InAppReviewGateway { requests += 1 },
-            currentTimeMillis = { 2_000L },
+            currentTimeMillis = { now },
         )
+    }
 
-        coordinator.onSuccessfulSession()
-        coordinator.onSuccessfulSession()
+    @Test
+    fun `review becomes pending on the fifth calm session with a discovery step`() {
+        val fixture = ReviewFixture()
 
-        assertEquals(1, requests)
-        assertTrue(history.requested)
-        assertEquals(4, history.successfulSessionCount)
+        repeat(4) { fixture.coordinator.onNewSessionSaved(calm = true) }
+        assertFalse(fixture.history.pending)
+        assertEquals(ReviewPrompt.NONE, fixture.coordinator.pendingPrompt())
+
+        fixture.coordinator.onNewSessionSaved(calm = true)
+        assertTrue(fixture.history.pending)
+        assertEquals(ReviewPrompt.DISCOVERY, fixture.coordinator.pendingPrompt())
+        assertEquals(0, fixture.requests)
+    }
+
+    @Test
+    fun `a session with advice does not trigger the review, the next calm one does`() {
+        val fixture = ReviewFixture()
+
+        repeat(4) { fixture.coordinator.onNewSessionSaved(calm = true) }
+        fixture.coordinator.onNewSessionSaved(calm = false)
+        assertFalse(fixture.history.pending)
+
+        fixture.coordinator.onNewSessionSaved(calm = true)
+        assertTrue(fixture.history.pending)
+    }
+
+    @Test
+    fun `sessions that are never calm never make the review pending`() {
+        val fixture = ReviewFixture()
+
+        repeat(20) { fixture.coordinator.onNewSessionSaved(calm = false) }
+
+        assertFalse(fixture.history.pending)
+        assertEquals(20, fixture.history.newSessionCount)
+    }
+
+    @Test
+    fun `after a declined discovery the review waits 30 days then asks directly`() {
+        val fixture = ReviewFixture(ReviewHistory(4, false, null, false))
+        fixture.coordinator.onNewSessionSaved(calm = true)
+
+        fixture.coordinator.onDiscoveryAnswered(leaveReview = false)
+        assertEquals(0, fixture.requests)
+        assertEquals(ReviewPrompt.NONE, fixture.coordinator.pendingPrompt())
+        assertTrue(fixture.history.discoverySeen)
+        assertEquals(1_000L, fixture.history.lastRequestedAtEpochMillis)
+
+        fixture.now = 1_000L + 29.days
+        fixture.coordinator.onNewSessionSaved(calm = true)
+        assertFalse(fixture.history.pending)
+
+        fixture.now = 1_000L + 30.days
+        fixture.coordinator.onNewSessionSaved(calm = true)
+        assertTrue(fixture.history.pending)
+        assertEquals(ReviewPrompt.DIRECT, fixture.coordinator.pendingPrompt())
+    }
+
+    @Test
+    fun `accepting the discovery or a direct request calls the native flow once each`() {
+        val fixture = ReviewFixture(ReviewHistory(5, true, null, false))
+        fixture.coordinator.onDiscoveryAnswered(leaveReview = true)
+        assertEquals(1, fixture.requests)
+        assertFalse(fixture.history.pending)
+
+        fixture.history = fixture.history.copy(pending = true)
+        fixture.coordinator.requestDirect()
+        assertEquals(2, fixture.requests)
+        assertFalse(fixture.history.pending)
+        assertEquals(1_000L, fixture.history.lastRequestedAtEpochMillis)
+    }
+
+    @Test
+    fun `a legacy requested flag becomes a request date and the discovery is still to come`() {
+        val history = storedReviewHistory(
+            newSessionCount = 3,
+            pending = false,
+            lastRequestedAtEpochMillis = null,
+            discoverySeen = false,
+            legacyRequested = true,
+            nowEpochMillis = 1_000L,
+        )
+        assertEquals(1_000L, history.lastRequestedAtEpochMillis)
+
+        val fixture = ReviewFixture(history.copy(newSessionCount = 10), now = 1_000L + 29.days)
+        fixture.coordinator.onNewSessionSaved(calm = true)
+        assertFalse(fixture.history.pending)
+
+        fixture.now = 1_000L + 30.days
+        fixture.coordinator.onNewSessionSaved(calm = true)
+        assertTrue(fixture.history.pending)
+        assertEquals(ReviewPrompt.DISCOVERY, fixture.coordinator.pendingPrompt())
+    }
+
+    @Test
+    fun `a derived legacy request date is persisted once and stays the same across loads`() {
+        var raw = RawReviewValues(3, false, null, false, legacyRequested = true)
+        val storage = object : ReviewValuesStorage {
+            override fun read() = raw
+            override fun write(history: ReviewHistory) {
+                raw = RawReviewValues(
+                    history.newSessionCount, history.pending, history.lastRequestedAtEpochMillis,
+                    history.discoverySeen, legacyRequested = false,
+                )
+            }
+        }
+        var now = 1_000L
+        val store = MigratingReviewHistoryStore(storage) { now }
+
+        assertEquals(1_000L, store.load().lastRequestedAtEpochMillis)
+        now = 1_000L + 30.days
+        assertEquals(1_000L, store.load().lastRequestedAtEpochMillis)
+        assertFalse(raw.legacyRequested)
     }
 
     private val Int.days: Long get() = this * 24 * 60 * 60 * 1_000L

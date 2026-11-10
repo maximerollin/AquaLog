@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -26,7 +27,7 @@ class MainActivity : ComponentActivity() {
         (application as AquaLogApplication).proPurchaseCoordinator(this)
     }
     private val reviewCoordinator by lazy {
-        (application as AquaLogApplication).reviewCoordinator(this)
+        (application as AquaLogApplication).reviewCoordinator()
     }
     private val homeViewModel: HomeViewModel by viewModels {
         val application = application as AquaLogApplication
@@ -68,6 +69,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        (application as AquaLogApplication).attachReviewActivity(this)
         proPurchaseCoordinator
         setContent {
             AquaLogTheme {
@@ -85,12 +87,18 @@ class MainActivity : ComponentActivity() {
                     externalLinks = ExternalLinks(BuildConfig.PRIVACY_URL, BuildConfig.SUPPORT_URL) { url ->
                         if (url.startsWith("https://")) startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                     },
+                    rateApp = ::openStoreListing,
                 )
             }
         }
         handleAuthenticationIntent(intent)
         // A recreation still carries the launch intent, whose extras were already handled.
         if (savedInstanceState == null) handleWidgetIntent(intent)
+    }
+
+    override fun onDestroy() {
+        (application as AquaLogApplication).detachReviewActivity(this)
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -105,6 +113,16 @@ class MainActivity : ComponentActivity() {
         val aquariumId = intent.getStringExtra(EXTRA_WIDGET_AQUARIUM_ID)
         setIntent(Intent(this, MainActivity::class.java))
         homeViewModel.openFromWidget(aquariumId, target)
+    }
+
+    /** Opens Aquagenda's Google Play page: the store app when present, the web page otherwise. */
+    private fun openStoreListing() {
+        val id = packageName
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$id")))
+        } catch (_: ActivityNotFoundException) {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$id")))
+        }
     }
 
     private fun handleAuthenticationIntent(intent: Intent?) {

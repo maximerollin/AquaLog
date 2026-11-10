@@ -34,17 +34,30 @@ component, and optional synchronization category; no user identifier is set.
 ## Voluntary feedback and reviews
 
 Feedback uses `FeedbackGateway`, never `ProductTelemetry` or `CrashReporter`.
-The Settings dialog explains exactly what is submitted and reminds the user not
-to type personal details. `DisabledFeedbackGateway` makes the missing delivery
-integration visible and does not claim the message was sent. When an authenticated
-Supabase session and `AQUALOG_FEEDBACK_URL` (or the configured Supabase Edge URL)
-exist, the dedicated `submit-feedback` function accepts only the voluntary message;
-the database RPC enforces authentication and three submissions per account/hour.
+The dialog explains exactly what is submitted (message, type, app version, app
+language and, from a species page, the species) and that a random device
+identifier limits sends without an account; it states that Aquagenda never
+attaches water values, notes, Aquarium names, photos, email address or
+analytics identifiers. `DisabledFeedbackGateway` makes the missing delivery
+integration visible and does not claim the message was sent. When
+`AQUALOG_FEEDBACK_URL` (or the configured Supabase Edge URL) exists, the
+dedicated `submit-feedback` function accepts the message, its type, the app
+version, the app language and an optional species id, with or without an
+account. With a Supabase session the database RPC limits submissions to three
+per account/hour. Without one, the anonymous path goes through a service-role
+RPC that limits to three per install id/hour and 100/hour overall; the install
+id is a random identifier used only for that limit.
 
-Review eligibility is stored locally. After three successful Sessions and at
-least seven days since the first one, Aquagenda calls Google Play In-App Review
-directly. There is no satisfaction pre-question. The local flag is persisted
-before the native request so recreation or retries cannot prompt repeatedly.
+Review eligibility is stored locally. On the fifth calm new Session (no value out
+of range, not a Cycling Aquarium; editing a Session never counts), then at most
+every 30 days, Aquagenda asks for a review. The first time, a one-time
+« Votre avis compte » dialog explains it and offers « Laisser un avis »
+(which opens the Google Play page, not the In-App Review API) or « Plus tard »;
+later 30-day requests call Google Play In-App Review directly. There is
+no satisfaction pre-question. The request date is persisted before the native
+request so recreation or retries cannot prompt repeatedly. Settings also offer
+« Noter Aquagenda », which opens the store page. The review-flow LogSnag
+event is unchanged.
 
 ## Operational notifications
 

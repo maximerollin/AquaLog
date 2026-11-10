@@ -120,7 +120,7 @@ import org.jetbrains.compose.resources.stringResource
 
 /** The Tank destination: scene, status, latest value per parameter, today's Tasks and the Measure button. */
 @Composable
-fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = Modifier) {
+fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = Modifier, rateApp: (() -> Unit)? = null) {
     val setup = requireNotNull(state.setup)
     val aquarium = setup.aquarium
     val overview = homeOverview(setup, state.latestReadings)
@@ -334,6 +334,26 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     }
     PhotoSheets(state, viewModel, snackbar)
     if (state.pistesAfterSave.isNotEmpty()) PistesSheet(state.pistesAfterSave, viewModel.today(), viewModel::dismissPistes)
+    if (state.reviewDiscoveryVisible) {
+        androidx.compose.material3.AlertDialog(
+            // Dismissing is « Plus tard ». The confirm button opens the store page: the In-App Review API is never a call-to-action's target.
+            onDismissRequest = { viewModel.answerReviewDiscovery(leaveReview = false) },
+            title = { Text(stringResource(Res.string.review_discovery_title)) },
+            text = { Text(stringResource(Res.string.review_discovery_text)) },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.answerReviewDiscovery(leaveReview = true, openStorePage = rateApp) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) { Text(stringResource(Res.string.review_discovery_confirm)) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { viewModel.answerReviewDiscovery(leaveReview = false) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) { Text(stringResource(Res.string.review_discovery_later)) }
+            },
+        )
+    }
     if (showHabitants) {
         HabitantsSheet(
             groups = state.inhabitants,
