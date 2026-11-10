@@ -36,7 +36,6 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -60,7 +59,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
@@ -102,6 +100,7 @@ import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.LinkedTaskTitle
 import com.maximerollin.aqualog.todayTasks
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
+import com.maximerollin.aqualog.ui.theme.FloatingNavBarClearance
 import com.maximerollin.aqualog.ui.theme.ReadingValue
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.ui.theme.attentionMarkColor
@@ -118,7 +117,13 @@ import org.jetbrains.compose.resources.stringResource
 
 /** The Tank destination: scene, status, latest value per parameter, today's Tasks and the Measure button. */
 @Composable
-fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = Modifier, rateApp: (() -> Unit)? = null) {
+fun TankHome(
+    state: HomeUiState,
+    viewModel: HomeViewModel,
+    modifier: Modifier = Modifier,
+    rateApp: (() -> Unit)? = null,
+    onMeasureAvailabilityChange: (Boolean) -> Unit = {},
+) {
     val setup = requireNotNull(state.setup)
     val aquarium = setup.aquarium
     val overview = homeOverview(setup, state.latestReadings)
@@ -177,13 +182,15 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
         }
     }
     val canMeasure = measureTargetsShownAquarium(state.aquariums.size, pager.isScrollInProgress, pendingSwipeSelection != null)
+    // The shell owns « + »: it only needs to know whether the shown Aquarium can take a Measure.
+    LaunchedEffect(canMeasure) { onMeasureAvailabilityChange(canMeasure) }
 
     Box(modifier.fillMaxSize()) {
         // The only scrollable on the home: tests rely on a single node with a scroll action.
         LazyColumn(
             Modifier.fillMaxSize().testTag("home-list"),
             state = listState,
-            contentPadding = PaddingValues(bottom = 88.dp),
+            contentPadding = PaddingValues(bottom = FloatingNavBarClearance.dp),
         ) {
             item {
                 AquariumScene(
@@ -326,15 +333,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                 }
             }
         }
-        ExtendedFloatingActionButton(
-            onClick = { if (canMeasure) viewModel.openRapidSession() },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).heightIn(min = 48.dp)
-                .alpha(if (canMeasure) 1f else .38f)
-                .semantics { if (!canMeasure) disabled() },
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-        ) { Text(stringResource(Res.string.measure_action), fontWeight = FontWeight.SemiBold) }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp))
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = FloatingNavBarClearance.dp))
     }
     PhotoSheets(state, viewModel, snackbar)
     if (state.pistesAfterSave.isNotEmpty()) PistesSheet(state.pistesAfterSave, viewModel.today(), viewModel::dismissPistes)
@@ -397,6 +396,10 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
  */
 internal fun measureTargetsShownAquarium(aquariumCount: Int, scrolling: Boolean, swipeSelectionPending: Boolean): Boolean =
     aquariumCount < 2 || (!scrolling && !swipeSelectionPending)
+
+/** The shell's « + » is live on every tab but the Tank's, where it follows the home's [measureTargetsShownAquarium] guard. */
+internal fun plusEnabled(destination: MainDestination, tankCanMeasure: Boolean): Boolean =
+    destination != MainDestination.TANK || tankCanMeasure
 
 /** The page the pager must scroll to so it shows the current Aquarium, or null when it already does. */
 internal fun pagerSyncTarget(currentIndex: Int, pageCount: Int, currentPage: Int): Int? =
