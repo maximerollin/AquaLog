@@ -90,6 +90,7 @@ import com.maximerollin.aqualog.pistesAdvices
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.label
 import com.maximerollin.aqualog.resources.*
+import com.maximerollin.aqualog.rememberReducedMotion
 import com.maximerollin.aqualog.SEPARATOR
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumProfile
@@ -142,6 +143,10 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     }
     // Every Aquarium's own scene, for the pages of the pager that are not the current one yet.
     val pageScenes = remember(state.inhabitantsByAquarium, encyclopedia) { miniScenes(state.inhabitantsByAquarium, encyclopedia, max = 12) }
+    // The 44 dp vignettes draw as few sprites as the list thumbnails.
+    val vignetteScenes = remember(state.inhabitantsByAquarium, encyclopedia) {
+        miniScenes(state.inhabitantsByAquarium, encyclopedia, max = THUMBNAIL_SPRITES)
+    }
     val snackbar = remember { SnackbarHostState() }
     val currentIndex = state.aquariums.indexOfFirst { it.id == aquarium.id }.coerceAtLeast(0)
     val pager = rememberPagerState(initialPage = currentIndex) { state.aquariums.size }
@@ -188,6 +193,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                         { showHabitants = true }, viewModel::openAddInhabitant,
                     ),
                     pageScenes = pageScenes,
+                    vignetteScenes = vignetteScenes,
                 )
             }
             item {
@@ -413,9 +419,13 @@ private fun AquariumScene(
     onChangeAquarium: () -> Unit,
     habitants: SceneHabitants,
     pageScenes: Map<String, MiniScene>,
+    vignetteScenes: Map<String, MiniScene>,
 ) {
     if (aquariums.size < 2) {
-        SceneHeader(current, onChangeAquarium, onOpenPhoto, loadPhoto, cachedPhoto, habitants.scene, habitants)
+        SceneHeader(
+            current, onChangeAquarium, onOpenPhoto, loadPhoto, cachedPhoto, habitants.scene,
+            vignetteScenes[current.id] ?: MiniScene.Empty, stillScene = false, habitants,
+        )
         return
     }
     Column {
@@ -424,7 +434,11 @@ private fun AquariumScene(
             // but it draws its own Aquarium's inhabitants.
             val isCurrent = aquariums[page].id == current.id
             val scene = if (isCurrent) habitants.scene else pageScenes[aquariums[page].id] ?: MiniScene.Empty
-            SceneHeader(aquariums[page], onChangeAquarium, onOpenPhoto.takeIf { isCurrent }, loadPhoto, cachedPhoto, scene, habitants.takeIf { isCurrent })
+            // Pages other than the current one are only seen mid-swipe: they stay still, so the home runs one frame loop.
+            SceneHeader(
+                aquariums[page], onChangeAquarium, onOpenPhoto.takeIf { isCurrent }, loadPhoto, cachedPhoto, scene,
+                vignetteScenes[aquariums[page].id] ?: MiniScene.Empty, stillScene = !isCurrent, habitants.takeIf { isCurrent },
+            )
         }
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center) {
             repeat(aquariums.size) { index ->
@@ -521,6 +535,8 @@ private fun SceneHeader(
     loadPhoto: suspend (String) -> ImageBitmap?,
     cachedPhoto: (String) -> ImageBitmap?,
     scene: MiniScene,
+    vignette: MiniScene,
+    stillScene: Boolean,
     habitants: SceneHabitants?,
 ) {
     // No age: createdAtEpochMillis is when the Aquarium was added to the app, not when it was set up.
@@ -542,7 +558,7 @@ private fun SceneHeader(
                 .semantics { contentDescription = habitantsLabel }
         },
     ) {
-        TankScene(aquarium, scene.sprites, Modifier.fillMaxWidth(), scene.plants)
+        TankScene(aquarium, scene.sprites, Modifier.fillMaxWidth(), scene.plants, animate = !stillScene && !rememberReducedMotion())
         Column(
             // Clear of the photo vignette (48 dp + 12 dp margin) at the top end. The scrim sits inside the same 16/12 dp
             // padding, so the click target is unchanged, and keeps the white text readable over a passing fish.
@@ -574,7 +590,7 @@ private fun SceneHeader(
             Box {
                 AquariumThumbnail(
                     aquarium, 44.dp, loadPhoto, Modifier.border(1.5.dp, Color.White, RoundedCornerShape(12.dp)), cachedPhoto,
-                    scene.sprites, scene.plants,
+                    vignette.sprites, vignette.plants,
                 )
                 if (aquarium.photoId == null) {
                     Box(

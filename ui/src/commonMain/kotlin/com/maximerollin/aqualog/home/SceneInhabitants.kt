@@ -159,4 +159,5 @@ fun rememberThumbnailScenes(byAquarium: Map<String, List<Inhabitant>>): Map<Stri
     return remember(byAquarium, encyclopedia) { miniScenes(byAquarium, encyclopedia, max = THUMBNAIL_SPRITES) }
 }
 
-private const val THUMBNAIL_SPRITES = 3
+/** A 40-44 dp thumbnail draws at most this many sprites (the small widget's cap). */
+internal const val THUMBNAIL_SPRITES = 3

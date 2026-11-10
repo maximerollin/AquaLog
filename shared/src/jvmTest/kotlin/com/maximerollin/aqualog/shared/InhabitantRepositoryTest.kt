@@ -1,8 +1,13 @@
 package com.maximerollin.aqualog.shared
 
 import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -144,9 +149,35 @@ class InhabitantRepositoryTest {
         assertEquals(listOf(shrimp), byAquarium.getValue(reef.id))
         assertEquals(null, byAquarium[empty.id])
 
-        f.repository.removeInhabitants(neons.id, 10)
-        val after = f.repository.observePresentInhabitantsByAquarium().first { it.getValue(amazon.id).size == 1 }
-        assertEquals(listOf(guppies), after.getValue(amazon.id))
+        f.database.close()
+    }
+
+    @Test
+    fun `a removal re-emits the by-Aquarium map to an already collecting observer`() = runTest {
+        val f = Fixture()
+        val amazon = f.aquarium("Amazonien")
+        val neons = f.neons(amazon.id, 10)
+        val guppies = f.repository.addInhabitant(amazon.id, "guppy", null, DrawingFamily.LIVEBEARER, 2)
+        val emissions = mutableListOf<Map<String, List<Inhabitant>>>()
+        val observer = launch(UnconfinedTestDispatcher(testScheduler)) {
+            f.repository.observePresentInhabitantsByAquarium().collect { emissions += it }
+        }
+        while (emissions.isEmpty()) yield()
+        assertEquals(listOf(neons, guppies), emissions.last().getValue(amazon.id))
+
+        // A partial removal splits the row: the group stays with its remaining count.
+        f.repository.removeInhabitants(neons.id, 4)
+        withTimeout(5_000) { while (emissions.last().getValue(amazon.id).first().count != 6) yield() }
+        assertEquals(listOf(6, 2), emissions.last().getValue(amazon.id).map(Inhabitant::count))
+
+        f.repository.removeInhabitants(neons.id, 6)
+        withTimeout(5_000) { while (emissions.last().getValue(amazon.id).size != 1) yield() }
+        assertEquals(listOf(guppies), emissions.last().getValue(amazon.id))
+
+        f.repository.removeInhabitants(guppies.id, 2)
+        withTimeout(5_000) { while (emissions.last().isNotEmpty()) yield() }
+        assertEquals(emptyMap(), emissions.last())
+        observer.cancel()
         f.database.close()
     }
 
