@@ -54,10 +54,9 @@ Contexte : un seul Supabase sert à tous les canaux (interne, test fermé, produ
   - **Quoi** : un nom, une région proche des utilisateurs, un mot de passe de base (garde-le au coffre).
   - **Vérifier** : tu vois l'URL `https://<projet>.supabase.co` et la clé « anon » (publique). Note l'URL et la clé anon : ce sont `AQUALOG_SUPABASE_URL` et `AQUALOG_SUPABASE_ANON_KEY` (phase 5). La clé `service_role` ne sort jamais de Supabase.
 - [ ] **1.2 Relier la CLI au projet.**
-  - **Où** : terminal, à la racine du dépôt. **Ne lance jamais `supabase start`, `db reset` ou `stop` ici** : la config historique (`aqualog-ticket-10`) appartient à la pile locale d'un autre ticket.
-  - **Quoi** : `supabase link --project-ref <référence du projet>` puis connecte-toi si la CLI le demande.
+  - **Où** : terminal, à la racine du dépôt. `supabase start`, `stop` et `db reset` restent sur ta base **locale** : continue de les utiliser pour développer. **Ne lance jamais `supabase db reset --linked`** : cette variante efface la base de **production** reliée.
+  - **Quoi** : `supabase login`, puis `supabase link --project-ref <référence du projet>` (la référence est dans l'URL du tableau de bord).
   - **Vérifier** : la commande répond sans erreur.
-  - **[À VÉRIFIER]** : les sources ne montrent que `db push` et `functions deploy`, pas `link`. C'est la méthode standard de la CLI.
 - [ ] **1.3 Appliquer toutes les migrations.**
   - **Où** : `supabase db push`.
   - **Quoi** : les 20 fichiers de `supabase/migrations/`, dans l'ordre :
@@ -89,8 +88,8 @@ Contexte : un seul Supabase sert à tous les canaux (interne, test fermé, produ
     - `AQUALOG_DELETION_SIGNING_SECRET` : aléatoire, pour la suppression de compte.
     - Si LogSnag : `LOGSNAG_PROJECT=aqualog` et `LOGSNAG_PRIVATE_TOKEN` (phase 4).
     - Ne définis **pas** `AQUALOG_ACCOUNT_STORAGE_BUCKETS` (le défaut vide déjà `aquarium-photos`).
+  - **Comment** : dans le tableau de bord, ou par la CLI : `supabase secrets set NOM=valeur` (une paire par secret). Avec la CLI, la valeur passe dans l'historique du terminal : préfère le tableau de bord pour les secrets.
   - **Vérifier** : les noms apparaissent dans la liste des secrets (les valeurs restent masquées).
-  - **[À VÉRIFIER]** : les sources donnent les noms, pas la commande exacte pour les poser (la CLI propose `supabase secrets set`).
 - [ ] **1.7 Configurer l'authentification.**
   - **Où** : tableau de bord → Authentication.
   - **Quoi** : ajouter `aqualog://auth/callback` aux URL de redirection autorisées ; activer le fournisseur Google et le code e-mail (OTP).
@@ -131,8 +130,13 @@ Contexte : un seul Supabase sert à tous les canaux (interne, test fermé, produ
 - [ ] **2.7 [PORTE À SENS UNIQUE] Signature de l'app : clé d'upload.**
   - **Où** : ta machine, puis Play Console → Configuration → Intégrité de l'application → Signature d'application (Play App Signing).
   - **Quoi** : crée une clé d'upload (un fichier keystore) avec son alias et deux mots de passe. Garde-la **en double sauvegarde** : la CI doit toujours utiliser **la même** clé ([deployment.md](deployment.md)). Tu en auras besoin en phase 5 sous la forme `KEYSTORE` (le fichier encodé en base64), `SIGNING_KEY_ALIAS`, `SIGNING_STORE_PASSWORD`, `SIGNING_KEY_PASSWORD`.
-  - **Vérifier** : tu peux rouvrir le keystore avec l'alias et le mot de passe notés.
-  - **[À VÉRIFIER]** : les sources ne donnent ni la commande de création du keystore, ni celle de l'encodage base64.
+  - **Comment** (commandes standard du JDK et de macOS) :
+    ```bash
+    keytool -genkeypair -v -keystore aquagenda-upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000
+    base64 -i aquagenda-upload.jks | pbcopy   # copie le contenu pour le secret KEYSTORE
+    ```
+    Range `aquagenda-upload.jks` hors du dépôt (jamais dans Git).
+  - **Vérifier** : `keytool -list -keystore aquagenda-upload.jks` affiche l'alias `upload` avec ton mot de passe.
 - [ ] **2.8 [PORTE À SENS UNIQUE] Créer les produits.**
   - **Où** : Play Console → Monétiser avec Play → Produits (abonnements, produits uniques).
   - **Quoi** :
@@ -254,9 +258,11 @@ Tout est optionnel pour publier. **Règle** : Supabase, PostHog, Firebase et Log
   - **[À VÉRIFIER]** : le test instrumenté exige un build **debug** avec le même package, alors que [deployment.md](deployment.md) dit qu'un debug (autre signature) ne cohabite pas avec l'app du store. Fais-le avant d'installer depuis Play, ou sur un autre appareil.
 - [ ] **6.6 Contrôle TalkBack de 5 minutes.**
   - **Où** : téléphone, Réglages → Accessibilité → TalkBack activé.
-  - **Quoi** : trois contrôles ciblés. (1) Champ de commentaire : TalkBack annonce « Votre message ». (2) Recherche d'espèce dans l'encyclopédie : le champ est annoncé et les résultats se lisent un par un. (3) Le pager (pagination) annonce « 1 / 2 » et la page suivante.
-  - **Vérifier** : les trois annonces sont claires, le focus ne se perd pas.
-  - **[À VÉRIFIER]** : « Votre message » est bien le libellé du champ dans le code (`feedback_message_label`). Je n'ai pas retrouvé « 1 / 2 » dans les sources ; vérifie sur l'écran réel. [accessibility-validation.md](accessibility-validation.md) rappelle qu'une passe TalkBack manuelle reste nécessaire.
+  - **Quoi** : trois contrôles ciblés.
+    1. Plus › Envoyer des commentaires, tape un mot : TalkBack dit « Votre message », la zone d'édition et ton texte.
+    2. Accueil › Ajouter vos habitants, tape « neon » : TalkBack dit « Rechercher une espèce… » et ton texte, puis lit les résultats un par un.
+    3. Avec au moins deux bacs, les petits points sous la scène de l'accueil : TalkBack annonce la position, « 1 / 2 ».
+  - **Vérifier** : les trois annonces sont claires et le focus ne se perd pas. [accessibility-validation.md](accessibility-validation.md) rappelle qu'une passe TalkBack manuelle reste nécessaire.
 - [ ] **6.7 Contrôle des services (confidentialité).**
   - **Quoi** : dans PostHog et Crashlytics, vérifie qu'aucun événement ne contient de valeur d'eau, note, nom de bac, e-mail ou photo ; dans LogSnag, qu'aucun identifiant de compte n'apparaît.
   - **Vérifier** : rien de personnel n'est visible.
