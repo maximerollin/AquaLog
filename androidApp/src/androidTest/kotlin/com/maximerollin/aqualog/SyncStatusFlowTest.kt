@@ -45,10 +45,10 @@ class SyncStatusFlowTest {
         composeRule.onNodeWithText("Continue for free").performClick()
 
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodes(hasText("Measure")).fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodes(hasLabel("Measure")).fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithText("Measure").assertIsDisplayed()
-        composeRule.onNodeWithText("More").performClick()
+        composeRule.onNode(hasLabel("Measure")).assertIsDisplayed()
+        composeRule.onNode(hasLabel("More")).performClick()
         waitForSettingsText("○ Sync pending")
         composeRule.onNodeWithText("○ Sync pending").assertIsDisplayed()
         scenario.close()
@@ -87,7 +87,7 @@ class SyncStatusFlowTest {
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodes(hasText("Retry sync")).fetchSemanticsNodes().isEmpty()
         }
-        composeRule.onNodeWithText("More").performClick()
+        composeRule.onNode(hasLabel("More")).performClick()
         waitForSettingsText("○ Sync pending")
 
         scenario.close()

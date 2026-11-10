@@ -4,9 +4,11 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -37,7 +39,7 @@ class PistesFlowTest {
         try {
             waitForText("Get started")
             completeMinimalOnboarding()
-            composeRule.onNodeWithText("Measure").performClick()
+            composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Nitrite").performTextInput("0.25")
             composeRule.onNodeWithText("Save Session").performClick()
@@ -51,7 +53,9 @@ class PistesFlowTest {
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasText("Ideas for Nitrite")).fetchSemanticsNodes().isEmpty()
             }
-            composeRule.onNodeWithText("Ideas · Nitrite").performClick()
+            // The ideas stay one tap away: the home's status card reopens them.
+            composeRule.onNodeWithTag("status-card").performClick()
+            waitForText("Ideas for Nitrite")
             composeRule.onNodeWithText("Change 30% of the water.").assertIsDisplayed()
         } finally {
             scenario.close()
@@ -66,20 +70,23 @@ class PistesFlowTest {
         try {
             waitForText("Get started")
             completeMinimalOnboarding()
-            composeRule.onNodeWithText("Measure").performClick()
+            composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Nitrite").performTextInput("0.25")
             composeRule.onNodeWithText("Save Session").performClick()
             waitForText("Ideas for Nitrite")
 
             // The scrim blocks touches, so leave the home through the semantics action, as a programmatic navigation would.
-            composeRule.onNodeWithText("History").performSemanticsAction(SemanticsActions.OnClick)
+            composeRule.onNode(hasLabel("History")).performSemanticsAction(SemanticsActions.OnClick)
             waitForText("Chronology")
-            composeRule.onNodeWithText("Tank").performClick()
-            waitForText("Ideas · Nitrite")
+            composeRule.onNode(hasLabel("Tank")).performClick()
+            waitForTag("status-card")
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasText("Ideas for Nitrite")).fetchSemanticsNodes().isEmpty()
             }
+            // The sheet does not come back by itself, but the status card still opens it.
+            composeRule.onNodeWithTag("status-card").performClick()
+            waitForText("Ideas for Nitrite")
         } finally {
             scenario.close()
         }
@@ -93,7 +100,7 @@ class PistesFlowTest {
         try {
             waitForText("Get started")
             completeMinimalOnboarding()
-            composeRule.onNodeWithText("Measure").performClick()
+            composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Nitrite").performTextInput("0.6")
             composeRule.onNodeWithText("Far outside your indicative range", substring = true).assertIsDisplayed()
@@ -132,8 +139,9 @@ class PistesFlowTest {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
-            waitForText("Ideas · Nitrate")
-            composeRule.onNodeWithText("Ideas · Nitrate").performClick()
+            waitForTag("status-card")
+            composeRule.onNodeWithTag("status-card").performClick()
+            waitForText("Ideas for Nitrate")
             // Nitrate is tested again 3 days after yesterday's reading: a date, neither today nor tomorrow.
             composeRule.onNodeWithText("Test again on ", substring = true).assertIsDisplayed()
         } finally {
@@ -151,7 +159,13 @@ class PistesFlowTest {
         composeRule.onNodeWithText("Try a mini Session").performClick()
         composeRule.onNodeWithText("See Free and Pro").performClick()
         composeRule.onNodeWithText("Continue for free").performClick()
-        waitForText("Measure")
+        composeRule.awaitLabel("Measure")
+    }
+
+    private fun waitForTag(tag: String) {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasTestTag(tag)).fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     private fun waitForText(text: String) {

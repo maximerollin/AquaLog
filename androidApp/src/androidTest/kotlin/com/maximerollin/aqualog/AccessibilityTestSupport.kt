@@ -6,6 +6,13 @@ import android.os.LocaleList
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertTrue
 
@@ -44,3 +51,13 @@ internal fun setFontScale(scale: Float) {
         SystemClock.sleep(50)
     }
 }
+
+/** Icon-only controls (floating bar, Measure) expose their name as a content description. */
+internal fun hasLabel(label: String): SemanticsMatcher = hasText(label) or hasContentDescription(label)
+
+internal fun ComposeTestRule.awaitLabel(label: String) =
+    waitUntil(timeoutMillis = 10_000) { onAllNodes(hasLabel(label)).fetchSemanticsNodes().isNotEmpty() }
+
+/** The home's horizontal row of value tiles: the only horizontal scrollable inside `home-list`. */
+internal fun homeValueRow(): SemanticsMatcher =
+    SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange) and hasAnyAncestor(hasTestTag("home-list"))

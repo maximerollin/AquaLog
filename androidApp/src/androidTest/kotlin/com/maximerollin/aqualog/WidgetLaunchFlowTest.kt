@@ -68,7 +68,7 @@ class WidgetLaunchFlowTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
             waitForText("Aqua 120")
-            composeRule.onNodeWithText("Measure").performClick()
+            composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
             // MainActivity is singleTask: this reaches the running instance through onNewIntent.
@@ -115,7 +115,7 @@ class WidgetLaunchFlowTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
             waitForText("Aqua 120")
-            composeRule.onNodeWithText("History").performClick()
+            composeRule.onNode(hasLabel("History")).performClick()
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasText("See all")).fetchSemanticsNodes().isEmpty()
             }

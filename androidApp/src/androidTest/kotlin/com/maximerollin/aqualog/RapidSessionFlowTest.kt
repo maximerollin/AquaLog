@@ -13,6 +13,7 @@ import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
@@ -81,7 +82,7 @@ class RapidSessionFlowTest {
         try {
             waitForText("Get started")
             completeMinimalOnboarding()
-            composeRule.onNodeWithText("Measure").performClick()
+            composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
             closeSoftKeyboard()
@@ -94,13 +95,13 @@ class RapidSessionFlowTest {
             assertEquals(1, received.single().sessions.size)
             assertEquals(24.5, received.single().measurements.single().value, 0.0)
             // The account migration keeps running after the upload; the home comes back only once it ends.
-            waitForText("History")
-            composeRule.onNodeWithText("History").performClick()
+            composeRule.awaitLabel("History")
+            composeRule.onNode(hasLabel("History")).performClick()
             waitForText("Chronology")
             composeRule.onNodeWithContentDescription("Open Session details").performClick()
             composeRule.onNode(hasText("Temperature") and hasText("24.5") and hasText("°C")).assertIsDisplayed()
             composeRule.onNodeWithText("Back to Chronology").performClick()
-            composeRule.onNodeWithText("More").performClick()
+            composeRule.onNode(hasLabel("More")).performClick()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("qualification@example.com"))
             composeRule.onNodeWithText("qualification@example.com").assertIsDisplayed()
         } finally {
@@ -118,7 +119,7 @@ class RapidSessionFlowTest {
         }
         completeMinimalOnboarding()
 
-        composeRule.onNodeWithText("Measure").performClick()
+        composeRule.onNode(hasLabel("Measure")).performClick()
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodes(hasText("Measurements")).fetchSemanticsNodes().isNotEmpty()
         }
@@ -151,8 +152,11 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithText("Secure your local Aquarium copy").assertIsDisplayed()
         composeRule.onNodeWithText("Not now").performClick()
         composeRule.onNodeWithText("measured today", substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText("24.5").assertIsDisplayed()
-        composeRule.onNodeWithText("7.2").assertIsDisplayed()
+        // Each value tile is one node read as « Temperature, 24.5, °C »; the row scrolls horizontally.
+        for (reading in listOf("Temperature, 24.5", "pH, 7.2")) {
+            composeRule.onNode(homeValueRow()).performScrollToNode(hasText(reading, substring = true))
+            composeRule.onNodeWithText(reading, substring = true).assertIsDisplayed()
+        }
         scenario.close()
     }
 
@@ -164,7 +168,7 @@ class RapidSessionFlowTest {
         try {
             waitForText("Get started")
             completeMinimalOnboarding()
-            composeRule.onNodeWithText("Measure").performClick()
+            composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             val ph = composeRule.onNodeWithContentDescription("Measurement for pH")
             ph.performTextInput("7..2")
@@ -189,7 +193,7 @@ class RapidSessionFlowTest {
         try {
             waitForText("Get started")
             completeMinimalOnboarding()
-            composeRule.onNodeWithText("Measure").performClick()
+            composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             val ph = composeRule.onNodeWithContentDescription("Measurement for pH")
             ph.performTextInput("72")
@@ -232,8 +236,8 @@ class RapidSessionFlowTest {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
-            waitForText("Measure")
-            composeRule.onNodeWithText("Measure").performClick()
+            composeRule.awaitLabel("Measure")
+            composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Nitrate").performScrollTo().performTextInput("80")
             composeRule.onNodeWithText("Save Session").performClick()
@@ -257,7 +261,7 @@ class RapidSessionFlowTest {
         }
         completeMinimalOnboarding()
 
-        composeRule.onNodeWithText("Measure").performClick()
+        composeRule.onNode(hasLabel("Measure")).performClick()
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodes(hasText("Measurements")).fetchSemanticsNodes().isNotEmpty()
         }
@@ -269,18 +273,18 @@ class RapidSessionFlowTest {
         firstScenario.close()
 
         val restartedScenario = ActivityScenario.launch(MainActivity::class.java)
-        waitForText("Measure")
-        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Secure your local Aquarium copy"))
+        composeRule.awaitLabel("Measure")
+        composeRule.onNodeWithTag("home-list").performScrollToNode(hasText("Secure your local Aquarium copy"))
         composeRule.onNodeWithText("Secure your local Aquarium copy").assertIsDisplayed()
-        composeRule.onNodeWithText("Measure").assertIsDisplayed()
+        composeRule.onNode(hasLabel("Measure")).assertIsDisplayed()
 
-        composeRule.onNodeWithText("History").performClick()
+        composeRule.onNode(hasLabel("History")).performClick()
         composeRule.onNodeWithText("Chronology").assertIsDisplayed()
-        composeRule.onNodeWithText("Trends").performClick()
+        composeRule.onNode(hasLabel("Trends")).performClick()
         composeRule.onNodeWithText("30 days").assertIsDisplayed()
 
-        composeRule.onNodeWithText("Tank").performClick()
-        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Review account options"))
+        composeRule.onNode(hasLabel("Tank")).performClick()
+        composeRule.onNodeWithTag("home-list").performScrollToNode(hasText("Review account options"))
         composeRule.onNodeWithText("Review account options").performClick()
         composeRule.onNodeWithText("Create an account").assertIsDisplayed()
         composeRule.onNodeWithText("Not now").performClick()
@@ -288,7 +292,7 @@ class RapidSessionFlowTest {
 
         val acknowledgedScenario = ActivityScenario.launch(MainActivity::class.java)
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodes(hasText("Measure")).fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodes(hasLabel("Measure")).fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onAllNodes(hasText("Secure your local Aquarium copy")).assertCountEquals(0)
         acknowledgedScenario.close()
@@ -305,7 +309,7 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithText("See Free and Pro").performClick()
         composeRule.onNodeWithText("Continue for free").performClick()
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodes(hasText("Measure")).fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodes(hasLabel("Measure")).fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithText("Amazonien").assertIsDisplayed()
     }

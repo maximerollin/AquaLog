@@ -121,7 +121,7 @@ class TrendsFlowTest {
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription("Exact value 7.2 pH"))
         composeRule.onNodeWithContentDescription("Exact value 7.2 pH").assertIsDisplayed()
 
-        composeRule.onNodeWithText("Tank").performClick()
+        composeRule.onNode(hasLabel("Tank")).performClick()
         SystemClock.sleep(10)
         runBlocking {
             application.aquariumRepository.saveRapidSession(
@@ -244,8 +244,8 @@ class TrendsFlowTest {
 
     private fun parameterRow(label: String) = composeRule.onNode(hasClickAction() and hasText(label))
 
-    // The home's "Latest values" section also offers a Trends action; target the navigation item.
+    // Target the Trends tab by its role.
     private fun trendsTab() = composeRule.onNode(
-        hasText("Trends") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab),
+        hasLabel("Trends") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab),
     )
 }

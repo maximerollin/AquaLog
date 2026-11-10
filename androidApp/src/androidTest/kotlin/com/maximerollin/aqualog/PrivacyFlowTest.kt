@@ -44,7 +44,7 @@ class PrivacyFlowTest {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
-            composeRule.onNodeWithText("More").performClick()
+            composeRule.onNode(hasLabel("More")).performClick()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Send feedback") and hasClickAction())
             composeRule.onNode(hasText("Send feedback") and hasClickAction())
                 .performScrollTo()
