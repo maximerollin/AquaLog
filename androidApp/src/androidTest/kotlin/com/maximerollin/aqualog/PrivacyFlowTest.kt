@@ -54,7 +54,8 @@ class PrivacyFlowTest {
                 substring = true,
             )
             val privateMessage = "My pH note for Private Aquarium is 7.2"
-            composeRule.onNodeWithText("Feedback message").performTextInput(privateMessage)
+            // The label is a separate Text above the field, so find the field itself.
+            composeRule.onNodeWithTag("feedback-message").performTextInput(privateMessage)
             composeRule.onNodeWithTag("submit-feedback").performClick()
             composeRule.waitUntil(timeoutMillis = 5_000) {
                 application.recordedFeedback.any { it.message == privateMessage }

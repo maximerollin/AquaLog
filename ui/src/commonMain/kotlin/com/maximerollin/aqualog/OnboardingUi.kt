@@ -1331,7 +1331,7 @@ private fun FeedbackDialog(
                         Text(stringResource(Res.string.feedback_character_count, state.message.length))
                     },
                     minLines = 4,
-                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = messageLabel },
+                    modifier = Modifier.fillMaxWidth().testTag("feedback-message").semantics { contentDescription = messageLabel },
                 )
                 state.outcome?.let { outcome ->
                     val (text, color) = when (outcome) {
