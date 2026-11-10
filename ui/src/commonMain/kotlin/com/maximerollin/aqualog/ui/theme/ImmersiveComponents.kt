@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -189,7 +190,8 @@ fun ValueTile(value: HomeValue, formatter: LocalizedFormatters, modifier: Modifi
     val levelWords = levelDescription(value.level)
     val spoken = listOfNotNull(label, shown ?: unmeasured, shown?.let { unit }, levelWords).joinToString(", ")
     Column(
-        modifier.width(96.dp)
+        // Grows past 96 dp rather than clipping: « Ammoniak / Ammonium » or « 25,5 °C » at 150 %.
+        modifier.widthIn(min = 96.dp)
             .background(container ?: colors.surface, shape)
             .let { if (container == null) it.border(BorderStroke(1.dp, colors.outlineVariant), shape) else it }
             .padding(horizontal = 10.dp, vertical = 12.dp)

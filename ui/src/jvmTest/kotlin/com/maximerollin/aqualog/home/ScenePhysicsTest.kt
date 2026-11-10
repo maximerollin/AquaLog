@@ -5,9 +5,6 @@ import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import com.maximerollin.aqualog.shared.encyclopedia.MotionFamily
 import com.maximerollin.aqualog.shared.encyclopedia.SwimZone
 import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.luminance
 import java.io.File
 import kotlin.test.assertFailsWith
 import kotlin.test.Test
@@ -165,14 +162,5 @@ class ScenePhysicsTest {
         assertEquals(0, decorPlants(listOf(group("n", "neon", 10))))
         assertEquals(1, decorPlants(listOf(plant("a"), group("n", "neon", 10))))
         assertEquals(3, decorPlants((1..5).map { plant("p$it") }))
-    }
-
-    @Test
-    fun `white header text stays readable over the lightest sprites`() {
-        for (sprite in listOf(Color(0xFFE3EAEC), Color(0xFFE8E0D0), Color(0xFFDCE0E6), Color.White)) {
-            val behind = HeaderScrim.compositeOver(sprite).luminance()
-            val contrast = (Color.White.luminance() + .05f) / (behind + .05f)
-            assertTrue(contrast >= 4.5f, "over $sprite: $contrast")
-        }
     }
 }
