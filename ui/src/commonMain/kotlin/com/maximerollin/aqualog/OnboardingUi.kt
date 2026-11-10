@@ -78,8 +78,6 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.text
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.AccountDeletionPhase
@@ -1331,16 +1329,14 @@ internal fun FeedbackDialog(
                 }
                 state.speciesName?.let { Text(stringResource(Res.string.feedback_species_line, it), style = MaterialTheme.typography.bodyMedium) }
                 // A separate label wraps at word boundaries; a floating label breaks mid-word in a narrow field at large font scales.
-                // The visible label is hidden from TalkBack and the field carries the same words as a zero-size node in its
-                // supporting slot (a `label` slot would add 8 dp of padding): TalkBack then reads « label, edit box, typed text ».
-                // A contentDescription would replace the typed text.
+                // The label stays a node of its own, read just before the field (checked with uiautomator: a node merged into the field,
+                // or a contentDescription, never reached the Android node or replaced the typed text).
                 val messageLabel = stringResource(Res.string.feedback_message_label)
-                Text(messageLabel, style = MaterialTheme.typography.labelLarge, modifier = Modifier.clearAndSetSemantics {})
+                Text(messageLabel, style = MaterialTheme.typography.labelLarge)
                 OutlinedTextField(
                     value = state.message,
                     onValueChange = onMessageChanged,
                     supportingText = {
-                        Spacer(Modifier.size(0.dp).semantics { text = AnnotatedString(messageLabel) })
                         Text(stringResource(Res.string.feedback_character_count, state.message.length))
                     },
                     minLines = 4,

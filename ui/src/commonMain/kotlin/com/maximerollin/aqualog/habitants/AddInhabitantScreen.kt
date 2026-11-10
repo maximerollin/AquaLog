@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -100,13 +101,7 @@ private fun SpeciesSearch(
             )
         }
         item {
-            OutlinedTextField(
-                value = add.query,
-                onValueChange = viewModel::updateSpeciesQuery,
-                placeholder = { Text(stringResource(Res.string.habitants_search_hint)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            SpeciesSearchField(add.query, viewModel::updateSpeciesQuery)
         }
         item {
             FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -162,6 +157,18 @@ private fun SpeciesSearch(
             }
         }
     }
+}
+
+/** The search box; the hint is its label (a placeholder would disappear once text is typed, leaving the field nameless). */
+@Composable
+internal fun SpeciesSearchField(query: String, onQueryChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        label = { Text(stringResource(Res.string.habitants_search_hint)) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().testTag("species-search"),
+    )
 }
 
 @Composable

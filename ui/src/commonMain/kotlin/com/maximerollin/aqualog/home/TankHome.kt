@@ -62,6 +62,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -440,11 +441,20 @@ private fun AquariumScene(
                 vignetteScenes[aquariums[page].id] ?: MiniScene.Empty, stillScene = !isCurrent, habitants.takeIf { isCurrent },
             )
         }
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center) {
-            repeat(aquariums.size) { index ->
-                val color = if (index == pager.currentPage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                Box(Modifier.padding(horizontal = 4.dp).size(8.dp).background(color, CircleShape))
-            }
+        PagerDots(aquariums.size, pager.currentPage)
+    }
+}
+
+/** The page dots, read as one « 2 / 3 »: the individual dots carry no semantics (the current one is shown by colour only). */
+@Composable
+internal fun PagerDots(count: Int, current: Int) {
+    Row(
+        Modifier.fillMaxWidth().padding(top = 8.dp).semantics(mergeDescendants = true) { stateDescription = "${current + 1} / $count" },
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        repeat(count) { index ->
+            val color = if (index == current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            Box(Modifier.padding(horizontal = 4.dp).size(8.dp).background(color, CircleShape).clearAndSetSemantics {})
         }
     }
 }

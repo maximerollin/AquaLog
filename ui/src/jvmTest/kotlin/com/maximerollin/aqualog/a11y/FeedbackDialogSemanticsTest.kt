@@ -34,21 +34,20 @@ class FeedbackDialogSemanticsTest {
     }
 
     @Test
-    fun `the message field announces its label and its typed text once, without a content description`() {
+    fun `the message field keeps its typed text and has no content description`() {
         withDialog(FeedbackUiState(isOpen = true, message = "Hello fish")) {
             val config = onNodeWithTag("feedback-message").fetchSemanticsNode().config
             assertEquals(null, config.getOrNull(SemanticsProperties.ContentDescription), "a description would replace the typed text")
             assertEquals("Hello fish", config.getOrNull(SemanticsProperties.EditableText)?.text)
-            assertEquals(listOf("Feedback message"), config[SemanticsProperties.Text].map { it.text }.filter { it == "Feedback message" })
         }
     }
 
     @Test
-    fun `the visual label is not a second node for the screen reader`() {
+    fun `the label is exactly one node of its own, read once`() {
         withDialog(FeedbackUiState(isOpen = true)) {
-            val labelNodes = onAllNodesWithText("Feedback message", useUnmergedTree = false).fetchSemanticsNodes()
+            val labelNodes = onAllNodesWithText("Feedback message").fetchSemanticsNodes()
             assertEquals(1, labelNodes.size, "the label must be read once")
-            assertEquals("feedback-message", labelNodes.single().config.getOrNull(SemanticsProperties.TestTag), "the one node is the field itself")
+            assertEquals(null, labelNodes.single().config.getOrNull(SemanticsProperties.TestTag), "it is not the field")
         }
     }
 
