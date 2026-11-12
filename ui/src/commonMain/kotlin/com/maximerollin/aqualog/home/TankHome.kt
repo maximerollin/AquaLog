@@ -34,7 +34,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.ui.platform.LocalDensity
+import com.maximerollin.aqualog.StatusBarOverWater
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
@@ -103,6 +111,7 @@ fun TankHome(
     modifier: Modifier = Modifier,
     rateApp: (() -> Unit)? = null,
     onMeasureAvailabilityChange: (Boolean) -> Unit = {},
+    onMeasureGuard: (() -> Boolean) -> Unit = {},
 ) {
     val setup = requireNotNull(state.setup)
     val aquarium = setup.aquarium
@@ -159,8 +168,16 @@ fun TankHome(
         }
     }
     val canMeasure = measureTargetsShownAquarium(state.aquariums.size, pager.isScrollInProgress, pendingSwipeSelection != null)
-    // The shell owns « + »: it only needs to know whether the shown Aquarium can take a Measure.
+    // The shell owns « + »: it only needs to know whether the shown Aquarium can take a Measure. The Boolean drives its look
+    // and arrives a frame or two late; the guard reads the pager and the pending swipe at the moment of the tap.
     LaunchedEffect(canMeasure) { onMeasureAvailabilityChange(canMeasure) }
+    val liveMeasureGuard = remember(pager) {
+        { measureTargetsShownAquarium(shownAquariums.size, pager.isScrollInProgress, pendingSwipeSelection != null) }
+    }
+    DisposableEffect(liveMeasureGuard) {
+        onMeasureGuard(liveMeasureGuard)
+        onDispose { }
+    }
     val currentHero = CurrentHero(
         overview = overview,
         scene = MiniScene(sprites, decorPlants(state.inhabitants)),
@@ -173,6 +190,11 @@ fun TankHome(
         onOpenStatus = when {
             pistes.isNotEmpty() -> ({ showPistes = true })
             state.latestSession != null -> viewModel::openSessionDetails
+            else -> null
+        },
+        statusActionLabel = when {
+            pistes.isNotEmpty() -> stringResource(Res.string.pistes_card_expand)
+            state.latestSession != null -> stringResource(Res.string.view_session_details)
             else -> null
         },
     )
@@ -194,7 +216,7 @@ fun TankHome(
                 )
             }
             item(key = "sheet-top") { PaperSheetTop() }
-            sheetItem("values") { ValueRow(overview.all, formatter, Modifier.padding(bottom = 8.dp)) }
+            sheetItem("values") { ValueRow(overview.all, formatter, todayDate, Modifier.padding(bottom = 8.dp)) }
             if (state.maintenanceSeries >= 1) {
                 sheetItem("maintenance-series") {
                     Text(
@@ -285,6 +307,7 @@ fun TankHome(
                 }
             }
         }
+        StatusBarOverHome(listState)
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = FloatingNavBarClearance.dp))
     }
     if (showPistes && pistes.isNotEmpty()) PistesSheet(pistes, today, onDismiss = { showPistes = false })
@@ -351,6 +374,38 @@ internal fun measureTargetsShownAquarium(aquariumCount: Int, scrolling: Boolean,
     aquariumCount < 2 || (!scrolling && !swipeSelectionPending)
 
 /** The shell's « + » is live on every tab but the Tank's, where it follows the home's [measureTargetsShownAquarium] guard. */
+/**
+ * Whether the water is still what lies under the status bar: the hero is the list's first item and the sheet's top edge,
+ * [heroHeightPx] down the list (the hero item's size, its overlap already removed), has not reached the status bar.
+ * Null before the list has laid the hero out: the list then opens on the water.
+ */
+internal fun heroUnderStatusBar(firstVisibleItemIndex: Int, firstVisibleItemScrollOffset: Int, heroHeightPx: Int?, statusBarHeightPx: Int): Boolean =
+    firstVisibleItemIndex == 0 &&
+        if (heroHeightPx == null) firstVisibleItemScrollOffset == 0 else firstVisibleItemScrollOffset < heroHeightPx - statusBarHeightPx
+
+/**
+ * Light status-bar icons while the water is under them (spec §6); once the paper sheet scrolls up to the status bar the icons
+ * turn dark again and a band of paper sits behind them, so the clock never reads white on cream.
+ */
+@Composable
+private fun StatusBarOverHome(listState: LazyListState) {
+    val statusBarPx = WindowInsets.statusBars.getTop(LocalDensity.current)
+    val overWater by remember(listState, statusBarPx) {
+        derivedStateOf {
+            heroUnderStatusBar(
+                listState.firstVisibleItemIndex,
+                listState.firstVisibleItemScrollOffset,
+                listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == 0 }?.size,
+                statusBarPx,
+            )
+        }
+    }
+    StatusBarOverWater(overWater)
+    if (!overWater) {
+        Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(MaterialTheme.colorScheme.background))
+    }
+}
+
 internal fun plusEnabled(destination: MainDestination, tankCanMeasure: Boolean): Boolean =
     destination != MainDestination.TANK || tankCanMeasure
 
@@ -367,6 +422,7 @@ private class CurrentHero(
     val onOpenHabitants: () -> Unit,
     val onAddHabitants: (() -> Unit)?,
     val onOpenStatus: (() -> Unit)?,
+    val statusActionLabel: String?,
 )
 
 /** One hero, or a pager of heroes with white dots on the water when there are several Aquariums; settling on a page selects it. */
@@ -428,6 +484,7 @@ private fun HeroPage(
         onOpenHabitants = hero.onOpenHabitants.takeIf { isCurrent },
         onAddHabitants = hero.onAddHabitants.takeIf { isCurrent },
         onOpenStatus = hero.onOpenStatus.takeIf { isCurrent },
+        statusActionLabel = hero.statusActionLabel.takeIf { isCurrent },
         modifier = modifier,
     )
 }

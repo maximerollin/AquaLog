@@ -1,6 +1,16 @@
 package com.maximerollin.aqualog.ui.theme
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
+import com.maximerollin.aqualog.ageDays
+import com.maximerollin.aqualog.resources.reading_age_days
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
+import org.jetbrains.compose.resources.pluralStringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -69,10 +79,20 @@ import com.maximerollin.aqualog.ui.icon.Menu
 import com.maximerollin.aqualog.ui.icon.Plus
 import com.maximerollin.aqualog.ui.icon.RotateCcwClock
 import com.maximerollin.aqualog.ui.icon.TrendingUp
+import java.time.LocalDate
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 
-/** Round translucent button laid over the full-bleed water scene: white glass, white icon. */
+/**
+ * Deep water behind every text block and button on the hero: white keeps 4.5:1 over the lightest sprite and over a white
+ * photo (ScenePhysicsTest). The hero shade alone cannot, since the water under it can be anything.
+ */
+internal val HeroTextBacking = Color(0xFF0F4A43).copy(alpha = .75f)
+
+/** Test tag of the shape that marks an out-of-range [ValueTile], so its state is never carried by colour alone. */
+const val LEVEL_MARK_TAG = "value-level-mark"
+
+/** Round button laid over the full-bleed water scene: deep-water glass with a light rim, white icon; it stays visible over a white photo. */
 @Composable
 fun GlassIconButton(
     icon: ImageVector,
@@ -86,19 +106,24 @@ fun GlassIconButton(
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            Modifier.size(40.dp).background(Color.White.copy(alpha = .2f), CircleShape)
+            Modifier.size(40.dp).background(HeroTextBacking, CircleShape)
                 .border(1.dp, Color.White.copy(alpha = .3f), CircleShape),
             contentAlignment = Alignment.Center,
         ) { Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp)) }
     }
 }
 
-/** Top edge of the paper sheet that slides over the scene: rounded corners, handle, soft shadow. A list item, not a container. */
+/**
+ * Top edge of the paper sheet that slides over the scene: rounded corners, handle, soft shadow. A list item, not a container.
+ * It lies over the hero's bottom, so it takes the pointer: a tap or a swipe on it never reaches the water under it.
+ */
 @Composable
 fun PaperSheetTop(modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
     Box(
         modifier.fillMaxWidth().height(30.dp)
+            // Hit-testing stops at the first sibling with a pointer handler; the list still scrolls, nothing is consumed.
+            .pointerInput(Unit) {}
             .shadow(8.dp, shape, ambientColor = Color.Black.copy(alpha = .2f), spotColor = Color.Black.copy(alpha = .2f))
             .background(MaterialTheme.colorScheme.background, shape),
         contentAlignment = Alignment.TopCenter,
@@ -176,19 +201,33 @@ fun FloatingNavBar(
     }
 }
 
-/** One value of the home hero: label, big tabular number with its unit, tinted when out of range. */
+/**
+ * One value of the home: label, big tabular number with its unit and trend arrow, the age when it is older than the latest
+ * Measurement. Out of range, it is tinted and marked by a shape; everything is spoken as one sentence.
+ * [reserveAgeLine] keeps an empty age line so the tiles of a row share one height.
+ */
 @Composable
-fun ValueTile(value: HomeValue, formatter: LocalizedFormatters, modifier: Modifier = Modifier) {
+fun ValueTile(
+    value: HomeValue,
+    formatter: LocalizedFormatters,
+    today: LocalDate,
+    modifier: Modifier = Modifier,
+    reserveAgeLine: Boolean = false,
+) {
     val colors = MaterialTheme.colorScheme
     val label = value.definition.parameter.label()
     val unit = value.definition.unit.takeIf { it.isNotBlank() && it != label } // pH's unit is pH
     val shown = value.value?.let { formatter.number(it, value.definition.precision) }
     val container = levelContainerColor(value.level)
     val textColor = levelTextColor(value.level) ?: colors.onSurface
+    val secondaryColor = if (container != null) textColor else colors.onSurfaceVariant
     val shape = RoundedCornerShape(20.dp)
     val unmeasured = stringResource(Res.string.home_no_measurement_yet)
+    val age = value.ageDays(today)?.let { days -> pluralStringResource(Res.plurals.reading_age_days, days, days) }
+    val trend = value.trend?.let(::trendIcon)
+    val trendWords = trend?.let { stringResource(it.second) }
     val levelWords = levelDescription(value.level)
-    val spoken = listOfNotNull(label, shown ?: unmeasured, shown?.let { unit }, levelWords).joinToString(", ")
+    val spoken = listOfNotNull(label, shown ?: unmeasured, shown?.let { unit }, age, trendWords, levelWords).joinToString(", ")
     Column(
         // Grows past 96 dp rather than clipping: « Ammoniak / Ammonium » or « 25,5 °C » at 150 %.
         modifier.widthIn(min = 96.dp)
@@ -198,7 +237,12 @@ fun ValueTile(value: HomeValue, formatter: LocalizedFormatters, modifier: Modifi
             .clearAndSetSemantics { text = AnnotatedString(spoken) },
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(label, fontSize = 12.sp, color = if (container != null) textColor else colors.onSurfaceVariant, maxLines = 1)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (value.level != ReadingLevel.OK) {
+                LevelMark(value.level, textColor, Modifier.padding(end = 4.dp).testTag(LEVEL_MARK_TAG))
+            }
+            Text(label, fontSize = 12.sp, color = secondaryColor, maxLines = 1)
+        }
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 shown ?: "—", fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = textColor,
@@ -207,18 +251,44 @@ fun ValueTile(value: HomeValue, formatter: LocalizedFormatters, modifier: Modifi
             if (shown != null && unit != null) {
                 Text(text = " $unit", fontSize = 12.sp, color = textColor, maxLines = 1, modifier = Modifier.padding(bottom = 3.dp))
             }
+            if (trend != null) {
+                Icon(
+                    trend.first, contentDescription = null, tint = secondaryColor,
+                    modifier = Modifier.align(Alignment.CenterVertically).padding(start = 4.dp).size(16.dp),
+                )
+            }
+        }
+        if (age != null || reserveAgeLine) Text(age.orEmpty(), fontSize = 11.sp, color = secondaryColor, maxLines = 1)
+    }
+}
+
+/** A small triangle beside the label of an out-of-range value: outlined for attention, filled for alert. */
+@Composable
+private fun LevelMark(level: ReadingLevel, color: Color, modifier: Modifier) {
+    Canvas(modifier.size(10.dp).clearAndSetSemantics {}) {
+        val triangle = Path().apply {
+            moveTo(size.width / 2, 0f)
+            lineTo(size.width, size.height)
+            lineTo(0f, size.height)
+            close()
+        }
+        if (level == ReadingLevel.ALERT) {
+            drawPath(triangle, color)
+        } else {
+            drawPath(triangle, color, style = Stroke(1.5.dp.toPx(), join = StrokeJoin.Round))
         }
     }
 }
 
 /** Horizontally scrolling row of [ValueTile]s with edge chevrons that appear only when more values are out of view. */
 @Composable
-fun ValueRow(values: List<HomeValue>, formatter: LocalizedFormatters, modifier: Modifier = Modifier) {
+fun ValueRow(values: List<HomeValue>, formatter: LocalizedFormatters, today: LocalDate, modifier: Modifier = Modifier) {
     val state = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val canBack = state.canScrollBackward
     val canForward = state.canScrollForward
+    val anyAge = values.any { it.ageDays(today) != null }
     fun page(direction: Int) = scope.launch {
         val viewport = state.layoutInfo.viewportSize.width
         state.animateScrollBy(direction * (viewport - with(density) { 40.dp.toPx() }))
@@ -229,21 +299,28 @@ fun ValueRow(values: List<HomeValue>, formatter: LocalizedFormatters, modifier: 
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            itemsIndexed(values, key = { index, v -> "${index}_${v.definition.id}" }) { _, v -> ValueTile(v, formatter) }
+            itemsIndexed(values, key = { index, v -> "${index}_${v.definition.id}" }) { _, v ->
+                ValueTile(v, formatter, today, reserveAgeLine = anyAge)
+            }
         }
+        // matchParentSize: the row's own height, so the fade covers the tiles top to bottom (a list item has no bounded height).
         if (canBack) {
-            Chevron(
-                AquagendaIcons.ChevronLeft, stringResource(Res.string.home_values_previous), atStart = true,
-                onClick = { page(-1) },
-                modifier = Modifier.align(Alignment.CenterStart),
-            )
+            Box(Modifier.matchParentSize()) {
+                Chevron(
+                    AquagendaIcons.ChevronLeft, stringResource(Res.string.home_values_previous), atStart = true,
+                    onClick = { page(-1) },
+                    modifier = Modifier.align(Alignment.CenterStart),
+                )
+            }
         }
         if (canForward) {
-            Chevron(
-                AquagendaIcons.ChevronRight, stringResource(Res.string.home_values_next), atStart = false,
-                onClick = { page(1) },
-                modifier = Modifier.align(Alignment.CenterEnd),
-            )
+            Box(Modifier.matchParentSize()) {
+                Chevron(
+                    AquagendaIcons.ChevronRight, stringResource(Res.string.home_values_next), atStart = false,
+                    onClick = { page(1) },
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                )
+            }
         }
     }
 }
@@ -251,7 +328,7 @@ fun ValueRow(values: List<HomeValue>, formatter: LocalizedFormatters, modifier: 
 @Composable
 private fun Chevron(icon: ImageVector, description: String, atStart: Boolean, onClick: () -> Unit, modifier: Modifier) {
     val colors = MaterialTheme.colorScheme
-    val fade = listOf(colors.background.copy(alpha = .35f), Color.Transparent)
+    val fade = listOf(colors.background.copy(alpha = .85f), Color.Transparent)
     Box(
         modifier.width(56.dp).fillMaxHeight()
             .background(Brush.horizontalGradient(if (atStart) fade else fade.reversed())),
@@ -263,7 +340,8 @@ private fun Chevron(icon: ImageVector, description: String, atStart: Boolean, on
             contentAlignment = Alignment.Center,
         ) {
             Box(
-                Modifier.size(30.dp).shadow(4.dp, CircleShape).background(colors.surface, CircleShape),
+                Modifier.size(30.dp).shadow(4.dp, CircleShape).background(colors.surfaceContainerHigh, CircleShape)
+                    .border(1.dp, colors.outlineVariant, CircleShape),
                 contentAlignment = Alignment.Center,
             ) { Icon(icon, contentDescription = null, tint = colors.onSurface, modifier = Modifier.size(18.dp)) }
         }

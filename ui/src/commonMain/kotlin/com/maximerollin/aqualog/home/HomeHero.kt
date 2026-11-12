@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -67,6 +68,7 @@ import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.Camera
 import com.maximerollin.aqualog.ui.theme.GlassIconButton
+import com.maximerollin.aqualog.ui.theme.HeroTextBacking
 import com.maximerollin.aqualog.ui.theme.frauncesFamily
 import java.time.LocalDate
 import org.jetbrains.compose.resources.pluralStringResource
@@ -87,25 +89,28 @@ private val HeroDotsBand = 16.dp
 /** Text on the water. */
 internal val HeroText = Color.White
 
-/**
- * Deep water behind every text block on the hero: white keeps 4.5:1 over the lightest sprite and over a white
- * photo (ScenePhysicsTest). The hero shade alone cannot, since the water under it can be anything.
- */
-internal val HeroTextBacking = Color(0xFF0F4A43).copy(alpha = .75f)
-
 /** Darkens the top for the status bar and the name, and the bottom where the sheet lands. */
-private val HeroShade = Brush.verticalGradient(
-    0f to Color.Black.copy(alpha = .4f),
+private val HeroTopShade = Color.Black.copy(alpha = .4f)
+
+/** A photo can be white at the top: the status-bar icons keep 3:1 over this (ScenePhysicsTest); the painted scene never is. */
+internal val HeroPhotoTopShade = Color.Black.copy(alpha = .6f)
+
+private fun heroShade(top: Color) = Brush.verticalGradient(
+    0f to top,
     .35f to Color.Transparent,
     .7f to Color.Transparent,
     1f to Color.Black.copy(alpha = .3f),
 )
+
+private val HeroShade = heroShade(HeroTopShade)
+private val HeroPhotoShade = heroShade(HeroPhotoTopShade)
 
 private val TextShadow = Shadow(Color.Black.copy(alpha = .45f), Offset(0f, 1f), blurRadius = 3f)
 
 /**
  * The home's water: the tank scene (or the Aquarium's photo) from the top edge, the name block, and the status card.
  * [overview] is null on a pager page that is not the current Aquarium: it has no status card.
+ * [statusActionLabel] says what tapping the status card does (« Show ideas », « View Session details »).
  */
 @Composable
 fun HomeHero(
@@ -121,6 +126,7 @@ fun HomeHero(
     onOpenHabitants: (() -> Unit)?,
     onAddHabitants: (() -> Unit)?,
     onOpenStatus: (() -> Unit)?,
+    statusActionLabel: String?,
     modifier: Modifier = Modifier,
 ) {
     val habitantsLabel = stringResource(Res.string.habitants_title)
@@ -141,7 +147,7 @@ fun HomeHero(
         } else {
             TankScene(aquarium, scene.sprites, Modifier.matchParentSize(), scene.plants, animate = !still && !rememberReducedMotion())
         }
-        Box(Modifier.matchParentSize().background(HeroShade))
+        Box(Modifier.matchParentSize().background(if (photo != null) HeroPhotoShade else HeroShade))
         // At least HeroHeight; with large fonts it grows, and the chip, the dots band and the sheet's overlap stay below the content.
         Column(
             Modifier.fillMaxWidth().heightIn(min = HeroHeight).windowInsetsPadding(WindowInsets.statusBars)
@@ -154,7 +160,7 @@ fun HomeHero(
             }
             if (overview != null) {
                 Spacer(Modifier.height(16.dp))
-                StatusCard(overview, today, onOpenStatus, Modifier.padding(start = 8.dp, end = 12.dp))
+                StatusCard(overview, today, onOpenStatus, statusActionLabel, Modifier.padding(start = 8.dp, end = 12.dp))
             }
             // Pushes what follows to the bottom when the content is shorter than HeroHeight.
             Spacer(Modifier.weight(1f))
@@ -208,7 +214,7 @@ private fun NameBlock(aquarium: Aquarium, inhabitantCount: Int, onChangeAquarium
 
 /** Dark glass card: the in-range ring and « 6 of 7 in range », then the status sentence; one node for TalkBack. */
 @Composable
-private fun StatusCard(overview: HomeOverview, today: LocalDate, onOpen: (() -> Unit)?, modifier: Modifier) {
+private fun StatusCard(overview: HomeOverview, today: LocalDate, onOpen: (() -> Unit)?, openLabel: String?, modifier: Modifier) {
     val shape = RoundedCornerShape(22.dp)
     val ratio = statusRatio(overview)?.resolve()
     val status = statusText(overview, today)
@@ -216,7 +222,9 @@ private fun StatusCard(overview: HomeOverview, today: LocalDate, onOpen: (() -> 
         modifier.testTag("status-card").clip(shape)
             .background(HeroTextBacking)
             .border(1.dp, Color.White.copy(alpha = .25f), shape)
-            .let { if (onOpen != null) it.clickable(role = Role.Button, onClick = onOpen) else it.semantics(mergeDescendants = true) {} }
+            .let {
+                if (onOpen != null) it.clickable(role = Role.Button, onClickLabel = openLabel, onClick = onOpen) else it.semantics(mergeDescendants = true) {}
+            }
             .heightIn(min = 48.dp)
             .padding(start = 10.dp, top = 10.dp, end = 14.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -259,7 +267,17 @@ private fun InRangeRing(inRange: Int, measured: Int) {
             }
         }
         val fraction = "$inRange/$measured" // digits and a slash: the same in every language, like the pager's « 2 / 3 »
-        Text(fraction, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = HeroText, maxLines = 1)
+        // A fixed size inside the fixed 36 dp hole, whatever the font scale (the card's title says the ratio in words);
+        // smaller as the fraction gets longer, so « 10/10 » fits.
+        val textSize = when {
+            fraction.length <= 3 -> 13.dp
+            fraction.length == 4 -> 12.dp
+            else -> 11.dp
+        }
+        Text(
+            fraction, fontSize = with(LocalDensity.current) { textSize.toSp() }, fontWeight = FontWeight.Bold, color = HeroText,
+            maxLines = 1, softWrap = false,
+        )
     }
 }
 

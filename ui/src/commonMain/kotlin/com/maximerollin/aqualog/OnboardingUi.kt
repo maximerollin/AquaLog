@@ -299,15 +299,19 @@ private fun AquariumShell(
 ) {
     // Reported by the home, which owns the guard: « + » records into the Aquarium the scene shows.
     var tankCanMeasure by remember { mutableStateOf(false) }
+    // Read at the moment of a tap, so a swipe that started a frame ago is never missed (the Boolean above lags it).
+    var tankMeasureGuard by remember { mutableStateOf<() -> Boolean>({ false }) }
     val statusBarInset = Modifier.windowInsetsPadding(WindowInsets.statusBars)
     // Lists scroll clear of the floating bar; the home draws from the top edge, under the status bar.
     val tabModifier = statusBarInset.padding(bottom = FloatingNavBarClearance.dp)
     Box(modifier.fillMaxSize()) {
         when (state.destination) {
-            MainDestination.TANK -> {
-                StatusBarOverWater()
-                TankHome(state, viewModel, Modifier, rateApp, onMeasureAvailabilityChange = { tankCanMeasure = it })
-            }
+            // The home sets the status-bar icons itself: light over the water, dark once the sheet is under them.
+            MainDestination.TANK -> TankHome(
+                state, viewModel, Modifier, rateApp,
+                onMeasureAvailabilityChange = { tankCanMeasure = it },
+                onMeasureGuard = { tankMeasureGuard = it },
+            )
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, tabModifier)
             MainDestination.TRENDS -> TrendsScreen(state, viewModel, tabModifier)
             MainDestination.MORE -> PortableDataSettings(
@@ -327,7 +331,7 @@ private fun AquariumShell(
         FloatingNavBar(
             selected = state.destination,
             onSelect = viewModel::selectDestination,
-            onMeasure = { if (plusEnabled(state.destination, tankCanMeasure)) viewModel.openRapidSession() },
+            onMeasure = { if (plusEnabled(state.destination, tankMeasureGuard())) viewModel.openRapidSession() },
             measureEnabled = plusEnabled(state.destination, tankCanMeasure),
             modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 16.dp),
         )

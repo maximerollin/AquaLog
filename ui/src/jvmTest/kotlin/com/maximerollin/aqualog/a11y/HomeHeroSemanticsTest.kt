@@ -81,13 +81,14 @@ class HomeHeroSemanticsTest {
         inhabitantCount: Int = 16,
         onOpenPhoto: (() -> Unit)? = {},
         onOpenStatus: (() -> Unit)? = null,
+        statusActionLabel: String? = null,
     ) = setContent {
         AquaLogTheme(false) {
             HomeHero(
                 aquarium = SALON, overview = overview, today = TODAY, inhabitantCount = inhabitantCount,
                 scene = MiniScene.Empty, still = true, photo = null,
                 onChangeAquarium = {}, onOpenPhoto = onOpenPhoto, onOpenHabitants = {}, onAddHabitants = {},
-                onOpenStatus = onOpenStatus,
+                onOpenStatus = onOpenStatus, statusActionLabel = statusActionLabel,
             )
         }
     }
@@ -161,7 +162,7 @@ class HomeHeroSemanticsTest {
                                     overview = longest, today = TODAY, inhabitantCount = inhabitants,
                                     scene = MiniScene.Empty, still = true, photo = null,
                                     onChangeAquarium = {}, onOpenPhoto = {}, onOpenHabitants = {}, onAddHabitants = {},
-                                    onOpenStatus = {},
+                                    onOpenStatus = {}, statusActionLabel = "Ideen anzeigen",
                                     modifier = Modifier.width(360.dp).testTag("hero"),
                                 )
                             }
@@ -177,6 +178,17 @@ class HomeHeroSemanticsTest {
                     assertTrue(card.bottom <= chip.top, "card $card, chip $chip")
                     assertTrue(chip.bottom <= visibleBottom, "chip $chip, hero $hero")
                 }
+            }
+        }
+    }
+
+    @Test
+    fun `the status card names what a tap does`() = withEnglish {
+        for (label in listOf("Show ideas", "View Session details")) {
+            runComposeUiTest {
+                hero(sixOfSeven, onOpenStatus = {}, statusActionLabel = label)
+                val card = onNodeWithTag("status-card").fetchSemanticsNode()
+                assertEquals(label, card.config[SemanticsActions.OnClick].label)
             }
         }
     }

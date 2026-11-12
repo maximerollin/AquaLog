@@ -9,6 +9,8 @@ import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.shared.assistance.readingLevel
+import com.maximerollin.aqualog.home.daysSince
+import java.time.LocalDate
 import kotlin.math.abs
 import kotlin.math.pow
 
@@ -25,6 +27,10 @@ data class HomeValue(
     val isOlderThanLatestReading: Boolean,
     val trend: Trend? = null,
 )
+
+/** Whole days since this value was measured, only when it is older than the Aquarium's latest Measurement; never 0. */
+fun HomeValue.ageDays(today: LocalDate): Int? =
+    occurredAtEpochMillis?.takeIf { isOlderThanLatestReading }?.let { daysSince(it, today) }?.takeIf { it > 0 }
 
 data class HomeOverview(
     val values: List<HomeValue>,
