@@ -77,6 +77,9 @@ import org.jetbrains.compose.resources.stringResource
 /** Height of the home's water hero, status bar included; it grows when its content needs more (large fonts). */
 private val HeroHeight = 430.dp
 
+/** The hero's photo or scene, for device tests that check which one is shown. */
+const val HERO_BACKDROP_TAG = "hero-backdrop"
+
 /** How much of the hero's bottom the paper sheet covers. */
 internal val HeroSheetOverlap = 30.dp
 
@@ -143,9 +146,9 @@ fun HomeHero(
     ) {
         // The water fills whatever height the content takes.
         if (photo != null) {
-            Image(photo, contentDescription = null, modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop)
+            Image(photo, contentDescription = null, modifier = Modifier.matchParentSize().testTag(HERO_BACKDROP_TAG), contentScale = ContentScale.Crop)
         } else {
-            TankScene(aquarium, scene.sprites, Modifier.matchParentSize(), scene.plants, animate = !still && !rememberReducedMotion())
+            TankScene(aquarium, scene.sprites, Modifier.matchParentSize().testTag(HERO_BACKDROP_TAG), scene.plants, animate = !still && !rememberReducedMotion())
         }
         Box(Modifier.matchParentSize().background(if (photo != null) HeroPhotoShade else HeroShade))
         // At least HeroHeight; with large fonts it grows, and the chip, the dots band and the sheet's overlap stay below the content.
