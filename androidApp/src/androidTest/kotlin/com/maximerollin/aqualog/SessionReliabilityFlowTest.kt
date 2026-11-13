@@ -122,7 +122,7 @@ class SessionReliabilityFlowTest {
         composeRule.onNodeWithText("Aquarium name").performTextInput("Amazonien")
         composeRule.onNodeWithText("Volume").performTextInput("120")
         composeRule.onNodeWithText("Continue to Parameters").performClick()
-        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Try a mini Session"))
+        composeRule.scrollToText("Try a mini Session")
         composeRule.onNodeWithText("Try a mini Session").performClick()
         composeRule.onNodeWithText("See Free and Pro").performClick()
         composeRule.onNodeWithText("Continue for free").performClick()

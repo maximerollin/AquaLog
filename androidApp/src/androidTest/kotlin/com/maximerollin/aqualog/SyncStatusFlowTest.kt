@@ -1,7 +1,6 @@
 package com.maximerollin.aqualog
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -39,7 +38,7 @@ class SyncStatusFlowTest {
         composeRule.onNodeWithText("Aquarium name").performTextInput("Amazonien")
         composeRule.onNodeWithText("Volume").performTextInput("120")
         composeRule.onNodeWithText("Continue to Parameters").performClick()
-        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Try a mini Session"))
+        composeRule.scrollToText("Try a mini Session")
         composeRule.onNodeWithText("Try a mini Session").performClick()
         composeRule.onNodeWithText("See Free and Pro").performClick()
         composeRule.onNodeWithText("Continue for free").performClick()

@@ -4,7 +4,6 @@ import com.maximerollin.aqualog.resources.*
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertIsOn
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -12,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
@@ -58,8 +56,7 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithContentDescription("Move pH up")
             .performScrollTo()
             .performClick()
-        composeRule.onNode(hasScrollAction())
-            .performScrollToNode(hasText("Try a mini Session"))
+        composeRule.scrollToText("Try a mini Session")
         composeRule.onNodeWithText("Try a mini Session").performClick()
 
         composeRule.onNodeWithContentDescription("Practice value for pH")

@@ -3,7 +3,6 @@ package com.maximerollin.aqualog
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.performSemanticsAction
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
@@ -11,7 +10,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -155,7 +153,7 @@ class PistesFlowTest {
         composeRule.onNodeWithText("Aquarium name").performTextInput("Amazonien")
         composeRule.onNodeWithText("Volume").performTextInput("120")
         composeRule.onNodeWithText("Continue to Parameters").performClick()
-        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Try a mini Session"))
+        composeRule.scrollToText("Try a mini Session")
         composeRule.onNodeWithText("Try a mini Session").performClick()
         composeRule.onNodeWithText("See Free and Pro").performClick()
         composeRule.onNodeWithText("Continue for free").performClick()
