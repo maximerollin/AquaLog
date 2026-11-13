@@ -8,6 +8,7 @@ import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
+import com.maximerollin.aqualog.ui.theme.HeroTextBacking
 import java.io.File
 import kotlin.test.assertFailsWith
 import kotlin.test.Test
@@ -168,11 +169,30 @@ class ScenePhysicsTest {
     }
 
     @Test
-    fun `white header text stays readable over the lightest sprites`() {
-        for (sprite in listOf(Color(0xFFE3EAEC), Color(0xFFE8E0D0), Color(0xFFDCE0E6), Color.White)) {
-            val behind = HeaderScrim.compositeOver(sprite).luminance()
-            val contrast = (Color.White.luminance() + .05f) / (behind + .05f)
-            assertTrue(contrast >= 4.5f, "over $sprite: $contrast")
+    fun `white hero text stays readable over the lightest sprites and a white photo`() {
+        for (behind in listOf(Color(0xFFE3EAEC), Color(0xFFE8E0D0), Color(0xFFDCE0E6), Color.White)) {
+            val backdrop = HeroTextBacking.compositeOver(behind).luminance()
+            val text = HeroText.compositeOver(HeroTextBacking.compositeOver(behind)).luminance()
+            val contrast = (text + .05f) / (backdrop + .05f)
+            assertTrue(contrast >= 4.5f, "over $behind: $contrast")
         }
+    }
+
+    private fun contrast(a: Color, b: Color): Float {
+        val (light, dark) = listOf(a.luminance(), b.luminance()).sortedDescending()
+        return (light + .05f) / (dark + .05f)
+    }
+
+    @Test
+    fun `status bar icons stay visible over the top shade of a white photo`() {
+        val shade = HeroPhotoTopShade.compositeOver(Color.White)
+        assertTrue(contrast(Color.White, shade) >= 3f, "${contrast(Color.White, shade)}")
+    }
+
+    @Test
+    fun `the camera button, deep-water glass, stands out from a white photo`() {
+        val fill = HeroTextBacking.compositeOver(Color.White)
+        assertTrue(contrast(fill, Color.White) >= 3f, "fill ${contrast(fill, Color.White)}")
+        assertTrue(contrast(Color.White, fill) >= 3f, "icon ${contrast(Color.White, fill)}")
     }
 }

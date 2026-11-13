@@ -31,7 +31,9 @@ import com.maximerollin.aqualog.resources.trend_down
 import com.maximerollin.aqualog.resources.trend_flat
 import com.maximerollin.aqualog.resources.trend_up
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -105,6 +107,13 @@ fun levelDescription(level: ReadingLevel): String? = when (level) {
     ReadingLevel.ALERT -> stringResource(Res.string.reading_alert_description)
 }
 
+/** The arrow of a [Trend] and the words that say it, since an arrow alone must not carry it. */
+internal fun trendIcon(trend: Trend): Pair<ImageVector, StringResource> = when (trend) {
+    Trend.UP -> AquagendaIcons.ArrowUp to Res.string.trend_up
+    Trend.DOWN -> AquagendaIcons.ArrowDown to Res.string.trend_down
+    Trend.FLAT -> AquagendaIcons.ArrowRight to Res.string.trend_flat
+}
+
 /** A measurement: big number, small unit, optional trend arrow, label below, optional age line. A null value was never measured. */
 @Composable
 fun ReadingValue(
@@ -116,12 +125,7 @@ fun ReadingValue(
     age: String? = null,
     trend: Trend? = null,
 ) {
-    val trendIcon = when (trend) {
-        Trend.UP -> AquagendaIcons.ArrowUp to Res.string.trend_up
-        Trend.DOWN -> AquagendaIcons.ArrowDown to Res.string.trend_down
-        Trend.FLAT -> AquagendaIcons.ArrowRight to Res.string.trend_flat
-        null -> null
-    }
+    val trendIcon = trend?.let(::trendIcon)
     // Spoken as words: colour and arrows alone must not carry the attention state or the trend.
     val description = listOfNotNull(
         value?.let { listOfNotNull(it, unit).joinToString(" ") } ?: stringResource(Res.string.home_no_measurement_yet),

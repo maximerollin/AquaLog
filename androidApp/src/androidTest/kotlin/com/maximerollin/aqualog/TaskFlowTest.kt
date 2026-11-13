@@ -113,7 +113,7 @@ class TaskFlowTest {
             }
             composeRule.onNodeWithTag("task-list").performScrollToIndex(0)
             composeRule.onNodeWithText("Back").performClick()
-            composeRule.onNodeWithText("History").performClick()
+            composeRule.onNode(hasLabel("History")).performClick()
             composeRule.onNode(hasText("Completed", substring = true)).assertIsDisplayed()
             composeRule.onNodeWithText("Change filter wool").assertIsDisplayed()
             composeRule.onNodeWithText("Session").assertIsDisplayed()
@@ -172,7 +172,7 @@ class TaskFlowTest {
                 composeRule.onAllNodes(hasText("Clean the glass")).fetchSemanticsNodes().isEmpty()
             }
             composeRule.onNodeWithText("No pending Task.").assertIsDisplayed()
-            composeRule.onNodeWithText("History").performClick()
+            composeRule.onNode(hasLabel("History")).performClick()
             composeRule.onNode(hasText("Completed", substring = true)).assertIsDisplayed()
             composeRule.onNodeWithText("Clean the glass").assertIsDisplayed()
         } finally {
@@ -214,7 +214,7 @@ class TaskFlowTest {
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 runBlocking { application.aquariumRepository.observeResolvedTaskOccurrences().first().isNotEmpty() }
             }
-            composeRule.onNodeWithText("History").performClick()
+            composeRule.onNode(hasLabel("History")).performClick()
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasText("Water change", substring = true)).fetchSemanticsNodes().isNotEmpty()
             }

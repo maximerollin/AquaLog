@@ -7,6 +7,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.hasScrollAction
 import androidx.test.core.app.ActivityScenario
@@ -49,8 +51,8 @@ class AddInhabitantFlowTest {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
-            composeRule.waitUntil(5_000) { exists(strings.getString(Res.string.navigation_more)) }
-            composeRule.onNodeWithText(strings.getString(Res.string.navigation_more)).performClick()
+            composeRule.waitUntil(5_000) { existsLabel(strings.getString(Res.string.navigation_more)) }
+            composeRule.onNode(hasLabel(strings.getString(Res.string.navigation_more))).performClick()
             val habitants = strings.getString(Res.string.habitants_title)
             composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText(habitants))
             composeRule.onNodeWithText(habitants).performClick()
@@ -70,8 +72,10 @@ class AddInhabitantFlowTest {
             composeRule.onNodeWithText(addButton).performClick()
 
             // The home comes back; tapping the scene opens the habitants sheet, which lists the six.
-            composeRule.waitUntil(5_000) { !exists(addButton) && exists(strings.getString(Res.string.navigation_history)) }
-            composeRule.onNodeWithContentDescription(strings.getString(Res.string.habitants_title)).performClick()
+            composeRule.waitUntil(5_000) { !exists(addButton) && existsLabel(strings.getString(Res.string.navigation_history)) }
+            // The centre of the water is under the status card: tap the open water below it.
+            composeRule.onNodeWithContentDescription(strings.getString(Res.string.habitants_title))
+                .performTouchInput { click(percentOffset(0.5f, 0.85f)) }
             composeRule.waitUntil(5_000) { exists(strings.getString(Res.string.habitants_present_group, "Otocinclus", 6)) }
 
             // « Retirer… » 2 of them leaves 4.
@@ -82,8 +86,8 @@ class AddInhabitantFlowTest {
             pressBack()
 
             // The Chronologie shows the add and the removal.
-            composeRule.waitUntil(5_000) { exists(strings.getString(Res.string.navigation_history)) }
-            composeRule.onNodeWithText(strings.getString(Res.string.navigation_history)).performClick()
+            composeRule.waitUntil(5_000) { existsLabel(strings.getString(Res.string.navigation_history)) }
+            composeRule.onNode(hasLabel(strings.getString(Res.string.navigation_history))).performClick()
             composeRule.waitUntil(5_000) {
                 exists(strings.getString(Res.string.timeline_inhabitant_added, "Otocinclus", 6)) &&
                     exists(strings.getString(Res.string.timeline_inhabitant_removed, "Otocinclus", 2))
@@ -96,4 +100,5 @@ class AddInhabitantFlowTest {
     }
 
     private fun exists(text: String) = composeRule.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
+    private fun existsLabel(label: String) = composeRule.onAllNodes(hasLabel(label)).fetchSemanticsNodes().isNotEmpty()
 }

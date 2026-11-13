@@ -2,15 +2,15 @@ package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertIsOn
-import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ActivityScenario
@@ -56,8 +56,7 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithContentDescription("Move pH up")
             .performScrollTo()
             .performClick()
-        composeRule.onNode(hasScrollAction())
-            .performScrollToNode(hasText("Try a mini Session"))
+        composeRule.scrollToText("Try a mini Session")
         composeRule.onNodeWithText("Try a mini Session").performClick()
 
         composeRule.onNodeWithContentDescription("Practice value for pH")
@@ -75,16 +74,18 @@ class AquariumPersistenceTest {
         waitForText("Amazonien")
         composeRule.onNodeWithText("Amazonien").assertIsDisplayed()
         composeRule.onNodeWithText("120.5 US gal", substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText("No measurement yet", substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText("Measure").assertIsDisplayed()
+        // The value tiles repeat « No measurement yet »: read the status card.
+        composeRule.onNodeWithTag("status-card").assertTextContains("No measurement yet", substring = true)
+        composeRule.onNode(hasLabel("Measure")).assertIsDisplayed()
 
         scenario.recreate()
 
         waitForText("Amazonien")
         composeRule.onNodeWithText("Amazonien").assertIsDisplayed()
         composeRule.onNodeWithText("120.5 US gal", substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText("No measurement yet", substring = true).assertIsDisplayed()
-        composeRule.onNodeWithText("More").performClick()
+        // The value tiles repeat « No measurement yet »: read the status card.
+        composeRule.onNodeWithTag("status-card").assertTextContains("No measurement yet", substring = true)
+        composeRule.onNode(hasLabel("More")).performClick()
         composeRule.onNodeWithText("View Free and Pro").performClick()
         composeRule.onNodeWithText("Choose Free or Pro").assertIsDisplayed()
         composeRule.onNodeWithText("Back to Settings").performClick()

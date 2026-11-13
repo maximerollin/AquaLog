@@ -59,7 +59,7 @@ class TimelineFlowTest {
         }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.onNodeWithText("History").performClick()
+        composeRule.onNode(hasLabel("History")).performClick()
         composeRule.onNodeWithText("Chronology").assertIsDisplayed()
         // One Session: its reading, maintenance action and Event all show on its journal entry.
         composeRule.onNode(

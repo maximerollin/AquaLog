@@ -2,15 +2,10 @@ package com.maximerollin.aqualog.home
 
 import com.maximerollin.aqualog.ui.icon.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.graphics.ImageBitmap
-import com.maximerollin.aqualog.photo.AquariumThumbnail
 import com.maximerollin.aqualog.photo.PhotoSheets
-import com.maximerollin.aqualog.ui.theme.CarnetLightColors
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,30 +14,35 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.ui.platform.LocalDensity
+import com.maximerollin.aqualog.StatusBarOverWater
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
@@ -51,22 +51,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.AccountInvitationPrompt
@@ -75,11 +68,9 @@ import com.maximerollin.aqualog.HomeUiState
 import com.maximerollin.aqualog.HomeViewModel
 import com.maximerollin.aqualog.MainDestination
 import com.maximerollin.aqualog.currentLocalizedFormatters
-import com.maximerollin.aqualog.formattedVolume
 import com.maximerollin.aqualog.AquariumAlert
 import com.maximerollin.aqualog.homeOverview
 import com.maximerollin.aqualog.otherAquariumAlerts
-import com.maximerollin.aqualog.PistesCard
 import com.maximerollin.aqualog.joinLabels
 import com.maximerollin.aqualog.ProPurchaseStatus
 import com.maximerollin.aqualog.shortLabelResource
@@ -89,12 +80,9 @@ import com.maximerollin.aqualog.PistesSheet
 import com.maximerollin.aqualog.overdueLinkedAction
 import com.maximerollin.aqualog.pistesAdvices
 import com.maximerollin.aqualog.shared.MaintenanceActionType
-import com.maximerollin.aqualog.label
 import com.maximerollin.aqualog.resources.*
-import com.maximerollin.aqualog.rememberReducedMotion
 import com.maximerollin.aqualog.SEPARATOR
 import com.maximerollin.aqualog.shared.Aquarium
-import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.SyncFailureCategory
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.TaskDate
@@ -102,10 +90,9 @@ import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.LinkedTaskTitle
 import com.maximerollin.aqualog.todayTasks
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
-import com.maximerollin.aqualog.ui.theme.ReadingValue
-import com.maximerollin.aqualog.shared.assistance.ReadingLevel
-import com.maximerollin.aqualog.ui.theme.attentionMarkColor
-import com.maximerollin.aqualog.ui.theme.levelMarkColor
+import com.maximerollin.aqualog.ui.theme.FloatingNavBarClearance
+import com.maximerollin.aqualog.ui.theme.PaperSheetTop
+import com.maximerollin.aqualog.ui.theme.ValueRow
 import com.maximerollin.aqualog.ui.theme.attentionTextColor
 import com.maximerollin.aqualog.shared.assistance.ReadingSample
 import java.time.Instant
@@ -116,16 +103,22 @@ import java.time.temporal.ChronoUnit
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** The Tank destination: scene, status, latest value per parameter, today's Tasks and the Measure button. */
+/** The Tank destination: the water hero with the status card, then the paper sheet: every value, « To do » and the conditional blocks. */
 @Composable
-fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = Modifier, rateApp: (() -> Unit)? = null) {
+fun TankHome(
+    state: HomeUiState,
+    viewModel: HomeViewModel,
+    modifier: Modifier = Modifier,
+    rateApp: (() -> Unit)? = null,
+    onMeasureAvailabilityChange: (Boolean) -> Unit = {},
+    onMeasureGuard: (() -> Boolean) -> Unit = {},
+) {
     val setup = requireNotNull(state.setup)
     val aquarium = setup.aquarium
     val overview = homeOverview(setup, state.latestReadings)
     val today = viewModel.today()
     val todayDate = LocalDate.of(today.year, today.month, today.day)
     val tasks = todayTasks(state.tasks.pendingOccurrences, aquarium.id, today)
-    val columns = if (LocalDensity.current.fontScale >= 1.3f) 2 else 3
     val formatter = currentLocalizedFormatters()
     val gutter = Modifier.padding(horizontal = 16.dp)
     val alerts = otherAquariumAlerts(state.aquariums, aquarium.id, state.tasks.pendingOccurrences, today)
@@ -137,6 +130,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     )
     var showPicker by remember { mutableStateOf(false) }
     var showHabitants by remember(aquarium.id) { mutableStateOf(false) }
+    var showPistes by remember(aquarium.id) { mutableStateOf(false) }
     // null while loading, so the scene does not flash silhouettes; empty when the file is unreadable (silhouettes, species ids).
     val encyclopedia by rememberEncyclopedia()
     val sprites = remember(state.inhabitants, encyclopedia) {
@@ -144,10 +138,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     }
     // Every Aquarium's own scene, for the pages of the pager that are not the current one yet.
     val pageScenes = remember(state.inhabitantsByAquarium, encyclopedia) { miniScenes(state.inhabitantsByAquarium, encyclopedia, max = 12) }
-    // The 44 dp vignettes draw as few sprites as the list thumbnails.
-    val vignetteScenes = remember(state.inhabitantsByAquarium, encyclopedia) {
-        miniScenes(state.inhabitantsByAquarium, encyclopedia, max = THUMBNAIL_SPRITES)
-    }
+    val pageInhabitantCounts = remember(state.inhabitantsByAquarium) { state.inhabitantsByAquarium.mapValues { (_, list) -> list.sumOf { it.count } } }
     val snackbar = remember { SnackbarHostState() }
     val currentIndex = state.aquariums.indexOfFirst { it.id == aquarium.id }.coerceAtLeast(0)
     val pager = rememberPagerState(initialPage = currentIndex) { state.aquariums.size }
@@ -161,7 +152,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
     val listState = rememberLazyListState()
     val shownAquariums by rememberUpdatedState(state.aquariums)
     val currentId by rememberUpdatedState(aquarium.id)
-    // Both effects live here, not in the scene item: the scene can be scrolled off-screen while the Aquarium changes.
+    // Both effects live here, not in the hero item: the hero can be scrolled off-screen while the Aquarium changes.
     LaunchedEffect(currentIndex, state.aquariums.size) {
         pagerSyncTarget(currentIndex, state.aquariums.size, pager.currentPage)?.let {
             if (listState.layoutInfo.visibleItemsInfo.any { item -> item.index == 0 }) pager.animateScrollToPage(it) else pager.scrollToPage(it)
@@ -177,110 +168,75 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
         }
     }
     val canMeasure = measureTargetsShownAquarium(state.aquariums.size, pager.isScrollInProgress, pendingSwipeSelection != null)
+    // The shell owns « + »: it only needs to know whether the shown Aquarium can take a Measure. The Boolean drives its look
+    // and arrives a frame or two late; the guard reads the pager and the pending swipe at the moment of the tap.
+    LaunchedEffect(canMeasure) { onMeasureAvailabilityChange(canMeasure) }
+    val liveMeasureGuard = remember(pager) {
+        { measureTargetsShownAquarium(shownAquariums.size, pager.isScrollInProgress, pendingSwipeSelection != null) }
+    }
+    DisposableEffect(liveMeasureGuard) {
+        onMeasureGuard(liveMeasureGuard)
+        onDispose { }
+    }
+    val currentHero = CurrentHero(
+        overview = overview,
+        scene = MiniScene(sprites, decorPlants(state.inhabitants)),
+        inhabitantCount = state.inhabitants.sumOf { it.count },
+        onOpenPhoto = viewModel::openPhoto,
+        onOpenHabitants = { showHabitants = true },
+        // Only once the list is loaded, so an Aquarium with inhabitants does not flash the chip.
+        onAddHabitants = (viewModel::openAddInhabitant).takeIf { state.inhabitantsLoaded },
+        // The card opens the pistes when a value is out of range, else the latest Session.
+        onOpenStatus = when {
+            pistes.isNotEmpty() -> ({ showPistes = true })
+            state.latestSession != null -> viewModel::openSessionDetails
+            else -> null
+        },
+        statusActionLabel = when {
+            pistes.isNotEmpty() -> stringResource(Res.string.pistes_card_expand)
+            state.latestSession != null -> stringResource(Res.string.view_session_details)
+            else -> null
+        },
+    )
 
     Box(modifier.fillMaxSize()) {
         // The only scrollable on the home: tests rely on a single node with a scroll action.
         LazyColumn(
             Modifier.fillMaxSize().testTag("home-list"),
             state = listState,
-            contentPadding = PaddingValues(bottom = 88.dp),
+            contentPadding = PaddingValues(bottom = FloatingNavBarClearance.dp),
         ) {
-            item {
-                AquariumScene(
-                    state.aquariums, aquarium, pager, viewModel::openPhoto, viewModel::aquariumPhoto, viewModel::cachedAquariumPhoto,
+            item(key = "hero") {
+                AquariumHeroes(
+                    state.aquariums, aquarium, pager, todayDate, currentHero, pageScenes, pageInhabitantCounts,
+                    viewModel::aquariumPhoto, viewModel::cachedAquariumPhoto,
                     onChangeAquarium = { showPicker = true },
-                    habitants = SceneHabitants(
-                        MiniScene(sprites, decorPlants(state.inhabitants)), state.inhabitantsLoaded && state.inhabitants.isEmpty(),
-                        { showHabitants = true }, viewModel::openAddInhabitant,
-                    ),
-                    pageScenes = pageScenes,
-                    vignetteScenes = vignetteScenes,
+                    // The sheet's top edge, the next item, covers the water's bottom.
+                    modifier = Modifier.overlapNext(HeroSheetOverlap),
                 )
             }
-            item {
-                StatusLine(
-                    overview = overview,
-                    hasSession = state.latestSession != null,
-                    today = todayDate,
-                    onOpenSession = viewModel::openSessionDetails,
-                    modifier = gutter,
-                )
-            }
+            item(key = "sheet-top") { PaperSheetTop() }
+            sheetItem("values") { ValueRow(overview.all, formatter, todayDate, Modifier.padding(bottom = 8.dp)) }
             if (state.maintenanceSeries >= 1) {
-                item(key = "maintenance-series") {
+                sheetItem("maintenance-series") {
                     Text(
                         pluralStringResource(Res.plurals.series_weeks, state.maintenanceSeries, state.maintenanceSeries),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = gutter.padding(bottom = 8.dp),
+                        modifier = gutter.padding(top = 4.dp),
                     )
                 }
             }
-            state.weeklySummary?.let { summary ->
-                item(key = "weekly-summary") {
-                    WeeklySummaryCard(summary, state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE, viewModel::openProPaywall, gutter)
-                }
-            }
-            items(alerts, key = { "alert-${it.aquarium.id}" }) { alert ->
-                AlertRow(alert, onClick = { viewModel.selectAquarium(alert.aquarium.id) }, modifier = gutter)
-            }
-            if (state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION) {
-                item {
-                    Button(
-                        onClick = viewModel::continueAfterSessionConfirmation,
-                        shape = MaterialTheme.shapes.medium,
-                        modifier = gutter.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(stringResource(Res.string.continue_after_session)) }
-                }
-            }
-            if (state.cycledDismissalsLoaded && looksCycled(setup, state.latestReadings) && state.latestSession?.session?.id != state.cycledDismissedSessionId) {
-                item(key = "cycled-proposal") {
-                    CycledProposalCard(viewModel::switchToEstablished, viewModel::dismissCycledProposal, gutter)
-                }
-            }
-            if (pistes.isNotEmpty()) {
-                item(key = "pistes") { PistesCard(pistes, aquarium.id, today, gutter) }
-            }
-            item {
+            sheetItem("to-do-title") {
                 CarnetSectionTitle(
-                    stringResource(Res.string.latest_values_title),
-                    gutter,
-                    actionLabel = stringResource(Res.string.navigation_trends),
-                    onAction = { viewModel.selectDestination(MainDestination.TRENDS) },
-                )
-            }
-            items(overview.values.chunked(columns)) { row ->
-                Row(gutter.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    row.forEach { value ->
-                        val label = value.definition.parameter.label()
-                        ReadingValue(
-                            value = value.value?.let { formatter.number(it, value.definition.precision) },
-                            label = label,
-                            modifier = Modifier.weight(1f),
-                            unit = value.definition.unit.takeIf { it.isNotBlank() && it != label }, // pH's unit is pH
-                            level = value.level,
-                            age = value.occurredAtEpochMillis?.takeIf { value.isOlderThanLatestReading }
-                                ?.let { daysSince(it, todayDate) }?.takeIf { it > 0 }
-                                ?.let { days -> pluralStringResource(Res.plurals.reading_age_days, days, days) },
-                            trend = value.trend,
-                        )
-                    }
-                    repeat(columns - row.size) { Spacer(Modifier.weight(1f)) }
-                }
-            }
-            if (state.syncState.status == SyncStatus.FAILED) {
-                item { SyncFailure(state, viewModel, gutter) }
-            }
-            item {
-                CarnetSectionTitle(
-                    stringResource(Res.string.home_today),
-                    gutter,
+                    stringResource(Res.string.home_to_do),
+                    gutter.padding(top = 8.dp),
                     actionLabel = stringResource(Res.string.home_see_all),
                     onAction = viewModel::openTasks,
                 )
             }
             if (state.dueTests.isNotEmpty()) {
-                item(key = "due-tests") {
+                sheetItem("due-tests") {
                     DueTestsRow(
                         state.dueTests,
                         enabled = canMeasure,
@@ -290,7 +246,7 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                 }
             }
             if (tasks.due.isEmpty()) {
-                item {
+                sheetItem("no-task-due") {
                     Text(
                         tasks.next?.let {
                             stringResource(
@@ -306,11 +262,36 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                 }
             } else {
                 items(tasks.due, key = { it.id }) { task ->
-                    TaskRow(task, today, onComplete = { onFailed -> viewModel.completeTask(task, onFailed) })
+                    OnPaper { TaskRow(task, today, onComplete = { onFailed -> viewModel.completeTask(task, onFailed) }) }
                 }
             }
+            if (state.accountInvitationPrompt == AccountInvitationPrompt.AFTER_SESSION_CONFIRMATION) {
+                sheetItem("continue-after-session") {
+                    Button(
+                        onClick = viewModel::continueAfterSessionConfirmation,
+                        shape = MaterialTheme.shapes.medium,
+                        modifier = gutter.padding(top = 8.dp).fillMaxWidth().heightIn(min = 48.dp),
+                    ) { Text(stringResource(Res.string.continue_after_session)) }
+                }
+            }
+            if (state.cycledDismissalsLoaded && looksCycled(setup, state.latestReadings) && state.latestSession?.session?.id != state.cycledDismissedSessionId) {
+                sheetItem("cycled-proposal") {
+                    CycledProposalCard(viewModel::switchToEstablished, viewModel::dismissCycledProposal, gutter)
+                }
+            }
+            items(alerts, key = { "alert-${it.aquarium.id}" }) { alert ->
+                OnPaper { AlertRow(alert, onClick = { viewModel.selectAquarium(alert.aquarium.id) }, modifier = gutter) }
+            }
+            state.weeklySummary?.let { summary ->
+                sheetItem("weekly-summary") {
+                    WeeklySummaryCard(summary, state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE, viewModel::openProPaywall, gutter)
+                }
+            }
+            if (state.syncState.status == SyncStatus.FAILED) {
+                sheetItem("sync-failure") { SyncFailure(state, viewModel, gutter) }
+            }
             if (state.accountInvitationPrompt == AccountInvitationPrompt.REMINDER) {
-                item {
+                sheetItem("account-reminder") {
                     Column(gutter.padding(top = 8.dp)) {
                         CarnetSectionTitle(stringResource(Res.string.account_invitation_title))
                         Text(
@@ -326,16 +307,10 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
                 }
             }
         }
-        ExtendedFloatingActionButton(
-            onClick = { if (canMeasure) viewModel.openRapidSession() },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).heightIn(min = 48.dp)
-                .alpha(if (canMeasure) 1f else .38f)
-                .semantics { if (!canMeasure) disabled() },
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-        ) { Text(stringResource(Res.string.measure_action), fontWeight = FontWeight.SemiBold) }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = 80.dp))
+        StatusBarOverHome(listState)
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = FloatingNavBarClearance.dp))
     }
+    if (showPistes && pistes.isNotEmpty()) PistesSheet(pistes, today, onDismiss = { showPistes = false })
     PhotoSheets(state, viewModel, snackbar)
     if (state.pistesAfterSave.isNotEmpty()) PistesSheet(state.pistesAfterSave, viewModel.today(), viewModel::dismissPistes)
     if (state.reviewDiscoveryVisible) {
@@ -398,65 +373,146 @@ fun TankHome(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier = 
 internal fun measureTargetsShownAquarium(aquariumCount: Int, scrolling: Boolean, swipeSelectionPending: Boolean): Boolean =
     aquariumCount < 2 || (!scrolling && !swipeSelectionPending)
 
+/** The shell's « + » is live on every tab but the Tank's, where it follows the home's [measureTargetsShownAquarium] guard. */
+/**
+ * Whether the water is still what lies under the status bar: the hero is the list's first item and the sheet's top edge,
+ * [heroHeightPx] down the list (the hero item's size, its overlap already removed), has not reached the status bar.
+ * Null before the list has laid the hero out: the list then opens on the water.
+ */
+internal fun heroUnderStatusBar(firstVisibleItemIndex: Int, firstVisibleItemScrollOffset: Int, heroHeightPx: Int?, statusBarHeightPx: Int): Boolean =
+    firstVisibleItemIndex == 0 &&
+        if (heroHeightPx == null) firstVisibleItemScrollOffset == 0 else firstVisibleItemScrollOffset < heroHeightPx - statusBarHeightPx
+
+/**
+ * Light status-bar icons while the water is under them (spec §6); once the paper sheet scrolls up to the status bar the icons
+ * turn dark again and a band of paper sits behind them, so the clock never reads white on cream.
+ */
+@Composable
+private fun StatusBarOverHome(listState: LazyListState) {
+    val statusBarPx = WindowInsets.statusBars.getTop(LocalDensity.current)
+    val overWater by remember(listState, statusBarPx) {
+        derivedStateOf {
+            heroUnderStatusBar(
+                listState.firstVisibleItemIndex,
+                listState.firstVisibleItemScrollOffset,
+                listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == 0 }?.size,
+                statusBarPx,
+            )
+        }
+    }
+    StatusBarOverWater(overWater)
+    if (!overWater) {
+        Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(MaterialTheme.colorScheme.background))
+    }
+}
+
+internal fun plusEnabled(destination: MainDestination, tankCanMeasure: Boolean): Boolean =
+    destination != MainDestination.TANK || tankCanMeasure
+
 /** The page the pager must scroll to so it shows the current Aquarium, or null when it already does. */
 internal fun pagerSyncTarget(currentIndex: Int, pageCount: Int, currentPage: Int): Int? =
     currentIndex.takeIf { pageCount > 1 && it in 0 until pageCount && it != currentPage }
 
-/** The current Aquarium's inhabitants as the scene shows them, and the scene's ways into the habitants sheet. */
-private class SceneHabitants(val scene: MiniScene, val empty: Boolean, val onOpen: () -> Unit, val onAdd: () -> Unit)
+/** What the hero shows of the current Aquarium, and its ways out; the pager's other pages get none of the actions. */
+private class CurrentHero(
+    val overview: HomeOverview,
+    val scene: MiniScene,
+    val inhabitantCount: Int,
+    val onOpenPhoto: () -> Unit,
+    val onOpenHabitants: () -> Unit,
+    val onAddHabitants: (() -> Unit)?,
+    val onOpenStatus: (() -> Unit)?,
+    val statusActionLabel: String?,
+)
 
-/** The scene's deep water under the name block: white text keeps 4.5:1 even over the lightest fish (ScenePhysicsTest). */
-internal val HeaderScrim = Color(0xFF0F4A43).copy(alpha = .72f)
-
-/** One scene, or a pager of scenes with dots when there are several Aquariums; settling on a page selects it. */
+/** One hero, or a pager of heroes with white dots on the water when there are several Aquariums; settling on a page selects it. */
 @Composable
-private fun AquariumScene(
+private fun AquariumHeroes(
     aquariums: List<Aquarium>,
     current: Aquarium,
     pager: PagerState,
-    onOpenPhoto: () -> Unit,
+    today: LocalDate,
+    hero: CurrentHero,
+    pageScenes: Map<String, MiniScene>,
+    pageInhabitantCounts: Map<String, Int>,
     loadPhoto: suspend (String) -> ImageBitmap?,
     cachedPhoto: (String) -> ImageBitmap?,
     onChangeAquarium: () -> Unit,
-    habitants: SceneHabitants,
-    pageScenes: Map<String, MiniScene>,
-    vignetteScenes: Map<String, MiniScene>,
+    modifier: Modifier,
 ) {
     if (aquariums.size < 2) {
-        SceneHeader(
-            current, onChangeAquarium, onOpenPhoto, loadPhoto, cachedPhoto, habitants.scene,
-            vignetteScenes[current.id] ?: MiniScene.Empty, stillScene = false, habitants,
-        )
+        HeroPage(current, current, today, hero, pageScenes, pageInhabitantCounts, loadPhoto, cachedPhoto, onChangeAquarium, modifier)
         return
     }
-    Column {
+    Box(modifier) {
         HorizontalPager(pager, Modifier.testTag("home-pager")) { page ->
-            // The photo flow and the habitants sheet belong to the current Aquarium: a page still sliding in has neither,
-            // but it draws its own Aquarium's inhabitants.
-            val isCurrent = aquariums[page].id == current.id
-            val scene = if (isCurrent) habitants.scene else pageScenes[aquariums[page].id] ?: MiniScene.Empty
-            // Pages other than the current one are only seen mid-swipe: they stay still, so the home runs one frame loop.
-            SceneHeader(
-                aquariums[page], onChangeAquarium, onOpenPhoto.takeIf { isCurrent }, loadPhoto, cachedPhoto, scene,
-                vignetteScenes[aquariums[page].id] ?: MiniScene.Empty, stillScene = !isCurrent, habitants.takeIf { isCurrent },
-            )
+            HeroPage(aquariums[page], current, today, hero, pageScenes, pageInhabitantCounts, loadPhoto, cachedPhoto, onChangeAquarium)
         }
-        PagerDots(aquariums.size, pager.currentPage)
+        PagerDots(aquariums.size, pager.currentPage, onWater = true, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = HeroDotsBottom))
     }
+}
+
+@Composable
+private fun HeroPage(
+    aquarium: Aquarium,
+    current: Aquarium,
+    today: LocalDate,
+    hero: CurrentHero,
+    pageScenes: Map<String, MiniScene>,
+    pageInhabitantCounts: Map<String, Int>,
+    loadPhoto: suspend (String) -> ImageBitmap?,
+    cachedPhoto: (String) -> ImageBitmap?,
+    onChangeAquarium: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // The status, the photo flow and the habitants sheet belong to the current Aquarium: a page still sliding in has none
+    // of them, but it draws its own Aquarium's inhabitants. It is only seen mid-swipe, so it stays still (one frame loop).
+    val isCurrent = aquarium.id == current.id
+    val photoId = aquarium.photoId
+    var photo by remember(photoId) { mutableStateOf(photoId?.let(cachedPhoto)) }
+    LaunchedEffect(photoId) { if (photoId != null && photo == null) photo = loadPhoto(photoId) }
+    HomeHero(
+        aquarium = aquarium,
+        overview = hero.overview.takeIf { isCurrent },
+        today = today,
+        inhabitantCount = if (isCurrent) hero.inhabitantCount else pageInhabitantCounts[aquarium.id] ?: 0,
+        scene = if (isCurrent) hero.scene else pageScenes[aquarium.id] ?: MiniScene.Empty,
+        still = !isCurrent,
+        photo = photo,
+        onChangeAquarium = onChangeAquarium,
+        onOpenPhoto = hero.onOpenPhoto.takeIf { isCurrent },
+        onOpenHabitants = hero.onOpenHabitants.takeIf { isCurrent },
+        onAddHabitants = hero.onAddHabitants.takeIf { isCurrent },
+        onOpenStatus = hero.onOpenStatus.takeIf { isCurrent },
+        statusActionLabel = hero.statusActionLabel.takeIf { isCurrent },
+        modifier = modifier,
+    )
 }
 
 /** The page dots, read as one « 2 / 3 »: the individual dots carry no semantics (the current one is shown by colour only). */
 @Composable
-internal fun PagerDots(count: Int, current: Int) {
+internal fun PagerDots(count: Int, current: Int, onWater: Boolean = false, modifier: Modifier = Modifier) {
     Row(
-        Modifier.fillMaxWidth().padding(top = 8.dp).semantics(mergeDescendants = true) { stateDescription = "${current + 1} / $count" },
+        modifier.fillMaxWidth().padding(top = 8.dp).semantics(mergeDescendants = true) { stateDescription = "${current + 1} / $count" },
         horizontalArrangement = Arrangement.Center,
     ) {
         repeat(count) { index ->
-            val color = if (index == current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            val color = when {
+                onWater -> if (index == current) Color.White else Color.White.copy(alpha = .45f)
+                index == current -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.outlineVariant
+            }
             Box(Modifier.padding(horizontal = 4.dp).size(8.dp).background(color, CircleShape).clearAndSetSemantics {})
         }
     }
+}
+
+/** A list item on the paper sheet: opaque, so the water never shows between items. */
+private fun LazyListScope.sheetItem(key: String, content: @Composable () -> Unit) = item(key = key) { OnPaper(content) }
+
+@Composable
+private fun OnPaper(content: @Composable () -> Unit) {
+    Box(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) { content() }
 }
 
 /** « {Aquarium} · {Task} · {overdue|today} › », one row per other Aquarium with something due. */
@@ -533,133 +589,6 @@ private fun DueTestsRow(tests: List<DueTest>, enabled: Boolean, onClick: () -> U
             contentDescription = null,
             modifier = Modifier.size(20.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun SceneHeader(
-    aquarium: Aquarium,
-    onChangeAquarium: () -> Unit,
-    onOpenPhoto: (() -> Unit)?,
-    loadPhoto: suspend (String) -> ImageBitmap?,
-    cachedPhoto: (String) -> ImageBitmap?,
-    scene: MiniScene,
-    vignette: MiniScene,
-    stillScene: Boolean,
-    habitants: SceneHabitants?,
-) {
-    // No age: createdAtEpochMillis is when the Aquarium was added to the app, not when it was set up.
-    val type = stringResource(
-        when (aquarium.profile) {
-            AquariumProfile.ESTABLISHED -> Res.string.profile_established
-            AquariumProfile.CYCLING -> Res.string.profile_cycling
-            AquariumProfile.PLANTED_SHRIMP -> Res.string.profile_planted_shrimp
-        },
-    )
-    val shadow = Shadow(Color.Black.copy(alpha = .45f), Offset(0f, 1f), blurRadius = 3f)
-    val habitantsLabel = stringResource(Res.string.habitants_title)
-    Box(
-        // The scene's background opens the habitants sheet; the name block and the vignette keep their own actions.
-        if (habitants == null) {
-            Modifier.fillMaxWidth()
-        } else {
-            Modifier.fillMaxWidth().clickable(onClickLabel = stringResource(Res.string.habitants_open), onClick = habitants.onOpen)
-                .semantics { contentDescription = habitantsLabel }
-        },
-    ) {
-        TankScene(aquarium, scene.sprites, Modifier.fillMaxWidth(), scene.plants, animate = !stillScene && !rememberReducedMotion())
-        Column(
-            // Clear of the photo vignette (48 dp + 12 dp margin) at the top end. The scrim sits inside the same 16/12 dp
-            // padding, so the click target is unchanged, and keeps the white text readable over a passing fish.
-            Modifier.padding(end = 60.dp).clickable(onClickLabel = stringResource(Res.string.home_change_aquarium), onClick = onChangeAquarium)
-                .padding(horizontal = 8.dp, vertical = 6.dp).background(HeaderScrim, RoundedCornerShape(12.dp))
-                .padding(horizontal = 8.dp, vertical = 6.dp).heightIn(min = 48.dp),
-        ) {
-            Text(
-                aquarium.name,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold, shadow = shadow),
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                aquarium.formattedVolume() + SEPARATOR + type,
-                style = MaterialTheme.typography.bodyMedium.copy(shadow = shadow),
-                color = Color.White,
-            )
-        }
-        val photoLabel = stringResource(if (aquarium.photoId != null) Res.string.photo_open else Res.string.photo_add, aquarium.name)
-        Box(
-            Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 12.dp).size(48.dp)
-                // The label is the node's name only, so TalkBack reads it once.
-                .clickable(enabled = onOpenPhoto != null, role = Role.Button) { onOpenPhoto?.invoke() }
-                .semantics { contentDescription = photoLabel },
-            contentAlignment = Alignment.Center,
-        ) {
-            Box {
-                AquariumThumbnail(
-                    aquarium, 44.dp, loadPhoto, Modifier.border(1.5.dp, Color.White, RoundedCornerShape(12.dp)), cachedPhoto,
-                    vignette.sprites, vignette.plants,
-                )
-                if (aquarium.photoId == null) {
-                    Box(
-                        Modifier.align(Alignment.BottomEnd).offset(4.dp, 4.dp).size(22.dp)
-                            .background(Color.White.copy(alpha = .85f), CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) { Icon(AquagendaIcons.Camera, contentDescription = null, modifier = Modifier.size(14.dp), tint = CarnetLightColors.primary) }
-                }
-            }
-        }
-        if (habitants?.empty == true) {
-            // Light on the water whatever the theme, like the vignette's camera badge.
-            AssistChip(
-                onClick = habitants.onAdd,
-                label = { Text(stringResource(Res.string.habitants_add_yours)) },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 12.dp),
-                colors = AssistChipDefaults.assistChipColors(containerColor = Color.White.copy(alpha = .9f), labelColor = CarnetLightColors.primary),
-                border = null,
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatusLine(
-    overview: HomeOverview,
-    hasSession: Boolean,
-    today: LocalDate,
-    onOpenSession: () -> Unit,
-    modifier: Modifier,
-) {
-    val measured = overview.isMeasured
-    val status = statusText(overview, today)
-    val summary = status.summary.resolve()
-    val since = status.since?.resolve()
-    val dot = when {
-        overview.hasAlert -> levelMarkColor(ReadingLevel.ALERT)!!
-        overview.outsideRangeCount > 0 -> attentionMarkColor()
-        measured -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.outline
-    }
-    val viewDetails = stringResource(Res.string.view_session_details)
-    Row(
-        // onClickLabel keeps the status itself as what TalkBack reads, and names the action.
-        (if (hasSession) Modifier.clickable(onClickLabel = viewDetails, onClick = onOpenSession) else Modifier)
-            .then(modifier)
-            .fillMaxWidth()
-            .heightIn(min = 48.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Box(Modifier.size(8.dp).background(dot, CircleShape))
-        Text(
-            buildAnnotatedString {
-                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(summary) }
-                if (since != null) append(SEPARATOR + since)
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground,
         )
     }
 }

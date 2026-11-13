@@ -97,7 +97,7 @@ class TankHomeDueTestsFlowTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
             waitForText("Test NO₃")
-            composeRule.onNodeWithText("More").performClick()
+            composeRule.onNode(hasLabel("More")).performClick()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Analysis rhythm"))
             composeRule.onNodeWithText("Analysis rhythm").performClick()
             waitForText("Nitrate")
@@ -110,8 +110,8 @@ class TankHomeDueTestsFlowTest {
                 }
             }
             composeRule.onNodeWithText("Back").performClick()
-            composeRule.onNodeWithText("Tank").performClick()
-            waitForText("Measure")
+            composeRule.onNode(hasLabel("Tank")).performClick()
+            composeRule.awaitLabel("Measure")
             composeRule.waitUntil(timeoutMillis = 5_000) {
                 composeRule.onAllNodes(hasText("Test NO₃")).fetchSemanticsNodes().isEmpty()
             }

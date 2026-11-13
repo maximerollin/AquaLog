@@ -23,7 +23,13 @@ import com.maximerollin.aqualog.habitants.AddInhabitantScreen
 import com.maximerollin.aqualog.ui.theme.CarnetDivider
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
-import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import com.maximerollin.aqualog.ui.theme.FloatingNavBar
+import com.maximerollin.aqualog.ui.theme.FloatingNavBarClearance
+import com.maximerollin.aqualog.home.plusEnabled
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -55,12 +61,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -101,12 +104,14 @@ fun AquaLogContent(
     rateApp: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    // The home draws under the status bar; every other screen starts below it.
+    val inset = modifier.windowInsetsPadding(WindowInsets.statusBars)
     when {
-        state.isLoading -> LoadingContent(modifier)
+        state.isLoading -> LoadingContent(inset)
         state.accountSettings.pendingDeletion?.phase == AccountDeletionPhase.CLOUD_DELETED -> {
-            AccountDeletionCleanupScreen(state.accountSettings, viewModel, modifier)
+            AccountDeletionCleanupScreen(state.accountSettings, viewModel, inset)
         }
-        state.account.step != AccountStep.HIDDEN -> AccountScreen(state.account, viewModel, modifier)
+        state.account.step != AccountStep.HIDDEN -> AccountScreen(state.account, viewModel, inset)
         state.tasks.isOpen && state.setup != null -> TaskScreen(
             state = state.tasks.copy(
                 pendingOccurrences = state.tasks.pendingOccurrences.filter {
@@ -114,25 +119,25 @@ fun AquaLogContent(
                 },
             ),
             viewModel = viewModel,
-            modifier = modifier,
+            modifier = inset,
             aquariumName = state.setup.aquarium.name,
         )
-        state.showRhythmSettings && state.setup != null -> RhythmSettingsScreen(state.setup, viewModel, modifier)
+        state.showRhythmSettings && state.setup != null -> RhythmSettingsScreen(state.setup, viewModel, inset)
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(
             state = state.rapidSession,
             aquarium = state.setup.aquarium,
             viewModel = viewModel,
-            modifier = modifier,
+            modifier = inset,
         )
         // Below entry: « Faire une analyse » opens a Session over the fiche, which comes back once it is closed.
-        state.addInhabitant != null && state.setup != null -> AddInhabitantScreen(state.addInhabitant, state, viewModel, modifier)
+        state.addInhabitant != null && state.setup != null -> AddInhabitantScreen(state.addInhabitant, state, viewModel, inset)
         state.sessionDetail != null && state.setup != null -> SessionDetailsScreen(
             recorded = state.sessionDetail,
             setup = state.setup,
             returnToTimeline = state.sessionDetailReturnsToTimeline,
             showDeleteConfirmation = state.showDeleteConfirmation,
             viewModel = viewModel,
-            modifier = modifier,
+            modifier = inset,
         )
         state.setup != null && state.pro.showPaywall -> PaywallScreen(
             pro = state.pro,
@@ -143,36 +148,36 @@ fun AquaLogContent(
             onRestore = viewModel::restoreProPurchase,
             onRetryOffer = viewModel::loadProOffer,
             onContinue = viewModel::closeProPaywall,
-            modifier = modifier,
+            modifier = inset,
         )
         state.setup != null -> AquariumShell(state, viewModel, onExportData, externalLinks, rateApp, modifier)
         state.step == OnboardingStep.WELCOME -> WelcomeScreen(
             state = state.portableData,
             onContinue = viewModel::startOnboarding,
             onRequestImport = viewModel::requestPortableImport,
-            modifier = modifier,
+            modifier = inset,
         )
         state.step == OnboardingStep.PROFILE -> ProfileScreen(
             selected = state.profile,
             onSelected = viewModel::selectProfile,
             onContinue = viewModel::continueToAquarium,
-            modifier = modifier,
+            modifier = inset,
         )
         state.step == OnboardingStep.AQUARIUM -> AquariumDetailsScreen(
             state = state,
             viewModel = viewModel,
-            modifier = modifier,
+            modifier = inset,
         )
         state.step == OnboardingStep.PARAMETERS -> ParametersScreen(
             state = state,
             viewModel = viewModel,
-            modifier = modifier,
+            modifier = inset,
         )
         state.step == OnboardingStep.PRACTICE -> PracticeScreen(
             state = state,
             onValueChanged = viewModel::updatePracticeValue,
             onContinue = viewModel::continueToPaywall,
-            modifier = modifier,
+            modifier = inset,
         )
         else -> PaywallScreen(
             pro = state.pro,
@@ -183,7 +188,7 @@ fun AquaLogContent(
             onRestore = viewModel::restoreProPurchase,
             onRetryOffer = viewModel::loadProOffer,
             onContinue = viewModel::finishForFree,
-            modifier = modifier,
+            modifier = inset,
         )
     }
     if (state.portableData.showImportConfirmation) {
@@ -292,42 +297,23 @@ private fun AquariumShell(
     rateApp: (() -> Unit)?,
     modifier: Modifier,
 ) {
-    Scaffold(
-        modifier = modifier,
-        bottomBar = {
-            NavigationBar {
-                MainDestination.entries.forEach { destination ->
-                    val label = when (destination) {
-                        MainDestination.TANK -> stringResource(Res.string.navigation_tank)
-                        MainDestination.HISTORY -> stringResource(Res.string.navigation_history)
-                        MainDestination.TRENDS -> stringResource(Res.string.navigation_trends)
-                        MainDestination.MORE -> stringResource(Res.string.navigation_more)
-                    }
-                    NavigationBarItem(
-                        selected = state.destination == destination,
-                        onClick = { viewModel.selectDestination(destination) },
-                        icon = {
-                            Icon(
-                                when (destination) {
-                                    MainDestination.TANK -> AquagendaIcons.Fish
-                                    MainDestination.HISTORY -> AquagendaIcons.RotateCcwClock
-                                    MainDestination.TRENDS -> AquagendaIcons.TrendingUp
-                                    MainDestination.MORE -> AquagendaIcons.Menu
-                                },
-                                contentDescription = null,
-                            )
-                        },
-                        label = { Text(label) },
-                    )
-                }
-            }
-        },
-    ) { innerPadding ->
-        val contentModifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding)
+    // Reported by the home, which owns the guard: « + » records into the Aquarium the scene shows.
+    var tankCanMeasure by remember { mutableStateOf(false) }
+    // Read at the moment of a tap, so a swipe that started a frame ago is never missed (the Boolean above lags it).
+    var tankMeasureGuard by remember { mutableStateOf<() -> Boolean>({ false }) }
+    val statusBarInset = Modifier.windowInsetsPadding(WindowInsets.statusBars)
+    // Lists scroll clear of the floating bar; the home draws from the top edge, under the status bar.
+    val tabModifier = statusBarInset.padding(bottom = FloatingNavBarClearance.dp)
+    Box(modifier.fillMaxSize()) {
         when (state.destination) {
-            MainDestination.TANK -> TankHome(state, viewModel, contentModifier, rateApp)
-            MainDestination.HISTORY -> TimelineScreen(state, viewModel, contentModifier)
-            MainDestination.TRENDS -> TrendsScreen(state, viewModel, contentModifier)
+            // The home sets the status-bar icons itself: light over the water, dark once the sheet is under them.
+            MainDestination.TANK -> TankHome(
+                state, viewModel, Modifier, rateApp,
+                onMeasureAvailabilityChange = { tankCanMeasure = it },
+                onMeasureGuard = { tankMeasureGuard = it },
+            )
+            MainDestination.HISTORY -> TimelineScreen(state, viewModel, tabModifier)
+            MainDestination.TRENDS -> TrendsScreen(state, viewModel, tabModifier)
             MainDestination.MORE -> PortableDataSettings(
                 homeState = state,
                 state = state.portableData,
@@ -339,9 +325,16 @@ private fun AquariumShell(
                 viewModel = viewModel,
                 externalLinks = externalLinks,
                 rateApp = rateApp,
-                modifier = contentModifier,
+                modifier = tabModifier,
             )
         }
+        FloatingNavBar(
+            selected = state.destination,
+            onSelect = viewModel::selectDestination,
+            onMeasure = { if (plusEnabled(state.destination, tankMeasureGuard())) viewModel.openRapidSession() },
+            measureEnabled = plusEnabled(state.destination, tankCanMeasure),
+            modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 16.dp),
+        )
     }
 }
 
