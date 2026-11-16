@@ -14,10 +14,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -35,6 +38,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -47,30 +51,49 @@ import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.shared.assistance.readingLevel
+import com.maximerollin.aqualog.shared.assistance.ruleFor
 import com.maximerollin.aqualog.shared.evaluateMeasurement
 import com.maximerollin.aqualog.ui.theme.LEVEL_MARK_TAG
 import com.maximerollin.aqualog.ui.theme.LevelMark
 import com.maximerollin.aqualog.ui.theme.levelContainerColor
 import com.maximerollin.aqualog.ui.theme.levelTextColor
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.ceil
 
 enum class SessionTileState { EMPTY, INVALID, IN_RANGE, ABOVE, BELOW, FAR_ABOVE, FAR_BELOW, NO_RANGE }
 
-internal fun sessionTileState(input: String, definition: ParameterDefinition, profile: AquariumProfile): SessionTileState {
-    if (input.isBlank()) return SessionTileState.EMPTY
+/** A tile's [state] in words and its [level], the tint and mark, from one reading of the input. */
+internal data class SessionTileReading(val state: SessionTileState, val level: ReadingLevel)
+
+internal fun sessionTileReading(input: String, definition: ParameterDefinition, profile: AquariumProfile): SessionTileReading {
+    if (input.isBlank()) return SessionTileReading(SessionTileState.EMPTY, ReadingLevel.OK)
     val feedback = evaluateMeasurement(input, definition)
     val value = feedback.value
-    if (!feedback.isValid || value == null) return SessionTileState.INVALID
+    if (!feedback.isValid || value == null) return SessionTileReading(SessionTileState.INVALID, ReadingLevel.OK)
+    val level = readingLevel(definition, value, profile)
     val minimum = definition.indicativeMinimum
     val maximum = definition.indicativeMaximum
-    if (minimum == null && maximum == null) return SessionTileState.NO_RANGE
-    val far = readingLevel(definition, value, profile) == ReadingLevel.ALERT
-    return when {
+    val far = level == ReadingLevel.ALERT
+    val state = when {
         maximum != null && value > maximum -> if (far) SessionTileState.FAR_ABOVE else SessionTileState.ABOVE
         minimum != null && value < minimum -> if (far) SessionTileState.FAR_BELOW else SessionTileState.BELOW
+        // An alert beyond a bound the person left empty: its side comes from the alert thresholds, so a tinted tile
+        // never reads « In range » nor stays wordless.
+        level != ReadingLevel.OK -> {
+            val below = ruleFor(definition.parameter).alertBelow?.let { value <= it } == true
+            when {
+                below -> if (far) SessionTileState.FAR_BELOW else SessionTileState.BELOW
+                else -> if (far) SessionTileState.FAR_ABOVE else SessionTileState.ABOVE
+            }
+        }
+        minimum == null && maximum == null -> SessionTileState.NO_RANGE
         else -> SessionTileState.IN_RANGE
     }
+    return SessionTileReading(state, level)
 }
+
+internal fun sessionTileState(input: String, definition: ParameterDefinition, profile: AquariumProfile): SessionTileState =
+    sessionTileReading(input, definition, profile).state
 
 internal fun sessionColumns(fontScale: Float, maxWidth: Dp): Int =
     if (fontScale >= 1.3f || maxWidth < 340.dp) 1 else 2
@@ -123,10 +146,8 @@ fun MeasureTile(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
-    val state = sessionTileState(input, definition, profile)
+    val (state, level) = sessionTileReading(input, definition, profile)
     val invalid = state == SessionTileState.INVALID
-    val feedback = evaluateMeasurement(input, definition)
-    val level = feedback.value?.takeIf { feedback.isValid }?.let { readingLevel(definition, it, profile) } ?: ReadingLevel.OK
     val container = levelContainerColor(level)
     val levelColor = levelTextColor(level)
     // On a tinted tile the muted grey gives way to the level's own text colour, as on the home's value tiles.
@@ -153,6 +174,24 @@ fun MeasureTile(
         focused -> 2.dp to colors.primary
         else -> 1.dp to colors.outlineVariant
     }
+    val valueStyle = TextStyle(
+        fontSize = 28.sp,
+        lineHeight = 34.sp,
+        fontWeight = FontWeight.SemiBold,
+        fontFeatureSettings = "tnum",
+        color = valueColor,
+    )
+    // The field is at least ten characters wide: the unit follows the typed text instead, measured in the field's own style.
+    val textMeasurer = rememberTextMeasurer()
+    val placeholderStyle = LocalTextStyle.current.merge(TextStyle(fontSize = 28.sp, lineHeight = 34.sp))
+    val valueWidth = with(LocalDensity.current) {
+        val text = if (input.isEmpty()) {
+            textMeasurer.measure(PLACEHOLDER, placeholderStyle, softWrap = false, maxLines = 1)
+        } else {
+            textMeasurer.measure(input, valueStyle, softWrap = false, maxLines = 1)
+        }
+        ceil(text.getLineRight(0)).toDp() + CursorRoom
+    }
     BasicTextField(
         value = input,
         onValueChange = onValueChange,
@@ -166,13 +205,7 @@ fun MeasureTile(
         },
         singleLine = true,
         interactionSource = interaction,
-        textStyle = TextStyle(
-            fontSize = 28.sp,
-            lineHeight = 34.sp,
-            fontWeight = FontWeight.SemiBold,
-            fontFeatureSettings = "tnum",
-            color = valueColor,
-        ),
+        textStyle = valueStyle,
         cursorBrush = SolidColor(colors.primary),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = imeAction),
         keyboardActions = KeyboardActions(onNext = { onNext() }, onDone = { onDone() }),
@@ -201,10 +234,12 @@ fun MeasureTile(
                     )
                 }
                 Row(Modifier.padding(top = 2.dp)) {
-                    Box(Modifier.weight(1f, fill = false).alignByBaseline()) {
+                    // Only as wide as the value (or « — ») plus the cursor, so the unit follows it; past the room left, the
+                    // field scrolls and the unit stays in view.
+                    Box(Modifier.weight(1f, fill = false).widthIn(max = valueWidth).alignByBaseline()) {
                         if (input.isEmpty()) {
                             Text(
-                                text = "—", fontSize = 28.sp, lineHeight = 34.sp, color = colors.outline,
+                                text = PLACEHOLDER, style = placeholderStyle, color = colors.outline,
                                 modifier = Modifier.clearAndSetSemantics {},
                             )
                         }
@@ -214,8 +249,9 @@ fun MeasureTile(
                         // Visual only, like the other lines: the field's state description says it. Its tight line height keeps it, once
                         // shifted onto the value's baseline, inside the value's line: the row's intrinsic height ignores that shift.
                         Text(
-                            text = " $shownUnit", fontSize = 14.sp, lineHeight = 16.sp, color = muted,
-                            modifier = Modifier.alignByBaseline().clearAndSetSemantics {},
+                            text = shownUnit, fontSize = 14.sp, lineHeight = 16.sp, color = muted,
+                            modifier = Modifier.padding(start = UnitGap - CursorRoom).alignByBaseline()
+                                .testTag(SESSION_TILE_UNIT_TAG).clearAndSetSemantics {},
                         )
                     }
                 }
@@ -233,11 +269,22 @@ fun MeasureTile(
     )
 }
 
+/** The gap between the value and its unit. */
+private val UnitGap = 4.dp
+
+/** Kept after the value for the 2 dp cursor, so a field just as wide as its text never scrolls it. */
+private val CursorRoom = 2.dp
+
+private const val PLACEHOLDER = "—"
+
 /** « Next » on every tile but the last, which says « Done » and closes the keyboard. */
 internal fun sessionImeAction(index: Int, lastIndex: Int): ImeAction = if (index >= lastIndex) ImeAction.Done else ImeAction.Next
 
 /** Test tag of a tile's state line, which is silent: its words are in the tile's state description. */
 internal const val SESSION_TILE_STATE_TAG = "session-tile-state"
+
+/** Test tag of a tile's unit, silent too: the state description says it. */
+internal const val SESSION_TILE_UNIT_TAG = "session-tile-unit"
 
 /**
  * One row of the Session grid: [tiles] share the width equally, 10 dp apart, and the same height. A short last row keeps

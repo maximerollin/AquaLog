@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalDensity
@@ -28,6 +31,7 @@ import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.text.input.ImeAction
@@ -38,6 +42,7 @@ import com.maximerollin.aqualog.LocalizedFormatters
 import com.maximerollin.aqualog.MeasureTile
 import com.maximerollin.aqualog.MeasureTileRow
 import com.maximerollin.aqualog.SESSION_TILE_STATE_TAG
+import com.maximerollin.aqualog.SESSION_TILE_UNIT_TAG
 import com.maximerollin.aqualog.sessionColumns
 import com.maximerollin.aqualog.sessionImeAction
 import com.maximerollin.aqualog.shared.AquariumProfile
@@ -63,6 +68,7 @@ class SessionTilesSemanticsTest {
     private val gh = definition(BuiltInParameter.GH, 4.0, 12.0)
     private val kh = definition(BuiltInParameter.KH, 3.0, 8.0)
     private val nitrite = definition(BuiltInParameter.NITRITE, 0.0, 0.0)
+    private val temperature = definition(BuiltInParameter.TEMPERATURE, 24.0, 27.0)
 
     private fun withLocale(locale: Locale, block: () -> Unit) {
         val previous = Locale.getDefault()
@@ -139,6 +145,44 @@ class SessionTilesSemanticsTest {
             assertEquals("6.5–7.5", field.stateDescription())
             assertTrue(field.mergedTexts().none { "decimal" in it }, "${field.mergedTexts()}")
             onNodeWithTag(SESSION_TILE_STATE_TAG, useUnmergedTree = true).assertExists()
+        }
+    }
+
+    @Test
+    fun `the unit follows the value, not the far edge`() = withEnglish {
+        runComposeUiTest {
+            lateinit var measurer: TextMeasurer
+            lateinit var baseStyle: TextStyle
+            var inputs by mutableStateOf(mapOf(temperature.id to "24"))
+            setContent {
+                measurer = rememberTextMeasurer()
+                AquaLogTheme(false) {
+                    baseStyle = LocalTextStyle.current
+                    Grid(listOf(temperature), inputs, 2, LocalizedFormatters(Locale.ENGLISH))
+                }
+            }
+            fun assertUnitAfter(shown: String) {
+                val tile = onNodeWithTag("tile-${temperature.id}").fetchSemanticsNode().boundsInRoot
+                val unit = onNodeWithTag(SESSION_TILE_UNIT_TAG, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+                // The value is drawn in the field's own style, the « — » placeholder as a themed Text.
+                val style = if (shown == "—") {
+                    baseStyle.merge(TextStyle(fontSize = 28.sp, lineHeight = 34.sp))
+                } else {
+                    TextStyle(fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum")
+                }
+                val valueWidth = measurer.measure(shown, style).size.width
+                // The tile's 14 dp padding, the value, then a 4 dp gap.
+                val expected = tile.left + with(density) { 14.dp.toPx() + 4.dp.toPx() } + valueWidth
+                assertEquals(expected, unit.left, with(density) { 2.dp.toPx() }, "« $shown » then the unit at $unit in $tile")
+            }
+            assertUnitAfter("24")
+            inputs = mapOf(temperature.id to "24.55")
+            waitForIdle()
+            assertUnitAfter("24.55")
+            // Empty, the unit follows the « — » placeholder.
+            inputs = emptyMap()
+            waitForIdle()
+            assertUnitAfter("—")
         }
     }
 

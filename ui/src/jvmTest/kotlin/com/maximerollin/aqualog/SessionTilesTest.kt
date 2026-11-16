@@ -49,7 +49,21 @@ class SessionTilesTest {
     @Test
     fun `no indicative range never reads in range`() {
         val ph = definition(BuiltInParameter.PH)
-        assertEquals(SessionTileState.NO_RANGE, sessionTileState("12", ph, established))
+        assertEquals(SessionTileState.NO_RANGE, sessionTileState("7.0", ph, established))
+    }
+
+    @Test
+    fun `an alert beyond a missing bound takes its side from the alert thresholds`() {
+        // Only a maximum: 4.0 crosses no indicative bound, but pH's low alert threshold.
+        assertEquals(SessionTileState.FAR_BELOW, sessionTileState("4.0", definition(BuiltInParameter.PH, max = 7.5), established))
+        // No range at all: 12 is past pH's high alert threshold, so it is said, not left wordless.
+        assertEquals(SessionTileState.FAR_ABOVE, sessionTileState("12", definition(BuiltInParameter.PH), established))
+    }
+
+    @Test
+    fun `cycling nitrite past its alert threshold with no maximum is above, not far`() {
+        val nitrite = definition(BuiltInParameter.NITRITE, min = 0.0)
+        assertEquals(SessionTileState.ABOVE, sessionTileState("1.0", nitrite, AquariumProfile.CYCLING))
     }
 
     @Test
