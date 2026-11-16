@@ -9,6 +9,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
 import com.maximerollin.aqualog.ui.theme.HeroTextBacking
+import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeBottom
+import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeTop
 import java.io.File
 import kotlin.test.assertFailsWith
 import kotlin.test.Test
@@ -175,6 +177,16 @@ class ScenePhysicsTest {
             val text = HeroText.compositeOver(HeroTextBacking.compositeOver(behind)).luminance()
             val contrast = (text + .05f) / (backdrop + .05f)
             assertTrue(contrast >= 4.5f, "over $behind: $contrast")
+        }
+    }
+
+    @Test
+    fun `white header text stays readable over the brightest water`() {
+        val topWater = Color(0xFF3D9184).let { Color.White.copy(alpha = .14f).compositeOver(it) } // a light ray over the scene's top water
+        for (shade in listOf(WaterHeaderShadeTop, WaterHeaderShadeBottom)) {
+            val behind = shade.compositeOver(topWater)
+            val c = contrast(HeroText, behind)
+            assertTrue(c >= 4.5f, "under $shade: $c")
         }
     }
 

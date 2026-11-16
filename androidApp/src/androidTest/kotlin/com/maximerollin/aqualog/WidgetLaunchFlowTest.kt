@@ -12,6 +12,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -47,9 +48,9 @@ class WidgetLaunchFlowTest {
         val scenario = ActivityScenario.launch<MainActivity>(widgetIntent(nanoId, WidgetTarget.MEASURE))
         try {
             waitForText("New Session")
-            waitForText("Nano 30 · ", substring = true)
+            waitForText("Nano 30")
             composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
-            composeRule.onNodeWithText("Save Session").performClick()
+            composeRule.onNodeWithTag("save-session").performClick()
             waitForText("measured today", substring = true)
             runBlocking {
                 val repository = application.aquariumRepository
@@ -77,7 +78,7 @@ class WidgetLaunchFlowTest {
             Thread.sleep(1_000)
             composeRule.waitForIdle()
             composeRule.onNodeWithContentDescription("Measurement for Temperature").assertTextContains("24,5")
-            waitForText("Aqua 120 · ", substring = true)
+            waitForText("Aqua 120")
         } finally {
             finishByHand(scenario)
         }
@@ -95,7 +96,7 @@ class WidgetLaunchFlowTest {
         context.startActivity(intent)
         try {
             waitForText("New Session")
-            waitForText("Nano 30 · ", substring = true)
+            waitForText("Nano 30")
             composeRule.onAllNodes(hasText("Authentication did not complete", substring = true)).assertCountEquals(0)
         } finally {
             var activity: Activity? = null

@@ -519,6 +519,8 @@ class HomeViewModel(
     private val reviewCoordinator: ReviewCoordinator? = null,
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
     private val loadSpecies: suspend () -> List<Species> = ::loadEncyclopedia,
+    /** The separator of the regional format locale, used when a stored decimal is put back into a field. */
+    private val decimalSeparator: () -> Char = ::regionalDecimalSeparator,
 ) : ViewModel() {
     private val feedbackCoordinator = FeedbackCoordinator(feedbackGateway)
     private val taskCompleter = TaskCompleter(
@@ -791,7 +793,7 @@ class HomeViewModel(
                 aquariumEditor = AquariumEditorUiState(
                     aquariumId = aquarium.id,
                     name = aquarium.name,
-                    volume = aquarium.volume.displayInput(),
+                    volume = aquarium.volume.displayInput(decimalSeparator()),
                     volumeUnit = aquarium.volumeUnit,
                 ),
             )
@@ -1819,12 +1821,12 @@ class HomeViewModel(
                     val hydrated = current.copy(
                         context = context,
                         measurementInputs = context.measurementInputs + recorded.measurements.associate {
-                            it.parameterDefinitionId to it.value.displayInput()
+                            it.parameterDefinitionId to it.value.displayInput(decimalSeparator())
                         },
                         actions = recorded.maintenanceActions.associate { action ->
                             action.type to MaintenanceActionInput(
                                 type = action.type,
-                                quantity = action.quantity.displayInput(),
+                                quantity = action.quantity.displayInput(decimalSeparator()),
                                 unit = action.unit.orEmpty(),
                                 product = action.product.orEmpty(),
                             )
@@ -2035,7 +2037,7 @@ class HomeViewModel(
         if (definition == null || suggestion == null) return@updateRapidSession state
         val scale = 10.0.pow(definition.precision)
         state.copy(
-            measurementInputs = state.measurementInputs + (parameterDefinitionId to (round(suggestion * scale) / scale).displayInput()),
+            measurementInputs = state.measurementInputs + (parameterDefinitionId to (round(suggestion * scale) / scale).displayInput(decimalSeparator())),
             pendingConcerns = state.pendingConcerns - parameterDefinitionId,
             saveError = false,
         )
@@ -2806,11 +2808,16 @@ private fun String.toOptionalDecimal(): OptionalDecimal? =
 
 private fun String.toDecimalOrNull(): Double? = parseDecimalInput(this)
 
-private fun Double?.displayInput(): String = when {
+/** A stored decimal back in a field, written with [decimalSeparator] as the person types it (« 7,8 » in French). */
+internal fun Double?.displayInput(decimalSeparator: Char = regionalDecimalSeparator()): String = when {
     this == null -> ""
     this % 1.0 == 0.0 -> toLong().toString()
-    else -> toString()
+    else -> toString().replace('.', decimalSeparator)
 }
+
+/** The decimal separator of the regional format locale, the same locale [LocalizedFormatters] uses. */
+internal fun regionalDecimalSeparator(): Char =
+    java.text.DecimalFormatSymbols.getInstance(java.util.Locale.getDefault(java.util.Locale.Category.FORMAT)).decimalSeparator
 
 /** The usual quantity of an action: the last recorded one, else the built-in default. */
 fun defaultMaintenanceInput(type: MaintenanceActionType, last: MaintenanceAction?): MaintenanceActionInput =

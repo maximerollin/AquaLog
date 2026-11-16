@@ -1,6 +1,9 @@
 package com.maximerollin.aqualog
 
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.hasTestTag
@@ -40,7 +43,7 @@ class PistesFlowTest {
             composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Nitrite").performTextInput("0.25")
-            composeRule.onNodeWithText("Save Session").performClick()
+            composeRule.onNodeWithTag("save-session").performClick()
 
             waitForText("Ideas for Nitrite")
             composeRule.onNodeWithText("Change 30% of the water.").assertIsDisplayed()
@@ -71,7 +74,7 @@ class PistesFlowTest {
             composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Nitrite").performTextInput("0.25")
-            composeRule.onNodeWithText("Save Session").performClick()
+            composeRule.onNodeWithTag("save-session").performClick()
             waitForText("Ideas for Nitrite")
 
             // The scrim blocks touches, so leave the home through the semantics action, as a programmatic navigation would.
@@ -101,8 +104,11 @@ class PistesFlowTest {
             composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Nitrite").performTextInput("0.6")
-            composeRule.onNodeWithText("Far outside your indicative range", substring = true).assertIsDisplayed()
-            composeRule.onNodeWithText("Save Session").performClick()
+            composeRule.onNodeWithContentDescription("Measurement for Nitrite").assert(SemanticsMatcher("far above the range is spoken") {
+                it.config.getOrElseNullable(SemanticsProperties.StateDescription) { null }
+                    ?.contains("Far above the range") == true
+            })
+            composeRule.onNodeWithTag("save-session").performClick()
             waitForText("Ideas for Nitrite")
             composeRule.onNodeWithText("Close").performClick()
             // The status line reads « 1 value to watch, 1 far out of range · measured today » as one text.

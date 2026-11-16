@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.home
 
+import com.maximerollin.aqualog.heroUnderStatusBar
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue

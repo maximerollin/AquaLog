@@ -83,8 +83,12 @@ class TankHomeDueTestsFlowTest {
             composeRule.waitUntil(timeoutMillis = 5_000) {
                 runCatching { nitrate.assertIsFocused() }.isSuccess
             }
+            // Tiles sit in rows of 2: nitrate reads first, in an earlier row or further left in the same row.
+            val nitrateBounds = nitrate.getBoundsInRoot()
+            val temperatureBounds = composeRule.onNodeWithTag("rapid-measurement-temperature").getBoundsInRoot()
             assertTrue(
-                nitrate.getBoundsInRoot().top < composeRule.onNodeWithTag("rapid-measurement-temperature").getBoundsInRoot().top,
+                nitrateBounds.top < temperatureBounds.top ||
+                    (nitrateBounds.top == temperatureBounds.top && nitrateBounds.left < temperatureBounds.left),
             )
         } finally {
             scenario.close()

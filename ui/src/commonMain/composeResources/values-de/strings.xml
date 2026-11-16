@@ -128,6 +128,13 @@
     <string name="session_save_error">Die Sitzung konnte nicht gespeichert werden. Ihre Einträge sind noch vorhanden; versuchen Sie es erneut.</string>
     <string name="session_saved_description">Chronologiebestätigung · %1$s · %2$s</string>
     <plurals name="session_measurement_count"><item quantity="one">%1$d Messung</item><item quantity="other">%1$d Messungen</item></plurals>
+    <string name="session_tile_tap_to_enter">Zum Eingeben tippen</string>
+    <string name="session_tile_in_range">Im Richtbereich</string>
+    <string name="session_tile_above">Über dem Richtbereich</string>
+    <string name="session_tile_below">Unter dem Richtbereich</string>
+    <string name="session_tile_far_above">Weit über dem Richtbereich</string>
+    <string name="session_tile_far_below">Weit unter dem Richtbereich</string>
+    <plurals name="save_session_count"><item quantity="one">Speichern · %1$d Messung</item><item quantity="other">Speichern · %1$d Messungen</item></plurals>
     <plurals name="session_maintenance_count"><item quantity="one">%1$d Wartungsaktion</item><item quantity="other">%1$d Wartungsaktionen</item></plurals>
     <string name="continue_after_session">Weitermachen</string>
 

@@ -128,6 +128,13 @@
     <string name="session_save_error">La session n'a pas pu être enregistrée. Vos entrées sont toujours là ; essayer à nouveau.</string>
     <string name="session_saved_description">Confirmation dans la Chronologie · %1$s · %2$s</string>
     <plurals name="session_measurement_count"><item quantity="one">%1$d Mesure</item><item quantity="other">%1$d Mesures</item></plurals>
+    <string name="session_tile_tap_to_enter">Toucher pour saisir</string>
+    <string name="session_tile_in_range">Dans la plage</string>
+    <string name="session_tile_above">Au-dessus de la plage</string>
+    <string name="session_tile_below">En dessous de la plage</string>
+    <string name="session_tile_far_above">Très au-dessus de la plage</string>
+    <string name="session_tile_far_below">Très en dessous de la plage</string>
+    <plurals name="save_session_count"><item quantity="one">Enregistrer · %1$d mesure</item><item quantity="other">Enregistrer · %1$d mesures</item></plurals>
     <plurals name="session_maintenance_count"><item quantity="one">%1$d Action d’entretien</item><item quantity="other">%1$d Actions d’entretien</item></plurals>
     <string name="continue_after_session">Continuer</string>
 
