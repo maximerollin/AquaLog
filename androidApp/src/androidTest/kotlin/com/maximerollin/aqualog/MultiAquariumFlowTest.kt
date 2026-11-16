@@ -63,7 +63,7 @@ class MultiAquariumFlowTest {
 
         try {
             waitForText("Salon")
-            composeRule.onNodeWithText("More").performClick()
+            composeRule.onNode(hasLabel("More")).performClick()
             waitForText("Pro active")
             composeRule.onNodeWithText("Add Aquarium").performScrollTo().performClick()
             waitForText("Aquarium name")
@@ -100,19 +100,19 @@ class MultiAquariumFlowTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
             waitForText("Aqua 120")
-            composeRule.onNodeWithText("History").performClick()
+            composeRule.onNode(hasLabel("History")).performClick()
             waitForText("Chronology")
-            composeRule.onNodeWithText("Tank").performClick()
+            composeRule.onNode(hasLabel("Tank")).performClick()
             composeRule.onNodeWithTag("home-pager").performTouchInput { swipeLeft() }
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasText("Nano 30")).fetchSemanticsNodes().isNotEmpty()
             }
-            composeRule.onNodeWithText("Measure").performClick()
+            composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
             composeRule.onNodeWithText("Save Session").performClick()
             waitForText("measured today", substring = true)
-            composeRule.onNodeWithText("History").performClick()
+            composeRule.onNode(hasLabel("History")).performClick()
             waitForText("Chronology")
             // The Chronologie context line names the shown Aquarium (« Nano 30 · All time »).
             composeRule.waitUntil(timeoutMillis = 10_000) {
@@ -186,9 +186,9 @@ class MultiAquariumFlowTest {
             composeRule.onNode(hasText("Nano 30", substring = true) and hasClickAction()).performClick()
             // « Nano 30 » is now current: its task shows under Today, the scene is still scrolled away.
             waitForText("Change filter wool")
-            composeRule.onNodeWithText("Measure").assertIsEnabled()
+            composeRule.onNode(hasLabel("Measure")).assertIsEnabled()
             composeRule.onNodeWithTag("home-list").performScrollToIndex(0)
-            composeRule.onNodeWithText("Measure").assertIsEnabled().performClick()
+            composeRule.onNode(hasLabel("Measure")).assertIsEnabled().performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
             composeRule.onNodeWithText("Save Session").performClick()

@@ -31,7 +31,7 @@ class SessionReliabilityFlowTest {
     @Test
     fun draft_survivesBackgroundingAndConfigurationChange() {
         val scenario = launchConfiguredAquarium()
-        composeRule.onNodeWithText("Measure").performClick()
+        composeRule.onNode(hasLabel("Measure")).performClick()
         waitForText("Measurements")
 
         val temperature = composeRule.onNodeWithContentDescription("Measurement for Temperature")
@@ -53,7 +53,7 @@ class SessionReliabilityFlowTest {
     @Test
     fun recordedSession_canBeReopenedCorrectedAfterRestartAndDeletedWithConfirmation() {
         var scenario = launchConfiguredAquarium()
-        composeRule.onNodeWithText("Measure").performClick()
+        composeRule.onNode(hasLabel("Measure")).performClick()
         waitForText("Measurements")
         composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Water change"))
@@ -122,11 +122,11 @@ class SessionReliabilityFlowTest {
         composeRule.onNodeWithText("Aquarium name").performTextInput("Amazonien")
         composeRule.onNodeWithText("Volume").performTextInput("120")
         composeRule.onNodeWithText("Continue to Parameters").performClick()
-        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Try a mini Session"))
+        composeRule.scrollToText("Try a mini Session")
         composeRule.onNodeWithText("Try a mini Session").performClick()
         composeRule.onNodeWithText("See Free and Pro").performClick()
         composeRule.onNodeWithText("Continue for free").performClick()
-        waitForText("Measure")
+        composeRule.awaitLabel("Measure")
         return scenario
     }
 

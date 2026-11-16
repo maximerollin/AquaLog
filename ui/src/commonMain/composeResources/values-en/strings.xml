@@ -369,6 +369,11 @@
     <string name="home_nothing_due">Nothing due · next: %1$s on %2$s</string>
     <string name="home_no_measurement_yet">No measurement yet</string>
     <string name="home_status_all_in_range">All in range</string>
+    <string name="home_status_in_range_ratio">%1$d of %2$d in range</string>
+    <string name="home_to_do">To do</string>
+    <string name="home_values_previous">Previous values</string>
+    <string name="home_values_next">Next values</string>
+    <plurals name="home_inhabitants_count"><item quantity="one">%1$d inhabitant</item><item quantity="other">%1$d inhabitants</item></plurals>
     <plurals name="series_weeks"><item quantity="one">%1$d week of regular care</item><item quantity="other">%1$d weeks of regular care</item></plurals>
     <plurals name="home_status_outside_range"><item quantity="one">%1$d value to watch</item><item quantity="other">%1$d values to watch</item></plurals>
     <plurals name="home_status_with_alert"><item quantity="one">%1$s, %2$d far out of range</item><item quantity="other">%1$s, %2$d far out of range</item></plurals>

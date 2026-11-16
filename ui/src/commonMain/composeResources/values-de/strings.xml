@@ -369,6 +369,11 @@
     <string name="home_nothing_due">Nichts fällig · nächste: %1$s am %2$s</string>
     <string name="home_no_measurement_yet">Noch keine Messung</string>
     <string name="home_status_all_in_range">Alles im Richtbereich</string>
+    <string name="home_status_in_range_ratio">%1$d von %2$d im Richtbereich</string>
+    <string name="home_to_do">Zu erledigen</string>
+    <string name="home_values_previous">Vorherige Werte</string>
+    <string name="home_values_next">Nächste Werte</string>
+    <plurals name="home_inhabitants_count"><item quantity="one">%1$d Bewohner</item><item quantity="other">%1$d Bewohner</item></plurals>
     <plurals name="series_weeks"><item quantity="one">%1$d Woche regelmäßiger Pflege</item><item quantity="other">%1$d Wochen regelmäßiger Pflege</item></plurals>
     <plurals name="home_status_outside_range"><item quantity="one">%1$d Wert zu beobachten</item><item quantity="other">%1$d Werte zu beobachten</item></plurals>
     <plurals name="home_status_with_alert"><item quantity="one">%1$s, davon %2$d weit außerhalb</item><item quantity="other">%1$s, davon %2$d weit außerhalb</item></plurals>

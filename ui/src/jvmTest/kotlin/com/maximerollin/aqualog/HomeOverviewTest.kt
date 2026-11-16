@@ -274,4 +274,23 @@ class HomeOverviewTest {
         assertEquals(1, cycling.alertCount)
         assertEquals(2, cycling.outsideRangeCount)
     }
+
+    @Test
+    fun `all keeps every active parameter in position order beyond six`() {
+        val definitions = BuiltInParameter.entries.take(8).mapIndexed { index, parameter -> definition(parameter, index) }
+        val overview = homeOverview(setup(*definitions.toTypedArray()), emptyList())
+        assertEquals(8, overview.all.size)
+        assertEquals((0..7).toList(), overview.all.map { it.definition.position })
+        assertEquals(6, overview.values.size)
+    }
+
+    @Test
+    fun `in range count is measured minus out of range`() {
+        val ph = definition(BuiltInParameter.PH, 0, 6.5, 7.5)
+        val gh = definition(BuiltInParameter.GH, 1, 4.0, 12.0)
+        val kh = definition(BuiltInParameter.KH, 2, 3.0, 8.0)
+        val overview = homeOverview(setup(ph, gh, kh), listOf(reading(ph, 7.8), reading(gh, 8.0)))
+        assertEquals(2, overview.measuredCount)
+        assertEquals(1, overview.inRangeCount)
+    }
 }

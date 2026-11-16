@@ -8,6 +8,7 @@ import com.maximerollin.aqualog.resources.home_measured_today
 import com.maximerollin.aqualog.resources.home_measured_yesterday
 import com.maximerollin.aqualog.resources.home_no_measurement_yet
 import com.maximerollin.aqualog.resources.home_status_all_in_range
+import com.maximerollin.aqualog.resources.home_status_in_range_ratio
 import com.maximerollin.aqualog.resources.home_status_outside_range
 import com.maximerollin.aqualog.resources.home_status_with_alert
 import com.maximerollin.aqualog.shared.BuiltInParameter
@@ -17,6 +18,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class StatusTextTest {
     private val today = LocalDate.of(2026, 11, 3)
@@ -66,5 +68,15 @@ class StatusTextTest {
             ),
             statusText(overview(5, outside = 3, alerts = 1), today),
         )
+    }
+
+    @Test
+    fun `ratio is null before the first measurement`() = assertNull(statusRatio(overview(null)))
+
+    @Test
+    fun `ratio reads in range over measured`() {
+        val values = (0 until 7).map { HomeValue(definition, 7.0, 1L, if (it == 0) ReadingLevel.ATTENTION else ReadingLevel.OK, false) }
+        val sixOfSeven = HomeOverview(values.take(6), 1, 1L, all = values)
+        assertEquals(TextRef.Str(Res.string.home_status_in_range_ratio, listOf(6, 7)), statusRatio(sixOfSeven))
     }
 }

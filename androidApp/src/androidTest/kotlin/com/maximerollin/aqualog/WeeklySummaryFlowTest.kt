@@ -135,7 +135,7 @@ class WeeklySummaryFlowTest {
         prepareWeek(clockDay = sunday.plusDays(2))
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
-            waitForText("Measure")
+            composeRule.awaitLabel("Measure")
             assertAbsent("Weekly summary")
         } finally {
             scenario.close()
@@ -190,7 +190,7 @@ class WeeklySummaryFlowTest {
     }
 
     private fun showCard() {
-        waitForText("Measure")
+        composeRule.awaitLabel("Measure")
         composeRule.onNodeWithTag("home-list").performScrollToNode(hasText("Weekly summary"))
         waitForText("6 tests done · 1 task completed")
     }

@@ -6,6 +6,15 @@ import android.os.LocaleList
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertTrue
 
@@ -44,3 +53,19 @@ internal fun setFontScale(scale: Float) {
         SystemClock.sleep(50)
     }
 }
+
+/** Icon-only controls (floating bar, Measure) expose their name as a content description. */
+internal fun hasLabel(label: String): SemanticsMatcher = hasText(label) or hasContentDescription(label)
+
+internal fun ComposeTestRule.awaitLabel(label: String) =
+    waitUntil(timeoutMillis = 10_000) { onAllNodes(hasLabel(label)).fetchSemanticsNodes().isNotEmpty() }
+
+/** Scrolls the screen's one scrollable to [text], once it is laid out: a screen just navigated to can lag on CI. */
+internal fun ComposeTestRule.scrollToText(text: String) {
+    waitUntil(timeoutMillis = 10_000) { onAllNodes(hasScrollAction()).fetchSemanticsNodes().size == 1 }
+    onNode(hasScrollAction()).performScrollToNode(hasText(text))
+}
+
+/** The home's horizontal row of value tiles: the only horizontal scrollable inside `home-list`. */
+internal fun homeValueRow(): SemanticsMatcher =
+    SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange) and hasAnyAncestor(hasTestTag("home-list"))

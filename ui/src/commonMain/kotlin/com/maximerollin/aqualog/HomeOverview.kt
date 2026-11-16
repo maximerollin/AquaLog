@@ -9,6 +9,8 @@ import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.shared.assistance.readingLevel
+import com.maximerollin.aqualog.home.daysSince
+import java.time.LocalDate
 import kotlin.math.abs
 import kotlin.math.pow
 
@@ -26,15 +28,23 @@ data class HomeValue(
     val trend: Trend? = null,
 )
 
+/** Whole days since this value was measured, only when it is older than the Aquarium's latest Measurement; never 0. */
+fun HomeValue.ageDays(today: LocalDate): Int? =
+    occurredAtEpochMillis?.takeIf { isOlderThanLatestReading }?.let { daysSince(it, today) }?.takeIf { it > 0 }
+
 data class HomeOverview(
     val values: List<HomeValue>,
     val outsideRangeCount: Int,
     /** The newest Measurement of an active parameter: a Session with only maintenance does not count. */
     val latestReadingAtEpochMillis: Long?,
     val alertCount: Int = 0,
+    /** Every active parameter in position order, untrimmed: [values] is the 6-value trim the widget shows. */
+    val all: List<HomeValue> = values,
 ) {
     val hasAlert: Boolean get() = alertCount > 0
     val isMeasured: Boolean get() = values.any { it.value != null }
+    val measuredCount: Int get() = all.count { it.value != null }
+    val inRangeCount: Int get() = measuredCount - outsideRangeCount
 }
 
 fun homeOverview(setup: AquariumSetup, readings: List<LatestReading>): HomeOverview {
@@ -56,7 +66,7 @@ fun homeOverview(setup: AquariumSetup, readings: List<LatestReading>): HomeOverv
     val values = all.sortedBy { if (it.level != ReadingLevel.OK) 0 else if (it.value != null) 1 else 2 }
         .take(MAX_HOME_VALUES)
         .sortedBy { it.definition.position }
-    return HomeOverview(values, all.count { it.level != ReadingLevel.OK }, latestAt, all.count { it.level == ReadingLevel.ALERT })
+    return HomeOverview(values, all.count { it.level != ReadingLevel.OK }, latestAt, all.count { it.level == ReadingLevel.ALERT }, all)
 }
 
 /** Flat when both values show the same at the parameter's precision (half a displayed step apart at most). */

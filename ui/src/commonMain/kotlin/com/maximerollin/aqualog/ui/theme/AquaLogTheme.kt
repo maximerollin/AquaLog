@@ -69,6 +69,20 @@ fun levelTextColor(level: ReadingLevel): Color? = when (level) {
     ReadingLevel.ALERT -> if (isDarkSurface()) AlertTextDark else AlertText
 }
 
+// Tile backgrounds for out-of-range values; OK keeps the neutral surface.
+private val AttentionContainer = Color(0xFFFBF0D9)
+private val AlertContainer = Color(0xFFF7E1DB)
+private val AttentionContainerDark = Color(0xFF3A3220)
+private val AlertContainerDark = Color(0xFF3D2420)
+
+/** Background of a tile showing a reading at [level]; null for OK so callers keep their neutral surface. */
+@Composable
+fun levelContainerColor(level: ReadingLevel): Color? = when (level) {
+    ReadingLevel.OK -> null
+    ReadingLevel.ATTENTION -> if (isDarkSurface()) AttentionContainerDark else AttentionContainer
+    ReadingLevel.ALERT -> if (isDarkSurface()) AlertContainerDark else AlertContainer
+}
+
 @Composable
 fun levelMarkColor(level: ReadingLevel): Color? = when (level) {
     ReadingLevel.OK -> null
