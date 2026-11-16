@@ -58,7 +58,9 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.EventType
+import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.MaintenanceAction
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.TaskOccurrence
@@ -106,6 +108,10 @@ private sealed interface TimelineListItem {
 
 /** Size of a [TimelineNode]: the line joining a day's nodes runs through its centre. */
 private val NodeSize = 36.dp
+
+/** Test tags of a [TimelineSessionCard]'s reading pills and action chips, both silent: the card speaks for them. */
+internal const val TIMELINE_PILL_TAG = "timeline-value-pill"
+internal const val TIMELINE_ACTION_CHIP_TAG = "timeline-action-chip"
 
 /**
  * The History screen: the setup Aquarium's water with the filter context, then the paper sheet with the period control and
@@ -183,7 +189,17 @@ fun TimelineScreen(
         }
         StatusBarOverHeader(listState)
     }
-    if (timeline.filtersExpanded) TimelineFiltersSheet(state, viewModel)
+    if (timeline.filtersExpanded) {
+        TimelineFiltersSheet(
+            timeline = timeline,
+            aquariums = state.aquariums,
+            parameters = state.setup?.parameters?.filter { it.isActive }.orEmpty(),
+            onDismiss = viewModel::toggleTimelineFilters,
+            onSelectAquarium = viewModel::selectTimelineAquarium,
+            onSelectParameter = viewModel::selectTimelineParameter,
+            onSelectAction = viewModel::selectTimelineAction,
+        )
+    }
 }
 
 private fun TimelinePeriod.labelRes() = when (this) {
@@ -411,7 +427,9 @@ internal fun TimelineSessionCard(entry: TimelineSession, showAquarium: Boolean, 
         }
         if (readings.isNotEmpty()) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                readings.forEach { reading -> ValuePill(reading.label, reading.value, reading.unit, reading.state) }
+                readings.forEach { reading ->
+                    ValuePill(reading.label, reading.value, reading.unit, reading.state, Modifier.testTag(TIMELINE_PILL_TAG))
+                }
             }
         }
         if (entry.maintenanceActions.isNotEmpty()) {
@@ -435,7 +453,7 @@ internal fun TimelineSessionCard(entry: TimelineSession, showAquarium: Boolean, 
 private fun ActionChip(type: MaintenanceActionType, summary: String) {
     val colors = MaterialTheme.colorScheme
     Row(
-        Modifier.heightIn(min = 28.dp).background(colors.secondaryContainer, RoundedCornerShape(14.dp))
+        Modifier.testTag(TIMELINE_ACTION_CHIP_TAG).heightIn(min = 28.dp).background(colors.secondaryContainer, RoundedCornerShape(14.dp))
             .padding(horizontal = 10.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -469,9 +487,17 @@ internal fun TimelineNoteLine(icon: ImageVector, text: String) {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-internal fun TimelineFiltersSheet(state: HomeUiState, viewModel: HomeViewModel) {
+internal fun TimelineFiltersSheet(
+    timeline: TimelineUiState,
+    aquariums: List<Aquarium>,
+    parameters: List<ParameterDefinition>,
+    onDismiss: () -> Unit,
+    onSelectAquarium: (String?) -> Unit,
+    onSelectParameter: (String?) -> Unit,
+    onSelectAction: (MaintenanceActionType?) -> Unit,
+) {
     ModalBottomSheet(
-        onDismissRequest = viewModel::toggleTimelineFilters,
+        onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
     ) {
         Column(
@@ -482,9 +508,9 @@ internal fun TimelineFiltersSheet(state: HomeUiState, viewModel: HomeViewModel) 
             CarnetSectionTitle(
                 stringResource(Res.string.timeline_filters),
                 actionLabel = stringResource(Res.string.close),
-                onAction = viewModel::toggleTimelineFilters,
+                onAction = onDismiss,
             )
-            if (state.timeline.isOffline) {
+            if (timeline.isOffline) {
                 Text(
                     stringResource(Res.string.timeline_offline_status),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -494,15 +520,15 @@ internal fun TimelineFiltersSheet(state: HomeUiState, viewModel: HomeViewModel) 
             // The period is chosen on the screen itself (its segmented control), not here.
             FilterGroup {
                 FilterChip(
-                    selected = state.timeline.aquariumId == null,
-                    onClick = { viewModel.selectTimelineAquarium(null) },
+                    selected = timeline.aquariumId == null,
+                    onClick = { onSelectAquarium(null) },
                     label = { Text(stringResource(Res.string.timeline_all_aquariums)) },
                     modifier = Modifier.heightIn(min = 48.dp),
                 )
-                state.aquariums.forEach { aquarium ->
+                aquariums.forEach { aquarium ->
                     FilterChip(
-                        selected = state.timeline.aquariumId == aquarium.id,
-                        onClick = { viewModel.selectTimelineAquarium(aquarium.id) },
+                        selected = timeline.aquariumId == aquarium.id,
+                        onClick = { onSelectAquarium(aquarium.id) },
                         label = { Text(aquarium.name) },
                         modifier = Modifier.heightIn(min = 48.dp),
                     )
@@ -510,15 +536,15 @@ internal fun TimelineFiltersSheet(state: HomeUiState, viewModel: HomeViewModel) 
             }
             FilterGroup {
                 FilterChip(
-                    selected = state.timeline.parameterDefinitionId == null,
-                    onClick = { viewModel.selectTimelineParameter(null) },
+                    selected = timeline.parameterDefinitionId == null,
+                    onClick = { onSelectParameter(null) },
                     label = { Text(stringResource(Res.string.timeline_all_parameters)) },
                     modifier = Modifier.heightIn(min = 48.dp),
                 )
-                state.setup?.parameters?.filter { it.isActive }?.forEach { definition ->
+                parameters.forEach { definition ->
                     FilterChip(
-                        selected = state.timeline.parameterDefinitionId == definition.id,
-                        onClick = { viewModel.selectTimelineParameter(definition.id) },
+                        selected = timeline.parameterDefinitionId == definition.id,
+                        onClick = { onSelectParameter(definition.id) },
                         label = { Text(definition.parameter.label()) },
                         modifier = Modifier.heightIn(min = 48.dp),
                     )
@@ -526,15 +552,15 @@ internal fun TimelineFiltersSheet(state: HomeUiState, viewModel: HomeViewModel) 
             }
             FilterGroup {
                 FilterChip(
-                    selected = state.timeline.maintenanceActionType == null,
-                    onClick = { viewModel.selectTimelineAction(null) },
+                    selected = timeline.maintenanceActionType == null,
+                    onClick = { onSelectAction(null) },
                     label = { Text(stringResource(Res.string.timeline_all_actions)) },
                     modifier = Modifier.heightIn(min = 48.dp),
                 )
                 MaintenanceActionType.entries.forEach { type ->
                     FilterChip(
-                        selected = state.timeline.maintenanceActionType == type,
-                        onClick = { viewModel.selectTimelineAction(type) },
+                        selected = timeline.maintenanceActionType == type,
+                        onClick = { onSelectAction(type) },
                         label = { Text(type.label()) },
                         modifier = Modifier.heightIn(min = 48.dp),
                     )

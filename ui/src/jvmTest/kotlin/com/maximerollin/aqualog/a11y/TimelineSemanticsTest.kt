@@ -1,6 +1,15 @@
 package com.maximerollin.aqualog.a11y
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
@@ -10,9 +19,8 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.runComposeUiTest
-import androidx.lifecycle.viewModelScope
-import com.maximerollin.aqualog.HomeUiState
-import com.maximerollin.aqualog.HomeViewModel
+import com.maximerollin.aqualog.TIMELINE_ACTION_CHIP_TAG
+import com.maximerollin.aqualog.TIMELINE_PILL_TAG
 import com.maximerollin.aqualog.TimelineFiltersSheet
 import com.maximerollin.aqualog.TimelineSessionCard
 import com.maximerollin.aqualog.TimelineUiState
@@ -24,19 +32,13 @@ import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.Measurement
 import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinition
-import com.maximerollin.aqualog.shared.RoomAquariumRepository
 import com.maximerollin.aqualog.shared.Session
 import com.maximerollin.aqualog.shared.TimelineMeasurement
 import com.maximerollin.aqualog.shared.TimelineSession
 import com.maximerollin.aqualog.shared.VolumeUnit
-import com.maximerollin.aqualog.shared.createAquaLogDatabase
-import com.maximerollin.aqualog.shared.createJvmDatabaseBuilder
 import com.maximerollin.aqualog.ui.theme.AquaLogTheme
 import com.maximerollin.aqualog.ui.theme.LEVEL_MARK_TAG
-import java.nio.file.Files
 import java.util.Locale
-import java.util.UUID
-import kotlinx.coroutines.cancel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -95,24 +97,66 @@ class TimelineSemanticsTest {
 
     @Test
     fun `the filter sheet no longer offers the period`() = withEnglish {
-        val directory = Files.createTempDirectory("aqualog-timeline-filters")
-        val database = createAquaLogDatabase(createJvmDatabaseBuilder(directory.resolve("aqualog.db").toString()))
-        val viewModel = HomeViewModel(RoomAquariumRepository(database, { UUID.randomUUID().toString() }, { 1_700_000_000_000L }))
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    TimelineFiltersSheet(
+                        timeline = TimelineUiState(filtersExpanded = true),
+                        aquariums = listOf(aquarium),
+                        parameters = listOf(ph, gh, kh),
+                        onDismiss = {},
+                        onSelectAquarium = {},
+                        onSelectParameter = {},
+                        onSelectAction = {},
+                    )
+                }
+            }
+            waitForIdle()
+            onNodeWithText("All Aquariums").assertExists()
+            assertEquals(0, onAllNodesWithText("7 days").fetchSemanticsNodes().size)
+        }
+    }
+
+    @Test
+    fun `german at 150 percent keeps pills and chips inside the card`() {
+        val previous = Locale.getDefault()
+        Locale.setDefault(Locale.GERMAN)
         try {
-            val state = HomeUiState(
-                isLoading = false,
-                aquariums = listOf(aquarium),
-                timeline = TimelineUiState(filtersExpanded = true),
-            )
             runComposeUiTest {
-                setContent { AquaLogTheme(false) { TimelineFiltersSheet(state, viewModel) } }
-                waitForIdle()
-                onNodeWithText("All Aquariums").assertExists()
-                assertEquals(0, onAllNodesWithText("7 days").fetchSemanticsNodes().size)
+                val ammonia = definition(BuiltInParameter.AMMONIA, 0, 0.0, 0.02)
+                val temperature = definition(BuiltInParameter.TEMPERATURE, 1, 24.0, 27.0)
+                val salinity = definition(BuiltInParameter.SALINITY, 2, 30.0, 35.0)
+                val german = entry.copy(
+                    measurements = listOf(ammonia to 0.25, temperature to 25.5, salinity to 33.5).mapIndexed { index, (definition, value) ->
+                        TimelineMeasurement(Measurement("g$index", "s1", definition.id, value), definition)
+                    },
+                    maintenanceActions = listOf(
+                        MaintenanceAction("ma2", "s1", MaintenanceActionType.WATER_CHANGE, 20.0, "%", "Wasseraufbereiter Langzeitpflege"),
+                    ),
+                )
+                setContent {
+                    AquaLogTheme(false) {
+                        CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 1.5f)) {
+                            Box(Modifier.width(360.dp)) {
+                                TimelineSessionCard(german, showAquarium = true, onClick = {}, modifier = Modifier.testTag("card"))
+                            }
+                        }
+                    }
+                }
+                val card = onNodeWithTag("card").fetchSemanticsNode().boundsInRoot
+                val pills = onAllNodesWithTag(TIMELINE_PILL_TAG, useUnmergedTree = true).fetchSemanticsNodes().map { it.boundsInRoot }
+                val chips = onAllNodesWithTag(TIMELINE_ACTION_CHIP_TAG, useUnmergedTree = true).fetchSemanticsNodes().map { it.boundsInRoot }
+                assertEquals(3, pills.size)
+                assertEquals(1, chips.size)
+                for (bounds in pills + chips) {
+                    assertTrue(
+                        bounds.left >= card.left && bounds.right <= card.right && bounds.top >= card.top && bounds.bottom <= card.bottom,
+                        "$bounds outside the card $card",
+                    )
+                }
             }
         } finally {
-            viewModel.viewModelScope.cancel()
-            database.close()
+            Locale.setDefault(previous)
         }
     }
 }
