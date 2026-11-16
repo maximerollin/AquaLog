@@ -110,7 +110,7 @@ class MultiAquariumFlowTest {
             composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
-            composeRule.onNodeWithText("Save Session").performClick()
+            composeRule.onNodeWithTag("save-session").performClick()
             waitForText("measured today", substring = true)
             composeRule.onNode(hasLabel("History")).performClick()
             waitForText("Chronology")
@@ -191,7 +191,7 @@ class MultiAquariumFlowTest {
             composeRule.onNode(hasLabel("Measure")).assertIsEnabled().performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
-            composeRule.onNodeWithText("Save Session").performClick()
+            composeRule.onNodeWithTag("save-session").performClick()
             // The Session went into « Nano 30 »: its home says so.
             waitForText("measured today", substring = true)
         } finally {

@@ -86,7 +86,7 @@ class RapidSessionFlowTest {
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
             closeSoftKeyboard()
-            composeRule.onNodeWithText("Save Session").performClick()
+            composeRule.onNodeWithTag("save-session").performClick()
             waitForText("measured today", substring = true)
             composeRule.onNodeWithText("Continue").performClick()
             composeRule.onNodeWithText("Create an account").performClick()
@@ -123,7 +123,7 @@ class RapidSessionFlowTest {
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodes(hasText("Measurements")).fetchSemanticsNodes().isNotEmpty()
         }
-        val save = composeRule.onNodeWithText("Save Session")
+        val save = composeRule.onNodeWithTag("save-session")
         save.assertIsNotEnabled()
 
         val temperature = composeRule.onNodeWithContentDescription("Measurement for Temperature")
@@ -178,7 +178,7 @@ class RapidSessionFlowTest {
             ph.assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Error))
             ph.assert(SemanticsMatcher("attention is spoken") {
                 it.config.getOrElseNullable(SemanticsProperties.StateDescription) { null }
-                    ?.contains("outside your indicative range") == true
+                    ?.contains("Far above the range") == true
             })
         } finally {
             scenario.close()
@@ -197,14 +197,14 @@ class RapidSessionFlowTest {
             waitForText("Measurements")
             val ph = composeRule.onNodeWithContentDescription("Measurement for pH")
             ph.performTextInput("72")
-            composeRule.onNodeWithText("Save Session").performClick()
+            composeRule.onNodeWithTag("save-session").performClick()
             waitForText("Did you mean 7.2?")
             composeRule.onNodeWithText("pH 72?").assertIsDisplayed()
             composeRule.onNodeWithText("Fix").performClick()
             composeRule.onAllNodes(hasText("Did you mean 7.2?")).assertCountEquals(0)
             composeRule.onNodeWithContentDescription("Measurement for pH").assert(hasText("7.2"))
             // Nothing was saved: the entry screen is still there.
-            composeRule.onNodeWithText("Save Session").assertIsDisplayed()
+            composeRule.onNodeWithTag("save-session").assertIsDisplayed()
         } finally {
             scenario.close()
         }
@@ -240,7 +240,7 @@ class RapidSessionFlowTest {
             composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Nitrate").performScrollTo().performTextInput("80")
-            composeRule.onNodeWithText("Save Session").performClick()
+            composeRule.onNodeWithTag("save-session").performClick()
             waitForText("Nitrate at 80 while you were at 20 3 days ago, is that right?")
             composeRule.onNodeWithText("Save anyway").performClick()
             waitForText("measured today", substring = true)
@@ -266,7 +266,7 @@ class RapidSessionFlowTest {
             composeRule.onAllNodes(hasText("Measurements")).fetchSemanticsNodes().isNotEmpty()
         }
         composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24.5")
-        composeRule.onNodeWithText("Save Session").assertIsEnabled().assertIsDisplayed().performClick()
+        composeRule.onNodeWithTag("save-session").assertIsEnabled().assertIsDisplayed().performClick()
         waitForText("measured today", substring = true)
         composeRule.onNodeWithText("measured today", substring = true).assertIsDisplayed()
         composeRule.onAllNodes(hasText("Secure your local Aquarium copy")).assertCountEquals(0)

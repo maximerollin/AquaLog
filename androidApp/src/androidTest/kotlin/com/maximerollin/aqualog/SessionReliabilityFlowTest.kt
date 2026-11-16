@@ -7,6 +7,7 @@ import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -61,7 +62,7 @@ class SessionReliabilityFlowTest {
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Add observation"))
         composeRule.onNodeWithText("Add observation").performClick()
         composeRule.onNodeWithText("Observation").performTextInput("Eau claire")
-        composeRule.onNodeWithText("Save Session").performClick()
+        composeRule.onNodeWithTag("save-session").performClick()
 
         waitForText("measured today", substring = true)
         composeRule.onNode(hasText("measured today", substring = true) and hasClickAction()).performClick()
@@ -90,7 +91,7 @@ class SessionReliabilityFlowTest {
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Hide incident"))
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Incident"))
         composeRule.onNodeWithText("Incident").performTextInput("Filtre corrigé")
-        composeRule.onNodeWithText("Save changes").performClick()
+        composeRule.onNodeWithTag("save-session").performClick()
 
         waitForText("Session details")
         waitForText("25.1")

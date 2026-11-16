@@ -111,6 +111,8 @@ class LocalizedAccessibilityFlowTest {
             compose.onNodeWithTag("rapid-session-list").performScrollToNode(hasText(waterChange))
             compose.onNodeWithText(waterChange).performClick()
             val remove = localized.getString(Res.string.remove_action, waterChange)
+            // The open keyboard can bring the focused first tile back into view and drop the chips from the list.
+            compose.onNodeWithTag("rapid-session-list").performScrollToNode(hasText(waterChange))
             val target = compose.onNode(hasContentDescription(remove) and hasClickAction())
             target.assertExists()
             assertMinimumTouchTarget(target.fetchSemanticsNode().touchBoundsInRoot)
@@ -276,7 +278,7 @@ class LocalizedAccessibilityFlowTest {
                 compose.onNodeWithTag("rapid-session-list").performScrollToIndex(0)
                 val cancel = localized.getString(Res.string.cancel)
                 awaitText(cancel)
-                compose.onNodeWithText(cancel).performClick()
+                compose.onNode(hasLabel(cancel)).performClick()
 
                 val tasks = localized.getString(Res.string.home_see_all)
                 compose.onNodeWithText(tasks).performClick()
