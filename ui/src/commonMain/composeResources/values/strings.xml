@@ -590,4 +590,7 @@
     <string name="review_discovery_confirm">Leave a review</string>
     <string name="review_discovery_later">Later</string>
     <string name="rate_app">Rate Aquagenda</string>
+    <string name="trends_custom_period">Custom period</string>
+    <string name="trends_hero_legend">▲ Water change · Reference, not a diagnosis</string>
+    <plurals name="trends_hero_change_days"><item quantity="one">%1$s over %2$d day</item><item quantity="other">%1$s over %2$d days</item></plurals>
 </resources>

@@ -590,4 +590,7 @@
     <string name="review_discovery_confirm">Laisser un avis</string>
     <string name="review_discovery_later">Plus tard</string>
     <string name="rate_app">Noter Aquagenda</string>
+    <string name="trends_custom_period">Période personnalisée</string>
+    <string name="trends_hero_legend">▲ Changement d'eau · Repère, pas un diagnostic</string>
+    <plurals name="trends_hero_change_days"><item quantity="one">%1$s en %2$d jour</item><item quantity="other">%1$s en %2$d jours</item></plurals>
 </resources>

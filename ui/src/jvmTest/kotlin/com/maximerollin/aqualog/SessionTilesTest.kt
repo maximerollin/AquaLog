@@ -112,4 +112,11 @@ class SessionTilesTest {
             Locale.setDefault(previous)
         }
     }
+
+    @Test
+    fun `value range state matches the tile rules`() {
+        assertEquals(SessionTileState.ABOVE, valueRangeState(7.8, definition(BuiltInParameter.PH, 6.5, 7.5), established))
+        assertEquals(SessionTileState.FAR_BELOW, valueRangeState(4.0, definition(BuiltInParameter.PH, max = 7.5), established))
+        assertEquals(SessionTileState.NO_RANGE, valueRangeState(7.0, definition(BuiltInParameter.PH), established))
+    }
 }

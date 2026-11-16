@@ -590,4 +590,7 @@
     <string name="review_discovery_confirm">Bewertung abgeben</string>
     <string name="review_discovery_later">Später</string>
     <string name="rate_app">Aquagenda bewerten</string>
+    <string name="trends_custom_period">Eigener Zeitraum</string>
+    <string name="trends_hero_legend">▲ Wasserwechsel · Orientierung, keine Diagnose</string>
+    <plurals name="trends_hero_change_days"><item quantity="one">%1$s in %2$d Tag</item><item quantity="other">%1$s in %2$d Tagen</item></plurals>
 </resources>
