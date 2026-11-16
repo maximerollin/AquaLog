@@ -6,6 +6,7 @@ import android.os.LocaleList
 import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasAnyAncestor
@@ -14,8 +15,11 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.platform.app.InstrumentationRegistry
+import com.maximerollin.aqualog.ui.theme.FloatingNavBarClearance
 import org.junit.Assert.assertTrue
 
 private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
@@ -69,3 +73,19 @@ internal fun ComposeTestRule.scrollToText(text: String) {
 /** The home's horizontal row of value tiles: the only horizontal scrollable inside `home-list`. */
 internal fun homeValueRow(): SemanticsMatcher =
     SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange) and hasAnyAncestor(hasTestTag("home-list"))
+
+/**
+ * Scrolls the home to [matcher], then on until it clears the floating bar. `performScrollToNode` stops as soon as the
+ * node is inside `home-list`, which reaches under the bar, so a tap there would land on a tab instead.
+ */
+internal fun ComposeTestRule.scrollHomeAboveBar(matcher: SemanticsMatcher) {
+    val list = onNodeWithTag("home-list")
+    list.performScrollToNode(matcher)
+    waitForIdle()
+    val listBottom = list.fetchSemanticsNode().boundsInRoot.bottom
+    val targetBottom = onNode(matcher).fetchSemanticsNode().boundsInRoot.bottom
+    val clearance = FloatingNavBarClearance * targetContext.resources.displayMetrics.density
+    val hidden = targetBottom - (listBottom - clearance)
+    if (hidden > 0f) list.performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, hidden) }
+    waitForIdle()
+}

@@ -284,7 +284,7 @@ class RapidSessionFlowTest {
         composeRule.onNodeWithText("30 days").assertIsDisplayed()
 
         composeRule.onNode(hasLabel("Tank")).performClick()
-        composeRule.onNodeWithTag("home-list").performScrollToNode(hasText("Review account options"))
+        composeRule.scrollHomeAboveBar(hasText("Review account options"))
         composeRule.onNodeWithText("Review account options").performClick()
         composeRule.onNodeWithText("Create an account").assertIsDisplayed()
         composeRule.onNodeWithText("Not now").performClick()
