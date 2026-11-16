@@ -111,8 +111,7 @@ class LocalizedAccessibilityFlowTest {
             compose.onNodeWithTag("rapid-session-list").performScrollToNode(hasText(waterChange))
             compose.onNodeWithText(waterChange).performClick()
             val remove = localized.getString(Res.string.remove_action, waterChange)
-            // The open keyboard can bring the focused first tile back into view and drop the chips from the list.
-            compose.onNodeWithTag("rapid-session-list").performScrollToNode(hasText(waterChange))
+            // No scroll back: tapping a chip closes the keyboard, so the focused first tile does not pull the list back to it.
             val target = compose.onNode(hasContentDescription(remove) and hasClickAction())
             target.assertExists()
             assertMinimumTouchTarget(target.fetchSemanticsNode().touchBoundsInRoot)

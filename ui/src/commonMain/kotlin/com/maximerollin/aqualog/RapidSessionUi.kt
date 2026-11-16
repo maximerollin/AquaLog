@@ -356,14 +356,23 @@ private fun MaintenanceChip(type: MaintenanceActionType, action: MaintenanceActi
     val label = type.label()
     val summary = action?.let { listOf(it.quantity, it.unit, it.product).filter(String::isNotBlank).joinToString(" ") }
     val remove = stringResource(Res.string.remove_action, label)
+    // Moving on to maintenance closes the keyboard: a focused tile would otherwise pull the list back to itself.
+    val focusManager = LocalFocusManager.current
+    val toggle = {
+        focusManager.clearFocus()
+        viewModel.toggleMaintenanceAction(type)
+    }
     FilterChip(
         selected = action != null,
         // A selected chip opens its quantity editor; the trailing icon is what removes it.
-        onClick = { if (action == null) viewModel.toggleMaintenanceAction(type) else viewModel.editMaintenanceAction(type) },
+        onClick = {
+            focusManager.clearFocus()
+            if (action == null) viewModel.toggleMaintenanceAction(type) else viewModel.editMaintenanceAction(type)
+        },
         // Also a custom action: a nested clickable can be dropped when the chip is merged for accessibility services.
         modifier = if (action != null) {
             Modifier.semantics {
-                customActions = listOf(CustomAccessibilityAction(remove) { viewModel.toggleMaintenanceAction(type); true })
+                customActions = listOf(CustomAccessibilityAction(remove) { toggle(); true })
             }
         } else {
             Modifier
@@ -389,7 +398,7 @@ private fun MaintenanceChip(type: MaintenanceActionType, action: MaintenanceActi
                 Box(
                     Modifier
                         .minimumInteractiveComponentSize()
-                        .clickable(role = Role.Button) { viewModel.toggleMaintenanceAction(type) }
+                        .clickable(role = Role.Button, onClick = toggle)
                         .semantics { contentDescription = remove },
                     contentAlignment = Alignment.Center,
                 ) {
