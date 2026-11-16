@@ -2,6 +2,8 @@ package com.maximerollin.aqualog.ui.theme
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -435,32 +437,37 @@ fun PeriodSegmented(labels: List<String>, selectedIndex: Int, onSelect: (Int) ->
     val colors = MaterialTheme.colorScheme
     val track = RoundedCornerShape(24.dp)
     val pill = RoundedCornerShape(20.dp)
-    Row(
+    // The track (tint, rim, rounded corners) is the outer box; the scroll lives inside it, so a pill's shadow and the corners
+    // are never cut by the scroll container. Options share the track equally; one that needs more grows and the row scrolls.
+    BoxWithConstraints(
         modifier.fillMaxWidth().height(48.dp)
             .background(colors.surfaceVariant.copy(alpha = .6f), track)
-            .border(1.dp, colors.outlineVariant, track)
-            .horizontalScroll(rememberScrollState())
-            .selectableGroup(),
-        verticalAlignment = Alignment.CenterVertically,
+            .border(1.dp, colors.outlineVariant, track),
     ) {
-        labels.forEachIndexed { index, label ->
-            val selected = index == selectedIndex
-            Box(
-                Modifier.fillMaxHeight().defaultMinSize(minWidth = 48.dp)
-                    .selectable(selected = selected, role = Role.RadioButton, onClick = { onSelect(index) })
-                    .padding(3.dp),
-                contentAlignment = Alignment.Center,
-            ) {
+        val equalWidth = maxWidth / labels.size.coerceAtLeast(1)
+        Row(
+            Modifier.fillMaxHeight().horizontalScroll(rememberScrollState()).selectableGroup(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            labels.forEachIndexed { index, label ->
+                val selected = index == selectedIndex
                 Box(
-                    Modifier.fillMaxHeight()
-                        .then(if (selected) Modifier.shadow(2.dp, pill).background(colors.surface, pill) else Modifier)
-                        .padding(horizontal = 16.dp),
+                    Modifier.fillMaxHeight().defaultMinSize(minWidth = maxOf(equalWidth, 48.dp))
+                        .selectable(selected = selected, role = Role.RadioButton, onClick = { onSelect(index) })
+                        .padding(3.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
-                        color = if (selected) colors.onSurface else colors.onSurfaceVariant,
-                    )
+                    Box(
+                        Modifier.fillMaxSize()
+                            .then(if (selected) Modifier.shadow(2.dp, pill).background(colors.surface, pill) else Modifier)
+                            .padding(horizontal = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
+                            color = if (selected) colors.onSurface else colors.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }

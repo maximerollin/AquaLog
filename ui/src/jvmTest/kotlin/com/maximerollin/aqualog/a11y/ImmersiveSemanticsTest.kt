@@ -322,4 +322,22 @@ class ImmersiveSemanticsTest {
             assertTrue(out.contains(marks.single().boundsInRoot.center))
         }
     }
+
+    @Test
+    fun `period options fill the track in equal segments`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    PeriodSegmented(listOf("All time", "7 days", "30 days", "90 days"), 0, {}, Modifier.width(360.dp).testTag("track"))
+                }
+            }
+            val track = onNodeWithTag("track").fetchSemanticsNode().boundsInRoot
+            val radios = onAllNodes(SemanticsMatcher("radio") { it.config.getOrNull(SemanticsProperties.Role) == Role.RadioButton })
+                .fetchSemanticsNodes().map { it.boundsInRoot }.sortedBy { it.left }
+            val tolerance = density.density
+            assertEquals(track.left, radios.first().left, tolerance)
+            assertEquals(track.right, radios.last().right, tolerance)
+            radios.forEach { assertEquals(radios.first().width, it.width, tolerance) }
+        }
+    }
 }
