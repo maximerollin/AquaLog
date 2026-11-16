@@ -128,6 +128,13 @@
     <string name="session_save_error">Impossibile salvare la sessione. Le tue voci sono ancora qui; riprova.</string>
     <string name="session_saved_description">Conferma nella Cronologia · %1$s · %2$s</string>
     <plurals name="session_measurement_count"><item quantity="one">%1$d Misurazione</item><item quantity="other">%1$d Misurazioni</item></plurals>
+    <string name="session_tile_tap_to_enter">Tocca per inserire</string>
+    <string name="session_tile_in_range">Nell’intervallo</string>
+    <string name="session_tile_above">Sopra l’intervallo</string>
+    <string name="session_tile_below">Sotto l’intervallo</string>
+    <string name="session_tile_far_above">Molto sopra l’intervallo</string>
+    <string name="session_tile_far_below">Molto sotto l’intervallo</string>
+    <plurals name="save_session_count"><item quantity="one">Salva · %1$d misurazione</item><item quantity="other">Salva · %1$d misurazioni</item></plurals>
     <plurals name="session_maintenance_count"><item quantity="one">%1$d Azione di manutenzione</item><item quantity="other">%1$d Azioni di manutenzione</item></plurals>
     <string name="continue_after_session">Continuare</string>
 
