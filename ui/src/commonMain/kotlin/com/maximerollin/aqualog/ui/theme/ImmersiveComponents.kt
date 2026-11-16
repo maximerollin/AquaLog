@@ -2,6 +2,13 @@ package com.maximerollin.aqualog.ui.theme
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.padding
+import com.maximerollin.aqualog.SessionTileState
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.WindowInsets
@@ -13,7 +20,6 @@ import androidx.compose.ui.unit.Dp
 import com.maximerollin.aqualog.home.HeroText
 import com.maximerollin.aqualog.home.TankScene
 import com.maximerollin.aqualog.shared.Aquarium
-import com.maximerollin.aqualog.ui.icon.X
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeJoin
@@ -67,7 +73,10 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.text
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -377,7 +386,7 @@ internal val WaterHeaderShadeBottom = Color.Black.copy(alpha = .25f)
 internal val WaterHeaderShade: Brush = Brush.verticalGradient(0f to WaterHeaderShadeTop, 1f to WaterHeaderShadeBottom)
 
 /**
- * The compact water of a screen opened over the home: the tank scene, a title (and subtitle) with a glass close button,
+ * The compact water of a screen opened over the home: the tank scene, a title (and subtitle) with an [action] slot at the right (a glass button),
  * then [below]. The paper sheet that follows overlaps its bottom by 30 dp ([overlapNext]); it grows with large fonts.
  */
 @Composable
@@ -385,9 +394,8 @@ fun WaterHeader(
     aquarium: Aquarium,
     title: String,
     subtitle: String,
-    closeLabel: String,
-    onClose: () -> Unit,
     modifier: Modifier = Modifier,
+    action: @Composable () -> Unit = {},
     below: @Composable () -> Unit = {},
 ) {
     Box(modifier.fillMaxWidth().heightIn(min = 170.dp)) {
@@ -410,10 +418,107 @@ fun WaterHeader(
                     )
                     Text(subtitle, modifier = Modifier.padding(top = 2.dp), style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp), color = HeroText)
                 }
-                GlassIconButton(AquagendaIcons.X, closeLabel, onClick = onClose)
+                action()
             }
             below()
             Spacer(Modifier.height(30.dp + 16.dp))
         }
+    }
+}
+
+/**
+ * Period choice as a pill row: a tinted track, the selected option in a raised surface pill. Labels stay on one line; when
+ * they don't fit (long German words, large fonts) the row scrolls sideways instead of wrapping.
+ */
+@Composable
+fun PeriodSegmented(labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    val track = RoundedCornerShape(24.dp)
+    val pill = RoundedCornerShape(20.dp)
+    Row(
+        modifier.fillMaxWidth().height(48.dp)
+            .background(colors.surfaceVariant.copy(alpha = .6f), track)
+            .border(1.dp, colors.outlineVariant, track)
+            .horizontalScroll(rememberScrollState())
+            .selectableGroup(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        labels.forEachIndexed { index, label ->
+            val selected = index == selectedIndex
+            Box(
+                Modifier.fillMaxHeight().defaultMinSize(minWidth = 48.dp)
+                    .selectable(selected = selected, role = Role.RadioButton, onClick = { onSelect(index) })
+                    .padding(3.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier.fillMaxHeight()
+                        .then(if (selected) Modifier.shadow(2.dp, pill).background(colors.surface, pill) else Modifier)
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
+                        color = if (selected) colors.onSurface else colors.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun SessionTileState.level(): ReadingLevel = when (this) {
+    SessionTileState.ABOVE, SessionTileState.BELOW -> ReadingLevel.ATTENTION
+    SessionTileState.FAR_ABOVE, SessionTileState.FAR_BELOW -> ReadingLevel.ALERT
+    else -> ReadingLevel.OK
+}
+
+/**
+ * « label value unit » as a small pill: tinted and marked when out of range, neutral otherwise. Decorative for semantics:
+ * the card that holds it speaks its readings itself.
+ */
+@Composable
+fun ValuePill(label: String, value: String, unit: String?, state: SessionTileState, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    val level = state.level()
+    val container = levelContainerColor(level)
+    val textColor = levelTextColor(level) ?: colors.onSurface
+    val secondary = if (container != null) textColor else colors.onSurfaceVariant
+    Row(
+        modifier.background(container ?: colors.surfaceVariant, RoundedCornerShape(14.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+            .clearAndSetSemantics {},
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (level != ReadingLevel.OK) LevelMark(level, textColor, Modifier.padding(end = 4.dp).testTag(LEVEL_MARK_TAG))
+        val spaced = SpanStyle(fontSize = 13.sp, color = textColor)
+        Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(fontSize = 13.sp, color = secondary)) { append(label) }
+                append(' ')
+                withStyle(spaced.copy(fontWeight = FontWeight.SemiBold)) { append(value) }
+                if (unit != null) {
+                    append(' ')
+                    withStyle(spaced) { append(unit) }
+                }
+            },
+            style = TextStyle(fontFeatureSettings = "tnum"),
+        )
+    }
+}
+
+/** The dot on a timeline: a filled circle for the latest entry, a tinted one for the others. Decorative. */
+@Composable
+fun TimelineNode(icon: ImageVector, emphasized: Boolean, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier.size(36.dp).background(if (emphasized) colors.primary else colors.secondaryContainer, CircleShape)
+            .clearAndSetSemantics {},
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            icon, contentDescription = null, modifier = Modifier.size(18.dp),
+            tint = if (emphasized) colors.onPrimary else colors.primary,
+        )
     }
 }

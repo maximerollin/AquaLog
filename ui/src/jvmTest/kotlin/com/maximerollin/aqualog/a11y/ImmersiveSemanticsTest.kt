@@ -34,6 +34,17 @@ import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.Plus
+import com.maximerollin.aqualog.ui.icon.X
+import com.maximerollin.aqualog.ui.icon.Funnel
+import com.maximerollin.aqualog.SessionTileState
+import com.maximerollin.aqualog.ui.theme.PeriodSegmented
+import com.maximerollin.aqualog.ui.theme.ValuePill
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.test.onAllNodesWithText
 import com.maximerollin.aqualog.ui.theme.AquaLogTheme
 import com.maximerollin.aqualog.ui.theme.FloatingNavBar
 import com.maximerollin.aqualog.ui.theme.LEVEL_MARK_TAG
@@ -160,7 +171,8 @@ class ImmersiveSemanticsTest {
             setContent {
                 AquaLogTheme(false) {
                     WaterHeader(
-                        Aquarium("a", "Salon", 120.0, VolumeUnit.LITERS, 0L), "New Session", "Salon", "Cancel", { closed++ },
+                        Aquarium("a", "Salon", 120.0, VolumeUnit.LITERS, 0L), "New Session", "Salon",
+                        action = { GlassIconButton(AquagendaIcons.X, "Cancel", { closed++ }) },
                     )
                 }
             }
@@ -236,6 +248,78 @@ class ImmersiveSemanticsTest {
             onNodeWithTag("sheet-top").performTouchInput { click(center) }
             waitForIdle()
             assertEquals(0, waterTaps)
+        }
+    }
+
+    @Test
+    fun `period options are radio buttons with one selected and 48 dp`() = withEnglish {
+        runComposeUiTest {
+            var picked = -1
+            setContent {
+                AquaLogTheme(false) {
+                    PeriodSegmented(listOf("All time", "7 days", "30 days", "90 days"), 2, { picked = it }, Modifier.width(360.dp))
+                }
+            }
+            val radios = onAllNodes(SemanticsMatcher("radio") { it.config.getOrNull(SemanticsProperties.Role) == Role.RadioButton })
+                .fetchSemanticsNodes()
+            assertEquals(4, radios.size)
+            assertEquals(listOf(false, false, true, false), radios.map { it.config[SemanticsProperties.Selected] })
+            radios.forEach { assertTrue(it.size.height >= 48 * density.density, "${it.size}") }
+            onNodeWithText("7 days").performClick()
+            assertEquals(1, picked)
+        }
+    }
+
+    @Test
+    fun `german period labels stay on one line at 150 percent`() = runComposeUiTest {
+        val labels = listOf("Gesamter Zeitraum", "7 Tage", "30 Tage", "90 Tage")
+        setContent {
+            AquaLogTheme(false) {
+                CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 1.5f)) {
+                    PeriodSegmented(labels, 0, {}, Modifier.width(360.dp))
+                }
+            }
+        }
+        for (label in labels) {
+            val node = onAllNodesWithText(label, useUnmergedTree = true).fetchSemanticsNodes().first()
+            val results = mutableListOf<TextLayoutResult>()
+            node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(results)
+            assertEquals(1, results.single().lineCount, label)
+        }
+    }
+
+    @Test
+    fun `water header shows its action`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    WaterHeader(
+                        Aquarium("a", "Salon", 120.0, VolumeUnit.LITERS, 0L), "History", "Salon",
+                        action = { GlassIconButton(AquagendaIcons.Funnel, "Filters", {}) },
+                    )
+                }
+            }
+            val size = onNodeWithContentDescription("Filters").fetchSemanticsNode().size
+            assertTrue(size.width >= 48 * density.density && size.height >= 48 * density.density, "$size")
+            onNodeWithContentDescription("Cancel").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun `an out of range value pill carries the mark`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    Column {
+                        ValuePill("pH", "7.8", null, SessionTileState.ABOVE, Modifier.testTag("out"))
+                        ValuePill("pH", "7.0", null, SessionTileState.IN_RANGE, Modifier.testTag("in"))
+                    }
+                }
+            }
+            val marks = onAllNodes(hasTestTag(LEVEL_MARK_TAG), useUnmergedTree = true).fetchSemanticsNodes()
+            assertEquals(1, marks.size)
+            val out = onNodeWithTag("out", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            assertTrue(out.contains(marks.single().boundsInRoot.center))
         }
     }
 }

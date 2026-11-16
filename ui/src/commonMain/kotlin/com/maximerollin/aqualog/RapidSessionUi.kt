@@ -74,6 +74,7 @@ import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
+import com.maximerollin.aqualog.ui.theme.GlassIconButton
 import com.maximerollin.aqualog.ui.theme.HeroTextBacking
 import com.maximerollin.aqualog.ui.theme.PaperSheetTop
 import com.maximerollin.aqualog.ui.theme.WaterHeader
@@ -154,8 +155,9 @@ fun RapidSessionScreen(
                         aquarium = aquarium,
                         title = title,
                         subtitle = aquarium.name,
-                        closeLabel = stringResource(Res.string.cancel),
-                        onClose = viewModel::closeRapidSession,
+                        action = {
+                            GlassIconButton(AquagendaIcons.X, stringResource(Res.string.cancel), viewModel::closeRapidSession)
+                        },
                         // The sheet's top edge, the next item, covers the water's bottom.
                         modifier = Modifier.overlapNext(30.dp),
                     ) {
