@@ -1,14 +1,20 @@
 package com.maximerollin.aqualog
 
+import androidx.compose.material3.Text
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.OnboardingPresets
 import com.maximerollin.aqualog.shared.ParameterDefinition
+import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+@OptIn(ExperimentalTestApi::class)
 class SessionTilesTest {
     private fun definition(parameter: BuiltInParameter, min: Double? = null, max: Double? = null) = ParameterDefinition(
         id = "d-${parameter.storageValue}", aquariumId = "a1", parameter = parameter, isActive = true,
@@ -68,5 +74,28 @@ class SessionTilesTest {
         val gh = definition(BuiltInParameter.GH)
         val inputs = mapOf(ph.id to "7,8", kh.id to "", gh.id to "x", "other-id" to "5")
         assertEquals(1, validMeasurementCount(inputs, listOf(ph, kh, gh)))
+    }
+
+    @Test
+    fun `save label counts measurements, not when editing`() {
+        val previous = Locale.getDefault()
+        Locale.setDefault(Locale.ENGLISH)
+        try {
+            runComposeUiTest {
+                setContent {
+                    Text(saveButtonLabel(editing = false, count = 0))
+                    Text(saveButtonLabel(editing = false, count = 4))
+                    Text(saveButtonLabel(editing = false, count = 1))
+                    Text(saveButtonLabel(editing = true, count = 4))
+                }
+                waitForIdle()
+                onNodeWithText("Save Session").assertExists()
+                onNodeWithText("Save · 4 measurements").assertExists()
+                onNodeWithText("Save · 1 measurement").assertExists()
+                onNodeWithText("Save changes").assertExists()
+            }
+        } finally {
+            Locale.setDefault(previous)
+        }
     }
 }

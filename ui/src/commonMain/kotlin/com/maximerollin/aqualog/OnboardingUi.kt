@@ -104,7 +104,7 @@ fun AquaLogContent(
     rateApp: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    // The home draws under the status bar; every other screen starts below it.
+    // The home and the Session draw under the status bar; every other screen starts below it.
     val inset = modifier.windowInsetsPadding(WindowInsets.statusBars)
     when {
         state.isLoading -> LoadingContent(inset)
@@ -127,7 +127,8 @@ fun AquaLogContent(
             state = state.rapidSession,
             aquarium = state.setup.aquarium,
             viewModel = viewModel,
-            modifier = inset,
+            // Like the home, the Session's water header draws under the status bar.
+            modifier = modifier,
         )
         // Below entry: « Faire une analyse » opens a Session over the fiche, which comes back once it is closed.
         state.addInhabitant != null && state.setup != null -> AddInhabitantScreen(state.addInhabitant, state, viewModel, inset)
