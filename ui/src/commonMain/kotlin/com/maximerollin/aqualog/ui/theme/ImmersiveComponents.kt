@@ -12,7 +12,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import com.maximerollin.aqualog.home.HeroText
 import com.maximerollin.aqualog.home.TankScene
-import com.maximerollin.aqualog.rememberReducedMotion
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.ui.icon.X
 import androidx.compose.foundation.Canvas
@@ -392,7 +391,8 @@ fun WaterHeader(
     below: @Composable () -> Unit = {},
 ) {
     Box(modifier.fillMaxWidth().heightIn(min = 170.dp)) {
-        TankScene(aquarium, inhabitants = emptyList(), modifier = Modifier.matchParentSize(), decorPlants = 0, animate = !rememberReducedMotion())
+        // Still water: motion belongs to the large headers only (spec §3).
+        TankScene(aquarium, inhabitants = emptyList(), modifier = Modifier.matchParentSize(), decorPlants = 0, animate = false)
         Box(Modifier.matchParentSize().background(WaterHeaderShade))
         Column(Modifier.fillMaxWidth()) {
             Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))

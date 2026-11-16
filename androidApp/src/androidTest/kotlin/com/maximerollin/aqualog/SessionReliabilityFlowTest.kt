@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasClickAction
@@ -73,6 +74,7 @@ class SessionReliabilityFlowTest {
 
         composeRule.onNodeWithText("Edit Session").performClick()
         waitForContentDescription("Measurement for Temperature")
+        composeRule.onNodeWithTag("save-session").assert(hasText("Save changes"))
         val temperature = composeRule.onNodeWithContentDescription("Measurement for Temperature")
         temperature.performTextClearance()
         temperature.performTextInput("25,1")
