@@ -425,18 +425,6 @@ private fun NoteRow(text: String, onClick: () -> Unit, modifier: Modifier = Modi
     }
 }
 
-/** « 6,5–7,5 », « ≤ 40 », « ≥ 3 », or nothing when the parameter has no indicative range. */
-private fun ParameterDefinition.rangeText(formatter: LocalizedFormatters): String? {
-    val min = indicativeMinimum?.let { formatter.number(it, precision) }
-    val max = indicativeMaximum?.let { formatter.number(it, precision) }
-    return when {
-        min != null && max != null -> "$min–$max"
-        max != null -> "≤ $max"
-        min != null -> "≥ $min"
-        else -> null
-    }
-}
-
 @Composable
 private fun MaintenanceChip(type: MaintenanceActionType, action: MaintenanceActionInput?, viewModel: HomeViewModel) {
     val label = type.label()

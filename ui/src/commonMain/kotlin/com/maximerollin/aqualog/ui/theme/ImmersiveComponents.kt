@@ -278,7 +278,7 @@ fun ValueTile(
 
 /** A small triangle beside the label of an out-of-range value: outlined for attention, filled for alert. */
 @Composable
-private fun LevelMark(level: ReadingLevel, color: Color, modifier: Modifier) {
+internal fun LevelMark(level: ReadingLevel, color: Color, modifier: Modifier) {
     Canvas(modifier.size(10.dp).clearAndSetSemantics {}) {
         val triangle = Path().apply {
             moveTo(size.width / 2, 0f)
