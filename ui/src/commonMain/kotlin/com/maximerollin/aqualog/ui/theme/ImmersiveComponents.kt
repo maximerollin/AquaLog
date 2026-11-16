@@ -1,6 +1,20 @@
 package com.maximerollin.aqualog.ui.theme
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
+import com.maximerollin.aqualog.home.HeroText
+import com.maximerollin.aqualog.home.TankScene
+import com.maximerollin.aqualog.rememberReducedMotion
+import com.maximerollin.aqualog.shared.Aquarium
+import com.maximerollin.aqualog.ui.icon.X
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeJoin
@@ -344,6 +358,62 @@ private fun Chevron(icon: ImageVector, description: String, atStart: Boolean, on
                     .border(1.dp, colors.outlineVariant, CircleShape),
                 contentAlignment = Alignment.Center,
             ) { Icon(icon, contentDescription = null, tint = colors.onSurface, modifier = Modifier.size(18.dp)) }
+        }
+    }
+}
+
+/**
+ * Measures the content at full height but reports [overlap] less to the parent, so the next list item,
+ * drawn later, covers the content's bottom.
+ */
+fun Modifier.overlapNext(overlap: Dp): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val height = (placeable.height - overlap.roundToPx()).coerceIn(constraints.minHeight, constraints.maxHeight)
+    layout(placeable.width, height) { placeable.place(0, 0) }
+}
+
+/** The shade over a [WaterHeader]'s whole height: its lightest stop is what the text's contrast is checked against (ScenePhysicsTest). */
+internal val WaterHeaderShadeTop = Color.Black.copy(alpha = .45f)
+internal val WaterHeaderShadeBottom = Color.Black.copy(alpha = .25f)
+internal val WaterHeaderShade: Brush = Brush.verticalGradient(0f to WaterHeaderShadeTop, 1f to WaterHeaderShadeBottom)
+
+/**
+ * The compact water of a screen opened over the home: the tank scene, a title (and subtitle) with a glass close button,
+ * then [below]. The paper sheet that follows overlaps its bottom by 30 dp ([overlapNext]); it grows with large fonts.
+ */
+@Composable
+fun WaterHeader(
+    aquarium: Aquarium,
+    title: String,
+    subtitle: String,
+    closeLabel: String,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+    below: @Composable () -> Unit = {},
+) {
+    Box(modifier.fillMaxWidth().heightIn(min = 170.dp)) {
+        TankScene(aquarium, inhabitants = emptyList(), modifier = Modifier.matchParentSize(), decorPlants = 0, animate = !rememberReducedMotion())
+        Box(Modifier.matchParentSize().background(WaterHeaderShade))
+        Column(Modifier.fillMaxWidth()) {
+            Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+            Row(Modifier.padding(start = 20.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f).padding(top = 8.dp)) {
+                    Text(
+                        title,
+                        modifier = Modifier.semantics { heading() },
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontFamily = frauncesFamily(), fontWeight = FontWeight.SemiBold, fontSize = 28.sp, lineHeight = 32.sp,
+                        ),
+                        color = HeroText,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(subtitle, modifier = Modifier.padding(top = 2.dp), style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp), color = HeroText)
+                }
+                GlassIconButton(AquagendaIcons.X, closeLabel, onClick = onClose)
+            }
+            below()
+            Spacer(Modifier.height(30.dp + 16.dp))
         }
     }
 }

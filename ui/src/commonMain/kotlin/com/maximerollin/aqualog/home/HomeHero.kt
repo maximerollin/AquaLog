@@ -35,7 +35,6 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -44,7 +43,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maximerollin.aqualog.HomeOverview
@@ -297,14 +295,4 @@ private fun GlassChip(label: String, onClick: () -> Unit, modifier: Modifier) {
             color = HeroText,
         )
     }
-}
-
-/**
- * Measures the content at full height but reports [overlap] less to the parent, so the next list item,
- * drawn later, covers the content's bottom.
- */
-fun Modifier.overlapNext(overlap: Dp): Modifier = layout { measurable, constraints ->
-    val placeable = measurable.measure(constraints)
-    val height = (placeable.height - overlap.roundToPx()).coerceIn(constraints.minHeight, constraints.maxHeight)
-    layout(placeable.width, height) { placeable.place(0, 0) }
 }

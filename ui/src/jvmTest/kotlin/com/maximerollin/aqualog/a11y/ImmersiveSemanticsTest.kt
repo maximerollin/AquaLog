@@ -16,6 +16,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.performClick
@@ -25,6 +26,9 @@ import com.maximerollin.aqualog.HomeValue
 import com.maximerollin.aqualog.LocalizedFormatters
 import com.maximerollin.aqualog.MainDestination
 import com.maximerollin.aqualog.Trend
+import com.maximerollin.aqualog.shared.Aquarium
+import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.ui.theme.WaterHeader
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
@@ -146,6 +150,27 @@ class ImmersiveSemanticsTest {
             setContent { AquaLogTheme(false) { GlassIconButton(AquagendaIcons.Plus, "Back", {}) } }
             val size = onNodeWithContentDescription("Back").fetchSemanticsNode().size
             assertTrue(size.width >= 48 * density.density && size.height >= 48 * density.density, "$size")
+        }
+    }
+
+    @Test
+    fun `water header title is a heading and close is a 48 dp glass button`() = withEnglish {
+        runComposeUiTest {
+            var closed = 0
+            setContent {
+                AquaLogTheme(false) {
+                    WaterHeader(
+                        Aquarium("a", "Salon", 120.0, VolumeUnit.LITERS, 0L), "New Session", "Salon", "Cancel", { closed++ },
+                    )
+                }
+            }
+            val title = onNodeWithText("New Session").fetchSemanticsNode()
+            assertTrue(title.config.contains(SemanticsProperties.Heading))
+            val close = onNodeWithContentDescription("Cancel")
+            val size = close.fetchSemanticsNode().size
+            assertTrue(size.width >= 48 * density.density && size.height >= 48 * density.density, "$size")
+            close.performClick()
+            assertEquals(1, closed)
         }
     }
 

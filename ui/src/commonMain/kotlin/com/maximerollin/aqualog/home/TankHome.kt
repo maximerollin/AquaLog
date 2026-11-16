@@ -42,7 +42,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.ui.platform.LocalDensity
-import com.maximerollin.aqualog.StatusBarOverWater
+import com.maximerollin.aqualog.StatusBarOverHeader
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
@@ -92,6 +92,7 @@ import com.maximerollin.aqualog.todayTasks
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.FloatingNavBarClearance
 import com.maximerollin.aqualog.ui.theme.PaperSheetTop
+import com.maximerollin.aqualog.ui.theme.overlapNext
 import com.maximerollin.aqualog.ui.theme.ValueRow
 import com.maximerollin.aqualog.ui.theme.attentionTextColor
 import com.maximerollin.aqualog.shared.assistance.ReadingSample
@@ -307,7 +308,7 @@ fun TankHome(
                 }
             }
         }
-        StatusBarOverHome(listState)
+        StatusBarOverHeader(listState)
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(bottom = FloatingNavBarClearance.dp))
     }
     if (showPistes && pistes.isNotEmpty()) PistesSheet(pistes, today, onDismiss = { showPistes = false })
@@ -374,38 +375,6 @@ internal fun measureTargetsShownAquarium(aquariumCount: Int, scrolling: Boolean,
     aquariumCount < 2 || (!scrolling && !swipeSelectionPending)
 
 /** The shell's « + » is live on every tab but the Tank's, where it follows the home's [measureTargetsShownAquarium] guard. */
-/**
- * Whether the water is still what lies under the status bar: the hero is the list's first item and the sheet's top edge,
- * [heroHeightPx] down the list (the hero item's size, its overlap already removed), has not reached the status bar.
- * Null before the list has laid the hero out: the list then opens on the water.
- */
-internal fun heroUnderStatusBar(firstVisibleItemIndex: Int, firstVisibleItemScrollOffset: Int, heroHeightPx: Int?, statusBarHeightPx: Int): Boolean =
-    firstVisibleItemIndex == 0 &&
-        if (heroHeightPx == null) firstVisibleItemScrollOffset == 0 else firstVisibleItemScrollOffset < heroHeightPx - statusBarHeightPx
-
-/**
- * Light status-bar icons while the water is under them (spec §6); once the paper sheet scrolls up to the status bar the icons
- * turn dark again and a band of paper sits behind them, so the clock never reads white on cream.
- */
-@Composable
-private fun StatusBarOverHome(listState: LazyListState) {
-    val statusBarPx = WindowInsets.statusBars.getTop(LocalDensity.current)
-    val overWater by remember(listState, statusBarPx) {
-        derivedStateOf {
-            heroUnderStatusBar(
-                listState.firstVisibleItemIndex,
-                listState.firstVisibleItemScrollOffset,
-                listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == 0 }?.size,
-                statusBarPx,
-            )
-        }
-    }
-    StatusBarOverWater(overWater)
-    if (!overWater) {
-        Box(Modifier.fillMaxWidth().windowInsetsTopHeight(WindowInsets.statusBars).background(MaterialTheme.colorScheme.background))
-    }
-}
-
 internal fun plusEnabled(destination: MainDestination, tankCanMeasure: Boolean): Boolean =
     destination != MainDestination.TANK || tankCanMeasure
 
