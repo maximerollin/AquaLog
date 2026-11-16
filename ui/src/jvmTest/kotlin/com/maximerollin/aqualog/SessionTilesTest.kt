@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
@@ -43,6 +44,14 @@ class SessionTilesTest {
     fun `no indicative range never reads in range`() {
         val ph = definition(BuiltInParameter.PH)
         assertEquals(SessionTileState.NO_RANGE, sessionTileState("12", ph, established))
+    }
+
+    @Test
+    fun `next on every tile but the last, which is done`() {
+        assertEquals(ImeAction.Next, sessionImeAction(0, 2))
+        assertEquals(ImeAction.Next, sessionImeAction(1, 2))
+        assertEquals(ImeAction.Done, sessionImeAction(2, 2))
+        assertEquals(ImeAction.Done, sessionImeAction(0, 0))
     }
 
     @Test

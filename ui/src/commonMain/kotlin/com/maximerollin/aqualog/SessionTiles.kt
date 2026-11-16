@@ -51,7 +51,6 @@ import com.maximerollin.aqualog.shared.evaluateMeasurement
 import com.maximerollin.aqualog.ui.theme.LEVEL_MARK_TAG
 import com.maximerollin.aqualog.ui.theme.LevelMark
 import com.maximerollin.aqualog.ui.theme.levelContainerColor
-import com.maximerollin.aqualog.ui.theme.levelDescription
 import com.maximerollin.aqualog.ui.theme.levelTextColor
 import org.jetbrains.compose.resources.stringResource
 
@@ -146,7 +145,6 @@ fun MeasureTile(
     val stateText = state.text()
     val description = stringResource(Res.string.measurement_for_parameter, name)
     val invalidText = stringResource(Res.string.invalid_measurement)
-    val levelText = levelDescription(level)
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val shape = RoundedCornerShape(20.dp)
@@ -160,8 +158,9 @@ fun MeasureTile(
         onValueChange = onValueChange,
         modifier = modifier.semantics {
             contentDescription = description
-            // The border and tint are not announced: TalkBack hears the unit, the state and the level as words.
-            stateDescription = listOf(unit, stateText.orEmpty(), levelText.orEmpty())
+            // The visible lines are silent, so each word is heard once: the name in the description, then the unit, the
+            // state (above / below says the level) and the range. An invalid input is said by the error alone.
+            stateDescription = listOf(shownUnit.orEmpty(), if (invalid) "" else stateText.orEmpty(), range.orEmpty())
                 .filter(String::isNotBlank).joinToString(", ")
             if (invalid) error(invalidText)
         },
@@ -195,6 +194,7 @@ fun MeasureTile(
                                 withStyle(SpanStyle(fontWeight = FontWeight.Normal, color = muted)) { append(SEPARATOR + range) }
                             }
                         },
+                        modifier = Modifier.clearAndSetSemantics {},
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
                         color = colors.onSurface,
@@ -211,7 +211,7 @@ fun MeasureTile(
                         inner()
                     }
                     if (shownUnit != null) {
-                        // Visual only: the unit is already in the field's state description. Its tight line height keeps it, once
+                        // Visual only, like the other lines: the field's state description says it. Its tight line height keeps it, once
                         // shifted onto the value's baseline, inside the value's line: the row's intrinsic height ignores that shift.
                         Text(
                             text = " $shownUnit", fontSize = 14.sp, lineHeight = 16.sp, color = muted,
@@ -220,12 +220,24 @@ fun MeasureTile(
                     }
                 }
                 if (stateText != null) {
-                    Text(stateText, Modifier.padding(top = 2.dp), fontSize = 12.sp, lineHeight = 16.sp, color = stateColor)
+                    Text(
+                        stateText,
+                        Modifier.padding(top = 2.dp).testTag(SESSION_TILE_STATE_TAG).clearAndSetSemantics {},
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        color = stateColor,
+                    )
                 }
             }
         },
     )
 }
+
+/** « Next » on every tile but the last, which says « Done » and closes the keyboard. */
+internal fun sessionImeAction(index: Int, lastIndex: Int): ImeAction = if (index >= lastIndex) ImeAction.Done else ImeAction.Next
+
+/** Test tag of a tile's state line, which is silent: its words are in the tile's state description. */
+internal const val SESSION_TILE_STATE_TAG = "session-tile-state"
 
 /**
  * One row of the Session grid: [tiles] share the width equally, 10 dp apart, and the same height. A short last row keeps
