@@ -74,12 +74,18 @@ internal fun ComposeTestRule.scrollToText(text: String) {
 internal fun homeValueRow(): SemanticsMatcher =
     SemanticsMatcher.keyIsDefined(SemanticsProperties.HorizontalScrollAxisRange) and hasAnyAncestor(hasTestTag("home-list"))
 
+/** A node whose state description contains [text]: the History cards speak their readings only through it. */
+internal fun hasStateDescriptionContaining(text: String): SemanticsMatcher =
+    SemanticsMatcher("StateDescription contains '$text'") {
+        it.config.getOrElse(SemanticsProperties.StateDescription) { "" }.contains(text)
+    }
+
 /**
- * Scrolls the home to [matcher], then on until it clears the floating bar. `performScrollToNode` stops as soon as the
- * node is inside `home-list`, which reaches under the bar, so a tap there would land on a tab instead.
+ * Scrolls the list tagged [listTag] to [matcher], then on until it clears the floating bar. `performScrollToNode` stops
+ * as soon as the node is inside the list, which reaches under the bar, so a tap there would land on a tab instead.
  */
-internal fun ComposeTestRule.scrollHomeAboveBar(matcher: SemanticsMatcher) {
-    val list = onNodeWithTag("home-list")
+internal fun ComposeTestRule.scrollAboveBar(listTag: String, matcher: SemanticsMatcher) {
+    val list = onNodeWithTag(listTag)
     list.performScrollToNode(matcher)
     waitForIdle()
     val listBottom = list.fetchSemanticsNode().boundsInRoot.bottom
@@ -89,3 +95,6 @@ internal fun ComposeTestRule.scrollHomeAboveBar(matcher: SemanticsMatcher) {
     if (hidden > 0f) list.performSemanticsAction(SemanticsActions.ScrollBy) { it(0f, hidden) }
     waitForIdle()
 }
+
+/** [scrollAboveBar] on the home. */
+internal fun ComposeTestRule.scrollHomeAboveBar(matcher: SemanticsMatcher) = scrollAboveBar("home-list", matcher)

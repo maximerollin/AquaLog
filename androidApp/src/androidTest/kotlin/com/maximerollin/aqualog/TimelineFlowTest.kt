@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
@@ -63,12 +64,16 @@ class TimelineFlowTest {
         composeRule.onNodeWithText("Chronology").assertIsDisplayed()
         // One Session: its reading, maintenance action and Event all show on its journal entry.
         composeRule.onNode(
-            hasContentDescription("Open Session details") and hasText("24.5", substring = true) and hasClickAction(),
+            hasContentDescription("Open Session details") and hasStateDescriptionContaining("24.5") and hasClickAction(),
         ).assertIsDisplayed()
         composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
         composeRule.onNodeWithText("Clear water").assertIsDisplayed()
 
+        // The period is chosen on the screen's own control, not in the filter sheet.
+        composeRule.onNode(hasText("7 days") and isSelectable()).performClick().assertIsSelected()
+        composeRule.onNodeWithContentDescription("Open Session details").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Filters").performClick()
+        composeRule.onAllNodes(hasText("7 days")).assertCountEquals(1)
         composeRule.onNodeWithText("Offline-ready · stored on this device").assertIsDisplayed()
         composeRule.onNode(hasText("Temperature") and isSelectable()).performClick().assertIsSelected()
         composeRule.onNodeWithText("Close").performClick()
