@@ -303,7 +303,7 @@ private fun AquariumShell(
     // Read at the moment of a tap, so a swipe that started a frame ago is never missed (the Boolean above lags it).
     var tankMeasureGuard by remember { mutableStateOf<() -> Boolean>({ false }) }
     val statusBarInset = Modifier.windowInsetsPadding(WindowInsets.statusBars)
-    // Lists scroll clear of the floating bar; the home and History draw from the top edge, under the status bar, and clear it themselves.
+    // Lists scroll clear of the floating bar; the home, History and Trends draw from the top edge, under the status bar, and clear it themselves.
     val tabModifier = statusBarInset.padding(bottom = FloatingNavBarClearance.dp)
     Box(modifier.fillMaxSize()) {
         when (state.destination) {
@@ -313,9 +313,9 @@ private fun AquariumShell(
                 onMeasureAvailabilityChange = { tankCanMeasure = it },
                 onMeasureGuard = { tankMeasureGuard = it },
             )
-            // Like the home, History draws its water under the status bar and clears the floating bar itself.
+            // Like the home, History and Trends draw their water under the status bar and clear the floating bar themselves.
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, Modifier)
-            MainDestination.TRENDS -> TrendsScreen(state, viewModel, tabModifier)
+            MainDestination.TRENDS -> TrendsScreen(state, viewModel, Modifier)
             MainDestination.MORE -> PortableDataSettings(
                 homeState = state,
                 state = state.portableData,
