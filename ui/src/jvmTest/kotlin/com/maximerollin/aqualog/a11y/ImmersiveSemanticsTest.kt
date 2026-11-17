@@ -37,6 +37,7 @@ import com.maximerollin.aqualog.ui.icon.Plus
 import com.maximerollin.aqualog.ui.icon.X
 import com.maximerollin.aqualog.ui.icon.Funnel
 import com.maximerollin.aqualog.SessionTileState
+import com.maximerollin.aqualog.ui.theme.PERIOD_PILL_TAG
 import com.maximerollin.aqualog.ui.theme.PeriodSegmented
 import com.maximerollin.aqualog.ui.theme.ValuePill
 import androidx.compose.runtime.CompositionLocalProvider
@@ -338,6 +339,30 @@ class ImmersiveSemanticsTest {
             assertEquals(track.left, radios.first().left, tolerance)
             assertEquals(track.right, radios.last().right, tolerance)
             radios.forEach { assertEquals(radios.first().width, it.width, tolerance) }
+            // The selected pill fills its segment, inside the segment's 3 dp inset, not just its label.
+            val pill = onNodeWithTag(PERIOD_PILL_TAG, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            val inset = 3 * density.density
+            val segment = radios.first()
+            assertEquals(segment.left + inset, pill.left, tolerance)
+            assertEquals(segment.right - inset, pill.right, tolerance)
+            assertEquals(segment.top + inset, pill.top, tolerance)
+            assertEquals(segment.bottom - inset, pill.bottom, tolerance)
+        }
+    }
+
+    @Test
+    fun `no period is selected at index -1`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    PeriodSegmented(listOf("7 days", "30 days", "90 days"), -1, {}, Modifier.width(360.dp))
+                }
+            }
+            val radios = onAllNodes(SemanticsMatcher("radio") { it.config.getOrNull(SemanticsProperties.Role) == Role.RadioButton })
+                .fetchSemanticsNodes()
+            assertEquals(3, radios.size)
+            assertEquals(listOf(false, false, false), radios.map { it.config[SemanticsProperties.Selected] })
+            onNodeWithTag(PERIOD_PILL_TAG, useUnmergedTree = true).assertDoesNotExist()
         }
     }
 }

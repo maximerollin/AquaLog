@@ -53,6 +53,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -428,9 +429,22 @@ fun WaterHeader(
     }
 }
 
+/** Test tag of the selected period's pill, so a test can check it fills its segment. */
+internal const val PERIOD_PILL_TAG = "period-pill"
+
+/** The period track's tint; it lies on the paper ([ColorScheme.background]). */
+internal fun ColorScheme.periodTrack(): Color = surfaceVariant.copy(alpha = .6f)
+
+/** The selected period's pill: it must stand out from the track by 3:1 in both themes (CarnetColorTest). */
+internal fun ColorScheme.periodPill(): Color = primary
+
+/** The selected period's label, on [periodPill]. */
+internal fun ColorScheme.onPeriodPill(): Color = onPrimary
+
 /**
- * Period choice as a pill row: a tinted track, the selected option in a raised surface pill. Labels stay on one line; when
- * they don't fit (long German words, large fonts) the row scrolls sideways instead of wrapping.
+ * Period choice as a pill row: a tinted track, the selected option in a raised [periodPill] that fills its segment. Labels
+ * stay on one line; when they don't fit (long German words, large fonts) the row scrolls sideways instead of wrapping.
+ * A [selectedIndex] of -1 selects none: the screen shows a window that is none of these periods.
  */
 @Composable
 fun PeriodSegmented(labels: List<String>, selectedIndex: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
@@ -441,7 +455,7 @@ fun PeriodSegmented(labels: List<String>, selectedIndex: Int, onSelect: (Int) ->
     // are never cut by the scroll container. Options share the track equally; one that needs more grows and the row scrolls.
     BoxWithConstraints(
         modifier.fillMaxWidth().height(48.dp)
-            .background(colors.surfaceVariant.copy(alpha = .6f), track)
+            .background(colors.periodTrack(), track)
             .border(1.dp, colors.outlineVariant, track),
     ) {
         val equalWidth = maxWidth / labels.size.coerceAtLeast(1)
@@ -451,21 +465,29 @@ fun PeriodSegmented(labels: List<String>, selectedIndex: Int, onSelect: (Int) ->
         ) {
             labels.forEachIndexed { index, label ->
                 val selected = index == selectedIndex
+                // The scroll leaves the width unbounded: the segment hands its minimum size down so the pill fills it.
                 Box(
                     Modifier.fillMaxHeight().defaultMinSize(minWidth = maxOf(equalWidth, 48.dp))
                         .selectable(selected = selected, role = Role.RadioButton, onClick = { onSelect(index) })
                         .padding(3.dp),
                     contentAlignment = Alignment.Center,
+                    propagateMinConstraints = true,
                 ) {
                     Box(
                         Modifier.fillMaxSize()
-                            .then(if (selected) Modifier.shadow(2.dp, pill).background(colors.surface, pill) else Modifier)
+                            .then(
+                                if (selected) {
+                                    Modifier.testTag(PERIOD_PILL_TAG).shadow(2.dp, pill).background(colors.periodPill(), pill)
+                                } else {
+                                    Modifier
+                                },
+                            )
                             .padding(horizontal = 8.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false,
-                            color = if (selected) colors.onSurface else colors.onSurfaceVariant,
+                            color = if (selected) colors.onPeriodPill() else colors.onSurfaceVariant,
                         )
                     }
                 }
@@ -514,7 +536,7 @@ fun ValuePill(label: String, value: String, unit: String?, state: SessionTileSta
     }
 }
 
-/** The dot on a timeline: a filled circle for the latest entry, a tinted one for the others. Decorative. */
+/** The dot on a timeline: a filled circle when [emphasized] (every Session), a tinted one for the others. Decorative. */
 @Composable
 fun TimelineNode(icon: ImageVector, emphasized: Boolean, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
