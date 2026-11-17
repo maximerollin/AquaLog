@@ -307,6 +307,7 @@
     <string name="trends_error">Local trends could not be read. Your saved data is still on this device.</string>
     <string name="trends_pro_complete_history">Pro shows the complete local history. Changing Pro status never deletes saved data.</string>
     <string name="trends_complete_history">Show complete history</string>
+    <string name="trends_window_complete_history">Complete history</string>
     <string name="trends_start_date">Start date</string>
     <string name="trends_end_date">End date</string>
     <string name="date_format_hint">YYYY-MM-DD</string>

@@ -307,6 +307,7 @@
     <string name="trends_error">Les tendances locales n'ont pas pu être lues. Vos données enregistrées sont toujours sur cet appareil.</string>
     <string name="trends_pro_complete_history">Pro affiche l'histoire locale complète. Changer le statut Pro ne supprime jamais les données enregistrées.</string>
     <string name="trends_complete_history">Afficher l'historique complet</string>
+    <string name="trends_window_complete_history">Historique complet</string>
     <string name="trends_start_date">Date de début</string>
     <string name="trends_end_date">Date de fin</string>
     <string name="date_format_hint">AAAA-MM-JJ</string>

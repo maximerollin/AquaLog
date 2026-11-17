@@ -83,7 +83,7 @@ fun TrendsScreen(
     val title = stringResource(Res.string.trends_title)
     val sceneAquarium = snapshot?.aquarium ?: state.setup?.aquarium ?: state.aquariums.firstOrNull()
     val customLabel = stringResource(Res.string.trends_custom_period)
-    val completeLabel = stringResource(Res.string.trends_complete_history)
+    val completeLabel = stringResource(Res.string.trends_window_complete_history)
     // A Pro window (complete history, or two dates) replaces the period: the subtitle names it, no period reads selected.
     // The complete history is the Pro window without dates.
     val proWindow = when {

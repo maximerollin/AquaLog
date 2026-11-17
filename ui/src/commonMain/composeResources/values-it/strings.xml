@@ -307,6 +307,7 @@
     <string name="trends_error">Non è stato possibile leggere le tendenze locali. I tuoi dati salvati sono ancora su questo dispositivo.</string>
     <string name="trends_pro_complete_history">Pro mostra la storia locale completa. La modifica dello stato Pro non elimina mai i dati salvati.</string>
     <string name="trends_complete_history">Mostra la cronologia completa</string>
+    <string name="trends_window_complete_history">Cronologia completa</string>
     <string name="trends_start_date">Data di inizio</string>
     <string name="trends_end_date">Data di fine</string>
     <string name="date_format_hint">AAAA-MM-GG</string>

@@ -229,7 +229,7 @@ class TrendsFlowTest {
         composeRule.onNode(hasLabel("Custom period")).performClick()
         composeRule.onNodeWithText("Show complete history").performClick()
         // The complete history is no period: none reads selected and the subtitle names the window.
-        composeRule.onNodeWithText("Long history · Show complete history").assertIsDisplayed()
+        composeRule.onNodeWithText("Long history · Complete history").assertIsDisplayed()
         composeRule.onAllNodes(periodRadio()).assertCountEquals(3)
         composeRule.onAllNodes(periodRadio() and isSelected()).assertCountEquals(0)
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("Advanced Pro analysis"))
