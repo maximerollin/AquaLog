@@ -104,6 +104,7 @@ fun AquaLogContent(
     rateApp: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    ScreenBackHandler(state, viewModel)
     // The home, History and the Session draw under the status bar; every other screen starts below it.
     val inset = modifier.windowInsetsPadding(WindowInsets.statusBars)
     when {
