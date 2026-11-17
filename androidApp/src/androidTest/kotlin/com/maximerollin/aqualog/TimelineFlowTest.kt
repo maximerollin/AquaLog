@@ -22,6 +22,7 @@ import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.RapidSessionInput
 import com.maximerollin.aqualog.shared.VolumeUnit
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,6 +31,27 @@ import org.junit.runner.RunWith
 class TimelineFlowTest {
     @get:Rule
     val composeRule = createEmptyComposeRule()
+
+    @Test
+    fun emptyHistory_saysSoBelowThePeriod() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val application = context.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        runBlocking {
+            application.aquariumRepository.createConfiguredAquarium(
+                "Empty tank", 120.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        composeRule.onNode(hasLabel("History")).performClick()
+        composeRule.awaitLabel("No matching history")
+        val empty = composeRule.onNodeWithText("No matching history").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        val period = composeRule.onNode(hasText("7 days") and isSelectable()).fetchSemanticsNode().boundsInRoot
+        assertTrue("$empty below $period", empty.top >= period.bottom)
+        scenario.close()
+    }
 
     @Test
     fun filtersSession_opensDetail_andReturnsToPreservedFilters() {

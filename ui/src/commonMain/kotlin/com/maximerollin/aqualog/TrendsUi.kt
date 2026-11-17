@@ -81,9 +81,19 @@ fun TrendsScreen(
     val trends = state.trends
     val snapshot = trends.snapshot
     val title = stringResource(Res.string.trends_title)
-    val subtitle = (snapshot?.aquarium ?: state.setup?.aquarium)?.name.orEmpty()
     val sceneAquarium = snapshot?.aquarium ?: state.setup?.aquarium ?: state.aquariums.firstOrNull()
     val customLabel = stringResource(Res.string.trends_custom_period)
+    val completeLabel = stringResource(Res.string.trends_complete_history)
+    // A Pro window (complete history, or two dates) replaces the period: the subtitle names it, no period reads selected.
+    // The complete history is the Pro window without dates.
+    val proWindow = when {
+        !trends.advancedEnabled -> null
+        trends.customStartDate.isBlank() && trends.customEndDate.isBlank() -> completeLabel
+        else -> customLabel
+    }
+    val subtitle = listOfNotNull((snapshot?.aquarium ?: state.setup?.aquarium)?.name, proWindow)
+        .filter(String::isNotBlank)
+        .joinToString(" · ")
     val periodLabels = TrendPeriod.entries.map { stringResource(it.labelRes()) }
     val listState = rememberLazyListState()
     var showCustomPeriod by rememberSaveable { mutableStateOf(false) }
@@ -121,7 +131,7 @@ fun TrendsScreen(
             paperItem("period", top = 0.dp) {
                 PeriodSegmented(
                     labels = periodLabels,
-                    selectedIndex = TrendPeriod.entries.indexOf(trends.period),
+                    selectedIndex = if (trends.advancedEnabled) -1 else TrendPeriod.entries.indexOf(trends.period),
                     onSelect = { viewModel.selectTrendPeriod(TrendPeriod.entries[it]) },
                 )
             }
