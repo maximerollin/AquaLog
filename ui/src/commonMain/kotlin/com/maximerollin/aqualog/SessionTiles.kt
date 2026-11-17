@@ -71,10 +71,18 @@ internal fun sessionTileReading(input: String, definition: ParameterDefinition, 
     val value = feedback.value
     if (!feedback.isValid || value == null) return SessionTileReading(SessionTileState.INVALID, ReadingLevel.OK)
     val level = readingLevel(definition, value, profile)
+    return SessionTileReading(rangeState(value, definition, level), level)
+}
+
+/** A valid [value] against the parameter's indicative range, in the words the tiles and the Trends hero share. */
+internal fun valueRangeState(value: Double, definition: ParameterDefinition, profile: AquariumProfile): SessionTileState =
+    rangeState(value, definition, readingLevel(definition, value, profile))
+
+private fun rangeState(value: Double, definition: ParameterDefinition, level: ReadingLevel): SessionTileState {
     val minimum = definition.indicativeMinimum
     val maximum = definition.indicativeMaximum
     val far = level == ReadingLevel.ALERT
-    val state = when {
+    return when {
         maximum != null && value > maximum -> if (far) SessionTileState.FAR_ABOVE else SessionTileState.ABOVE
         minimum != null && value < minimum -> if (far) SessionTileState.FAR_BELOW else SessionTileState.BELOW
         // An alert beyond a bound the person left empty: its side comes from the alert thresholds, so a tinted tile
@@ -89,7 +97,6 @@ internal fun sessionTileReading(input: String, definition: ParameterDefinition, 
         minimum == null && maximum == null -> SessionTileState.NO_RANGE
         else -> SessionTileState.IN_RANGE
     }
-    return SessionTileReading(state, level)
 }
 
 internal fun sessionTileState(input: String, definition: ParameterDefinition, profile: AquariumProfile): SessionTileState =

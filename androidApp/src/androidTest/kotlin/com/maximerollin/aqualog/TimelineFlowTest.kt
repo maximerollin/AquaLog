@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
@@ -21,6 +22,7 @@ import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.RapidSessionInput
 import com.maximerollin.aqualog.shared.VolumeUnit
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,6 +31,27 @@ import org.junit.runner.RunWith
 class TimelineFlowTest {
     @get:Rule
     val composeRule = createEmptyComposeRule()
+
+    @Test
+    fun emptyHistory_saysSoBelowThePeriod() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val application = context.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        runBlocking {
+            application.aquariumRepository.createConfiguredAquarium(
+                "Empty tank", 120.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+
+        composeRule.onNode(hasLabel("History")).performClick()
+        composeRule.awaitLabel("No matching history")
+        val empty = composeRule.onNodeWithText("No matching history").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+        val period = composeRule.onNode(hasText("7 days") and isSelectable()).fetchSemanticsNode().boundsInRoot
+        assertTrue("$empty below $period", empty.top >= period.bottom)
+        scenario.close()
+    }
 
     @Test
     fun filtersSession_opensDetail_andReturnsToPreservedFilters() {
@@ -63,12 +86,16 @@ class TimelineFlowTest {
         composeRule.onNodeWithText("Chronology").assertIsDisplayed()
         // One Session: its reading, maintenance action and Event all show on its journal entry.
         composeRule.onNode(
-            hasContentDescription("Open Session details") and hasText("24.5", substring = true) and hasClickAction(),
+            hasContentDescription("Open Session details") and hasStateDescriptionContaining("24.5") and hasClickAction(),
         ).assertIsDisplayed()
         composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
         composeRule.onNodeWithText("Clear water").assertIsDisplayed()
 
+        // The period is chosen on the screen's own control, not in the filter sheet.
+        composeRule.onNode(hasText("7 days") and isSelectable()).performClick().assertIsSelected()
+        composeRule.onNodeWithContentDescription("Open Session details").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Filters").performClick()
+        composeRule.onAllNodes(hasText("7 days")).assertCountEquals(1)
         composeRule.onNodeWithText("Offline-ready · stored on this device").assertIsDisplayed()
         composeRule.onNode(hasText("Temperature") and isSelectable()).performClick().assertIsSelected()
         composeRule.onNodeWithText("Close").performClick()

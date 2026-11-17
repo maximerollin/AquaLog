@@ -94,7 +94,7 @@ class SupabaseTwoDeviceSyncTest {
         composeRule.onNode(hasLabel("History")).performClick()
         composeRule.onNodeWithText("Chronology").assertIsDisplayed()
         composeRule.onNode(
-            hasContentDescription("Open Session details") and hasText("24.5", substring = true) and hasClickAction(),
+            hasContentDescription("Open Session details") and hasStateDescriptionContaining("24.5") and hasClickAction(),
         ).assertIsDisplayed()
         composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
         composeRule.onNodeWithText("Downloaded from first installation").assertIsDisplayed()

@@ -2,35 +2,39 @@ package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -39,9 +43,18 @@ import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.maximerollin.aqualog.ui.icon.AquagendaIcons
+import com.maximerollin.aqualog.ui.icon.Calendar
 import com.maximerollin.aqualog.ui.theme.CarnetDivider
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
+import com.maximerollin.aqualog.ui.theme.FloatingNavBarClearance
+import com.maximerollin.aqualog.ui.theme.GlassIconButton
+import com.maximerollin.aqualog.ui.theme.PaperSheetTop
+import com.maximerollin.aqualog.ui.theme.PeriodSegmented
+import com.maximerollin.aqualog.ui.theme.WaterHeader
+import com.maximerollin.aqualog.ui.theme.overlapNext
 import com.maximerollin.aqualog.shared.EventType
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.ParameterTrendSeries
@@ -54,36 +67,113 @@ import com.maximerollin.aqualog.shared.InterventionSeriesComparison
 import com.maximerollin.aqualog.shared.DescriptiveTrendDirection
 import kotlin.math.max
 
+/**
+ * Trends in the immersive style: the water header with the custom-period button, then on the paper sheet the period, the
+ * hero card for the parameter to watch, the other parameters as rows, the history limit and the Pro analysis.
+ * Draws under the status bar and clears the floating bar itself.
+ */
 @Composable
 fun TrendsScreen(
     state: HomeUiState,
     viewModel: HomeViewModel,
     modifier: Modifier = Modifier,
 ) {
-    when {
-        state.trends.isLoading -> TrendLoading(modifier)
-        state.trends.hasRecoverableError -> TrendError(viewModel::retryTrends, modifier)
-        else -> TrendContent(state, viewModel, modifier)
+    val trends = state.trends
+    val snapshot = trends.snapshot
+    val title = stringResource(Res.string.trends_title)
+    val sceneAquarium = snapshot?.aquarium ?: state.setup?.aquarium ?: state.aquariums.firstOrNull()
+    val customLabel = stringResource(Res.string.trends_custom_period)
+    val completeLabel = stringResource(Res.string.trends_window_complete_history)
+    // A Pro window (complete history, or two dates) replaces the period: the subtitle names it, no period reads selected.
+    // The complete history is the Pro window without dates.
+    val proWindow = when {
+        !trends.advancedEnabled -> null
+        trends.customStartDate.isBlank() && trends.customEndDate.isBlank() -> completeLabel
+        else -> customLabel
+    }
+    val subtitle = listOfNotNull((snapshot?.aquarium ?: state.setup?.aquarium)?.name, proWindow)
+        .filter(String::isNotBlank)
+        .joinToString(" · ")
+    val periodLabels = TrendPeriod.entries.map { stringResource(it.labelRes()) }
+    val listState = rememberLazyListState()
+    var showCustomPeriod by rememberSaveable { mutableStateOf(false) }
+    val onCustomPeriod = {
+        if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) showCustomPeriod = true else viewModel.openProPaywall()
+    }
+    Box(modifier.fillMaxSize()) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize().testTag("trend-list"),
+            contentPadding = PaddingValues(bottom = FloatingNavBarClearance.dp),
+        ) {
+            item(key = "header") {
+                if (sceneAquarium != null) {
+                    WaterHeader(
+                        aquarium = sceneAquarium,
+                        title = title,
+                        subtitle = subtitle,
+                        action = { GlassIconButton(AquagendaIcons.Calendar, customLabel, onCustomPeriod) },
+                        // The sheet's top edge, the next item, covers the water's bottom.
+                        modifier = Modifier.overlapNext(30.dp),
+                    )
+                } else {
+                    // shortcut: no Aquarium to draw the water from; the shell only opens with a setup, so this is never seen.
+                    Column {
+                        Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+                        CarnetScreenTitle(
+                            title, subtitle, Modifier.padding(start = 24.dp, end = 12.dp, top = 12.dp, bottom = 4.dp),
+                            action = { GlassIconButton(AquagendaIcons.Calendar, customLabel, onCustomPeriod) },
+                        )
+                    }
+                }
+            }
+            item(key = "sheet-top") { PaperSheetTop() }
+            paperItem("period", top = 0.dp) {
+                PeriodSegmented(
+                    labels = periodLabels,
+                    selectedIndex = if (trends.advancedEnabled) -1 else TrendPeriod.entries.indexOf(trends.period),
+                    onSelect = { viewModel.selectTrendPeriod(TrendPeriod.entries[it]) },
+                )
+            }
+            when {
+                trends.isLoading -> paperItem("loading") { TrendLoading(Modifier.padding(vertical = 32.dp)) }
+                trends.hasRecoverableError -> paperItem("error") { TrendError(viewModel::retryTrends, Modifier) }
+                else -> trendContent(state, viewModel)
+            }
+        }
+        StatusBarOverHeader(listState)
+    }
+    if (showCustomPeriod) {
+        CustomPeriodSheet(state, viewModel, onDismiss = { showCustomPeriod = false })
     }
 }
 
-@Composable
-private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier: Modifier) {
-    val snapshot = state.trends.snapshot
-    val context = listOfNotNull(snapshot?.aquarium?.name, stringResource(state.trends.period.labelRes()))
-        .joinToString(" · ")
-    LazyColumn(
-        modifier = modifier.fillMaxSize().testTag("trend-list"),
-        contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
-            CarnetScreenTitle(stringResource(Res.string.trends_title), context, Modifier.padding(top = 12.dp))
+/** The sheet's body once the trends are loaded: hero, rows, legend, history limit and Pro analysis. */
+private fun LazyListScope.trendContent(state: HomeUiState, viewModel: HomeViewModel) {
+    val trends = state.trends
+    val snapshot = trends.snapshot
+    val hero = snapshot?.let(::heroSeries)
+    if (snapshot != null && hero != null) {
+        val heroExpanded = hero.definition.id == trends.selectedParameterDefinitionId
+        paperItem("trend-hero") {
+            TrendHeroCard(
+                series = hero,
+                snapshot = snapshot,
+                expanded = heroExpanded,
+                onToggleValues = { viewModel.selectTrendParameter(if (heroExpanded) null else hero.definition.id) },
+            )
         }
-        item { TrendPeriods(state.trends.period, viewModel::selectTrendPeriod) }
-        snapshot?.series?.sortedBy { it.definition.position }?.forEach { series ->
-            val expanded = series.definition.id == state.trends.selectedParameterDefinitionId
-            item(key = "trend-row-${series.definition.id}") {
+        if (heroExpanded) trendValuesAndEvents(hero, snapshot)
+    } else {
+        paperItem("trend-empty") { EmptyTrendCard() }
+    }
+    val rows = snapshot?.series.orEmpty()
+        .filter { it.definition.id != hero?.definition?.id }
+        .sortedBy { it.definition.position }
+    if (snapshot != null) {
+        rows.forEach { series ->
+            val expanded = series.definition.id == trends.selectedParameterDefinitionId
+            paperItem("trend-row-${series.definition.id}") {
                 Column {
                     CarnetDivider()
                     TrendSparklineRow(
@@ -96,82 +186,109 @@ private fun TrendContent(state: HomeUiState, viewModel: HomeViewModel, modifier:
             }
             if (expanded) trendDetails(series, snapshot)
         }
-        if (snapshot?.series?.isNotEmpty() == true) {
-            item {
-                Text(
-                    stringResource(Res.string.trends_sparkline_legend),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
+    }
+    if (rows.isNotEmpty()) {
+        paperItem("trend-sparkline-legend") {
+            Text(
+                stringResource(Res.string.trends_sparkline_legend),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
-        item { TrendProRow(state, viewModel) }
-        state.trends.advancedAnalysis?.let { analysis ->
-            item { AdvancedAnalysis(analysis, viewModel::selectTrendIntervention) }
-        }
+    }
+    paperItem("trend-pro") { TrendProRow(state, viewModel) }
+    trends.advancedAnalysis?.let { analysis ->
+        paperItem("trend-advanced") { AdvancedAnalysis(analysis, viewModel::selectTrendIntervention) }
     }
 }
 
-/** The existing full chart, exact values and Events, shown in place under the expanded row. */
+/** A sheet item: paper behind it edge to edge, its content 16 dp from the sides and [top] below the previous one. */
+private fun LazyListScope.paperItem(key: String, top: Dp = 12.dp, content: @Composable () -> Unit) =
+    item(key = key) { OnPaper(top, content) }
+
+@Composable
+private fun OnPaper(top: Dp, content: @Composable () -> Unit) {
+    Box(
+        Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 16.dp).padding(top = top),
+    ) { content() }
+}
+
+/** The existing full chart, exact values and Events, shown in place under an expanded row. */
 private fun LazyListScope.trendDetails(selected: ParameterTrendSeries, snapshot: TrendSnapshot) {
-    item { TrendSeriesHeading(selected) }
-    item { TrendChart(selected, snapshot) }
-    item {
+    val id = selected.definition.id
+    paperItem("trend-heading-$id") { TrendSeriesHeading(selected) }
+    paperItem("trend-chart-$id") { TrendChart(selected, snapshot) }
+    paperItem("trend-legend-$id") {
         Text(
             stringResource(Res.string.trends_legend),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium,
         )
     }
-    item { Text(stringResource(Res.string.trends_exact_values), style = MaterialTheme.typography.titleLarge) }
+    trendValuesAndEvents(selected, snapshot)
+}
+
+/** The exact values and the Events of the period: under an expanded row, or after the hero card that already shows the chart. */
+private fun LazyListScope.trendValuesAndEvents(selected: ParameterTrendSeries, snapshot: TrendSnapshot) {
+    val id = selected.definition.id
+    paperItem("trend-values-title-$id") {
+        Text(stringResource(Res.string.trends_exact_values), style = MaterialTheme.typography.titleLarge)
+    }
     if (selected.points.isEmpty()) {
-        item { EmptyTrendCard() }
+        paperItem("trend-values-empty-$id") { EmptyTrendCard() }
     } else {
-        items(selected.points, key = { "trend-point-${it.sessionId}" }) { point ->
-            val value = point.value.displayTrendValue(selected.definition.precision)
-            val exactValueDescription = stringResource(
-                Res.string.trends_exact_value_description,
-                value,
-                selected.definition.unit,
-            )
-            Card(
-                Modifier
-                    .fillMaxWidth()
-                    .semantics {
-                        contentDescription = exactValueDescription
-                    },
-            ) {
-                Text(
-                    stringResource(
-                        Res.string.timeline_marker_line,
-                        point.occurredAtEpochMillis.displayTrendDate(),
-                        stringResource(Res.string.value_with_unit, value, selected.definition.unit),
-                    ),
-                    modifier = Modifier.padding(16.dp),
+        selected.points.forEach { point ->
+            paperItem("trend-point-${point.sessionId}") {
+                val value = point.value.displayTrendValue(selected.definition.precision)
+                val exactValueDescription = stringResource(
+                    Res.string.trends_exact_value_description,
+                    value,
+                    selected.definition.unit,
                 )
+                Card(
+                    Modifier
+                        .fillMaxWidth()
+                        .semantics {
+                            contentDescription = exactValueDescription
+                        },
+                ) {
+                    Text(
+                        stringResource(
+                            Res.string.timeline_marker_line,
+                            point.occurredAtEpochMillis.displayTrendDate(),
+                            stringResource(Res.string.value_with_unit, value, selected.definition.unit),
+                        ),
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
             }
         }
     }
-    item { Text(stringResource(Res.string.trends_events), style = MaterialTheme.typography.titleLarge) }
+    paperItem("trend-events-title-$id") {
+        Text(stringResource(Res.string.trends_events), style = MaterialTheme.typography.titleLarge)
+    }
     if (snapshot.events.isEmpty()) {
-        item { Text(stringResource(Res.string.trends_no_events)) }
+        paperItem("trend-no-events-$id") { Text(stringResource(Res.string.trends_no_events)) }
     } else {
-        items(snapshot.events, key = { "trend-event-${it.sessionId}" }) { marker ->
-            Card(Modifier.fillMaxWidth()) {
-                Text(
-                    stringResource(
-                        Res.string.timeline_marker_line,
-                        marker.occurredAtEpochMillis.displayTrendDate(),
-                        marker.displayText(),
-                    ),
-                    modifier = Modifier.padding(16.dp),
-                )
+        snapshot.events.forEach { marker ->
+            paperItem("trend-event-${marker.sessionId}") {
+                Card(Modifier.fillMaxWidth()) {
+                    Text(
+                        stringResource(
+                            Res.string.timeline_marker_line,
+                            marker.occurredAtEpochMillis.displayTrendDate(),
+                            marker.displayText(),
+                        ),
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
             }
         }
     }
 }
 
-/** Last row of the list: the history limit and the Pro entry (complete history, custom period). */
+/** Last row of the list: the history limit and, without Pro, the paywall link. Pro choices live in [CustomPeriodSheet]. */
 @Composable
 private fun TrendProRow(state: HomeUiState, viewModel: HomeViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -192,39 +309,9 @@ private fun TrendProRow(state: HomeUiState, viewModel: HomeViewModel) {
                 Text(stringResource(Res.string.unlock_history_beyond_90_days))
             }
         }
-        if (state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
-            Button(
-                onClick = viewModel::showCompleteProHistory,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-            ) { Text(stringResource(Res.string.trends_complete_history)) }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = state.trends.customStartDate,
-                    onValueChange = viewModel::updateTrendCustomStart,
-                    label = { Text(stringResource(Res.string.trends_start_date)) },
-                    supportingText = { Text(stringResource(Res.string.date_format_hint)) },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                )
-                OutlinedTextField(
-                    value = state.trends.customEndDate,
-                    onValueChange = viewModel::updateTrendCustomEnd,
-                    label = { Text(stringResource(Res.string.trends_end_date)) },
-                    supportingText = { Text(stringResource(Res.string.date_format_hint)) },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Button(
-                onClick = viewModel::applyTrendCustomPeriod,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-            ) { Text(stringResource(Res.string.trends_apply_custom_period)) }
-            if (state.trends.customDateError) {
-                Text(stringResource(Res.string.trends_invalid_custom_period), color = MaterialTheme.colorScheme.error)
-            }
-        }
     }
 }
+
 
 @Composable
 private fun AdvancedAnalysis(
@@ -482,21 +569,6 @@ private fun TrendPeriod.labelRes() = when (this) {
 }
 
 @Composable
-private fun TrendPeriods(selected: TrendPeriod, onSelect: (TrendPeriod) -> Unit) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        TrendPeriod.entries.forEachIndexed { index, period ->
-            SegmentedButton(
-                selected = selected == period,
-                onClick = { onSelect(period) },
-                shape = SegmentedButtonDefaults.itemShape(index, TrendPeriod.entries.size),
-                icon = {},
-                modifier = Modifier.heightIn(min = 48.dp),
-            ) { Text(stringResource(period.labelRes())) }
-        }
-    }
-}
-
-@Composable
 private fun TrendSeriesHeading(series: ParameterTrendSeries) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
@@ -519,8 +591,23 @@ private fun TrendSeriesHeading(series: ParameterTrendSeries) {
     }
 }
 
+/**
+ * The full chart of one parameter: line and points, the hatched indicative range, a dashed line and diamond per Event, and a
+ * filled ▲ at the foot for each water change. [framed] puts it on its own card; the hero card draws it bare.
+ */
 @Composable
-private fun TrendChart(series: ParameterTrendSeries, snapshot: TrendSnapshot) {
+internal fun TrendChart(series: ParameterTrendSeries, snapshot: TrendSnapshot, framed: Boolean = true) {
+    if (framed) {
+        Card(Modifier.fillMaxWidth()) {
+            Box(Modifier.fillMaxWidth().padding(16.dp)) { TrendChartCanvas(series, snapshot) }
+        }
+    } else {
+        TrendChartCanvas(series, snapshot)
+    }
+}
+
+@Composable
+private fun TrendChartCanvas(series: ParameterTrendSeries, snapshot: TrendSnapshot) {
     val lineColor = MaterialTheme.colorScheme.primary
     val targetColor = MaterialTheme.colorScheme.secondary
     val eventColor = MaterialTheme.colorScheme.tertiary
@@ -529,103 +616,111 @@ private fun TrendChart(series: ParameterTrendSeries, snapshot: TrendSnapshot) {
         Res.string.trends_chart_description,
         series.definition.parameter.label(),
     )
-    Card(Modifier.fillMaxWidth()) {
-        Box(Modifier.fillMaxWidth().padding(16.dp)) {
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(220.dp)
-                    .semantics { contentDescription = description },
-            ) {
-                val plotLeft = 12.dp.toPx()
-                val plotTop = 12.dp.toPx()
-                val plotRight = size.width - 12.dp.toPx()
-                val plotBottom = size.height - 12.dp.toPx()
-                drawLine(axisColor, Offset(plotLeft, plotTop), Offset(plotLeft, plotBottom), strokeWidth = 1.dp.toPx())
-                drawLine(axisColor, Offset(plotLeft, plotBottom), Offset(plotRight, plotBottom), strokeWidth = 1.dp.toPx())
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(220.dp)
+            .semantics { contentDescription = description },
+    ) {
+        val plotLeft = 12.dp.toPx()
+        val plotTop = 12.dp.toPx()
+        val plotRight = size.width - 12.dp.toPx()
+        val plotBottom = size.height - 12.dp.toPx()
+        drawLine(axisColor, Offset(plotLeft, plotTop), Offset(plotLeft, plotBottom), strokeWidth = 1.dp.toPx())
+        drawLine(axisColor, Offset(plotLeft, plotBottom), Offset(plotRight, plotBottom), strokeWidth = 1.dp.toPx())
 
-                val rangeValues = buildList {
-                    addAll(series.points.map { it.value })
-                    series.definition.indicativeMinimum?.let(::add)
-                    series.definition.indicativeMaximum?.let(::add)
-                }
-                val rawMinimum = rangeValues.minOrNull() ?: 0.0
-                val rawMaximum = rangeValues.maxOrNull() ?: 1.0
-                val padding = max((rawMaximum - rawMinimum) * 0.12, 0.5)
-                val minimum = rawMinimum - padding
-                val maximum = rawMaximum + padding
-                val yFor: (Double) -> Float = { value ->
-                    plotBottom - (((value - minimum) / (maximum - minimum)).toFloat() * (plotBottom - plotTop))
-                }
-                val windowLength = max(1L, snapshot.windowEndEpochMillis - snapshot.windowStartEpochMillis)
-                val xFor: (Long) -> Float = { timestamp ->
-                    plotLeft + ((timestamp - snapshot.windowStartEpochMillis).toFloat() / windowLength) *
-                        (plotRight - plotLeft)
-                }
+        val rangeValues = buildList {
+            addAll(series.points.map { it.value })
+            series.definition.indicativeMinimum?.let(::add)
+            series.definition.indicativeMaximum?.let(::add)
+        }
+        val rawMinimum = rangeValues.minOrNull() ?: 0.0
+        val rawMaximum = rangeValues.maxOrNull() ?: 1.0
+        val padding = max((rawMaximum - rawMinimum) * 0.12, 0.5)
+        val minimum = rawMinimum - padding
+        val maximum = rawMaximum + padding
+        val yFor: (Double) -> Float = { value ->
+            plotBottom - (((value - minimum) / (maximum - minimum)).toFloat() * (plotBottom - plotTop))
+        }
+        val windowLength = max(1L, snapshot.windowEndEpochMillis - snapshot.windowStartEpochMillis)
+        val xFor: (Long) -> Float = { timestamp ->
+            plotLeft + ((timestamp - snapshot.windowStartEpochMillis).toFloat() / windowLength) *
+                (plotRight - plotLeft)
+        }
 
-                val targetMinimum = series.definition.indicativeMinimum
-                val targetMaximum = series.definition.indicativeMaximum
-                if (targetMinimum != null && targetMaximum != null) {
-                    val top = yFor(targetMaximum)
-                    val bottom = yFor(targetMinimum)
-                    if (top == bottom) {
+        val targetMinimum = series.definition.indicativeMinimum
+        val targetMaximum = series.definition.indicativeMaximum
+        if (targetMinimum != null && targetMaximum != null) {
+            val top = yFor(targetMaximum)
+            val bottom = yFor(targetMinimum)
+            if (top == bottom) {
+                drawLine(
+                    color = targetColor,
+                    start = Offset(plotLeft, top),
+                    end = Offset(plotRight, top),
+                    strokeWidth = 2.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 5.dp.toPx())),
+                )
+            } else {
+                drawRect(
+                    color = targetColor.copy(alpha = 0.12f),
+                    topLeft = Offset(plotLeft, top),
+                    size = Size(plotRight - plotLeft, bottom - top),
+                )
+                clipRect(plotLeft, top, plotRight, bottom) {
+                    var x = plotLeft - size.height
+                    while (x < plotRight) {
                         drawLine(
-                            color = targetColor,
-                            start = Offset(plotLeft, top),
-                            end = Offset(plotRight, top),
-                            strokeWidth = 2.dp.toPx(),
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 5.dp.toPx())),
+                            color = targetColor.copy(alpha = 0.55f),
+                            start = Offset(x, bottom),
+                            end = Offset(x + (bottom - top), top),
+                            strokeWidth = 1.dp.toPx(),
                         )
-                    } else {
-                        drawRect(
-                            color = targetColor.copy(alpha = 0.12f),
-                            topLeft = Offset(plotLeft, top),
-                            size = Size(plotRight - plotLeft, bottom - top),
-                        )
-                        clipRect(plotLeft, top, plotRight, bottom) {
-                            var x = plotLeft - size.height
-                            while (x < plotRight) {
-                                drawLine(
-                                    color = targetColor.copy(alpha = 0.55f),
-                                    start = Offset(x, bottom),
-                                    end = Offset(x + (bottom - top), top),
-                                    strokeWidth = 1.dp.toPx(),
-                                )
-                                x += 12.dp.toPx()
-                            }
-                        }
+                        x += 12.dp.toPx()
                     }
                 }
+            }
+        }
 
-                val line = Path()
-                series.points.forEachIndexed { index, point ->
-                    val position = Offset(xFor(point.occurredAtEpochMillis), yFor(point.value))
-                    if (index == 0) line.moveTo(position.x, position.y) else line.lineTo(position.x, position.y)
-                }
-                if (series.points.size > 1) drawPath(line, lineColor, style = Stroke(width = 3.dp.toPx()))
-                series.points.forEach { point ->
-                    drawCircle(lineColor, radius = 5.dp.toPx(), center = Offset(xFor(point.occurredAtEpochMillis), yFor(point.value)))
-                }
+        val line = Path()
+        series.points.forEachIndexed { index, point ->
+            val position = Offset(xFor(point.occurredAtEpochMillis), yFor(point.value))
+            if (index == 0) line.moveTo(position.x, position.y) else line.lineTo(position.x, position.y)
+        }
+        if (series.points.size > 1) drawPath(line, lineColor, style = Stroke(width = 3.dp.toPx()))
+        series.points.forEach { point ->
+            drawCircle(lineColor, radius = 5.dp.toPx(), center = Offset(xFor(point.occurredAtEpochMillis), yFor(point.value)))
+        }
 
-                snapshot.events.forEach { event ->
-                    val x = xFor(event.occurredAtEpochMillis)
-                    drawLine(
-                        color = eventColor,
-                        start = Offset(x, plotTop),
-                        end = Offset(x, plotBottom),
-                        strokeWidth = 2.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 5.dp.toPx())),
-                    )
-                    val radius = 6.dp.toPx()
-                    val diamond = Path().apply {
-                        moveTo(x, plotTop)
-                        lineTo(x + radius, plotTop + radius)
-                        lineTo(x, plotTop + radius * 2)
-                        lineTo(x - radius, plotTop + radius)
+        snapshot.events.forEach { event ->
+            val x = xFor(event.occurredAtEpochMillis)
+            drawLine(
+                color = eventColor,
+                start = Offset(x, plotTop),
+                end = Offset(x, plotBottom),
+                strokeWidth = 2.dp.toPx(),
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 5.dp.toPx())),
+            )
+            val radius = 6.dp.toPx()
+            val diamond = Path().apply {
+                moveTo(x, plotTop)
+                lineTo(x + radius, plotTop + radius)
+                lineTo(x, plotTop + radius * 2)
+                lineTo(x - radius, plotTop + radius)
+                close()
+            }
+            drawPath(diamond, eventColor, style = Stroke(width = 2.dp.toPx()))
+            if (MaintenanceActionType.WATER_CHANGE in event.maintenanceActionTypes) {
+                val half = 5.dp.toPx()
+                drawPath(
+                    Path().apply {
+                        moveTo(x, plotBottom - 8.dp.toPx())
+                        lineTo(x + half, plotBottom)
+                        lineTo(x - half, plotBottom)
                         close()
-                    }
-                    drawPath(diamond, eventColor, style = Stroke(width = 2.dp.toPx()))
-                }
+                    },
+                    eventColor,
+                )
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
 import kotlin.math.max
 import kotlin.math.min
@@ -45,6 +46,17 @@ class CarnetColorTest {
         for (dark in listOf(false, true)) {
             val mark = if (dark) AlertMarkDark else AlertMark
             assertTrue(contrast(mark, aquaLogColorScheme(dark).background) >= 3.0f, "alert mark dark=$dark")
+        }
+    }
+
+    @Test
+    fun `the selected period pill stands out from its track on paper in both schemes`() {
+        for (dark in listOf(false, true)) {
+            val scheme = aquaLogColorScheme(dark)
+            val track = scheme.periodTrack().compositeOver(scheme.background)
+            val pill = scheme.periodPill()
+            assertTrue(contrast(pill, track) >= 3.0f, "pill on track dark=$dark: ${contrast(pill, track)}")
+            assertTrue(contrast(scheme.onPeriodPill(), pill) >= 4.5f, "label on pill dark=$dark")
         }
     }
 }

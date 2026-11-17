@@ -307,6 +307,7 @@
     <string name="trends_error">Les tendances locales n'ont pas pu être lues. Vos données enregistrées sont toujours sur cet appareil.</string>
     <string name="trends_pro_complete_history">Pro affiche l'histoire locale complète. Changer le statut Pro ne supprime jamais les données enregistrées.</string>
     <string name="trends_complete_history">Afficher l'historique complet</string>
+    <string name="trends_window_complete_history">Historique complet</string>
     <string name="trends_start_date">Date de début</string>
     <string name="trends_end_date">Date de fin</string>
     <string name="date_format_hint">AAAA-MM-JJ</string>
@@ -590,4 +591,7 @@
     <string name="review_discovery_confirm">Laisser un avis</string>
     <string name="review_discovery_later">Plus tard</string>
     <string name="rate_app">Noter Aquagenda</string>
+    <string name="trends_custom_period">Période personnalisée</string>
+    <string name="trends_hero_legend">▲ Changement d'eau · Repère, pas un diagnostic</string>
+    <plurals name="trends_hero_change_days"><item quantity="one">%1$s en %2$d jour</item><item quantity="other">%1$s en %2$d jours</item></plurals>
 </resources>
