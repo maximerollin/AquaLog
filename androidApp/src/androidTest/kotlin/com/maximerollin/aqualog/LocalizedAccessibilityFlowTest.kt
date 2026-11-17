@@ -303,6 +303,7 @@ class LocalizedAccessibilityFlowTest {
                 assertEssentialActions(localized.getString(Res.string.timeline_filters))
                 captureAndInspect("timeline-$language-$mode.png")
                 compose.onNode(hasLabel(localized.getString(Res.string.navigation_trends))).performClick()
+                awaitText(localized.getString(Res.string.trends_custom_period))
                 assertEssentialActions(localized.getString(Res.string.trends_custom_period))
                 // The hero's own button always shows; opening a row adds the exact values title (a plain text).
                 assertEssentialActions(localized.getString(Res.string.trends_exact_values))

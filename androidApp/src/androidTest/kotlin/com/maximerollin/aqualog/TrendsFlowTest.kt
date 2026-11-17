@@ -107,6 +107,11 @@ class TrendsFlowTest {
             hasText("Exact values") and hasClickAction() and
                 SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Expanded"),
         ).assertIsDisplayed()
+        // The hero keeps its disclaimer and its chart once opened.
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("▲ Water change · Reference, not a diagnosis"))
+        composeRule.onNodeWithText("▲ Water change · Reference, not a diagnosis").assertIsDisplayed()
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription(chartDescription))
+        composeRule.onNodeWithContentDescription(chartDescription).assertIsDisplayed()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription("Exact value 24.5 °C"))
         composeRule.onNodeWithContentDescription("Exact value 24.5 °C").assertIsDisplayed()
         composeRule.onNodeWithTag("trend-list")
@@ -125,8 +130,9 @@ class TrendsFlowTest {
             hasTestTag("trend-row") and hasContentDescription("7.2, pH") and
                 SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Expanded"),
         ).assertIsDisplayed()
-        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText("Indicative target", substring = true))
-        composeRule.onNodeWithText("Indicative target", substring = true).assertIsDisplayed()
+        val phTarget = "Indicative target 6.5–7.5 pH · reference only, not a diagnosis"
+        composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText(phTarget))
+        composeRule.onNodeWithText(phTarget).assertIsDisplayed()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription("Exact value 7.2 pH"))
         composeRule.onNodeWithContentDescription("Exact value 7.2 pH").assertIsDisplayed()
 
@@ -249,6 +255,29 @@ class TrendsFlowTest {
             runBlocking { application.aquariumRepository.observeTimeline(com.maximerollin.aqualog.shared.TimelineFilter()).first() }
                 .any { it.measurements.any { measurement -> measurement.measurement.value == oldTemperature } },
         )
+        scenario.close()
+    }
+
+    @Test
+    fun freeUser_customPeriodOpensThePaywall_notTheCompleteHistory() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val application = context.applicationContext as TestAquaLogApplication
+        application.resetRepository()
+        runBlocking {
+            application.aquariumRepository.createConfiguredAquarium(
+                "Free tank", 120.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        trendsTab().performClick()
+        composeRule.awaitLabel("Custom period")
+        composeRule.onNode(hasLabel("Custom period")).performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasText("Choose Free or Pro")).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithText("Choose Free or Pro").assertIsDisplayed()
+        composeRule.onAllNodesWithText("Show complete history").assertCountEquals(0)
         scenario.close()
     }
 
