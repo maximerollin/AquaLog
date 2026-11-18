@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
@@ -151,29 +153,32 @@ internal fun RhythmContent(
 private fun RhythmRow(label: String, current: String, expanded: Boolean, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val state = stringResource(if (expanded) Res.string.trends_row_expanded else Res.string.trends_row_collapsed)
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 56.dp)
-            .clickable(role = Role.Button, onClick = onClick)
-            .semantics(mergeDescendants = true) { stateDescription = state }
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = colors.onSurface)
-        Text(
-            current,
-            modifier = Modifier.clip(CircleShape)
-                .background(if (expanded) colors.primary else colors.surfaceVariant)
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-            style = MaterialTheme.typography.labelLarge,
-            color = if (expanded) colors.onPrimary else colors.onSurfaceVariant,
-        )
-        Icon(
-            if (expanded) AquagendaIcons.ChevronDown else AquagendaIcons.ChevronRight,
-            contentDescription = null,
-            tint = colors.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
-        )
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                .clickable(role = Role.Button, onClick = onClick)
+                .semantics(mergeDescendants = true) { stateDescription = state }
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = colors.onSurface)
+            Text(
+                current,
+                // Capped: a long value wraps within 45 % of the line, so the label keeps the rest.
+                modifier = Modifier.widthIn(max = this@BoxWithConstraints.maxWidth * .45f).clip(CircleShape)
+                    .background(if (expanded) colors.primary else colors.surfaceVariant)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                style = MaterialTheme.typography.labelLarge,
+                color = if (expanded) colors.onPrimary else colors.onSurfaceVariant,
+            )
+            Icon(
+                if (expanded) AquagendaIcons.ChevronDown else AquagendaIcons.ChevronRight,
+                contentDescription = null,
+                tint = colors.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 
