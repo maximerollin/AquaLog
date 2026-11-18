@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.assertCountEquals
 import com.maximerollin.aqualog.ui.theme.AquaLogTheme
 import com.maximerollin.aqualog.ui.theme.FloatingNavBar
 import com.maximerollin.aqualog.ui.theme.LEVEL_MARK_TAG
@@ -523,12 +524,35 @@ class ImmersiveSemanticsTest {
         runComposeUiTest {
             var typed = ""
             setContent { AquaLogTheme(false) { FilledField("", { typed = it }, "Titre de la tâche") } }
+            // The label is text on the editable node itself (M3's label slot); a contentDescription would hide the typed text (#45).
             val config = onNode(hasSetTextAction()).fetchSemanticsNode().config
-            val named = config.getOrNull(SemanticsProperties.ContentDescription)?.contains("Titre de la tâche") == true ||
-                config.getOrNull(SemanticsProperties.Text)?.any { it.text.contains("Titre de la tâche") } == true
-            assertTrue(named, "$config")
+            assertEquals(listOf("Titre de la tâche"), config.getOrNull(SemanticsProperties.Text)?.map { it.text }, "$config")
+            assertEquals(null, config.getOrNull(SemanticsProperties.ContentDescription), "$config")
+            onAllNodesWithText("Titre de la tâche").assertCountEquals(1)
             onNode(hasSetTextAction()).performTextInput("x")
             assertEquals("x", typed)
+        }
+    }
+
+    @Test
+    fun `filled field keeps its label and its typed text on one node`() = withEnglish {
+        runComposeUiTest {
+            setContent { AquaLogTheme(false) { FilledField("Vitre", {}, "Titre de la tâche", testTag = "title") } }
+            val config = onNode(hasSetTextAction()).fetchSemanticsNode().config
+            assertEquals("title", config.getOrNull(SemanticsProperties.TestTag))
+            assertEquals("Vitre", config.getOrNull(SemanticsProperties.EditableText)?.text)
+            assertEquals(listOf("Titre de la tâche"), config.getOrNull(SemanticsProperties.Text)?.map { it.text })
+            assertEquals(null, config.getOrNull(SemanticsProperties.ContentDescription))
+            onNode(hasSetTextAction()).assertHeightIsAtLeast(56.dp)
+        }
+    }
+
+    @Test
+    fun `filled field in error exposes its message`() = withEnglish {
+        runComposeUiTest {
+            setContent { AquaLogTheme(false) { FilledField("", {}, "Titre de la tâche", isError = true, errorMessage = "Requis") } }
+            val config = onNode(hasSetTextAction()).fetchSemanticsNode().config
+            assertEquals("Requis", config.getOrNull(SemanticsProperties.Error))
         }
     }
 

@@ -10,6 +10,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -157,6 +159,9 @@ class TaskSemanticsTest {
             onNode(hasContentDescription("Nouvelle tâche") and hasClickAction()).performClick()
             waitForIdle()
             onNode(hasText("Enregistrer la tâche")).assertExists()
+            // The title field is named by its label, as text on the editable node (no contentDescription to hide the typed text).
+            val title = onNode(hasSetTextAction() and hasText("Titre de la tâche")).fetchSemanticsNode().config
+            assertEquals(null, title.getOrNull(SemanticsProperties.ContentDescription))
             onNodeWithTag("tasks-back").assert(hasContentDescription("Retour"))
         }
     }

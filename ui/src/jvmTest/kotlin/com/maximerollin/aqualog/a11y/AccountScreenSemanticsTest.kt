@@ -20,7 +20,6 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -153,7 +152,7 @@ class AccountScreenSemanticsTest {
                 }
             }
             onNode(hasText("Lien magique par email") and isHeading()).assertIsDisplayed()
-            onNode(hasSetTextAction() and hasContentDescription("Adresse email")).performTextInput("nemo@example.com")
+            onNode(hasSetTextAction() and hasText("Adresse email")).performTextInput("nemo@example.com")
             onNode(hasText("Envoyer un lien magique") and button).performClick()
             onNode(hasText("Retour") and button).performScrollTo().performClick()
             assertEquals(listOf("email:nemo@example.com", "send", "methods"), calls)

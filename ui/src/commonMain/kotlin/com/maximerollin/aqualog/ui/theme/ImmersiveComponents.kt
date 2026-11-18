@@ -2,7 +2,6 @@ package com.maximerollin.aqualog.ui.theme
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -14,8 +13,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -658,18 +655,27 @@ fun GlassChip(label: String, onClick: () -> Unit, modifier: Modifier = Modifier,
 
 private val FieldShape = RoundedCornerShape(18.dp)
 
+private val FieldPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+
+/** A field's 56 dp box and rim, without the inner padding (a text field keeps its whole box as its node and touch area). */
 @Composable
-private fun fieldBox(modifier: Modifier, ring: Color?): Modifier {
+private fun fieldFrame(modifier: Modifier, ring: Color?): Modifier {
     val colors = MaterialTheme.colorScheme
     return modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).background(colors.surface, FieldShape)
         .border(if (ring != null) 2.dp else 1.dp, ring ?: colors.outlineVariant, FieldShape)
-        .padding(horizontal = 16.dp, vertical = 8.dp)
 }
+
+@Composable
+private fun fieldBox(modifier: Modifier, ring: Color?): Modifier = fieldFrame(modifier, ring).padding(FieldPadding)
 
 /**
  * A filled field: the label (12 sp) above the value, in a [surface] box with a rim that becomes a 2 dp ring on focus
  * ([MaterialTheme] primary) or on [isError]. The ring and label colour are never the only signal: when [isError], [errorMessage]
- * is exposed as the field's error semantics, and the caller shows the same text visibly under the field. The label is the field's accessible name, even when it is empty.
+ * is exposed as the field's error semantics, and the caller shows the same text visibly under the field.
+ *
+ * The label is drawn in the text field's decoration box, as M3 does with its label slot, so it belongs to the editable node and
+ * names it, empty or filled. A separate Text or a contentDescription would leave the typed text nameless (TalkBack pass, #45).
+ * The whole box is the text field, so a tap anywhere in it focuses it.
  */
 @Composable
 fun FilledField(
@@ -686,34 +692,28 @@ fun FilledField(
 ) {
     val colors = MaterialTheme.colorScheme
     var focused by remember { mutableStateOf(false) }
-    val focusRequester = remember { FocusRequester() }
     val accent = if (isError) colors.error else colors.primary
     val ring = if (isError || focused) accent else null
-    Column(
-        fieldBox(modifier, ring)
-            .pointerInput(Unit) { detectTapGestures { focusRequester.requestFocus() } },
-    ) {
-        // The field itself carries the label as its name; the visible line is not read a second time.
-        Text(
-            label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
-            color = if (isError || focused) accent else colors.onSurfaceVariant,
-            modifier = Modifier.clearAndSetSemantics {},
-        )
-        BasicTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier.fillMaxWidth().let { if (testTag != null) it.testTag(testTag) else it } // on the node that takes text
-                .semantics {
-                    contentDescription = label
-                    if (isError && errorMessage != null) error(errorMessage)
-                }
-                .focusRequester(focusRequester).onFocusChanged { focused = it.isFocused },
-            textStyle = valueStyle.merge(TextStyle(color = colors.onSurface)),
-            keyboardOptions = keyboardOptions,
-            singleLine = singleLine,
-            cursorBrush = SolidColor(colors.primary),
-        )
-    }
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = fieldFrame(modifier, ring).let { if (testTag != null) it.testTag(testTag) else it } // on the node that takes text
+            .semantics { if (isError && errorMessage != null) error(errorMessage) }
+            .onFocusChanged { focused = it.isFocused },
+        textStyle = valueStyle.merge(TextStyle(color = colors.onSurface)),
+        keyboardOptions = keyboardOptions,
+        singleLine = singleLine,
+        cursorBrush = SolidColor(colors.primary),
+        decorationBox = { innerTextField ->
+            Column(Modifier.padding(FieldPadding)) {
+                Text(
+                    label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+                    color = if (isError || focused) accent else colors.onSurfaceVariant,
+                )
+                Box(Modifier.fillMaxWidth()) { innerTextField() }
+            }
+        },
+    )
 }
 
 /** A [FilledField]'s look without the typing: a label over a value, one button; both texts are merged into its one node. */

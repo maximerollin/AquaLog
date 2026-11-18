@@ -295,8 +295,9 @@ class MoreSemanticsTest {
                 }
             }
             waitForIdle()
-            onNode(hasContentDescription("Nom de l'aquarium") and hasSetTextAction()).assertExists()
-            onNode(hasContentDescription("Volume") and hasSetTextAction()).assertExists()
+            // Each field is named by its label, carried as text on the editable node with its value.
+            onNode(hasText("Nom de l'aquarium") and hasText("Salon") and hasSetTextAction()).assertExists()
+            onNode(hasText("Volume") and hasText("120") and hasSetTextAction()).assertExists()
             val radio = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
             onNode(hasText("gallons américains") and radio).assertIsSelected()
             onNode(hasText("Litres") and radio).assertIsNotSelected().performClick()

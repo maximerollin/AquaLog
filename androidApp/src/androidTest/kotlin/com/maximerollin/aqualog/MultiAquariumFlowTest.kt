@@ -7,8 +7,8 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isSelectable
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -71,9 +71,9 @@ class MultiAquariumFlowTest {
             waitForText("Pro active")
             composeRule.onNodeWithText("Add Aquarium").performScrollTo().performClick()
             waitForEditorOpen()
-            // The editor's filled fields carry their label as the field's name, not as a text.
-            composeRule.onNodeWithContentDescription("Aquarium name").performTextInput("Crevettes")
-            composeRule.onNodeWithContentDescription("Volume").performTextInput("30")
+            // The editor's filled fields carry their label as text on the editable node (its accessible name).
+            composeRule.onNode(hasText("Aquarium name") and hasSetTextAction()).performTextInput("Crevettes")
+            composeRule.onNode(hasText("Volume") and hasSetTextAction()).performTextInput("30")
             composeRule.onNodeWithText("Save Aquarium").performClick()
             waitForEditorClosed()
 
@@ -87,8 +87,8 @@ class MultiAquariumFlowTest {
             }
             composeRule.onNodeWithContentDescription("Edit Aquarium").performScrollTo().performClick()
             waitForEditorOpen()
-            composeRule.onNodeWithContentDescription("Aquarium name").performTextClearance()
-            composeRule.onNodeWithContentDescription("Aquarium name").performTextInput("Nano")
+            composeRule.onNode(hasText("Aquarium name") and hasSetTextAction()).performTextClearance()
+            composeRule.onNode(hasText("Aquarium name") and hasSetTextAction()).performTextInput("Nano")
             composeRule.onNodeWithText("Save Aquarium").performClick()
             waitForEditorClosed()
             waitForText("Nano")
@@ -243,13 +243,13 @@ class MultiAquariumFlowTest {
 
     private fun waitForEditorOpen() {
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodes(hasContentDescription("Aquarium name")).fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodes(hasText("Aquarium name") and hasSetTextAction()).fetchSemanticsNodes().isNotEmpty()
         }
     }
 
     private fun waitForEditorClosed() {
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodes(hasContentDescription("Aquarium name")).fetchSemanticsNodes().isEmpty()
+            composeRule.onAllNodes(hasText("Aquarium name") and hasSetTextAction()).fetchSemanticsNodes().isEmpty()
         }
     }
 
