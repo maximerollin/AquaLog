@@ -10,7 +10,9 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -289,6 +291,9 @@ class RapidSessionFlowTest {
         composeRule.scrollHomeAboveBar(hasText("Review account options"))
         composeRule.onNodeWithText("Review account options").performClick()
         composeRule.onNodeWithText("Create an account").assertIsDisplayed()
+        // The account invitation is full frame: its backed column reaches the bottom of the window, under the gesture bar.
+        val windowBottom = composeRule.onAllNodes(isRoot())[0].getBoundsInRoot().bottom
+        assertEquals(windowBottom, composeRule.onNodeWithTag("full-screen-backing").getBoundsInRoot().bottom)
         composeRule.onNodeWithText("Not now").performClick()
         restartedScenario.close()
 

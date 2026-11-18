@@ -13,7 +13,9 @@ import com.maximerollin.aqualog.ui.theme.CarnetDivider
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import com.maximerollin.aqualog.ui.theme.FloatingNavBar
@@ -99,12 +101,16 @@ fun AquaLogContent(
     externalLinks: ExternalLinks = ExternalLinks(),
     rateApp: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
 ) {
     ScreenBackHandler(state, viewModel)
-    // Screens whose water header (or full-frame water) draws under the status bar get the bare modifier: the account screens,
-    // Tasks, Rhythm, the Session, Session details and the shell (the home, History, Trends and More). Every other screen gets
-    // `inset` and starts below the status bar.
-    val inset = modifier.windowInsetsPadding(WindowInsets.statusBars)
+    // [contentPadding] is the host's bottom and side insets (the gesture bar). The account screens are full-frame water that
+    // handles those insets itself, so they get the bare [modifier] and reach the bottom of the window. Every other screen gets
+    // `framed`, kept clear of the gesture bar.
+    val framed = modifier.padding(contentPadding).consumeWindowInsets(contentPadding)
+    // Screens whose water header draws under the status bar get `framed` as is: Tasks, Rhythm, the Session, Session details
+    // and the shell (the home, History, Trends and More). Every other screen gets `inset` and starts below the status bar.
+    val inset = framed.windowInsetsPadding(WindowInsets.statusBars)
     when {
         state.isLoading -> LoadingContent(inset)
         state.accountSettings.pendingDeletion?.phase == AccountDeletionPhase.CLOUD_DELETED -> {
@@ -119,18 +125,18 @@ fun AquaLogContent(
             ),
             viewModel = viewModel,
             aquarium = state.setup.aquarium,
-            modifier = modifier,
+            modifier = framed,
         )
         state.showRhythmSettings && state.setup != null -> RhythmSettingsScreen(
             state.setup,
             viewModel,
-            modifier,
+            framed,
         )
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(
             state = state.rapidSession,
             aquarium = state.setup.aquarium,
             viewModel = viewModel,
-            modifier = modifier,
+            modifier = framed,
         )
         // Below entry: « Faire une analyse » opens a Session over the fiche, which comes back once it is closed.
         state.addInhabitant != null && state.setup != null -> AddInhabitantScreen(state.addInhabitant, state, viewModel, inset)
@@ -140,7 +146,7 @@ fun AquaLogContent(
             returnToTimeline = state.sessionDetailReturnsToTimeline,
             showDeleteConfirmation = state.showDeleteConfirmation,
             viewModel = viewModel,
-            modifier = modifier,
+            modifier = framed,
         )
         state.setup != null && state.pro.showPaywall -> PaywallScreen(
             pro = state.pro,
@@ -153,7 +159,7 @@ fun AquaLogContent(
             onContinue = viewModel::closeProPaywall,
             modifier = inset,
         )
-        state.setup != null -> AquariumShell(state, viewModel, onExportData, externalLinks, rateApp, modifier)
+        state.setup != null -> AquariumShell(state, viewModel, onExportData, externalLinks, rateApp, framed)
         state.step == OnboardingStep.WELCOME -> WelcomeScreen(
             state = state.portableData,
             onContinue = viewModel::startOnboarding,
