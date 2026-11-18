@@ -144,6 +144,9 @@ import org.jetbrains.compose.resources.stringResource
  */
 internal val HeroTextBacking = Color(0xFF0F4A43).copy(alpha = .75f)
 
+/** The narrowest a [ValueTile] gets: a grid needs this much per column. */
+internal val ValueTileMinWidth = 96.dp
+
 /** Test tag of the shape that marks an out-of-range [ValueTile], so its state is never carried by colour alone. */
 const val LEVEL_MARK_TAG = "value-level-mark"
 
@@ -285,7 +288,7 @@ fun ValueTile(
     val spoken = listOfNotNull(label, shown ?: unmeasured, shown?.let { unit }, age, trendWords, levelWords).joinToString(", ")
     Column(
         // Grows past 96 dp rather than clipping: « Ammoniak / Ammonium » or « 25,5 °C » at 150 %.
-        modifier.widthIn(min = 96.dp)
+        modifier.widthIn(min = ValueTileMinWidth)
             .background(container ?: colors.surface, shape)
             .let { if (container == null) it.border(BorderStroke(1.dp, colors.outlineVariant), shape) else it }
             .padding(horizontal = 10.dp, vertical = 12.dp)
@@ -296,7 +299,8 @@ fun ValueTile(
             if (value.level != ReadingLevel.OK) {
                 LevelMark(value.level, textColor, Modifier.padding(end = 4.dp).testTag(LEVEL_MARK_TAG))
             }
-            Text(label, fontSize = 12.sp, color = secondaryColor, maxLines = 1)
+            // Two lines in a narrow tile (« Ammoniak / Ammonium » at 150 %): read in full, never cut mid-word.
+            Text(label, fontSize = 12.sp, color = secondaryColor, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         Row(verticalAlignment = Alignment.Bottom) {
             Text(

@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -25,6 +26,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.LocalizedFormatters
@@ -48,6 +50,7 @@ import java.time.LocalDate
 import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /** Session details in tiles and cards under the water (lot 4a, Task 5). */
@@ -182,6 +185,21 @@ class SessionDetailsSemanticsTest {
                 assertEquals(tiles[4].top, tiles[5].top)
                 val frame = onNodeWithTag("frame").fetchSemanticsNode().boundsInRoot
                 tiles.forEach { assertTrue(it.left >= frame.left && it.right <= frame.right, "tile $it in $frame") }
+                // Every label is read in full, the longest « Ammoniak / Ammonium » included: nothing cut, all inside its tile.
+                val labels = listOf("pH-Wert", "Temperatur", "GH", "KH", "Nitrat", "Ammoniak / Ammonium")
+                labels.zip(tiles).forEach { (label, tile) ->
+                    val node = onAllNodes(hasText(label), useUnmergedTree = true).fetchSemanticsNodes()
+                        .single { tile.contains(it.boundsInRoot.center) }
+                    val layouts = mutableListOf<TextLayoutResult>()
+                    node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+                    val layout = layouts.single()
+                    // Cut means lines dropped (height overflow) or an ellipsis; a short label's paragraph is wider than
+                    // its shrink-wrapped node, so didOverflowWidth does not say « cut ».
+                    assertFalse(layout.didOverflowHeight, "« $label » loses lines")
+                    assertTrue((0 until layout.lineCount).none(layout::isLineEllipsized), "« $label » is ellipsized")
+                    val bounds = node.boundsInRoot
+                    assertTrue(bounds.left >= tile.left && bounds.right <= tile.right && bounds.bottom <= tile.bottom, "« $label » $bounds in $tile")
+                }
             }
         }
     }

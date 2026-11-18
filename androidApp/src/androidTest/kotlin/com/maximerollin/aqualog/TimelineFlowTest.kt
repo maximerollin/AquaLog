@@ -9,8 +9,10 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -105,8 +107,13 @@ class TimelineFlowTest {
         // A reading is one tile, spoken as one sentence: its label, value and unit.
         composeRule.onNode(hasText("Temperature, 24.5, °C", substring = true)).assertIsDisplayed()
         // Maintenance and notes are rows: label and detail, kind and note, each one node.
-        composeRule.onNode(hasText("Water change") and hasText("20 %")).assertIsDisplayed()
-        composeRule.onNode(hasText("Observation") and hasText("Clear water")).assertIsDisplayed()
+        // Below the water header and the tiles: scrolled into view first.
+        val waterChange = hasText("Water change") and hasText("20 %")
+        composeRule.onNodeWithTag("session-details-list").performScrollToNode(waterChange)
+        composeRule.onNode(waterChange).assertIsDisplayed()
+        val observation = hasText("Observation") and hasText("Clear water")
+        composeRule.onNodeWithTag("session-details-list").performScrollToNode(observation)
+        composeRule.onNode(observation).assertIsDisplayed()
 
         // A glass icon button over the water: its name is its content description.
         composeRule.onNode(hasLabel("Back to Chronology")).performClick()

@@ -71,8 +71,12 @@ class SessionReliabilityFlowTest {
         // A reading is one tile, spoken as one sentence: its label, value and unit.
         composeRule.onNode(hasText("Temperature, 24.5, °C", substring = true)).assertIsDisplayed()
         // Maintenance and notes are rows: label and detail, kind and note, each one node.
-        composeRule.onNode(hasText("Water change") and hasText("20 %")).assertIsDisplayed()
-        composeRule.onNode(hasText("Observation") and hasText("Eau claire")).assertIsDisplayed()
+        val waterChange = hasText("Water change") and hasText("20 %")
+        composeRule.onNodeWithTag("session-details-list").performScrollToNode(waterChange)
+        composeRule.onNode(waterChange).assertIsDisplayed()
+        val observation = hasText("Observation") and hasText("Eau claire")
+        composeRule.onNodeWithTag("session-details-list").performScrollToNode(observation)
+        composeRule.onNode(observation).assertIsDisplayed()
 
         composeRule.onNodeWithTag("session-details-list").performScrollToNode(hasText("Edit Session"))
         composeRule.onNodeWithText("Edit Session").performClick()

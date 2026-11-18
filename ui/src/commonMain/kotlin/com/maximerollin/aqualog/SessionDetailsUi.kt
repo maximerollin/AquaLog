@@ -152,9 +152,8 @@ internal fun SessionDetailsContent(
             if (readings.isNotEmpty()) {
                 item(key = "readings") {
                     BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 18.dp)) {
-                        // Three tiles a row; at large text, or too narrow for three 96 dp tiles, two.
-                        val columns = if (LocalDensity.current.fontScale > 1.3f || maxWidth < 308.dp) 2 else 3
-                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        val columns = sessionDetailsColumns(LocalDensity.current.fontScale, maxWidth)
+                        Column(verticalArrangement = Arrangement.spacedBy(MeasureTileGap)) {
                             readings.chunked(columns).forEach { row ->
                                 key(row.first().definition.id) {
                                     MeasureTileRow(
