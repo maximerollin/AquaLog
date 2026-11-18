@@ -101,12 +101,13 @@ fun AquaLogContent(
     modifier: Modifier = Modifier,
 ) {
     ScreenBackHandler(state, viewModel)
-    // The home, History, the Session and Tasks draw under the status bar; every other screen starts below it.
+    // Screens whose water header (or full-frame water) draws under the status bar get the bare modifier: the account screens,
+    // Tasks, Rhythm, the Session, Session details and the shell (the home, History, Trends and More). Every other screen gets
+    // `inset` and starts below the status bar.
     val inset = modifier.windowInsetsPadding(WindowInsets.statusBars)
     when {
         state.isLoading -> LoadingContent(inset)
         state.accountSettings.pendingDeletion?.phase == AccountDeletionPhase.CLOUD_DELETED -> {
-            // The account screens draw their water under the status bar, full frame.
             AccountDeletionCleanupScreen(state.accountSettings, state.setup?.aquarium, viewModel, modifier)
         }
         state.account.step != AccountStep.HIDDEN -> AccountScreen(state.account, state.setup?.aquarium, viewModel, modifier)
@@ -118,20 +119,17 @@ fun AquaLogContent(
             ),
             viewModel = viewModel,
             aquarium = state.setup.aquarium,
-            // Like the home, the water header draws under the status bar.
             modifier = modifier,
         )
         state.showRhythmSettings && state.setup != null -> RhythmSettingsScreen(
             state.setup,
             viewModel,
-            // Like the home, the water header draws under the status bar.
             modifier,
         )
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(
             state = state.rapidSession,
             aquarium = state.setup.aquarium,
             viewModel = viewModel,
-            // Like the home, the Session's water header draws under the status bar.
             modifier = modifier,
         )
         // Below entry: « Faire une analyse » opens a Session over the fiche, which comes back once it is closed.
@@ -142,7 +140,6 @@ fun AquaLogContent(
             returnToTimeline = state.sessionDetailReturnsToTimeline,
             showDeleteConfirmation = state.showDeleteConfirmation,
             viewModel = viewModel,
-            // Like the home, the water header draws under the status bar.
             modifier = modifier,
         )
         state.setup != null && state.pro.showPaywall -> PaywallScreen(
