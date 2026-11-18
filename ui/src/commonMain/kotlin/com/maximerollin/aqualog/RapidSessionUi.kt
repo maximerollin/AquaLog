@@ -466,10 +466,11 @@ internal fun MaintenanceActionType.icon(): ImageVector = when (this) {
     MaintenanceActionType.PRUNING -> AquagendaIcons.Scissors
 }
 
+/** A task's title, after its linked action's icon unless [showIcon] is false (a row that already shows the icon in its tile). */
 @Composable
-internal fun LinkedTaskTitle(title: String, type: MaintenanceActionType?) {
+internal fun LinkedTaskTitle(title: String, type: MaintenanceActionType?, showIcon: Boolean = true) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        type?.let { Icon(it.icon(), contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
+        type?.takeIf { showIcon }?.let { Icon(it.icon(), contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant) }
         Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
     }
 }

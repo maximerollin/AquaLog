@@ -12,6 +12,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -111,6 +112,18 @@ class TaskSemanticsTest {
             val overdueTop = row(hasText("Changement d'eau")).fetchSemanticsNode().boundsInRoot.top
             val eveningTop = row(hasText("Nettoyer la vitre")).fetchSemanticsNode().boundsInRoot.top
             assertTrue(label.bottom <= overdueTop && overdueTop < eveningTop, "label $label, overdue $overdueTop, evening $eveningTop")
+        }
+    }
+
+    @Test
+    fun `a linked task row shows its action icon once, in the tile`() = french {
+        runComposeUiTest {
+            tasks(TaskUiState(pendingOccurrences = listOf(overdue)))
+            row(hasText("Changement d'eau"))
+            // No second icon before the title: the title starts where the detail line under it starts.
+            val title = onNodeWithText("Changement d'eau", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            val detail = onNodeWithText("En retard", substring = true, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            assertEquals(detail.left, title.left, "title $title, detail $detail")
         }
     }
 

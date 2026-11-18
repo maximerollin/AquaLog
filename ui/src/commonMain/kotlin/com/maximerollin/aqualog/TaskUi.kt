@@ -511,7 +511,8 @@ private fun TaskRow(occurrence: TaskOccurrence, recurrence: TaskRecurrence?, ove
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            LinkedTaskTitle(occurrence.title, occurrence.maintenanceActionType)
+            // The icon tile already shows the linked action: the title does not repeat it.
+            LinkedTaskTitle(occurrence.title, occurrence.maintenanceActionType, showIcon = false)
             Text(styledDetail, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
         }
         Box {
