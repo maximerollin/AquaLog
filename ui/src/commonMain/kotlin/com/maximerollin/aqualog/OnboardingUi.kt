@@ -73,6 +73,22 @@ import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.VolumeUnit
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
+import com.maximerollin.aqualog.ui.icon.AquagendaIcons
+import com.maximerollin.aqualog.ui.icon.Cloud
+import com.maximerollin.aqualog.ui.theme.FilledField
+import com.maximerollin.aqualog.ui.theme.WaterFullScreen
+import com.maximerollin.aqualog.ui.theme.frauncesFamily
 
 @Composable
 fun AquaLogContent(
@@ -90,9 +106,10 @@ fun AquaLogContent(
     when {
         state.isLoading -> LoadingContent(inset)
         state.accountSettings.pendingDeletion?.phase == AccountDeletionPhase.CLOUD_DELETED -> {
-            AccountDeletionCleanupScreen(state.accountSettings, viewModel, inset)
+            // The account screens draw their water under the status bar, full frame.
+            AccountDeletionCleanupScreen(state.accountSettings, state.setup?.aquarium, viewModel, modifier)
         }
-        state.account.step != AccountStep.HIDDEN -> AccountScreen(state.account, viewModel, inset)
+        state.account.step != AccountStep.HIDDEN -> AccountScreen(state.account, state.setup?.aquarium, viewModel, modifier)
         state.tasks.isOpen && state.setup != null -> TaskScreen(
             state = state.tasks.copy(
                 pendingOccurrences = state.tasks.pendingOccurrences.filter {
@@ -200,80 +217,185 @@ fun AquaLogContent(
     }
 }
 
+/** Test tag of the decorative cloud square that opens every account step. */
+internal const val ACCOUNT_CLOUD_TAG = "account-cloud"
+
+/** The label of a white primary button on the water: it keeps 4.5:1 on the white (ScenePhysicsTest). */
+internal val AccountPrimaryButtonText = Color(0xFF14675E)
+
+/** A glass button's fill on the full-screen backing: its white label keeps 4.5:1 (ScenePhysicsTest). */
+internal val AccountGlassButtonFill = Color.White.copy(alpha = .14f)
+
+/** A step's description on the full-screen backing: it keeps 4.5:1 (ScenePhysicsTest). */
+internal val AccountDescriptionText = Color.White.copy(alpha = .85f)
+
 @Composable
-private fun AccountScreen(state: AccountUiState, viewModel: HomeViewModel, modifier: Modifier) {
-    StandardScreen(modifier) {
+private fun AccountScreen(state: AccountUiState, aquarium: Aquarium?, viewModel: HomeViewModel, modifier: Modifier) {
+    AccountContent(
+        state = state,
+        aquarium = aquarium,
+        actions = AccountActions(
+            onOpenMethods = viewModel::openAccountMethods,
+            onDismiss = viewModel::dismissAccount,
+            onSignInWithGoogle = viewModel::signInWithGoogle,
+            onOpenMagicEmail = viewModel::openMagicEmail,
+            onEmailChange = viewModel::updateAccountEmail,
+            onRequestMagicLink = viewModel::requestMagicLink,
+            onRetryMigration = viewModel::retryAccountMigration,
+        ),
+        modifier = modifier,
+    )
+}
+
+/** What the account steps ask of their ViewModel; every default does nothing, for tests. */
+internal class AccountActions(
+    val onOpenMethods: () -> Unit = {},
+    val onDismiss: () -> Unit = {},
+    val onSignInWithGoogle: () -> Unit = {},
+    val onOpenMagicEmail: () -> Unit = {},
+    val onEmailChange: (String) -> Unit = {},
+    val onRequestMagicLink: () -> Unit = {},
+    val onRetryMigration: () -> Unit = {},
+)
+
+/** The account steps, full frame on the [aquarium]'s water (deep water without one): a cloud, the step's text, its buttons. */
+@Composable
+internal fun AccountContent(state: AccountUiState, aquarium: Aquarium?, actions: AccountActions, modifier: Modifier = Modifier) {
+    AccountFrame(aquarium, modifier) {
         when (state.step) {
             AccountStep.INVITATION -> {
-                ScreenHeading(Res.string.account_invitation_title, Res.string.account_invitation_description)
-                Spacer(Modifier.weight(1f))
-                PrimaryButton(Res.string.create_account, viewModel::openAccountMethods)
-                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(Res.string.not_now))
-                }
+                AccountHeading(Res.string.account_invitation_title, Res.string.account_invitation_description)
+                WaterPrimaryButton(Res.string.create_account, actions.onOpenMethods)
+                WaterTextButton(Res.string.not_now, actions.onDismiss)
             }
             AccountStep.METHODS -> {
-                ScreenHeading(Res.string.account_methods_title, Res.string.account_methods_description)
-                PrimaryButton(Res.string.continue_with_google, viewModel::signInWithGoogle)
-                PrimaryButton(Res.string.continue_with_email, viewModel::openMagicEmail)
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(Res.string.cancel))
-                }
+                AccountHeading(Res.string.account_methods_title, Res.string.account_methods_description)
+                WaterPrimaryButton(Res.string.continue_with_google, actions.onSignInWithGoogle)
+                WaterGlassButton(Res.string.continue_with_email, actions.onOpenMagicEmail)
+                WaterTextButton(Res.string.cancel, actions.onDismiss)
             }
             AccountStep.MAGIC_EMAIL -> {
-                ScreenHeading(Res.string.magic_link_title, Res.string.magic_link_description)
-                OutlinedTextField(
+                AccountHeading(Res.string.magic_link_title, Res.string.magic_link_description)
+                FilledField(
                     value = state.email,
-                    onValueChange = viewModel::updateAccountEmail,
-                    label = { Text(stringResource(Res.string.email_address)) },
+                    onValueChange = actions.onEmailChange,
+                    label = stringResource(Res.string.email_address),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                PrimaryButton(Res.string.send_magic_link, viewModel::requestMagicLink)
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = viewModel::openAccountMethods, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(Res.string.back))
-                }
+                WaterPrimaryButton(Res.string.send_magic_link, actions.onRequestMagicLink)
+                WaterTextButton(Res.string.back, actions.onOpenMethods)
             }
             AccountStep.MAGIC_SENT -> {
-                ScreenHeading(Res.string.magic_link_sent_title, Res.string.magic_link_sent_description)
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(Res.string.back_to_aquarium))
-                }
+                AccountHeading(Res.string.magic_link_sent_title, Res.string.magic_link_sent_description)
+                WaterTextButton(Res.string.back_to_aquarium, actions.onDismiss)
             }
             AccountStep.WAITING_BROWSER -> {
-                ScreenHeading(Res.string.authentication_waiting_title, Res.string.authentication_waiting_description)
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(Res.string.back_to_aquarium))
-                }
+                AccountHeading(Res.string.authentication_waiting_title, Res.string.authentication_waiting_description)
+                WaterTextButton(Res.string.back_to_aquarium, actions.onDismiss)
             }
-            AccountStep.WORKING -> LoadingContent(Modifier.fillMaxSize())
+            AccountStep.WORKING -> Box(Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color.White)
+            }
             AccountStep.ERROR -> {
                 val message = when (state.error) {
                     AccountError.EXPIRED_LINK -> Res.string.magic_link_expired
                     AccountError.AUTHENTICATION -> Res.string.authentication_failed
                     AccountError.MIGRATION, null -> Res.string.account_migration_failed
                 }
-                ScreenHeading(Res.string.account_error_title, message)
-                PrimaryButton(
+                // The error is said in words, in white: never red on the water.
+                AccountHeading(Res.string.account_error_title, message, descriptionColor = Color.White)
+                WaterPrimaryButton(
                     Res.string.try_again,
-                    if (state.error == AccountError.MIGRATION) {
-                        viewModel::retryAccountMigration
-                    } else {
-                        viewModel::openAccountMethods
-                    },
+                    if (state.error == AccountError.MIGRATION) actions.onRetryMigration else actions.onOpenMethods,
                 )
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = viewModel::dismissAccount, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(Res.string.back_to_aquarium))
-                }
+                WaterTextButton(Res.string.back_to_aquarium, actions.onDismiss)
             }
             AccountStep.HIDDEN -> Unit
         }
+    }
+}
+
+/** The frame every account step shares: the water, then at the bottom a glass square with a cloud and the step's [content]. */
+@Composable
+private fun AccountFrame(aquarium: Aquarium?, modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
+    WaterFullScreen(aquarium, modifier) {
+        Column(
+            Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                Modifier.testTag(ACCOUNT_CLOUD_TAG).size(56.dp)
+                    .background(Color.White.copy(alpha = .2f), RoundedCornerShape(18.dp))
+                    .border(1.dp, Color.White.copy(alpha = .3f), RoundedCornerShape(18.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(AquagendaIcons.Cloud, contentDescription = null, tint = Color.White, modifier = Modifier.size(28.dp))
+            }
+            Spacer(Modifier.height(4.dp))
+            content()
+        }
+    }
+}
+
+@Composable
+private fun AccountHeading(title: StringResource, description: StringResource, descriptionColor: Color = AccountDescriptionText) {
+    Text(
+        stringResource(title),
+        modifier = Modifier.semantics { heading() },
+        style = TextStyle(fontFamily = frauncesFamily(), fontWeight = FontWeight.SemiBold, fontSize = 30.sp, lineHeight = 34.sp),
+        color = Color.White,
+    )
+    Text(
+        stringResource(description),
+        modifier = Modifier.padding(bottom = 8.dp),
+        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
+        color = descriptionColor,
+    )
+}
+
+/** A white filled button on the water, its label deep teal. */
+@Composable
+private fun WaterPrimaryButton(label: StringResource, onClick: () -> Unit, enabled: Boolean = true) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        shape = MaterialTheme.shapes.medium,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.White,
+            contentColor = AccountPrimaryButtonText,
+            disabledContainerColor = Color.White.copy(alpha = .6f),
+            disabledContentColor = AccountPrimaryButtonText.copy(alpha = .7f),
+        ),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+    ) {
+        Text(stringResource(label), fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** A secondary action on the water: glass with a light rim, white label. */
+@Composable
+private fun WaterGlassButton(label: StringResource, onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.medium,
+        colors = ButtonDefaults.outlinedButtonColors(containerColor = AccountGlassButtonFill, contentColor = Color.White),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = .35f)),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+    ) {
+        Text(stringResource(label), fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** A text action on the water, in white. */
+@Composable
+private fun WaterTextButton(label: StringResource, onClick: () -> Unit) {
+    TextButton(
+        onClick = onClick,
+        colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+    ) {
+        Text(stringResource(label), fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -353,18 +475,27 @@ private fun WelcomeScreen(
 @Composable
 private fun AccountDeletionCleanupScreen(
     state: AccountSettingsUiState,
+    aquarium: Aquarium?,
     viewModel: HomeViewModel,
     modifier: Modifier,
 ) {
-    StandardScreen(modifier) {
-        ScreenHeading(Res.string.account_deleted_cleanup_title, Res.string.account_deleted_cleanup_description)
-        state.localizedSafeDetail()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Spacer(Modifier.weight(1f))
-        Button(
-            onClick = viewModel::retryAccountDeletion,
-            enabled = !state.isWorking,
-            modifier = Modifier.fillMaxWidth().height(48.dp),
-        ) { Text(stringResource(Res.string.finish_local_cleanup)) }
+    AccountDeletionCleanupContent(state, aquarium, viewModel::retryAccountDeletion, modifier)
+}
+
+/** The account-deletion cleanup in the account steps' frame; its error detail is white, never red on the water. */
+@Composable
+internal fun AccountDeletionCleanupContent(
+    state: AccountSettingsUiState,
+    aquarium: Aquarium?,
+    onFinish: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AccountFrame(aquarium, modifier) {
+        AccountHeading(Res.string.account_deleted_cleanup_title, Res.string.account_deleted_cleanup_description)
+        state.localizedSafeDetail()?.let {
+            Text(it, color = Color.White, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
+        }
+        WaterPrimaryButton(Res.string.finish_local_cleanup, onFinish, enabled = !state.isWorking)
     }
 }
 

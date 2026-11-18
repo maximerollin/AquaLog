@@ -8,6 +8,9 @@ import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
+import com.maximerollin.aqualog.AccountDescriptionText
+import com.maximerollin.aqualog.AccountGlassButtonFill
+import com.maximerollin.aqualog.AccountPrimaryButtonText
 import com.maximerollin.aqualog.ProBannerTextBottom
 import com.maximerollin.aqualog.ProBannerTextFraction
 import com.maximerollin.aqualog.ProBannerWater
@@ -227,6 +230,19 @@ class ScenePhysicsTest {
         for (behind in listOf(Color(0xFFE3EAEC), Color(0xFFE8E0D0), Color(0xFFDCE0E6), Color.White)) {
             val c = contrast(Color.White, backing.compositeOver(behind))
             assertTrue(c >= 4.5f, "over $behind: $c")
+        }
+    }
+
+    @Test
+    fun `the account screens keep 4·5 to 1 on the full-screen backing`() {
+        // The primary button is white, its label deep teal.
+        assertTrue(contrast(AccountPrimaryButtonText, Color.White) >= 4.5f, "primary ${contrast(AccountPrimaryButtonText, Color.White)}")
+        for (behind in listOf(Color(0xFFE3EAEC), Color(0xFFE8E0D0), Color(0xFFDCE0E6), Color.White)) {
+            val backing = FullScreenContentBacking.compositeOver(behind)
+            val glass = AccountGlassButtonFill.compositeOver(backing)
+            assertTrue(contrast(Color.White, glass) >= 4.5f, "glass button over $behind: ${contrast(Color.White, glass)}")
+            val description = AccountDescriptionText.compositeOver(backing)
+            assertTrue(contrast(description, backing) >= 4.5f, "description over $behind: ${contrast(description, backing)}")
         }
     }
 
