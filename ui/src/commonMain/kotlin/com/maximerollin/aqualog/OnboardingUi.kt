@@ -104,7 +104,12 @@ fun AquaLogContent(
             // Like the home, the water header draws under the status bar.
             modifier = modifier,
         )
-        state.showRhythmSettings && state.setup != null -> RhythmSettingsScreen(state.setup, viewModel, inset)
+        state.showRhythmSettings && state.setup != null -> RhythmSettingsScreen(
+            state.setup,
+            viewModel,
+            // Like the home, the water header draws under the status bar.
+            modifier,
+        )
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(
             state = state.rapidSession,
             aquarium = state.setup.aquarium,
