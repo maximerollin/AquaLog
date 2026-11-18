@@ -27,6 +27,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.LocalizedFormatters
@@ -250,6 +251,22 @@ class SessionDetailsSemanticsTest {
             val notesLabel = row(hasText("NOTES")).fetchSemanticsNode().boundsInRoot
             val waterTop = row(hasText("Changement d'eau") and hasText("20 %")).fetchSemanticsNode().boundsInRoot.top
             assertTrue(waterTop < notesLabel.top, "maintenance before notes")
+        }
+    }
+
+    @Test
+    fun `a long maintenance detail is shown in full under its label`() = french {
+        runComposeUiTest {
+            val product = "Engrais liquide complet pour plantes à croissance rapide, sans phosphate ni nitrate, flacon de 500 mL"
+            details(recorded(actions = listOf(MaintenanceAction("ma1", "s1", MaintenanceActionType.FERTILIZATION, 5.0, "mL", product))))
+            val fertilization = row(hasText("Fertilisation") and hasText("5 mL $product"))
+            fertilization.assertIsDisplayed()
+            val detail = onNodeWithText("5 mL $product", useUnmergedTree = true)
+            val layouts = mutableListOf<TextLayoutResult>()
+            detail.fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+            assertFalse(layouts.single().hasVisualOverflow, "the detail is not cut")
+            val label = onNodeWithText("Fertilisation", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            assertTrue(detail.fetchSemanticsNode().boundsInRoot.top >= label.bottom, "the detail sits under the label")
         }
     }
 

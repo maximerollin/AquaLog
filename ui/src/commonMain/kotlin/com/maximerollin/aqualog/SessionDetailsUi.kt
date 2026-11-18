@@ -184,10 +184,11 @@ internal fun SessionDetailsContent(
                                     action.unit.orEmpty(),
                                     action.product.orEmpty(),
                                 ).filter(String::isNotBlank).joinToString(" ")
+                                // The free-text detail (quantity, unit, product) is shown in full under the label, never cut.
                                 SettingsRow(
                                     label = action.type.label(),
                                     icon = action.type.icon(),
-                                    value = detail.takeIf(String::isNotBlank),
+                                    supporting = detail.takeIf(String::isNotBlank),
                                     onClick = null,
                                 )
                             }
