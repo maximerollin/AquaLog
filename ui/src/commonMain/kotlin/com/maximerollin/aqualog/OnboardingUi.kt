@@ -2,21 +2,10 @@ package com.maximerollin.aqualog
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
-import com.maximerollin.aqualog.home.HabitantsSheet
-import com.maximerollin.aqualog.home.MiniScene
-import com.maximerollin.aqualog.home.rememberThumbnailScenes
-import com.maximerollin.aqualog.shared.encyclopedia.Species
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.intl.Locale
-import java.util.Locale as JavaLocale
-import kotlin.coroutines.cancellation.CancellationException
-import com.maximerollin.aqualog.ui.icon.*
-import androidx.compose.ui.graphics.vector.ImageVector
-import com.maximerollin.aqualog.photo.AquariumThumbnail
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.home.TankHome
 import com.maximerollin.aqualog.habitants.AddInhabitantScreen
@@ -28,7 +17,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import com.maximerollin.aqualog.ui.theme.FloatingNavBar
-import com.maximerollin.aqualog.ui.theme.FloatingNavBarClearance
 import com.maximerollin.aqualog.home.plusEnabled
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -42,12 +30,9 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -59,7 +44,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -71,7 +55,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.graphics.Color
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.ui.semantics.Role
@@ -89,9 +72,6 @@ import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
-import com.maximerollin.aqualog.shared.LocalCopyDecision
-import com.maximerollin.aqualog.shared.PortableImportProblem
-import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.VolumeUnit
 
 @Composable
@@ -303,9 +283,6 @@ private fun AquariumShell(
     var tankCanMeasure by remember { mutableStateOf(false) }
     // Read at the moment of a tap, so a swipe that started a frame ago is never missed (the Boolean above lags it).
     var tankMeasureGuard by remember { mutableStateOf<() -> Boolean>({ false }) }
-    val statusBarInset = Modifier.windowInsetsPadding(WindowInsets.statusBars)
-    // Lists scroll clear of the floating bar; the home, History and Trends draw from the top edge, under the status bar, and clear it themselves.
-    val tabModifier = statusBarInset.padding(bottom = FloatingNavBarClearance.dp)
     Box(modifier.fillMaxSize()) {
         when (state.destination) {
             // The home sets the status-bar icons itself: light over the water, dark once the sheet is under them.
@@ -314,22 +291,10 @@ private fun AquariumShell(
                 onMeasureAvailabilityChange = { tankCanMeasure = it },
                 onMeasureGuard = { tankMeasureGuard = it },
             )
-            // Like the home, History and Trends draw their water under the status bar and clear the floating bar themselves.
+            // Like the home, History, Trends and More draw their water under the status bar and clear the floating bar themselves.
             MainDestination.HISTORY -> TimelineScreen(state, viewModel, Modifier)
             MainDestination.TRENDS -> TrendsScreen(state, viewModel, Modifier)
-            MainDestination.MORE -> PortableDataSettings(
-                homeState = state,
-                state = state.portableData,
-                accountState = state.accountSettings,
-                syncState = state.syncState,
-                proState = state.pro,
-                onExportData = onExportData,
-                onRequestImport = viewModel::requestPortableImport,
-                viewModel = viewModel,
-                externalLinks = externalLinks,
-                rateApp = rateApp,
-                modifier = tabModifier,
-            )
+            MainDestination.MORE -> MoreScreen(state, viewModel, onExportData, externalLinks, rateApp, Modifier)
         }
         FloatingNavBar(
             selected = state.destination,
@@ -379,369 +344,6 @@ private fun WelcomeScreen(
 }
 
 @Composable
-private fun PortableDataSettings(
-    homeState: HomeUiState,
-    state: PortableDataUiState,
-    accountState: AccountSettingsUiState,
-    syncState: com.maximerollin.aqualog.shared.SyncState,
-    proState: ProUiState,
-    onExportData: () -> Unit,
-    onRequestImport: () -> Unit,
-    viewModel: HomeViewModel,
-    externalLinks: ExternalLinks,
-    rateApp: (() -> Unit)?,
-    modifier: Modifier,
-) {
-    val proActive = proState.purchaseStatus == ProPurchaseStatus.ACTIVE
-    var showHabitants by remember(homeState.setup?.aquarium?.id) { mutableStateOf(false) }
-    val thumbnailScenes = rememberThumbnailScenes(homeState.inhabitantsByAquarium)
-    LazyColumn(
-        modifier = modifier.fillMaxSize().testTag("settings-list").padding(horizontal = 24.dp),
-    ) {
-        item {
-            CarnetScreenTitle(stringResource(Res.string.navigation_more), null, Modifier.padding(top = 12.dp))
-        }
-        moreSection(Res.string.more_section_tasks) {
-            moreItem {
-                MoreRow(
-                    stringResource(Res.string.open_tasks),
-                    onClick = viewModel::openTasks,
-                    trailingIcon = AquagendaIcons.ChevronRight,
-                )
-            }
-        }
-        moreSection(Res.string.aquariums_title) {
-            homeState.aquariums.forEach { aquarium ->
-                moreItem {
-                    val current = homeState.setup?.aquarium?.id == aquarium.id
-                    MoreRow(
-                        aquarium.name,
-                        onClick = { viewModel.selectAquarium(aquarium.id) },
-                        selected = current,
-                        trailingIcon = if (current) AquagendaIcons.Check else null,
-                        leading = {
-                            val scene = thumbnailScenes[aquarium.id] ?: MiniScene.Empty
-                            AquariumThumbnail(
-                                aquarium, 40.dp, viewModel::aquariumPhoto, Modifier.clearAndSetSemantics {}, viewModel::cachedAquariumPhoto,
-                                scene.sprites, scene.plants,
-                            )
-                        },
-                    )
-                }
-            }
-            moreItem { MoreRow(stringResource(Res.string.add_aquarium), onClick = viewModel::openCreateAquarium) }
-            moreItem { MoreRow(stringResource(Res.string.edit_aquarium), onClick = viewModel::openEditAquarium) }
-            moreItem {
-                MoreRow(
-                    stringResource(Res.string.rhythm_title),
-                    onClick = viewModel::openRhythmSettings,
-                    trailingIcon = AquagendaIcons.ChevronRight,
-                )
-            }
-            moreItem {
-                MoreRow(
-                    stringResource(Res.string.habitants_title),
-                    onClick = { showHabitants = true },
-                    trailingIcon = AquagendaIcons.ChevronRight,
-                )
-            }
-            moreItem {
-                MoreRow(
-                    stringResource(Res.string.archive_aquarium),
-                    onClick = viewModel::archiveCurrentAquarium,
-                    enabled = proActive && homeState.aquariums.size > 1,
-                    supporting = if (proActive) null else stringResource(Res.string.free_one_aquarium_limit),
-                )
-            }
-        }
-        moreSection(Res.string.more_section_plan) {
-            moreItem {
-                MoreRow(
-                    stringResource(if (proActive) Res.string.pro_active else Res.string.free_plan),
-                    supporting = stringResource(Res.string.subscription_settings_description),
-                )
-            }
-            moreItem {
-                MoreRow(
-                    stringResource(Res.string.view_free_and_pro),
-                    onClick = viewModel::openProPaywall,
-                    trailingIcon = AquagendaIcons.ChevronRight,
-                )
-            }
-        }
-        moreSection(Res.string.account_title) {
-            moreItem {
-                MoreRow(
-                    accountState.identity?.email ?: stringResource(Res.string.account_local_only),
-                    supporting = stringResource(
-                        when (syncState.status) {
-                            SyncStatus.SYNCED -> Res.string.sync_status_synced
-                            SyncStatus.PENDING -> Res.string.sync_status_pending
-                            SyncStatus.FAILED -> Res.string.sync_status_failed
-                        },
-                    ),
-                )
-            }
-        }
-        accountState.pendingDeletion?.let {
-            moreSection(Res.string.account_deletion_pending) {
-                moreItem {
-                    MoreRow(
-                        accountState.localizedSafeDetail() ?: stringResource(Res.string.account_deletion_pending_description),
-                    )
-                }
-                if (accountState.showDeletionReauthenticationAction) {
-                    moreItem {
-                        MoreRow(
-                            stringResource(Res.string.continue_with_google),
-                            onClick = viewModel::reauthenticateAccountDeletionWithGoogle,
-                            enabled = !accountState.isWorking,
-                        )
-                    }
-                    moreItem {
-                        MoreRow(
-                            stringResource(Res.string.send_deletion_magic_link),
-                            onClick = viewModel::requestDeletionMagicLink,
-                            enabled = !accountState.isWorking,
-                        )
-                    }
-                } else {
-                    moreItem {
-                        MoreRow(
-                            stringResource(Res.string.retry_account_deletion),
-                            onClick = viewModel::retryAccountDeletion,
-                            enabled = !accountState.isWorking,
-                        )
-                    }
-                }
-            }
-        }
-        moreSection(Res.string.portable_data_title) {
-            item {
-                Text(
-                    stringResource(Res.string.portable_data_replace_explanation),
-                    modifier = Modifier.padding(bottom = 8.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            if (state.message != null || state.importProblem != null) {
-                moreItem { PortableDataMessage(state) }
-            }
-            moreItem {
-                MoreRow(
-                    stringResource(Res.string.export_data),
-                    onClick = onExportData,
-                    enabled = !state.isWorking,
-                )
-            }
-            moreItem {
-                MoreRow(stringResource(Res.string.restore_from_export), onClick = onRequestImport, enabled = !state.isWorking)
-            }
-        }
-        moreSection(Res.string.more_section_help) {
-            moreItem { MoreRow(stringResource(Res.string.send_feedback), onClick = viewModel::openFeedback) }
-            rateApp?.let { moreItem { MoreRow(stringResource(Res.string.rate_app), onClick = it) } }
-            moreItem {
-                MoreRow(
-                    stringResource(Res.string.privacy_policy),
-                    onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.PRIVACY) },
-                )
-            }
-            moreItem {
-                MoreRow(
-                    stringResource(Res.string.support),
-                    onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.SUPPORT) },
-                )
-            }
-        }
-        moreSection(Res.string.account_actions) {
-            if (accountState.identity != null && accountState.pendingDeletion == null) {
-                moreItem {
-                    MoreRow(
-                        stringResource(Res.string.sign_out),
-                        onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.LOGOUT) },
-                        enabled = !accountState.isWorking,
-                    )
-                }
-                moreItem {
-                    MoreRow(
-                        stringResource(Res.string.delete_account),
-                        onClick = { viewModel.showAccountSettingsDialog(AccountSettingsDialog.DELETE) },
-                        enabled = !accountState.isWorking,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            } else {
-                moreItem { MoreRow(stringResource(Res.string.account_local_only_description)) }
-            }
-        }
-        item {
-            if (state.isWorking || accountState.isWorking) CircularProgressIndicator()
-            accountState.localizedSafeDetail()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Spacer(Modifier.height(16.dp))
-        }
-    }
-    AccountSettingsDialog(accountState.dialog, viewModel, externalLinks)
-    homeState.aquariumEditor?.let { editor -> AquariumEditorDialog(editor, viewModel) }
-    if (showHabitants) {
-        val encyclopedia by produceState<List<Species>>(emptyList()) {
-            value = try { loadEncyclopedia() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { emptyList() }
-        }
-        HabitantsSheet(
-            groups = homeState.inhabitants,
-            encyclopedia = encyclopedia,
-            language = remember { JavaLocale.getDefault().language },
-            onRemove = viewModel::removeInhabitants,
-            onAdd = {
-                showHabitants = false
-                viewModel.openAddInhabitant()
-            },
-            onDismiss = { showHabitants = false },
-        )
-    }
-}
-
-private fun LazyListScope.moreSection(title: StringResource, rows: LazyListScope.() -> Unit) {
-    item { CarnetSectionTitle(stringResource(title), Modifier.padding(top = 20.dp, bottom = 4.dp)) }
-    rows()
-    item { CarnetDivider() }
-}
-
-private fun LazyListScope.moreItem(content: @Composable () -> Unit) {
-    item { Column { CarnetDivider(); content() } }
-}
-
-/** One list row: 56 dp minimum, a single accessible unit; no [onClick] makes it a plain read-only line. */
-@Composable
-internal fun MoreRow(
-    label: String,
-    modifier: Modifier = Modifier,
-    supporting: String? = null,
-    onClick: (() -> Unit)? = null,
-    enabled: Boolean = true,
-    selected: Boolean? = null,
-    color: Color = MaterialTheme.colorScheme.onSurface,
-    trailingIcon: ImageVector? = null,
-    leading: (@Composable () -> Unit)? = null,
-) {
-    val interaction = when {
-        onClick == null -> Modifier
-        selected != null -> Modifier.selectable(selected, enabled, Role.RadioButton, onClick = onClick)
-        else -> Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-    }
-    Row(
-        modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).then(interaction).padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (leading != null) {
-            leading()
-            Spacer(Modifier.width(12.dp))
-        }
-        Column(Modifier.weight(1f)) {
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (enabled) color else color.copy(alpha = 0.5f),
-            )
-            if (supporting != null) {
-                Text(
-                    supporting,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        if (trailingIcon != null) {
-            Spacer(Modifier.width(12.dp))
-            Icon(trailingIcon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        }
-    }
-}
-
-@Composable
-private fun AccountSettingsDialog(
-    dialog: AccountSettingsDialog,
-    viewModel: HomeViewModel,
-    externalLinks: ExternalLinks,
-) {
-    when (dialog) {
-        AccountSettingsDialog.NONE -> Unit
-        AccountSettingsDialog.LOGOUT -> AlertDialog(
-            onDismissRequest = viewModel::dismissAccountSettingsDialog,
-            title = { Text(stringResource(Res.string.sign_out)) },
-            text = { Text(stringResource(Res.string.sign_out_copy_choice)) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.logout(LocalCopyDecision.KEEP) }) {
-                    Text(stringResource(Res.string.keep_local_copy))
-                }
-            },
-            dismissButton = {
-                Row {
-                    TextButton(onClick = { viewModel.logout(LocalCopyDecision.REMOVE) }) {
-                        Text(stringResource(Res.string.remove_local_copy))
-                    }
-                    TextButton(onClick = viewModel::dismissAccountSettingsDialog) { Text(stringResource(Res.string.cancel)) }
-                }
-            },
-        )
-        AccountSettingsDialog.DELETE -> AlertDialog(
-            onDismissRequest = viewModel::dismissAccountSettingsDialog,
-            title = { Text(stringResource(Res.string.delete_account_confirmation_title)) },
-            text = { Text(stringResource(Res.string.delete_account_confirmation_description), modifier = Modifier.verticalScroll(rememberScrollState())) },
-            confirmButton = {
-                TextButton(onClick = viewModel::deleteAccount) { Text(stringResource(Res.string.delete_account_confirm)) }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::dismissAccountSettingsDialog) { Text(stringResource(Res.string.cancel)) }
-            },
-        )
-        AccountSettingsDialog.PRIVACY -> InformationDialog(
-            Res.string.privacy_policy,
-            Res.string.privacy_policy_local,
-            externalLinks.privacyUrl,
-            Res.string.open_privacy_policy,
-            externalLinks.open,
-            viewModel::dismissAccountSettingsDialog,
-        )
-        AccountSettingsDialog.SUPPORT -> InformationDialog(
-            Res.string.support,
-            Res.string.support_unconfigured,
-            externalLinks.supportUrl,
-            Res.string.open_support,
-            externalLinks.open,
-            viewModel::dismissAccountSettingsDialog,
-        )
-    }
-}
-
-@Composable
-private fun InformationDialog(
-    title: StringResource,
-    body: StringResource,
-    configuredUrl: String,
-    openLabel: StringResource,
-    onOpenExternalUrl: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(title)) },
-        text = { Text(stringResource(body), modifier = Modifier.verticalScroll(rememberScrollState())) },
-        confirmButton = {
-            if (configuredUrl.startsWith("https://")) {
-                TextButton(onClick = { onOpenExternalUrl(configuredUrl) }) { Text(stringResource(openLabel)) }
-            } else {
-                TextButton(onClick = onDismiss) { Text(stringResource(Res.string.close)) }
-            }
-        },
-        dismissButton = if (configuredUrl.startsWith("https://")) {
-            { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.close)) } }
-        } else null,
-    )
-}
-
-@Composable
 private fun AccountDeletionCleanupScreen(
     state: AccountSettingsUiState,
     viewModel: HomeViewModel,
@@ -777,50 +379,6 @@ private fun PortableImportConfirmation(
             TextButton(onClick = onDismiss) {
                 Text(stringResource(Res.string.cancel))
             }
-        },
-    )
-}
-
-@Composable
-private fun PortableDataMessage(state: PortableDataUiState) {
-    val string = when (state.importProblem) {
-        PortableImportProblem.INVALID_DOCUMENT -> Res.string.portable_problem_invalid_document
-        PortableImportProblem.MISSING_VERSION -> Res.string.portable_problem_missing_version
-        PortableImportProblem.UNSUPPORTED_VERSION -> Res.string.portable_problem_unsupported_version
-        PortableImportProblem.SCHEMA_MISMATCH -> Res.string.portable_problem_schema_mismatch
-        PortableImportProblem.UNSUPPORTED_DUPLICATE_STRATEGY -> {
-            Res.string.portable_problem_duplicate_strategy
-        }
-        PortableImportProblem.DUPLICATE_IDENTIFIERS -> Res.string.portable_problem_duplicate_ids
-        PortableImportProblem.INVALID_AQUARIUMS -> Res.string.portable_problem_aquariums
-        PortableImportProblem.INVALID_PHOTO -> Res.string.portable_problem_photo
-        PortableImportProblem.INVALID_PARAMETERS -> Res.string.portable_problem_parameters
-        PortableImportProblem.INVALID_SESSIONS -> Res.string.portable_problem_sessions
-        PortableImportProblem.INVALID_MEASUREMENTS -> Res.string.portable_problem_measurements
-        PortableImportProblem.INVALID_ACTIONS -> Res.string.portable_problem_actions
-        PortableImportProblem.INVALID_EVENTS -> Res.string.portable_problem_events
-        PortableImportProblem.INVALID_TASKS -> Res.string.portable_problem_tasks
-        PortableImportProblem.INVALID_OCCURRENCES -> Res.string.portable_problem_occurrences
-        PortableImportProblem.INVALID_INHABITANTS -> Res.string.portable_problem_inhabitants
-        PortableImportProblem.ACCOUNT_LINKED -> Res.string.portable_problem_account_linked
-        PortableImportProblem.DATABASE_WRITE_FAILED -> Res.string.portable_problem_database
-        null -> when (state.message) {
-            PortableDataMessage.EXPORT_READY -> Res.string.portable_export_ready
-            PortableDataMessage.IMPORT_COMPLETE -> Res.string.portable_import_complete
-            PortableDataMessage.STORAGE_ERROR -> Res.string.portable_storage_error
-            null -> return
-        }
-    }
-    Text(
-        stringResource(string),
-        style = MaterialTheme.typography.bodyMedium,
-        color = if (
-            state.message == PortableDataMessage.EXPORT_READY ||
-            state.message == PortableDataMessage.IMPORT_COMPLETE
-        ) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.error
         },
     )
 }
@@ -1260,7 +818,7 @@ private fun ProMessage.resourceId(): StringResource = when (this) {
 }
 
 @Composable
-private fun AccountSettingsUiState.localizedSafeDetail(): String? = safeMessage?.let {
+internal fun AccountSettingsUiState.localizedSafeDetail(): String? = safeMessage?.let {
     stringResource(
         when (it) {
             AccountSafeMessage.SIGN_OUT_FAILED -> Res.string.account_sign_out_failed
@@ -1361,52 +919,6 @@ internal fun FeedbackDialog(
                 Text(stringResource(Res.string.cancel))
             }
         },
-    )
-}
-
-@Composable
-private fun AquariumEditorDialog(editor: AquariumEditorUiState, viewModel: HomeViewModel) {
-    AlertDialog(
-        onDismissRequest = viewModel::dismissAquariumEditor,
-        title = {
-            Text(stringResource(if (editor.aquariumId == null) Res.string.add_aquarium else Res.string.edit_aquarium))
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = editor.name,
-                    onValueChange = viewModel::updateAquariumEditorName,
-                    label = { Text(stringResource(Res.string.aquarium_name_label)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = editor.volume,
-                    onValueChange = viewModel::updateAquariumEditorVolume,
-                    label = { Text(stringResource(Res.string.aquarium_volume_label)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VolumeUnit.entries.forEach { unit ->
-                        OutlinedButton(
-                            onClick = { viewModel.updateAquariumEditorUnit(unit) },
-                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        ) {
-                            Text(stringResource(if (unit == VolumeUnit.LITERS) Res.string.unit_liters else Res.string.unit_us_gallons))
-                        }
-                    }
-                }
-                if (editor.showValidationError) Text(stringResource(Res.string.invalid_aquarium), color = MaterialTheme.colorScheme.error)
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = viewModel::saveAquariumEditor, enabled = !editor.isSaving) {
-                Text(stringResource(Res.string.save_aquarium))
-            }
-        },
-        dismissButton = { TextButton(onClick = viewModel::dismissAquariumEditor) { Text(stringResource(Res.string.cancel)) } },
     )
 }
 

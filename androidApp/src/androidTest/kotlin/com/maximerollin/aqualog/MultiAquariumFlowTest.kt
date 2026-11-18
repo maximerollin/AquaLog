@@ -4,7 +4,11 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -66,22 +70,32 @@ class MultiAquariumFlowTest {
             composeRule.onNode(hasLabel("More")).performClick()
             waitForText("Pro active")
             composeRule.onNodeWithText("Add Aquarium").performScrollTo().performClick()
-            waitForText("Aquarium name")
-            composeRule.onNodeWithText("Aquarium name").performTextInput("Crevettes")
-            composeRule.onNodeWithText("Volume").performTextInput("30")
+            waitForEditorOpen()
+            // The editor's filled fields carry their label as the field's name, not as a text.
+            composeRule.onNodeWithContentDescription("Aquarium name").performTextInput("Crevettes")
+            composeRule.onNodeWithContentDescription("Volume").performTextInput("30")
             composeRule.onNodeWithText("Save Aquarium").performClick()
             waitForEditorClosed()
 
             waitForText("Crevettes")
-            composeRule.onNodeWithText("Salon").assertIsDisplayed()
-            composeRule.onNodeWithText("Edit Aquarium").performScrollTo().performClick()
-            waitForText("Aquarium name")
-            composeRule.onNodeWithText("Aquarium name").performTextClearance()
-            composeRule.onNodeWithText("Aquarium name").performTextInput("Nano")
+            // More lists the Aquariums in « Change Aquarium »: both are there, the new one current.
+            composeRule.onNodeWithText("Change Aquarium").performClick()
+            composeRule.onNode(hasText("Salon") and isSelectable()).assertIsDisplayed().assertIsNotSelected()
+            composeRule.onNode(hasText("Crevettes") and isSelectable()).assertIsSelected().performClick()
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasText("Salon") and isSelectable()).fetchSemanticsNodes().isEmpty()
+            }
+            composeRule.onNodeWithContentDescription("Edit Aquarium").performScrollTo().performClick()
+            waitForEditorOpen()
+            composeRule.onNodeWithContentDescription("Aquarium name").performTextClearance()
+            composeRule.onNodeWithContentDescription("Aquarium name").performTextInput("Nano")
             composeRule.onNodeWithText("Save Aquarium").performClick()
             waitForEditorClosed()
             waitForText("Nano")
-            composeRule.onNodeWithText("Archive Aquarium").performScrollTo().performClick()
+            composeRule.scrollAboveBar("settings-list", hasText("Archive Aquarium"))
+            composeRule.onNodeWithText("Archive Aquarium").performClick()
+            // The current Aquarium's name is in More's header, scrolled away to reach « Archive ».
+            composeRule.onNodeWithTag("settings-list").performScrollToIndex(0)
             waitForText("Salon")
 
             runBlocking {
@@ -227,9 +241,15 @@ class MultiAquariumFlowTest {
         return application
     }
 
+    private fun waitForEditorOpen() {
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasContentDescription("Aquarium name")).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
     private fun waitForEditorClosed() {
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodes(hasText("Aquarium name")).fetchSemanticsNodes().isEmpty()
+            composeRule.onAllNodes(hasContentDescription("Aquarium name")).fetchSemanticsNodes().isEmpty()
         }
     }
 

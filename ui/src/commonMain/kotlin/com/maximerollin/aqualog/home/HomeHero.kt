@@ -177,9 +177,9 @@ fun HomeHero(
     }
 }
 
-/** « Salon » in Fraunces, then « 120 L · Planted / shrimp · 16 inhabitants »; one click target that changes Aquarium. */
+/** « 120 L · Planté / crevette · 16 habitants »: volume, profile, and the inhabitants when there are any. */
 @Composable
-private fun NameBlock(aquarium: Aquarium, inhabitantCount: Int, onChangeAquarium: () -> Unit) {
+internal fun aquariumContextLine(aquarium: Aquarium, inhabitantCount: Int): String {
     val profile = stringResource(
         when (aquarium.profile) {
             AquariumProfile.ESTABLISHED -> Res.string.profile_established
@@ -188,6 +188,12 @@ private fun NameBlock(aquarium: Aquarium, inhabitantCount: Int, onChangeAquarium
         },
     )
     val inhabitants = inhabitantCount.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.home_inhabitants_count, it, it) }
+    return listOfNotNull(aquarium.formattedVolume(), profile, inhabitants).joinToString(SEPARATOR)
+}
+
+/** « Salon » in Fraunces, then its [aquariumContextLine]; one click target that changes Aquarium. */
+@Composable
+private fun NameBlock(aquarium: Aquarium, inhabitantCount: Int, onChangeAquarium: () -> Unit) {
     Column(
         Modifier.heightIn(min = 48.dp)
             .clickable(onClickLabel = stringResource(Res.string.home_change_aquarium), onClick = onChangeAquarium)
@@ -205,7 +211,7 @@ private fun NameBlock(aquarium: Aquarium, inhabitantCount: Int, onChangeAquarium
             overflow = TextOverflow.Ellipsis,
         )
         Text(
-            listOfNotNull(aquarium.formattedVolume(), profile, inhabitants).joinToString(SEPARATOR),
+            aquariumContextLine(aquarium, inhabitantCount),
             modifier = Modifier.padding(top = 4.dp),
             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, shadow = TextShadow),
             color = HeroText,
