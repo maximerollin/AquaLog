@@ -74,6 +74,9 @@ internal fun RhythmContent(
     modifier: Modifier = Modifier,
 ) {
     var expandedId by rememberSaveable { mutableStateOf<String?>(null) }
+    // While a row is open, Back only folds it, as Back once closed the choice dialog; composed after the screen's own handler,
+    // it takes Back first. The next Back leaves the screen.
+    SystemBackHandler(enabled = expandedId != null) { expandedId = null }
     val profile = setup.aquarium.profile
     val parameters = setup.parameters.filter { it.isActive }.sortedBy { it.position }
     val listState = rememberLazyListState()
