@@ -286,7 +286,7 @@ class LocalizedAccessibilityFlowTest {
                 assertAction(localized.getString(Res.string.new_task))
                 assertEssentialActionByTag("tasks-back")
                 captureAndInspect("tasks-$language-$mode.png")
-                compose.onNodeWithText(localized.getString(Res.string.new_task)).performClick()
+                compose.onNode(hasLabel(localized.getString(Res.string.new_task)) and hasClickAction()).performClick()
                 awaitText(localized.getString(Res.string.save_task))
                 compose.onNode(hasText(localized.getString(Res.string.save_task)) and hasClickAction()).performScrollTo()
                 assertAction(localized.getString(Res.string.save_task))
@@ -295,7 +295,7 @@ class LocalizedAccessibilityFlowTest {
                 compose.waitUntil(10_000) {
                     compose.onAllNodes(hasText(localized.getString(Res.string.save_task))).fetchSemanticsNodes().isEmpty()
                 }
-                compose.onNodeWithText(localized.getString(Res.string.back)).performClick()
+                compose.onNode(hasLabel(localized.getString(Res.string.back)) and hasClickAction()).performClick()
 
                 compose.onNode(hasLabel(localized.getString(Res.string.navigation_history))).performClick()
                 awaitText(localized.getString(Res.string.timeline_title))

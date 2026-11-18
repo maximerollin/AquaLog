@@ -85,7 +85,7 @@ fun AquaLogContent(
     modifier: Modifier = Modifier,
 ) {
     ScreenBackHandler(state, viewModel)
-    // The home, History and the Session draw under the status bar; every other screen starts below it.
+    // The home, History, the Session and Tasks draw under the status bar; every other screen starts below it.
     val inset = modifier.windowInsetsPadding(WindowInsets.statusBars)
     when {
         state.isLoading -> LoadingContent(inset)
@@ -100,8 +100,9 @@ fun AquaLogContent(
                 },
             ),
             viewModel = viewModel,
-            modifier = inset,
-            aquariumName = state.setup.aquarium.name,
+            aquarium = state.setup.aquarium,
+            // Like the home, the water header draws under the status bar.
+            modifier = modifier,
         )
         state.showRhythmSettings && state.setup != null -> RhythmSettingsScreen(state.setup, viewModel, inset)
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(

@@ -180,6 +180,23 @@ class TaskRepositoryContractTest {
         fixture.close()
     }
 
+    @Test
+    fun `task recurrences are observed by task id`() = runTest {
+        val fixture = taskFixture()
+        val aquariumId = fixture.createAquarium().aquarium.id
+        val weekly = fixture.repository.createTask(
+            TaskInput(aquariumId, "Water change", TaskRecurrence.WEEKLY, TaskDate(2027, 1, 10), null, "Europe/Paris"),
+        ).task
+        val once = fixture.repository.createTask(
+            TaskInput(aquariumId, "Glass", TaskRecurrence.ONCE, TaskDate(2027, 1, 11), null, "Europe/Paris"),
+        ).task
+
+        val recurrences = fixture.repository.observeTaskRecurrences().first()
+
+        assertEquals(mapOf(weekly.id to TaskRecurrence.WEEKLY, once.id to TaskRecurrence.ONCE), recurrences)
+        fixture.close()
+    }
+
     private fun taskFixture(): TaskFixture {
         val path = Files.createTempDirectory("aqualog-tasks").resolve("aqualog.db").toString()
         val database = createAquaLogDatabase(createJvmDatabaseBuilder(path))
