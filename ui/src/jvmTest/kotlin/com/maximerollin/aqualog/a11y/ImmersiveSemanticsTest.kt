@@ -76,6 +76,7 @@ import com.maximerollin.aqualog.ui.theme.PickerTile
 import com.maximerollin.aqualog.ui.theme.SETTINGS_DIVIDER_TAG
 import com.maximerollin.aqualog.ui.theme.SettingsGroup
 import com.maximerollin.aqualog.ui.theme.SettingsRow
+import com.maximerollin.aqualog.ui.theme.FULL_SCREEN_BACKING_TAG
 import com.maximerollin.aqualog.ui.theme.WaterFullScreen
 import androidx.compose.material3.Text
 
@@ -451,6 +452,9 @@ class ImmersiveSemanticsTest {
             }
             val root = onRoot().fetchSemanticsNode().boundsInRoot
             val text = onNodeWithText("Bonjour").fetchSemanticsNode().boundsInRoot
+            val backing = onNodeWithTag(FULL_SCREEN_BACKING_TAG).fetchSemanticsNode().boundsInRoot
+            assertTrue(backing.top > root.top + root.height / 2, "backing starts at the content, not the screen top: $root $backing")
+            assertTrue(text.top >= backing.top + 48 * density.density, "48 dp free of text: $backing $text")
             assertTrue(text.top > root.top + root.height / 2, "$root $text")
             assertTrue(text.bottom <= root.bottom, "$root $text")
         }

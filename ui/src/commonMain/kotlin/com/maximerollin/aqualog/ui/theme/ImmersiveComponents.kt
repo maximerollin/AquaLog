@@ -24,8 +24,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.SubcomposeLayout
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.semantics.error
 import com.maximerollin.aqualog.StatusBarOverWater
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,6 +42,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import com.maximerollin.aqualog.home.HeroText
 import com.maximerollin.aqualog.home.TankScene
@@ -98,6 +97,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.text
@@ -682,6 +682,9 @@ fun PickerTile(label: String, value: String, onClick: () -> Unit, modifier: Modi
     }
 }
 
+/** Test tag of the backed column of a [WaterFullScreen]: it starts where the content starts, not at the top of the screen. */
+internal const val FULL_SCREEN_BACKING_TAG = "full-screen-backing"
+
 /** Behind the text of a [WaterFullScreen]: white keeps 4.5:1 over any water (ScenePhysicsTest). */
 internal val FullScreenContentBacking = Color(0xFF0A2824).copy(alpha = .88f)
 
@@ -703,7 +706,7 @@ fun WaterFullScreen(aquarium: Aquarium?, modifier: Modifier = Modifier, content:
             // The viewport-tall column only anchors the content to the bottom; the backing belongs to the inner column.
             Column(Modifier.fillMaxWidth().heightIn(min = viewport), verticalArrangement = Arrangement.Bottom) {
                 Column(
-                    Modifier.fillMaxWidth()
+                    Modifier.fillMaxWidth().testTag(FULL_SCREEN_BACKING_TAG)
                         .drawBehind {
                             val fade = 48.dp.toPx().coerceAtMost(size.height)
                             drawRect(Brush.verticalGradient(listOf(Color.Transparent, FullScreenContentBacking), 0f, fade), size = Size(size.width, fade))
