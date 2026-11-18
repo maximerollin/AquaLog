@@ -1,5 +1,7 @@
 package com.maximerollin.aqualog.shared
 
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.execSQL
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import java.nio.file.Files
@@ -197,8 +199,33 @@ class TaskRepositoryContractTest {
         fixture.close()
     }
 
-    private fun taskFixture(): TaskFixture {
+    @Test
+    fun `a stored recurrence the app does not know is left out of the map`() = runTest {
         val path = Files.createTempDirectory("aqualog-tasks").resolve("aqualog.db").toString()
+        val fixture = taskFixture(path)
+        val aquariumId = fixture.createAquarium().aquarium.id
+        val weekly = fixture.repository.createTask(
+            TaskInput(aquariumId, "Water change", TaskRecurrence.WEEKLY, TaskDate(2027, 1, 10), null, "Europe/Paris"),
+        ).task
+        val unknown = fixture.repository.createTask(
+            TaskInput(aquariumId, "Glass", TaskRecurrence.ONCE, TaskDate(2027, 1, 11), null, "Europe/Paris"),
+        ).task
+        fixture.close()
+        // A value written by a newer version (or a damaged row): the Room schema is unchanged, the column is free text.
+        BundledSQLiteDriver().open(path).use { connection ->
+            connection.execSQL("UPDATE tasks SET recurrence = 'fortnightly' WHERE id = '${unknown.id}'")
+        }
+
+        val reopened = taskFixture(path)
+        val recurrences = reopened.repository.observeTaskRecurrences().first()
+
+        assertEquals(mapOf(weekly.id to TaskRecurrence.WEEKLY), recurrences)
+        reopened.close()
+    }
+
+    private fun taskFixture(
+        path: String = Files.createTempDirectory("aqualog-tasks").resolve("aqualog.db").toString(),
+    ): TaskFixture {
         val database = createAquaLogDatabase(createJvmDatabaseBuilder(path))
         val ids = generateSequence(1) { it + 1 }.map { "id-$it" }.iterator()
         return TaskFixture(database, RoomAquariumRepository(database, ids::next, { 1_700_000_000_000L }))

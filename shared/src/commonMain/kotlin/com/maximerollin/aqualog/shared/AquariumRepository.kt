@@ -758,8 +758,13 @@ class RoomAquariumRepository(
     override fun observeResolvedTaskOccurrences(): Flow<List<TaskOccurrence>> =
         taskDao.observeResolved().map { occurrences -> occurrences.map(TaskOccurrenceEntity::toDomain) }
 
+    /** A stored recurrence this version does not know is left out (the row reads without one) rather than failing the flow. */
     override fun observeTaskRecurrences(): Flow<Map<String, TaskRecurrence>> =
-        taskDao.observeTasks().map { tasks -> tasks.associate { it.id to TaskRecurrence.fromStorageValue(it.recurrence) } }
+        taskDao.observeTasks().map { tasks ->
+            tasks.mapNotNull { task ->
+                TaskRecurrence.entries.firstOrNull { it.storageValue == task.recurrence }?.let { task.id to it }
+            }.toMap()
+        }
 
     suspend fun sessionCount(aquariumId: String): Int = sessionDao.count(aquariumId)
 
