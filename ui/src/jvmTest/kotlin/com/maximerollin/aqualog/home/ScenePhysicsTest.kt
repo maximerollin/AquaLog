@@ -8,6 +8,11 @@ import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
+import com.maximerollin.aqualog.ProBannerTextBottom
+import com.maximerollin.aqualog.ProBannerTextFraction
+import com.maximerollin.aqualog.ProBannerWater
+import com.maximerollin.aqualog.proBannerShadeAlpha
+import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.ui.theme.FullScreenContentBacking
 import com.maximerollin.aqualog.ui.theme.HeroTextBacking
 import com.maximerollin.aqualog.ui.theme.WaterHeaderPhotoShade
@@ -223,5 +228,22 @@ class ScenePhysicsTest {
             val c = contrast(Color.White, backing.compositeOver(behind))
             assertTrue(c >= 4.5f, "over $behind: $c")
         }
+    }
+
+    @Test
+    fun `white text on the Pro banner keeps 4·5 to 1 up to the text column's right edge`() {
+        // The shade thins to the right, so the column's right edge is its weakest point; the plants and the light rays
+        // are the lightest colours there (the text keeps above the sand).
+        val edge = ProBannerWater.copy(alpha = proBannerShadeAlpha(ProBannerTextFraction))
+        val water = Color(0xFF3D9184)
+        for (behind in listOf(Color(0xFF5FB36F), Color(0xFF4F9D5D), Color.White.copy(alpha = .14f).compositeOver(water))) {
+            val c = contrast(Color.White, edge.compositeOver(behind))
+            assertTrue(c >= 4.5f, "over $behind: $c")
+        }
+        // A bubble (white at .7 at most) rises at x = .34 at the furthest.
+        val bubble = ProBannerWater.copy(alpha = proBannerShadeAlpha(.34f)).compositeOver(Color.White.copy(alpha = .7f).compositeOver(water))
+        assertTrue(contrast(Color.White, bubble) >= 4.5f, "over a bubble: ${contrast(Color.White, bubble)}")
+        // The sand, the scene's lightest colour, rises 16 dp at most: the text never lies on it.
+        assertTrue(ProBannerTextBottom > 16.dp)
     }
 }

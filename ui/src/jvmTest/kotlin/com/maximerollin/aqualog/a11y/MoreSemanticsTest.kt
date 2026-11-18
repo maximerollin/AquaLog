@@ -213,10 +213,15 @@ class MoreSemanticsTest {
                 ),
                 MoreActions(onRetryAccountDeletion = { retried++ }),
             )
+            row("Suppression du compte incomplète").assertExists()
             row("Réessayez de supprimer le compte").performClick()
             assertEquals(1, retried)
-            // A pending deletion takes the sign-out and delete rows away.
+            // A pending deletion takes the sign-out and delete rows away: « Actions du compte » shows the local-only line instead.
+            row(
+                "Aucun compte cloud n'est lié. Aquagenda reste entièrement utilisable avec les données stockées sur cet appareil.",
+            ).assertExists()
             assertEquals(0, onAllNodesWithText("se déconnecter").fetchSemanticsNodes().size)
+            assertEquals(0, onAllNodesWithText("Supprimer le compte").fetchSemanticsNodes().size)
         }
     }
 
@@ -269,6 +274,7 @@ class MoreSemanticsTest {
                     accountSettings = AccountSettingsUiState(safeDetail = "Réseau indisponible"),
                 ),
             )
+            row("Android n'a pas pu lire ou écrire ce document. Essayez un autre emplacement.").assertExists()
             row("Exporter des données").assertIsNotEnabled()
             row("Restaurer depuis l'exportation").assertIsNotEnabled()
             onNodeWithTag("settings-list").performScrollToNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))

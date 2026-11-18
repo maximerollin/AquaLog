@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -149,8 +150,19 @@ internal class MoreActions(
     val cachedPhoto: (String) -> ImageBitmap? = { null },
 )
 
-/** The deep water of the Pro banner, opaque at the text and fading to the right so the scene shows through. */
-private val ProBannerWater = Color(0xFF0F4A43)
+/** The deep water of the Pro banner, deep at the text and fading to the right so the scene shows through. */
+internal val ProBannerWater = Color(0xFF0F4A43)
+internal const val ProBannerShadeStart = .9f
+internal const val ProBannerShadeEnd = .2f
+
+/** The banner shade's alpha at [fraction] of the card's width, left to right. */
+internal fun proBannerShadeAlpha(fraction: Float): Float = ProBannerShadeStart + (ProBannerShadeEnd - ProBannerShadeStart) * fraction
+
+/** The text column's share of the card: the shade up to there keeps white text at 4.5:1 over the scene (ScenePhysicsTest). */
+internal const val ProBannerTextFraction = .6f
+
+/** Space under the banner's text: more than the scene's sand (16 dp at most), its lightest colour, so no text lies on it. */
+internal val ProBannerTextBottom = 18.dp
 
 /** More drawn from [state] alone: the single scrollable `settings-list`, under the status bar, clear of the floating bar. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -320,7 +332,7 @@ internal fun MoreContent(state: HomeUiState, actions: MoreActions, modifier: Mod
                     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (portable.isWorking || account.isWorking) CircularProgressIndicator()
                         account.localizedSafeDetail()?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                        Spacer(Modifier.heightIn(min = 16.dp))
+                        Spacer(Modifier.height(16.dp))
                     }
                 }
             }
@@ -384,10 +396,11 @@ private fun ProBanner(aquarium: Aquarium, onOpen: () -> Unit) {
         TankScene(aquarium, inhabitants = emptyList(), modifier = Modifier.matchParentSize(), decorPlants = 0, animate = false)
         Box(
             Modifier.matchParentSize().background(
-                Brush.horizontalGradient(listOf(ProBannerWater.copy(alpha = .9f), ProBannerWater.copy(alpha = .2f))),
+                Brush.horizontalGradient(listOf(ProBannerWater.copy(alpha = ProBannerShadeStart), ProBannerWater.copy(alpha = ProBannerShadeEnd))),
             ),
         )
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+        // The text stays where the shade is deep enough: long titles wrap within the first 60 % and the card grows.
+        Column(Modifier.fillMaxWidth(ProBannerTextFraction).padding(start = 16.dp, top = 14.dp, bottom = ProBannerTextBottom)) {
             Text(
                 stringResource(Res.string.free_plan).uppercase(),
                 fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.White,

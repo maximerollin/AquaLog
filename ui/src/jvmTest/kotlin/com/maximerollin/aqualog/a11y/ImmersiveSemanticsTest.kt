@@ -2,6 +2,13 @@ package com.maximerollin.aqualog.a11y
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -412,6 +419,57 @@ class ImmersiveSemanticsTest {
                 AquaLogTheme(false) { SettingsRow("Archiver", AquagendaIcons.Pencil, onClick = {}, enabled = false) }
             }
             onNode(hasText("Archiver")).assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun `a long value leaves the label on one line`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    Box(Modifier.width(328.dp)) {
+                        SettingsRow("Local uniquement", AquagendaIcons.Pencil, value = "○ Synchronisation en attente")
+                    }
+                }
+            }
+            val layouts = mutableListOf<TextLayoutResult>()
+            onNode(hasText("Local uniquement"), useUnmergedTree = true).fetchSemanticsNode()
+                .config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+            assertEquals(1, layouts.single().lineCount)
+            onNode(hasText("○ Synchronisation en attente"), useUnmergedTree = true).assertExists()
+        }
+    }
+
+    /** Contrast of the darkest pixel of [text] against [background]: the glyphs' own colour, as drawn. */
+    private fun ComposeUiTest.inkContrast(text: String, background: Color): Float {
+        val pixels = onNode(hasText(text), useUnmergedTree = true).captureToImage().toPixelMap()
+        var darkest = background.luminance()
+        for (x in 0 until pixels.width) for (y in 0 until pixels.height) darkest = minOf(darkest, pixels[x, y].luminance())
+        return (background.luminance() + .05f) / (darkest + .05f)
+    }
+
+    @Test
+    fun `a disabled row dims its label but keeps its reason readable`() = withEnglish {
+        runComposeUiTest {
+            var surface = Color.Unspecified
+            setContent {
+                AquaLogTheme(false) {
+                    surface = MaterialTheme.colorScheme.surface
+                    // A large density gives the glyphs solid stems, so their darkest pixel is their colour.
+                    CompositionLocalProvider(LocalDensity provides Density(3f)) {
+                        Column(Modifier.background(surface)) {
+                            SettingsRow("Archive", AquagendaIcons.Pencil, supporting = "Only one Aquarium in Free", onClick = {}, enabled = false)
+                            SettingsRow("Rhythm", AquagendaIcons.Pencil, onClick = {})
+                        }
+                    }
+                }
+            }
+            onNode(hasText("Archive")).assertIsNotEnabled()
+            val reason = inkContrast("Only one Aquarium in Free", surface)
+            assertTrue(reason >= 4.5f, "reason $reason")
+            val dimmed = inkContrast("Archive", surface)
+            val live = inkContrast("Rhythm", surface)
+            assertTrue(dimmed < live * .7f, "label not dimmed: $dimmed vs $live")
         }
     }
 

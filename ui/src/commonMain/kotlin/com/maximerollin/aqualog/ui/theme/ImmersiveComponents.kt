@@ -40,6 +40,9 @@ import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.Layout
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -535,9 +538,14 @@ fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScop
     }
 }
 
+/** The widest a [SettingsRow]'s value may grow when the label needs the room: the label comes first. */
+internal const val SETTINGS_VALUE_MAX_FRACTION = .45f
+
 /**
  * One line of a [SettingsGroup]: an icon tile, the [label] (with an optional [supporting] line), a [value], a [trailing] slot
  * and a chevron. It is one accessible unit, a button when [onClick] is set. At large font scales the value moves under the label.
+ * The label keeps its natural width when it can; the value then takes the rest, at least [SETTINGS_VALUE_MAX_FRACTION] of
+ * the line, on up to two lines. Disabled, the label and icon dim; the [supporting] line, often the reason, stays readable.
  */
 @Composable
 fun SettingsRow(
@@ -554,7 +562,8 @@ fun SettingsRow(
 ) {
     val colors = MaterialTheme.colorScheme
     val stacked = LocalDensity.current.fontScale > 1.3f
-    val base = modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).alpha(if (enabled) 1f else .5f)
+    val dim = if (enabled) 1f else .5f
+    val base = modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp)
     val interactive = if (onClick != null) {
         base.clickable(enabled = enabled, role = Role.Button, onClick = onClick)
     } else {
@@ -566,18 +575,27 @@ fun SettingsRow(
     ) {
         if (icon != null) {
             Box(
-                Modifier.size(34.dp).background(colors.secondaryContainer, RoundedCornerShape(11.dp)),
+                Modifier.alpha(dim).size(34.dp).background(colors.secondaryContainer, RoundedCornerShape(11.dp)),
                 contentAlignment = Alignment.Center,
             ) { Icon(icon, contentDescription = null, tint = colors.primary, modifier = Modifier.size(18.dp)) }
             Spacer(Modifier.width(12.dp))
         }
-        Column(Modifier.weight(1f)) {
-            Text(label, fontSize = 16.sp, color = labelColor.takeOrElse { colors.onSurface })
-            if (supporting != null) Text(supporting, fontSize = 13.sp, color = colors.onSurfaceVariant)
-            if (stacked && value != null) Text(value, fontSize = 14.sp, color = colors.onSurfaceVariant)
+        val texts = @Composable {
+            Column {
+                Text(label, fontSize = 16.sp, color = labelColor.takeOrElse { colors.onSurface }, modifier = Modifier.alpha(dim))
+                if (supporting != null) Text(supporting, fontSize = 13.sp, color = colors.onSurfaceVariant)
+                if (stacked && value != null) Text(value, fontSize = 14.sp, color = colors.onSurfaceVariant)
+            }
         }
         if (!stacked && value != null) {
-            Text(value, fontSize = 14.sp, color = colors.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
+            LabelAndValue(texts) {
+                Text(
+                    value, fontSize = 14.sp, color = colors.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.End, modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+        } else {
+            Box(Modifier.weight(1f)) { texts() }
         }
         trailing?.invoke()
         if (showChevron) {
@@ -585,6 +603,31 @@ fun SettingsRow(
                 AquagendaIcons.ChevronRight, contentDescription = null, tint = colors.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp).size(20.dp),
             )
+        }
+    }
+}
+
+/**
+ * The label column, then the value at the end: the value gets what the label leaves at its natural width, but never less
+ * than [SETTINGS_VALUE_MAX_FRACTION] of the room when the label wants more; the label wraps in what remains.
+ */
+@Composable
+private fun RowScope.LabelAndValue(label: @Composable () -> Unit, value: @Composable () -> Unit) {
+    Layout(contents = listOf(label, value), modifier = Modifier.weight(1f)) { (labelPart, valuePart), constraints ->
+        val labelNatural = labelPart.first().maxIntrinsicWidth(constraints.maxHeight)
+        // Unbounded (a group that wraps its widest row): both at their natural width.
+        val width = if (constraints.hasBoundedWidth) {
+            constraints.maxWidth
+        } else {
+            labelNatural + valuePart.first().maxIntrinsicWidth(constraints.maxHeight)
+        }
+        val valueRoom = maxOf((width * SETTINGS_VALUE_MAX_FRACTION).toInt(), width - labelNatural).coerceIn(0, width)
+        val shownValue = valuePart.first().measure(Constraints(maxWidth = valueRoom))
+        val shownLabel = labelPart.first().measure(Constraints(maxWidth = (width - shownValue.width).coerceAtLeast(0)))
+        val height = maxOf(shownLabel.height, shownValue.height, constraints.minHeight)
+        layout(width, height) {
+            shownLabel.place(0, (height - shownLabel.height) / 2)
+            shownValue.place(width - shownValue.width, (height - shownValue.height) / 2)
         }
     }
 }
