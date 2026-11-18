@@ -99,7 +99,8 @@ class SupabaseTwoDeviceSyncTest {
         composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
         composeRule.onNodeWithText("Downloaded from first installation").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Open Session details").performClick()
-        composeRule.onNodeWithText("Observation · Downloaded from first installation").assertIsDisplayed()
+        // On Session details, the note is a row: its kind, then the note, one node.
+        composeRule.onNode(hasText("Observation") and hasText("Downloaded from first installation")).assertIsDisplayed()
         scenario.close()
         firstDatabase.close()
         secondDatabase.close()

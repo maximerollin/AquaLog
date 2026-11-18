@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -67,11 +66,15 @@ class SessionReliabilityFlowTest {
 
         waitForText("measured today", substring = true)
         composeRule.onNode(hasText("measured today", substring = true) and hasClickAction()).performClick()
-        composeRule.onNodeWithText("Session details").assertIsDisplayed()
-        composeRule.onNode(hasText("Temperature") and hasText("24.5") and hasText("°C")).assertIsDisplayed()
-        composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
-        composeRule.onNodeWithText("Observation · Eau claire").assertIsDisplayed()
+        // The header's subtitle: « Session details · <Aquarium> », under the date.
+        composeRule.onNode(hasText("Session details", substring = true)).assertIsDisplayed()
+        // A reading is one tile, spoken as one sentence: its label, value and unit.
+        composeRule.onNode(hasText("Temperature, 24.5, °C", substring = true)).assertIsDisplayed()
+        // Maintenance and notes are rows: label and detail, kind and note, each one node.
+        composeRule.onNode(hasText("Water change") and hasText("20 %")).assertIsDisplayed()
+        composeRule.onNode(hasText("Observation") and hasText("Eau claire")).assertIsDisplayed()
 
+        composeRule.onNodeWithTag("session-details-list").performScrollToNode(hasText("Edit Session"))
         composeRule.onNodeWithText("Edit Session").performClick()
         waitForContentDescription("Measurement for Temperature")
         composeRule.onNodeWithTag("save-session").assert(hasText("Save changes"))
@@ -95,18 +98,23 @@ class SessionReliabilityFlowTest {
         composeRule.onNodeWithText("Incident").performTextInput("Filtre corrigé")
         composeRule.onNodeWithTag("save-session").performClick()
 
-        waitForText("Session details")
-        waitForText("25.1")
-        composeRule.onNode(hasText("Temperature") and hasText("25.1") and hasText("°C")).assertIsDisplayed()
-        composeRule.onNodeWithText("Fertilization · 1 mL").performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithText("Incident · Filtre corrigé").assertIsDisplayed()
+        waitForText("Session details", substring = true)
+        waitForText("25.1", substring = true)
+        composeRule.onNode(hasText("Temperature, 25.1, °C", substring = true)).assertIsDisplayed()
+        val fertilization = hasText("Fertilization") and hasText("1 mL")
+        composeRule.onNodeWithTag("session-details-list").performScrollToNode(fertilization)
+        composeRule.onNode(fertilization).assertIsDisplayed()
+        val incident = hasText("Incident") and hasText("Filtre corrigé")
+        composeRule.onNodeWithTag("session-details-list").performScrollToNode(incident)
+        composeRule.onNode(incident).assertIsDisplayed()
         scenario.close()
 
         scenario = ActivityScenario.launch(MainActivity::class.java)
         waitForText("measured today", substring = true)
         composeRule.onNode(hasText("measured today", substring = true) and hasClickAction()).performClick()
-        waitForText("25.1")
-        composeRule.onNode(hasText("Temperature") and hasText("25.1") and hasText("°C")).assertIsDisplayed()
+        waitForText("25.1", substring = true)
+        composeRule.onNode(hasText("Temperature, 25.1, °C", substring = true)).assertIsDisplayed()
+        composeRule.onNodeWithTag("session-details-list").performScrollToNode(hasText("Delete Session"))
         composeRule.onNodeWithText("Delete Session").performClick()
         composeRule.onNodeWithText("Delete this Session?").assertIsDisplayed()
         composeRule.onNodeWithText("Delete", useUnmergedTree = true).performClick()

@@ -125,7 +125,8 @@ fun AquaLogContent(
             returnToTimeline = state.sessionDetailReturnsToTimeline,
             showDeleteConfirmation = state.showDeleteConfirmation,
             viewModel = viewModel,
-            modifier = inset,
+            // Like the home, the water header draws under the status bar.
+            modifier = modifier,
         )
         state.setup != null && state.pro.showPaywall -> PaywallScreen(
             pro = state.pro,

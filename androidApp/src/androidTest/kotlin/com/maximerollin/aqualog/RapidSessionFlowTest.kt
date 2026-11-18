@@ -99,8 +99,10 @@ class RapidSessionFlowTest {
             composeRule.onNode(hasLabel("History")).performClick()
             waitForText("Chronology")
             composeRule.onNodeWithContentDescription("Open Session details").performClick()
-            composeRule.onNode(hasText("Temperature") and hasText("24.5") and hasText("°C")).assertIsDisplayed()
-            composeRule.onNodeWithText("Back to Chronology").performClick()
+            // A reading is one tile, spoken as one sentence: its label, value and unit.
+            composeRule.onNode(hasText("Temperature, 24.5, °C", substring = true)).assertIsDisplayed()
+            // A glass icon button over the water: its name is its content description.
+            composeRule.onNode(hasLabel("Back to Chronology")).performClick()
             composeRule.onNode(hasLabel("More")).performClick()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("qualification@example.com"))
             composeRule.onNodeWithText("qualification@example.com").assertIsDisplayed()

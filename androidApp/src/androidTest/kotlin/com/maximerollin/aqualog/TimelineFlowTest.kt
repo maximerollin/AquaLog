@@ -100,12 +100,16 @@ class TimelineFlowTest {
         composeRule.onNode(hasText("Temperature") and isSelectable()).performClick().assertIsSelected()
         composeRule.onNodeWithText("Close").performClick()
         composeRule.onNodeWithContentDescription("Open Session details").performClick()
-        composeRule.onNodeWithText("Session details").assertIsDisplayed()
-        composeRule.onNode(hasText("Temperature") and hasText("24.5") and hasText("°C")).assertIsDisplayed()
-        composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
-        composeRule.onNodeWithText("Observation · Clear water").assertIsDisplayed()
+        // The header's subtitle: « Session details · <Aquarium> », under the date.
+        composeRule.onNode(hasText("Session details", substring = true)).assertIsDisplayed()
+        // A reading is one tile, spoken as one sentence: its label, value and unit.
+        composeRule.onNode(hasText("Temperature, 24.5, °C", substring = true)).assertIsDisplayed()
+        // Maintenance and notes are rows: label and detail, kind and note, each one node.
+        composeRule.onNode(hasText("Water change") and hasText("20 %")).assertIsDisplayed()
+        composeRule.onNode(hasText("Observation") and hasText("Clear water")).assertIsDisplayed()
 
-        composeRule.onNodeWithText("Back to Chronology").performClick()
+        // A glass icon button over the water: its name is its content description.
+        composeRule.onNode(hasLabel("Back to Chronology")).performClick()
         composeRule.onNodeWithContentDescription("Filters").performClick()
         composeRule.onNode(hasText("Temperature") and isSelectable()).assertIsSelected()
         scenario.close()
