@@ -594,4 +594,13 @@
     <string name="trends_custom_period">Eigener Zeitraum</string>
     <string name="trends_hero_legend">▲ Wasserwechsel · Orientierung, keine Diagnose</string>
     <plurals name="trends_hero_change_days"><item quantity="one">%1$s in %2$d Tag</item><item quantity="other">%1$s in %2$d Tagen</item></plurals>
+    <string name="more_pro_banner_title">Mehrere Aquarien, der ganze Verlauf</string>
+    <string name="more_pro_banner_action">Pro entdecken</string>
+    <string name="more_section_data_account">Daten und Konto</string>
+    <string name="task_day_tomorrow">Morgen</string>
+    <string name="task_overdue">Überfällig</string>
+    <string name="task_row_detail">%1$s · %2$s</string>
+    <string name="rhythm_description">Wann Aquagenda vorschlägt, jeden Parameter zu testen. „Auto“ folgt dem Profil Ihres Aquariums.</string>
+    <string name="session_details_context">%1$s · %2$s</string>
+    <string name="session_notes_heading">Notizen</string>
 </resources>

@@ -8,7 +8,9 @@ import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
+import com.maximerollin.aqualog.ui.theme.FullScreenContentBacking
 import com.maximerollin.aqualog.ui.theme.HeroTextBacking
+import com.maximerollin.aqualog.ui.theme.WaterHeaderPhotoShade
 import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeBottom
 import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeTop
 import java.io.File
@@ -206,5 +208,20 @@ class ScenePhysicsTest {
         val fill = HeroTextBacking.compositeOver(Color.White)
         assertTrue(contrast(fill, Color.White) >= 3f, "fill ${contrast(fill, Color.White)}")
         assertTrue(contrast(Color.White, fill) >= 3f, "icon ${contrast(Color.White, fill)}")
+    }
+
+    @Test
+    fun `white text keeps 4·5 to 1 over a white photo under the header shade`() {
+        val behind = WaterHeaderPhotoShade.compositeOver(Color.White)
+        assertTrue(contrast(Color.White, behind) >= 4.5f, "${contrast(Color.White, behind)}")
+    }
+
+    @Test
+    fun `white text keeps 4·5 to 1 on the full-screen backing`() {
+        val backing = FullScreenContentBacking
+        for (behind in listOf(Color(0xFFE3EAEC), Color(0xFFE8E0D0), Color(0xFFDCE0E6), Color.White)) {
+            val c = contrast(Color.White, backing.compositeOver(behind))
+            assertTrue(c >= 4.5f, "over $behind: $c")
+        }
     }
 }

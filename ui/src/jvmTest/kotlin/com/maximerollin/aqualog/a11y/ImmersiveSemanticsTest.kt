@@ -60,6 +60,22 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onAllNodesWithTag
+import com.maximerollin.aqualog.ui.icon.Pencil
+import com.maximerollin.aqualog.ui.icon.ArrowLeft
+import com.maximerollin.aqualog.ui.theme.FilledField
+import com.maximerollin.aqualog.ui.theme.GlassChip
+import com.maximerollin.aqualog.ui.theme.PickerTile
+import com.maximerollin.aqualog.ui.theme.SETTINGS_DIVIDER_TAG
+import com.maximerollin.aqualog.ui.theme.SettingsGroup
+import com.maximerollin.aqualog.ui.theme.SettingsRow
 
 @OptIn(ExperimentalTestApi::class)
 class ImmersiveSemanticsTest {
@@ -363,6 +379,111 @@ class ImmersiveSemanticsTest {
             assertEquals(3, radios.size)
             assertEquals(listOf(false, false, false), radios.map { it.config[SemanticsProperties.Selected] })
             onNodeWithTag(PERIOD_PILL_TAG, useUnmergedTree = true).assertDoesNotExist()
+        }
+    }
+
+    private val aquariumSalon = Aquarium("a", "Salon", 120.0, VolumeUnit.LITERS, 0L)
+
+    private fun role(node: androidx.compose.ui.semantics.SemanticsNode) = node.config.getOrNull(SemanticsProperties.Role)
+
+    @Test
+    fun `settings row is one button with label and value`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    SettingsRow("Rythme d’analyse", AquagendaIcons.Pencil, value = "Chaque semaine", onClick = {})
+                }
+            }
+            val node = onNode(hasText("Rythme d’analyse") and hasClickAction()).fetchSemanticsNode()
+            assertEquals(Role.Button, role(node))
+            val spoken = node.config[SemanticsProperties.Text].joinToString(" ") { it.text }
+            assertTrue(spoken.contains("Chaque semaine"), spoken)
+            assertEquals(1, onAllNodes(hasText("Rythme d’analyse") and hasClickAction()).fetchSemanticsNodes().size)
+        }
+    }
+
+    @Test
+    fun `disabled settings row is not clickable`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) { SettingsRow("Archiver", AquagendaIcons.Pencil, onClick = {}, enabled = false) }
+            }
+            onNode(hasText("Archiver")).assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun `settings group draws a line between rows only`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    SettingsGroup {
+                        SettingsRow("A", null, onClick = {})
+                        SettingsRow("B", null, onClick = {})
+                    }
+                }
+            }
+            assertEquals(1, onAllNodesWithTag(SETTINGS_DIVIDER_TAG, useUnmergedTree = true).fetchSemanticsNodes().size)
+        }
+    }
+
+    @Test
+    fun `filled field is named by its label when empty`() = withEnglish {
+        runComposeUiTest {
+            var typed = ""
+            setContent { AquaLogTheme(false) { FilledField("", { typed = it }, "Titre de la tâche") } }
+            val config = onNode(hasSetTextAction()).fetchSemanticsNode().config
+            val named = config.getOrNull(SemanticsProperties.ContentDescription)?.contains("Titre de la tâche") == true ||
+                config.getOrNull(SemanticsProperties.Text)?.any { it.text.contains("Titre de la tâche") } == true
+            assertTrue(named, "$config")
+            onNode(hasSetTextAction()).performTextInput("x")
+            assertEquals("x", typed)
+        }
+    }
+
+    @Test
+    fun `picker tile speaks label and value`() = withEnglish {
+        runComposeUiTest {
+            setContent { AquaLogTheme(false) { PickerTile("Première date d'échéance", "12 nov. 2026", {}) } }
+            val node = onNode(hasClickAction()).fetchSemanticsNode()
+            assertEquals(Role.Button, role(node))
+            val spoken = node.config[SemanticsProperties.Text].joinToString(" ") { it.text }
+            assertTrue(spoken.contains("Première date d'échéance") && spoken.contains("12 nov. 2026"), spoken)
+        }
+    }
+
+    @Test
+    fun `glass chip is a 48 dp button`() = withEnglish {
+        runComposeUiTest {
+            setContent { AquaLogTheme(false) { GlassChip("Changer", {}, icon = AquagendaIcons.Pencil) } }
+            val chip = onNode(hasClickAction())
+            chip.assertHeightIsAtLeast(48.dp)
+            assertEquals(Role.Button, role(chip.fetchSemanticsNode()))
+        }
+    }
+
+    @Test
+    fun `water header leading slot comes before the title`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    WaterHeader(
+                        aquariumSalon, "Rythme", "Salon",
+                        leading = { GlassIconButton(AquagendaIcons.ArrowLeft, "Retour", {}) },
+                    )
+                }
+            }
+            val leading = onNodeWithContentDescription("Retour").fetchSemanticsNode().boundsInRoot
+            val title = onNodeWithText("Rythme").fetchSemanticsNode().boundsInRoot
+            assertTrue(leading.left < title.left, "$leading $title")
+        }
+    }
+
+    @Test
+    fun `water header honours its minimum height`() = withEnglish {
+        runComposeUiTest {
+            setContent { AquaLogTheme(false) { WaterHeader(aquariumSalon, "Plus", "Salon", minHeight = 190.dp) } }
+            onRoot().assertHeightIsAtLeast(190.dp)
         }
     }
 }

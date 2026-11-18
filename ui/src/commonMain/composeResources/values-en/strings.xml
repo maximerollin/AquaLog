@@ -594,4 +594,13 @@
     <string name="trends_custom_period">Custom period</string>
     <string name="trends_hero_legend">▲ Water change · Reference, not a diagnosis</string>
     <plurals name="trends_hero_change_days"><item quantity="one">%1$s over %2$d day</item><item quantity="other">%1$s over %2$d days</item></plurals>
+    <string name="more_pro_banner_title">Several aquariums, all your history</string>
+    <string name="more_pro_banner_action">Discover Pro</string>
+    <string name="more_section_data_account">Data and account</string>
+    <string name="task_day_tomorrow">Tomorrow</string>
+    <string name="task_overdue">Overdue</string>
+    <string name="task_row_detail">%1$s · %2$s</string>
+    <string name="rhythm_description">When Aquagenda suggests testing each parameter. “Auto” follows your Aquarium's profile.</string>
+    <string name="session_details_context">%1$s · %2$s</string>
+    <string name="session_notes_heading">Notes</string>
 </resources>
