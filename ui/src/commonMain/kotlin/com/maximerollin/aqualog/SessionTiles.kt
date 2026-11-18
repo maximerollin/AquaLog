@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.ui.theme.LargeFontScale
 import com.maximerollin.aqualog.ui.theme.ValueTileMinWidth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -104,7 +105,7 @@ internal fun sessionTileState(input: String, definition: ParameterDefinition, pr
     sessionTileReading(input, definition, profile).state
 
 internal fun sessionColumns(fontScale: Float, maxWidth: Dp): Int =
-    if (fontScale >= 1.3f || maxWidth < 340.dp) 1 else 2
+    if (fontScale >= LargeFontScale || maxWidth < 340.dp) 1 else 2
 
 /** The gap between two tiles of a [MeasureTileRow]. */
 internal val MeasureTileGap = 10.dp
@@ -112,9 +113,9 @@ internal val MeasureTileGap = 10.dp
 /** The narrowest width that holds three [ValueTile]s at their minimum width, with the two gaps between them: 308 dp. */
 internal val ThreeDetailColumnsMinWidth = ValueTileMinWidth * 3 + MeasureTileGap * 2
 
-/** Columns of the Session details tiles: three, or two at large text or when three would go below [ValueTileMinWidth]. */
+/** Columns of the Session details tiles: three, or two from [LargeFontScale] or when three would go below [ValueTileMinWidth]. */
 internal fun sessionDetailsColumns(fontScale: Float, maxWidth: Dp): Int =
-    if (fontScale > 1.3f || maxWidth < ThreeDetailColumnsMinWidth) 2 else 3
+    if (fontScale >= LargeFontScale || maxWidth < ThreeDetailColumnsMinWidth) 2 else 3
 
 internal fun validMeasurementCount(inputs: Map<String, String>, definitions: List<ParameterDefinition>): Int =
     definitions.count { definition ->

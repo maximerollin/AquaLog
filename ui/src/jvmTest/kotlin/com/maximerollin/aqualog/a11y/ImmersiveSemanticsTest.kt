@@ -79,6 +79,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import com.maximerollin.aqualog.ui.icon.Pencil
 import com.maximerollin.aqualog.ui.icon.ArrowLeft
 import com.maximerollin.aqualog.ui.theme.FilledField
+import com.maximerollin.aqualog.ui.theme.LargeFontScale
 import com.maximerollin.aqualog.ui.theme.GlassChip
 import com.maximerollin.aqualog.ui.theme.PickerTile
 import com.maximerollin.aqualog.ui.theme.SETTINGS_DIVIDER_TAG
@@ -295,6 +296,24 @@ class ImmersiveSemanticsTest {
             radios.forEach { assertTrue(it.size.height >= 48 * density.density, "${it.size}") }
             onNodeWithText("7 days").performClick()
             assertEquals(1, picked)
+        }
+    }
+
+    @Test
+    fun `settings row value moves under its label from the 130 percent preset`() {
+        for ((scale, stacked) in listOf(LargeFontScale - .01f to false, LargeFontScale to true)) {
+            runComposeUiTest {
+                setContent {
+                    AquaLogTheme(false) {
+                        CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = scale)) {
+                            Box(Modifier.width(360.dp)) { SettingsRow("Rythme", null, value = "Hebdomadaire") }
+                        }
+                    }
+                }
+                val label = onNodeWithText("Rythme", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+                val value = onNodeWithText("Hebdomadaire", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+                assertEquals(stacked, value.top >= label.bottom, "at $scale: label $label, value $value")
+            }
         }
     }
 

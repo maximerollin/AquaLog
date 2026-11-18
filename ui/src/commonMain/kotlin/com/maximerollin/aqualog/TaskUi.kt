@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.ui.theme.LargeFontScale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -313,7 +314,7 @@ private fun NewTaskSheet(state: TaskUiState, actions: TaskActions, onDismiss: ()
                 )
             }
             // Side by side, one height; at large font sizes they stack so neither label is cut.
-            if (LocalDensity.current.fontScale > 1.3f) {
+            if (LocalDensity.current.fontScale >= LargeFontScale) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     dateTile(Modifier.fillMaxWidth())
                     timeTile(Modifier.fillMaxWidth())

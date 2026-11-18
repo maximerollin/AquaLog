@@ -539,6 +539,12 @@ fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScop
     }
 }
 
+/**
+ * The font scale from which layouts switch to their large-text form (stacked rows, fewer columns): Android's 130 % preset
+ * included. One threshold for every screen, compared with `>=`.
+ */
+internal const val LargeFontScale = 1.3f
+
 /** The widest a [SettingsRow]'s value may grow when the label needs the room: the label comes first. */
 internal const val SETTINGS_VALUE_MAX_FRACTION = .45f
 
@@ -562,7 +568,7 @@ fun SettingsRow(
     showChevron: Boolean = onClick != null,
 ) {
     val colors = MaterialTheme.colorScheme
-    val stacked = LocalDensity.current.fontScale > 1.3f
+    val stacked = LocalDensity.current.fontScale >= LargeFontScale
     val dim = if (enabled) 1f else .5f
     val base = modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp)
     val interactive = if (onClick != null) {
