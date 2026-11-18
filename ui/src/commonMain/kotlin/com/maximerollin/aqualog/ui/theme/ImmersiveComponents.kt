@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.semantics.error
 import com.maximerollin.aqualog.StatusBarOverWater
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -86,6 +88,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -493,7 +496,11 @@ private object SettingsGroupScope : ColumnScope {
     override fun Modifier.alignBy(alignmentLineBlock: (androidx.compose.ui.layout.Measured) -> Int): Modifier = this
 }
 
-/** A rounded card of rows; the group draws a 1 dp line between two children and none around them. */
+/**
+ * A rounded card of rows; the group draws a 1 dp line between two children and none around them.
+ * Limits: it stacks its children itself, so `weight` and `align` in its scope are ignored; intrinsic measurements are not
+ * supported; each top-level layout node [content] emits counts as one row. With an unbounded width it wraps its widest row.
+ */
 @Composable
 fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val colors = MaterialTheme.colorScheme
@@ -504,15 +511,20 @@ fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScop
             .background(colors.surface, shape),
     ) { constraints ->
         val inset = 14.dp.roundToPx()
-        val inner = constraints.copy(minWidth = 0, minHeight = 0, maxWidth = (constraints.maxWidth - 2 * inset).coerceAtLeast(0))
+        val bounded = constraints.hasBoundedWidth
+        val inner = constraints.copy(
+            minWidth = 0, minHeight = 0,
+            maxWidth = if (bounded) (constraints.maxWidth - 2 * inset).coerceAtLeast(0) else Constraints.Infinity,
+        )
         val rows = subcompose("rows") { SettingsGroupScope.content() }.map { it.measure(inner) }
+        val innerWidth = if (bounded) inner.maxWidth else rows.maxOfOrNull { it.width } ?: 0
         val dividers = subcompose("dividers") {
             repeat((rows.size - 1).coerceAtLeast(0)) {
                 Box(Modifier.fillMaxWidth().height(1.dp).background(colors.outlineVariant).testTag(SETTINGS_DIVIDER_TAG))
             }
-        }.map { it.measure(inner.copy(minWidth = inner.maxWidth, maxWidth = inner.maxWidth)) }
+        }.map { it.measure(inner.copy(minWidth = innerWidth, maxWidth = innerWidth)) }
         val height = rows.sumOf { it.height } + dividers.sumOf { it.height }
-        layout(constraints.maxWidth, height) {
+        layout(innerWidth + 2 * inset, height) {
             var y = 0
             rows.forEachIndexed { index, row ->
                 row.place(inset, y)
@@ -581,7 +593,7 @@ fun SettingsRow(
 @Composable
 fun GlassChip(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon: ImageVector? = null) {
     Box(
-        modifier.heightIn(min = 48.dp).clickable(role = Role.Button, onClick = onClick),
+        modifier.heightIn(min = 48.dp).clip(CircleShape).clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Row(
@@ -609,7 +621,8 @@ private fun fieldBox(modifier: Modifier, ring: Color?): Modifier {
 
 /**
  * A filled field: the label (12 sp) above the value, in a [surface] box with a rim that becomes a 2 dp ring on focus
- * ([MaterialTheme] primary) or on [isError]. The label is the field's accessible name, even when it is empty.
+ * ([MaterialTheme] primary) or on [isError]. The ring and label colour are never the only signal: when [isError], [errorMessage]
+ * is exposed as the field's error semantics, and the caller shows the same text visibly under the field. The label is the field's accessible name, even when it is empty.
  */
 @Composable
 fun FilledField(
@@ -619,6 +632,7 @@ fun FilledField(
     modifier: Modifier = Modifier,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     isError: Boolean = false,
+    errorMessage: String? = null,
     singleLine: Boolean = true,
     valueStyle: TextStyle = TextStyle(fontFamily = dmSansFamily(), fontSize = 18.sp, fontWeight = FontWeight.SemiBold),
     testTag: String? = null,
@@ -642,7 +656,10 @@ fun FilledField(
             value = value,
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth().let { if (testTag != null) it.testTag(testTag) else it } // on the node that takes text
-                .semantics { contentDescription = label }
+                .semantics {
+                    contentDescription = label
+                    if (isError && errorMessage != null) error(errorMessage)
+                }
                 .focusRequester(focusRequester).onFocusChanged { focused = it.isFocused },
             textStyle = valueStyle.merge(TextStyle(color = colors.onSurface)),
             keyboardOptions = keyboardOptions,
@@ -652,14 +669,13 @@ fun FilledField(
     }
 }
 
-/** A [FilledField]'s look without the typing: a label over a value, one button, spoken « label, value ». */
+/** A [FilledField]'s look without the typing: a label over a value, one button; both texts are merged into its one node. */
 @Composable
 fun PickerTile(label: String, value: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
-    val spoken = "$label, $value"
     Column(
         fieldBox(modifier, null).clickable(role = Role.Button, onClick = onClick)
-            .semantics(mergeDescendants = true) { contentDescription = spoken },
+            .semantics(mergeDescendants = true) {},
     ) {
         Text(label, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = colors.onSurfaceVariant)
         Text(value, style = TextStyle(fontFamily = dmSansFamily(), fontSize = 18.sp, fontWeight = FontWeight.SemiBold), color = colors.onSurface)
@@ -683,20 +699,20 @@ fun WaterFullScreen(aquarium: Aquarium?, modifier: Modifier = Modifier, content:
         } else {
             Box(Modifier.matchParentSize().background(HeroTextBacking))
         }
-        Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-        ) {
-            Column(
-                Modifier.fillMaxWidth().heightIn(min = viewport)
-                    .drawBehind {
-                        val fade = 48.dp.toPx()
-                        drawRect(Brush.verticalGradient(listOf(Color.Transparent, FullScreenContentBacking), 0f, fade), size = Size(size.width, fade))
-                        drawRect(FullScreenContentBacking, topLeft = Offset(0f, fade), size = Size(size.width, (size.height - fade).coerceAtLeast(0f)))
-                    }
-                    .navigationBarsPadding().imePadding().padding(top = 48.dp),
-                verticalArrangement = Arrangement.Bottom,
-                content = content,
-            )
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            // The viewport-tall column only anchors the content to the bottom; the backing belongs to the inner column.
+            Column(Modifier.fillMaxWidth().heightIn(min = viewport), verticalArrangement = Arrangement.Bottom) {
+                Column(
+                    Modifier.fillMaxWidth()
+                        .drawBehind {
+                            val fade = 48.dp.toPx().coerceAtMost(size.height)
+                            drawRect(Brush.verticalGradient(listOf(Color.Transparent, FullScreenContentBacking), 0f, fade), size = Size(size.width, fade))
+                            drawRect(FullScreenContentBacking, topLeft = Offset(0f, fade), size = Size(size.width, (size.height - fade).coerceAtLeast(0f)))
+                        }
+                        .navigationBarsPadding().imePadding().padding(top = 48.dp),
+                    content = content,
+                )
+            }
         }
     }
 }

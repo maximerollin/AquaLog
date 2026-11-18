@@ -76,6 +76,8 @@ import com.maximerollin.aqualog.ui.theme.PickerTile
 import com.maximerollin.aqualog.ui.theme.SETTINGS_DIVIDER_TAG
 import com.maximerollin.aqualog.ui.theme.SettingsGroup
 import com.maximerollin.aqualog.ui.theme.SettingsRow
+import com.maximerollin.aqualog.ui.theme.WaterFullScreen
+import androidx.compose.material3.Text
 
 @OptIn(ExperimentalTestApi::class)
 class ImmersiveSemanticsTest {
@@ -424,6 +426,33 @@ class ImmersiveSemanticsTest {
                 }
             }
             assertEquals(1, onAllNodesWithTag(SETTINGS_DIVIDER_TAG, useUnmergedTree = true).fetchSemanticsNodes().size)
+        }
+    }
+
+    @Test
+    fun `settings group has no line for one row and two for three`() = withEnglish {
+        for ((rows, lines) in listOf(1 to 0, 3 to 2)) {
+            runComposeUiTest {
+                setContent {
+                    AquaLogTheme(false) { SettingsGroup { repeat(rows) { SettingsRow("R$it", null, onClick = {}) } } }
+                }
+                assertEquals(lines, onAllNodesWithTag(SETTINGS_DIVIDER_TAG, useUnmergedTree = true).fetchSemanticsNodes().size)
+            }
+        }
+    }
+
+    @Test
+    fun `full-screen content sits at the bottom with the water free above it`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    Box(Modifier.width(360.dp).height(640.dp)) { WaterFullScreen(aquariumSalon) { Text("Bonjour") } }
+                }
+            }
+            val root = onRoot().fetchSemanticsNode().boundsInRoot
+            val text = onNodeWithText("Bonjour").fetchSemanticsNode().boundsInRoot
+            assertTrue(text.top > root.top + root.height / 2, "$root $text")
+            assertTrue(text.bottom <= root.bottom, "$root $text")
         }
     }
 
