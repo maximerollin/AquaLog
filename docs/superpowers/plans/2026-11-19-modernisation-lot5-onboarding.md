@@ -42,7 +42,7 @@
    - Changes apply live to the ViewModel, as the fields do today. « Valider » closes the sheet.
 7. **Practice keeps its first three active Parameters** (`take(3)`, as today), shown as Session `MeasureTile`s with the « Suivant » chain.
 8. **Offer opened from More.** It has no progress bar, and its bottom text button stays « Retour aux paramètres » (`back_to_settings`). System Back still closes it (`BackStep.ClosePaywall`).
-9. **Pro benefits** are the three in today's `pro_plan_description`, one line each: several Aquariums, history beyond 90 days, before/after analysis. Nothing is promised that the app does not do.
+9. **Pro benefits** are four lines: the three in today's `pro_plan_description` (several Aquariums, history beyond 90 days, before/after analysis), plus the home-screen tracking widgets (Maxime, 19/11; the widgets show « Pro requis » without Pro, `WidgetCommon.kt`). Nothing is promised that the app does not do.
 10. **Volume unit labels.** The segmented control uses the existing « Litres » / « gallons américains », not the mockup's « L / gal US », so TalkBack reads words rather than abbreviations.
 
 **Built in lots 1–4b (on `main`, `a8eb49c`):**
@@ -521,7 +521,12 @@ git commit -m "feat(onboarding): practice in session tiles"
   - **`class PaywallActions(onStartAnnual, onStartLifetime, onRestore, onRetryOffer, onContinue)`** holds lambdas `() -> Unit`.
   - **`@Composable fun PaywallContent(pro: ProUiState, isSaving: Boolean, onboarding: Boolean, aquarium: Aquarium, actions: PaywallActions, modifier: Modifier = Modifier)`**
     - **Header.** 330 dp, animated; `step = 5` only when `onboarding`. It shows `paywall_pro_overline` (12 sp SemiBold, upper case), `paywall_headline` (Fraunces 30 sp, heading) and `paywall_description` (13 sp).
-    - **Benefits.** Three rows, each a 24 dp `secondaryContainer` circle with a 14 dp `Check` in `primary`, then 15 sp text: `paywall_benefit_aquariums`, `paywall_benefit_history`, `paywall_benefit_analysis`.
+    - **Benefits.** Four rows, each a 24 dp `secondaryContainer` circle with a 14 dp `Check` in `primary`, then 15 sp text: `paywall_benefit_aquariums`, `paywall_benefit_history`, `paywall_benefit_analysis`, `paywall_benefit_widgets`.
+    - **New string** (this task adds it to the 6 catalogs):
+
+      | key | values / -en | -fr | -de | -it | -es |
+      |---|---|---|---|---|---|
+      | `paywall_benefit_widgets` | Tracking widgets on your home screen | Widgets de suivi sur l'écran d'accueil | Übersichts-Widgets auf dem Startbildschirm | Widget di monitoraggio nella schermata Home | Widgets de seguimiento en la pantalla de inicio |
     - **Plans.** `isLoadingOffer` → spinner + `loading_google_play_offer`. No plan → `google_play_offer_unavailable` in `error` + a `try_again` text button. Otherwise, a `selectableGroup` row (a column at `fontScale >= LargeFontScale`) of `PlanCard`s:
       - annual: `paywall_plan_annual`, `formattedPrice` (19 sp SemiBold tabular), `paywall_annual_terms(trialDays)`, badge `paywall_recommended`, tag `plan-annual`;
       - lifetime: `paywall_plan_lifetime`, `formattedPrice`, `paywall_lifetime_terms`, tag `plan-lifetime`.
