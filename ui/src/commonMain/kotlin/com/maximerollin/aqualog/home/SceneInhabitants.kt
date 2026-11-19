@@ -2,11 +2,12 @@ package com.maximerollin.aqualog.home
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
 import com.maximerollin.aqualog.resources.Res
 import com.maximerollin.aqualog.resources.allDrawableResources
 import com.maximerollin.aqualog.resources.family_catfish
@@ -23,7 +24,6 @@ import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import com.maximerollin.aqualog.shared.encyclopedia.MotionFamily
 import com.maximerollin.aqualog.shared.encyclopedia.Species
 import com.maximerollin.aqualog.shared.encyclopedia.SwimZone
-import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.PI
 import kotlin.math.cos

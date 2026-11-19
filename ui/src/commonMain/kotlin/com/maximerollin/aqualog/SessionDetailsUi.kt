@@ -1,6 +1,5 @@
 package com.maximerollin.aqualog
 
-import com.maximerollin.aqualog.ui.theme.IconTile
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,16 +17,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -50,6 +46,7 @@ import com.maximerollin.aqualog.shared.assistance.readingLevel
 import com.maximerollin.aqualog.ui.icon.*
 import com.maximerollin.aqualog.ui.theme.GlassIconButton
 import com.maximerollin.aqualog.ui.theme.GroupLabel
+import com.maximerollin.aqualog.ui.theme.IconTile
 import com.maximerollin.aqualog.ui.theme.PaperSheetTop
 import com.maximerollin.aqualog.ui.theme.SettingsGroup
 import com.maximerollin.aqualog.ui.theme.SettingsRow

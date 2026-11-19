@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
@@ -478,29 +477,10 @@ internal fun CyclingBanner() {
 }
 
 @Composable
-internal fun BackButton(onClick: () -> Unit) {
-    TextButton(onClick = onClick, modifier = Modifier.requiredSizeIn(minWidth = 48.dp, minHeight = 48.dp)) {
-        Text(stringResource(Res.string.back))
-    }
-}
-
-@Composable
 internal fun fitColor(fit: Fit): Color = when (fit) {
     Fit.GOOD -> MaterialTheme.colorScheme.primary
     Fit.CAUTION -> levelTextColor(ReadingLevel.ATTENTION) ?: MaterialTheme.colorScheme.onSurface
     Fit.BAD -> levelTextColor(ReadingLevel.ALERT) ?: MaterialTheme.colorScheme.error
-}
-
-/** « ✓ Compatible », « ⚠ <raison> », « ✗ <raison> » or « ✗ N problèmes »: the badge always carries words. */
-@Composable
-internal fun badgeText(assessment: Assessment): String {
-    val reason = assessment.badgeReason?.label()
-    return when {
-        assessment.problems >= 2 -> pluralStringResource(Res.plurals.habitants_badge_problems, assessment.problems, assessment.problems)
-        assessment.fit == Fit.BAD && reason != null -> stringResource(Res.string.habitants_badge_bad, reason)
-        assessment.fit == Fit.CAUTION && reason != null -> stringResource(Res.string.habitants_badge_caution, reason)
-        else -> stringResource(Res.string.habitants_badge_good)
-    }
 }
 
 /** The verdict's sentence: the first two reasons (problems first), else what was checked. */

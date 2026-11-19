@@ -1,7 +1,5 @@
 package com.maximerollin.aqualog
 
-import com.maximerollin.aqualog.ui.theme.IconTile
-import com.maximerollin.aqualog.ui.theme.LargeFontScale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -88,6 +86,8 @@ import com.maximerollin.aqualog.ui.icon.*
 import com.maximerollin.aqualog.ui.theme.FilledField
 import com.maximerollin.aqualog.ui.theme.GlassIconButton
 import com.maximerollin.aqualog.ui.theme.GroupLabel
+import com.maximerollin.aqualog.ui.theme.IconTile
+import com.maximerollin.aqualog.ui.theme.LargeFontScale
 import com.maximerollin.aqualog.ui.theme.PaperSheetTop
 import com.maximerollin.aqualog.ui.theme.PickerTile
 import com.maximerollin.aqualog.ui.theme.SettingsGroup

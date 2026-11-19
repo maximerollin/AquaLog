@@ -77,7 +77,6 @@
     <string name="restore_purchase">Restaurar compra de Google Play</string>
     <string name="back_to_settings">Volver a configuración</string>
     <string name="subscription_settings_description">Gratis incluye 90 días de historia. Revise Pro, vuelva a intentar una compra o restaure una suscripción existente.</string>
-    <string name="view_free_and_pro">Ver gratis y profesional</string>
     <string name="pro_active">Pro activo</string>
     <string name="pro_message_play_unavailable">Google Play no está disponible. No se ha iniciado ninguna compra.</string>
     <string name="pro_message_purchase_pending">Google Play sigue procesando esta compra. Podrás restaurarla más tarde.</string>
@@ -91,8 +90,6 @@
     <string name="home_title">Tu acuario</string>
     <string name="aquarium_ready">Listo para tu próxima rutina</string>
     <string name="open_tasks">Tareas y recordatorios</string>
-    <string name="more_section_tasks">Tareas</string>
-    <string name="more_section_plan">Plan</string>
     <string name="more_section_help">Ayuda</string>
     <string name="volume_liters_format">%1$s L</string>
     <string name="volume_us_gallons_format">%1$s chica estadounidense</string>
@@ -164,9 +161,6 @@
     <string name="back_to_aquarium">Volver al Acuario</string>
     <string name="view_session_details">Ver detalles de la sesión</string>
     <string name="session_details">Detalles de la sesión</string>
-    <string name="session_date">Registrada el %1$s</string>
-    <string name="session_action_detail">%1$s · %2$s</string>
-    <string name="session_event_detail">%1$s · %2$s</string>
     <string name="edit_session">Editar sesión</string>
     <string name="save_changes">Guardar cambios</string>
     <string name="delete_session">Eliminar sesión</string>
@@ -200,7 +194,6 @@
     <string name="sync_failure_server">El servicio de sincronización no pudo completar la solicitud. Sus datos locales permanecen disponibles.</string>
     <string name="sync_failure_unknown">La sincronización no se completó. Sus datos locales permanecen disponibles.</string>
     <string name="sync_retry">Reintentar sincronización</string>
-    <string name="portable_data_title">Datos locales portátiles</string>
     <string name="portable_data_replace_explanation">Restaurar primero valida todo el archivo y luego reemplaza atómicamente los datos del Acuario en este dispositivo. Las identificaciones estables evitan duplicados. Las credenciales de la cuenta y los datos de facturación nunca se incluyen.</string>
     <string name="export_data">Exportar datos</string>
     <string name="restore_from_export">Restaurar desde exportación</string>
@@ -228,7 +221,6 @@
     <string name="portable_problem_account_linked">Desconecte su cuenta vinculada antes de restaurar una copia local portátil. Sus datos locales y su cuenta no fueron modificados.</string>
     <string name="portable_problem_database">La restauración falló al reemplazar la copia local. No se conservaron datos importados.</string>
     <string name="portable_storage_error">Android no pudo leer ni escribir este documento. Prueba con otra ubicación.</string>
-    <string name="account_title">Cuenta</string>
     <string name="account_local_only">Sólo local</string>
     <string name="account_local_only_description">No hay ninguna cuenta en la nube vinculada. Aquagenda sigue siendo totalmente utilizable con los datos almacenados en este dispositivo.</string>
     <string name="account_actions">Acciones de cuenta</string>
@@ -350,7 +342,6 @@
     <string name="task_monthly">Mensual</string>
     <string name="task_validation_error">Ingrese un título, una fecha válida y una hora válida opcional.</string>
     <string name="save_task">Guardar tarea</string>
-    <string name="pending_tasks">Próximas ocurrencias</string>
     <string name="no_pending_tasks">No hay tarea pendiente.</string>
     <string name="task_due_value">Vence %1$s · %2$s</string>
     <string name="task_no_time">no hay tiempo elegido</string>
@@ -481,7 +472,6 @@
     <string name="photo_save_failed">No se pudo guardar la foto. Inténtalo de nuevo.</string>
     <string name="photo_processing">Preparando la foto…</string>
     <string name="habitants_title">Habitantes</string>
-    <string name="habitants_add_title">Añadir · %1$s</string>
     <string name="habitants_search_hint">Buscar una especie…</string>
     <string name="habitants_kind_fish">Peces</string>
     <string name="habitants_kind_shrimp">Gambas</string>
@@ -490,9 +480,6 @@
     <string name="habitants_group_good">Van bien en este acuario</string>
     <string name="habitants_group_caution">Con precauciones</string>
     <string name="habitants_group_bad">No recomendados</string>
-    <string name="habitants_badge_good">✓ Compatible</string>
-    <string name="habitants_badge_caution">⚠ %1$s</string>
-    <string name="habitants_badge_bad">✗ %1$s</string>
     <string name="habitants_reason_tank_too_small">Acuario pequeño</string>
     <string name="habitants_reason_water_too_hard">Agua dura</string>
     <string name="habitants_reason_water_too_soft">Agua blanda</string>
@@ -525,9 +512,6 @@
     <string name="habitants_explain_two">%1$s y %2$s.</string>
     <string name="habitants_explain_good">Ningún problema con el volumen, las últimas mediciones y las especies conocidas del acuario.</string>
     <string name="habitants_explain_unmeasured">Ningún problema con el volumen y las especies conocidas del acuario; el agua aún no se ha medido.</string>
-    <string name="habitants_verdict_good">✓ Va bien en %1$s</string>
-    <string name="habitants_verdict_caution">⚠ Con precauciones para %1$s</string>
-    <string name="habitants_verdict_bad">✗ No recomendado para %1$s</string>
     <string name="habitants_compared">Comparado con su acuario</string>
     <string name="habitants_details">Detalles ›</string>
     <string name="habitants_criterion_volume">Volumen</string>
@@ -575,7 +559,6 @@
     <string name="habitants_family_shrimp">Gamba</string>
     <string name="habitants_family_snail">Caracol</string>
     <string name="habitants_family_plant">Planta</string>
-    <plurals name="habitants_badge_problems"><item quantity="one">✗ %1$d problema</item><item quantity="other">✗ %1$d problemas</item></plurals>
     <plurals name="habitants_fact_lifespan"><item quantity="one">Esperanza de vida: %1$d año</item><item quantity="other">Esperanza de vida: %1$d años</item></plurals>
     <string name="feedback_kind_bug">Error</string>
     <string name="feedback_kind_translation">Error de traducción</string>

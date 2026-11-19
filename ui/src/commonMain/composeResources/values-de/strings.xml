@@ -77,7 +77,6 @@
     <string name="restore_purchase">Stellen Sie den Google Play-Kauf wieder her</string>
     <string name="back_to_settings">Zurück zu den Einstellungen</string>
     <string name="subscription_settings_description">Kostenlos umfasst 90 Tage Verlauf. Sieh dir Pro an, versuche den Kauf erneut oder stelle ein bestehendes Abo wieder her.</string>
-    <string name="view_free_and_pro">Kostenlos und Pro ansehen</string>
     <string name="pro_active">Pro aktiv</string>
     <string name="pro_message_play_unavailable">Google Play ist nicht verfügbar. Es wurde kein Kauf gestartet.</string>
     <string name="pro_message_purchase_pending">Google Play verarbeitet diesen Kauf noch. Du kannst ihn später wiederherstellen.</string>
@@ -91,8 +90,6 @@
     <string name="home_title">Ihr Aquarium</string>
     <string name="aquarium_ready">Bereit für Ihre nächste Routine</string>
     <string name="open_tasks">Aufgaben und Erinnerungen</string>
-    <string name="more_section_tasks">Aufgaben</string>
-    <string name="more_section_plan">Angebot</string>
     <string name="more_section_help">Hilfe</string>
     <string name="volume_liters_format">%1$s L</string>
     <string name="volume_us_gallons_format">%1$s US-gal</string>
@@ -164,9 +161,6 @@
     <string name="back_to_aquarium">Zurück zum Aquarium</string>
     <string name="view_session_details">Sitzungsdetails anzeigen</string>
     <string name="session_details">Sitzungsdetails</string>
-    <string name="session_date">Aufgenommen am %1$s</string>
-    <string name="session_action_detail">%1$s · %2$s</string>
-    <string name="session_event_detail">%1$s · %2$s</string>
     <string name="edit_session">Sitzung bearbeiten</string>
     <string name="save_changes">Änderungen speichern</string>
     <string name="delete_session">Sitzung löschen</string>
@@ -200,7 +194,6 @@
     <string name="sync_failure_server">Der Synchronisierungsdienst konnte die Anfrage nicht abschließen. Ihre lokalen Daten bleiben verfügbar.</string>
     <string name="sync_failure_unknown">Die Synchronisierung wurde nicht abgeschlossen. Ihre lokalen Daten bleiben verfügbar.</string>
     <string name="sync_retry">Versuchen Sie die Synchronisierung erneut</string>
-    <string name="portable_data_title">Tragbare lokale Daten</string>
     <string name="portable_data_replace_explanation">Die Wiederherstellung validiert zunächst die gesamte Datei und ersetzt dann atomar die Aquarium-Daten auf diesem Gerät. Stabile IDs verhindern Duplikate. Kontoanmeldeinformationen und Rechnungsdaten sind niemals enthalten.</string>
     <string name="export_data">Daten exportieren</string>
     <string name="restore_from_export">Aus dem Export wiederherstellen</string>
@@ -228,7 +221,6 @@
     <string name="portable_problem_account_linked">Trennen Sie Ihr verknüpftes Konto, bevor Sie eine tragbare lokale Kopie wiederherstellen. Ihre lokalen Daten und Ihr Konto wurden nicht geändert.</string>
     <string name="portable_problem_database">Die Wiederherstellung ist beim Ersetzen der lokalen Kopie fehlgeschlagen. Es wurden keine importierten Daten gespeichert.</string>
     <string name="portable_storage_error">Android konnte dieses Dokument nicht lesen oder schreiben. Versuchen Sie es an einem anderen Ort.</string>
-    <string name="account_title">Konto</string>
     <string name="account_local_only">Nur lokal</string>
     <string name="account_local_only_description">Es ist kein Cloud-Konto verknüpft. Aquagenda bleibt mit den auf diesem Gerät gespeicherten Daten uneingeschränkt nutzbar.</string>
     <string name="account_actions">Kontoaktionen</string>
@@ -350,7 +342,6 @@
     <string name="task_monthly">Monatlich</string>
     <string name="task_validation_error">Geben Sie einen Titel, ein gültiges Datum und optional eine gültige Uhrzeit ein.</string>
     <string name="save_task">Aufgabe speichern</string>
-    <string name="pending_tasks">Nächste Aufgaben</string>
     <string name="no_pending_tasks">Keine ausstehende Aufgabe.</string>
     <string name="task_due_value">Fällig %1$s · %2$s</string>
     <string name="task_no_time">keine gewählte Zeit</string>
@@ -481,7 +472,6 @@
     <string name="photo_save_failed">Das Foto konnte nicht gespeichert werden. Versuchen Sie es erneut.</string>
     <string name="photo_processing">Foto wird vorbereitet…</string>
     <string name="habitants_title">Bewohner</string>
-    <string name="habitants_add_title">Hinzufügen · %1$s</string>
     <string name="habitants_search_hint">Art suchen…</string>
     <string name="habitants_kind_fish">Fische</string>
     <string name="habitants_kind_shrimp">Garnelen</string>
@@ -490,9 +480,6 @@
     <string name="habitants_group_good">Passen in dieses Becken</string>
     <string name="habitants_group_caution">Mit Vorsicht</string>
     <string name="habitants_group_bad">Nicht empfohlen</string>
-    <string name="habitants_badge_good">✓ Passt</string>
-    <string name="habitants_badge_caution">⚠ %1$s</string>
-    <string name="habitants_badge_bad">✗ %1$s</string>
     <string name="habitants_reason_tank_too_small">Becken klein</string>
     <string name="habitants_reason_water_too_hard">Hartes Wasser</string>
     <string name="habitants_reason_water_too_soft">Weiches Wasser</string>
@@ -525,9 +512,6 @@
     <string name="habitants_explain_two">%1$s und %2$s.</string>
     <string name="habitants_explain_good">Kein Problem mit Volumen, letzten Messungen und den bekannten Arten im Becken.</string>
     <string name="habitants_explain_unmeasured">Kein Problem mit Volumen und den bekannten Arten im Becken; das Wasser ist noch nicht gemessen.</string>
-    <string name="habitants_verdict_good">✓ Passt in %1$s</string>
-    <string name="habitants_verdict_caution">⚠ Mit Vorsicht für %1$s</string>
-    <string name="habitants_verdict_bad">✗ Nicht empfohlen für %1$s</string>
     <string name="habitants_compared">Im Vergleich zu Ihrem Becken</string>
     <string name="habitants_details">Details ›</string>
     <string name="habitants_criterion_volume">Volumen</string>
@@ -575,7 +559,6 @@
     <string name="habitants_family_shrimp">Garnele</string>
     <string name="habitants_family_snail">Schnecke</string>
     <string name="habitants_family_plant">Pflanze</string>
-    <plurals name="habitants_badge_problems"><item quantity="one">✗ %1$d Problem</item><item quantity="other">✗ %1$d Probleme</item></plurals>
     <plurals name="habitants_fact_lifespan"><item quantity="one">Lebensdauer: %1$d Jahr</item><item quantity="other">Lebensdauer: %1$d Jahre</item></plurals>
     <string name="feedback_kind_bug">Fehler</string>
     <string name="feedback_kind_translation">Übersetzungsfehler</string>

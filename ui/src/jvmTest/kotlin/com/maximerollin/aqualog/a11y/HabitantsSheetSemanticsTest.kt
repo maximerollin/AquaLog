@@ -5,15 +5,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.home.HabitantsSheetBody
 import com.maximerollin.aqualog.shared.Inhabitant
@@ -25,10 +29,6 @@ import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import androidx.compose.ui.test.getBoundsInRoot
-import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.hasText
 
 /** The Habitants sheet body in French: header count, rows with thumbnails, « Retirer » and « Ajouter » (lot 4b, Task 2). */
 @OptIn(ExperimentalTestApi::class)

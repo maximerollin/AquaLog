@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,7 +21,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -44,7 +42,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -422,53 +419,6 @@ private fun ProBanner(aquarium: Aquarium, onOpen: () -> Unit) {
                     modifier = Modifier.padding(start = 4.dp).size(16.dp),
                 )
             }
-        }
-    }
-}
-
-/** One list row: 56 dp minimum, a single accessible unit; no [onClick] makes it a plain read-only line. */
-@Composable
-internal fun MoreRow(
-    label: String,
-    modifier: Modifier = Modifier,
-    supporting: String? = null,
-    onClick: (() -> Unit)? = null,
-    enabled: Boolean = true,
-    selected: Boolean? = null,
-    color: Color = MaterialTheme.colorScheme.onSurface,
-    trailingIcon: ImageVector? = null,
-    leading: (@Composable () -> Unit)? = null,
-) {
-    val interaction = when {
-        onClick == null -> Modifier
-        selected != null -> Modifier.selectable(selected, enabled, Role.RadioButton, onClick = onClick)
-        else -> Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-    }
-    Row(
-        modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).then(interaction).padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (leading != null) {
-            leading()
-            Spacer(Modifier.width(12.dp))
-        }
-        Column(Modifier.weight(1f)) {
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (enabled) color else color.copy(alpha = 0.5f),
-            )
-            if (supporting != null) {
-                Text(
-                    supporting,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        if (trailingIcon != null) {
-            Spacer(Modifier.width(12.dp))
-            Icon(trailingIcon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         }
     }
 }

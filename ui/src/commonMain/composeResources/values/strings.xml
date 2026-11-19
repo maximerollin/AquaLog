@@ -77,7 +77,6 @@
     <string name="restore_purchase">Restore Google Play purchase</string>
     <string name="back_to_settings">Back to Settings</string>
     <string name="subscription_settings_description">Free includes 90 days of history. Review Pro, retry a purchase or restore an existing subscription.</string>
-    <string name="view_free_and_pro">View Free and Pro</string>
     <string name="pro_active">Pro active</string>
     <string name="pro_message_play_unavailable">Google Play is unavailable. No purchase has started.</string>
     <string name="pro_message_purchase_pending">Google Play is still processing this purchase. You can restore it later.</string>
@@ -91,8 +90,6 @@
     <string name="home_title">Your Aquarium</string>
     <string name="aquarium_ready">Ready for your next routine</string>
     <string name="open_tasks">Tasks &amp; reminders</string>
-    <string name="more_section_tasks">Tasks</string>
-    <string name="more_section_plan">Plan</string>
     <string name="more_section_help">Help</string>
     <string name="volume_liters_format">%1$s L</string>
     <string name="volume_us_gallons_format">%1$s US gal</string>
@@ -164,9 +161,6 @@
     <string name="back_to_aquarium">Back to Aquarium</string>
     <string name="view_session_details">View Session details</string>
     <string name="session_details">Session details</string>
-    <string name="session_date">Recorded on %1$s</string>
-    <string name="session_action_detail">%1$s · %2$s</string>
-    <string name="session_event_detail">%1$s · %2$s</string>
     <string name="edit_session">Edit Session</string>
     <string name="save_changes">Save changes</string>
     <string name="delete_session">Delete Session</string>
@@ -200,7 +194,6 @@
     <string name="sync_failure_server">The sync service could not complete the request. Your local data remains available.</string>
     <string name="sync_failure_unknown">Sync did not complete. Your local data remains available.</string>
     <string name="sync_retry">Retry sync</string>
-    <string name="portable_data_title">Portable local data</string>
     <string name="portable_data_replace_explanation">Restore validates the whole file first, then atomically replaces Aquarium data on this device. Stable IDs prevent duplicates. Account credentials and billing data are never included.</string>
     <string name="export_data">Export data</string>
     <string name="restore_from_export">Restore from export</string>
@@ -228,7 +221,6 @@
     <string name="portable_problem_account_linked">Disconnect your linked account before restoring a portable local copy. Your local data and account were not changed.</string>
     <string name="portable_problem_database">Restore failed while replacing the local copy. No imported data was kept.</string>
     <string name="portable_storage_error">Android could not read or write this document. Try another location.</string>
-    <string name="account_title">Account</string>
     <string name="account_local_only">Local-only</string>
     <string name="account_local_only_description">No cloud account is linked. Aquagenda remains fully usable with data stored on this device.</string>
     <string name="account_actions">Account actions</string>
@@ -350,7 +342,6 @@
     <string name="task_monthly">Monthly</string>
     <string name="task_validation_error">Enter a title, a valid date and an optional valid time.</string>
     <string name="save_task">Save Task</string>
-    <string name="pending_tasks">Next occurrences</string>
     <string name="no_pending_tasks">No pending Task.</string>
     <string name="task_due_value">Due %1$s · %2$s</string>
     <string name="task_no_time">no chosen time</string>
@@ -481,7 +472,6 @@
     <string name="photo_save_failed">The photo could not be saved. Try again.</string>
     <string name="photo_processing">Preparing the photo…</string>
     <string name="habitants_title">Inhabitants</string>
-    <string name="habitants_add_title">Add · %1$s</string>
     <string name="habitants_search_hint">Search for a species…</string>
     <string name="habitants_kind_fish">Fish</string>
     <string name="habitants_kind_shrimp">Shrimp</string>
@@ -490,9 +480,6 @@
     <string name="habitants_group_good">Do well in this tank</string>
     <string name="habitants_group_caution">With precautions</string>
     <string name="habitants_group_bad">Not recommended</string>
-    <string name="habitants_badge_good">✓ Compatible</string>
-    <string name="habitants_badge_caution">⚠ %1$s</string>
-    <string name="habitants_badge_bad">✗ %1$s</string>
     <string name="habitants_reason_tank_too_small">Small tank</string>
     <string name="habitants_reason_water_too_hard">Hard water</string>
     <string name="habitants_reason_water_too_soft">Soft water</string>
@@ -525,9 +512,6 @@
     <string name="habitants_explain_two">%1$s, and %2$s.</string>
     <string name="habitants_explain_good">No problem found with the volume, latest Measurements and the tank's known species.</string>
     <string name="habitants_explain_unmeasured">No problem found with the volume and the tank's known species; the water is not measured yet.</string>
-    <string name="habitants_verdict_good">✓ Does well in %1$s</string>
-    <string name="habitants_verdict_caution">⚠ With precautions for %1$s</string>
-    <string name="habitants_verdict_bad">✗ Not recommended for %1$s</string>
     <string name="habitants_compared">Compared with your tank</string>
     <string name="habitants_details">Details ›</string>
     <string name="habitants_criterion_volume">Volume</string>
@@ -575,7 +559,6 @@
     <string name="habitants_family_shrimp">Shrimp</string>
     <string name="habitants_family_snail">Snail</string>
     <string name="habitants_family_plant">Plant</string>
-    <plurals name="habitants_badge_problems"><item quantity="one">✗ %1$d problem</item><item quantity="other">✗ %1$d problems</item></plurals>
     <plurals name="habitants_fact_lifespan"><item quantity="one">Lifespan: %1$d year</item><item quantity="other">Lifespan: %1$d years</item></plurals>
     <string name="feedback_kind_bug">Bug</string>
     <string name="feedback_kind_translation">Translation error</string>

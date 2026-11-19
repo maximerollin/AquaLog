@@ -3,7 +3,8 @@ package com.maximerollin.aqualog.a11y
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -11,8 +12,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
-import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.assert
 import com.maximerollin.aqualog.photo.PhotoCropScreen
 import com.maximerollin.aqualog.photo.SquareCrop
 import com.maximerollin.aqualog.photo.centredCrop

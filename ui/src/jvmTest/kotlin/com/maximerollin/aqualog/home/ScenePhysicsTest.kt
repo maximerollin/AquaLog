@@ -1,13 +1,9 @@
 package com.maximerollin.aqualog.home
 
-import com.maximerollin.aqualog.shared.Inhabitant
-import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
-import com.maximerollin.aqualog.shared.encyclopedia.MotionFamily
-import com.maximerollin.aqualog.shared.encyclopedia.SwimZone
-import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.AccountDescriptionText
 import com.maximerollin.aqualog.AccountGlassButtonFill
 import com.maximerollin.aqualog.AccountPrimaryButtonText
@@ -15,7 +11,11 @@ import com.maximerollin.aqualog.ProBannerTextBottom
 import com.maximerollin.aqualog.ProBannerTextFraction
 import com.maximerollin.aqualog.ProBannerWater
 import com.maximerollin.aqualog.proBannerShadeAlpha
-import androidx.compose.ui.unit.dp
+import com.maximerollin.aqualog.shared.Inhabitant
+import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
+import com.maximerollin.aqualog.shared.encyclopedia.MotionFamily
+import com.maximerollin.aqualog.shared.encyclopedia.SwimZone
+import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
 import com.maximerollin.aqualog.ui.theme.CropBackdrop
 import com.maximerollin.aqualog.ui.theme.FullScreenContentBacking
 import com.maximerollin.aqualog.ui.theme.HeroTextBacking
@@ -23,9 +23,9 @@ import com.maximerollin.aqualog.ui.theme.WaterHeaderPhotoShade
 import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeBottom
 import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeTop
 import java.io.File
-import kotlin.test.assertFailsWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
