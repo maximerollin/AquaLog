@@ -3,8 +3,12 @@ package com.maximerollin.aqualog.a11y
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
@@ -15,6 +19,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
@@ -23,6 +28,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.Density
@@ -40,12 +46,15 @@ import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import com.maximerollin.aqualog.shared.encyclopedia.PresentGroup
+import com.maximerollin.aqualog.shared.encyclopedia.SpeciesKind
 import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
 import com.maximerollin.aqualog.ui.theme.AquaLogTheme
 import java.io.File
 import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -207,8 +216,65 @@ class AddInhabitantSemanticsTest {
         runComposeUiTest {
             screen(add = search.copy(custom = true, showCustomError = true))
             onNode(isHeading() and hasText("Ajouter à la main")).assertIsDisplayed()
-            onNode(hasSetTextAction() and hasText("Nom de l'espèce")).assertIsDisplayed()
-            onNodeWithText("Indiquez un nom et choisissez une famille.").assertIsDisplayed()
+            val field = onNode(hasSetTextAction() and hasText("Nom de l'espèce"))
+            field.assertIsDisplayed()
+            assertTrue(SemanticsProperties.Error in field.fetchSemanticsNode().config, "a blank name is in error")
+            onNodeWithText("Indiquez un nom et choisissez une famille.").performScrollTo().assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun `a typed name without a family leaves the name field out of error and shows the message by the button`() = french {
+        runComposeUiTest {
+            screen(add = search.copy(custom = true, customName = "Guppy", customFamily = null, showCustomError = true))
+            val field = onNode(hasSetTextAction() and hasText("Nom de l'espèce"))
+            assertFalse(SemanticsProperties.Error in field.fetchSemanticsNode().config, "the typed name is not the gap")
+            val message = onNodeWithText("Indiquez un nom et choisissez une famille.").performScrollTo()
+            message.assertIsDisplayed()
+            // Beside « Ajouter », where the tap that refused it was: right above the button, not under the name.
+            val button = onNode(hasText("Ajouter") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+                .getBoundsInRoot()
+            val shown = message.getBoundsInRoot()
+            assertTrue(shown.bottom <= button.top && button.top - shown.bottom <= 24.dp, "message $shown by button $button")
+        }
+    }
+
+    @Test
+    fun `while the encyclopedia loads a spinner shows and the header and custom row stay`() = french {
+        runComposeUiTest {
+            screen(add = AddInhabitantUiState(salon.id, species = null))
+            onNode(isHeading() and hasText("Ajouter un habitant")).assertIsDisplayed()
+            val spinner = hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)
+            scrolledTo(spinner)
+            onNode(spinner).assertIsDisplayed()
+            val missing = hasText("Espèce absente ? L'ajouter à la main")
+            scrolledTo(missing)
+            onNode(missing).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun `a kind chip selects its kind and toggles it off`() = french {
+        runComposeUiTest {
+            val selected = mutableListOf<SpeciesKind?>()
+            var add by mutableStateOf(search)
+            setContent {
+                AquaLogTheme(false) {
+                    Box(Modifier.size(360.dp, 760.dp)) {
+                        AddInhabitantContent(
+                            add, setup, readings, inhabitants, present, encyclopedia, "fr",
+                            AddInhabitantActions(onSelectKind = { selected += it; add = add.copy(kind = it) }),
+                        )
+                    }
+                }
+            }
+            val fish = hasText("Poissons")
+            scrolledTo(fish)
+            onNode(fish).performClick()
+            waitForIdle()
+            onNode(fish).performClick()
+            assertEquals(listOf<SpeciesKind?>(SpeciesKind.FISH, null), selected)
+            assertNull(add.kind)
         }
     }
 

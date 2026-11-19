@@ -301,16 +301,15 @@ private fun CustomInhabitantForm(add: AddInhabitantUiState, aquarium: Aquarium, 
 private fun CustomInhabitantFields(add: AddInhabitantUiState, aquarium: Aquarium, actions: AddInhabitantActions) {
     val error = stringResource(Res.string.habitants_custom_error)
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(Modifier.padding(horizontal = 16.dp)) {
-            FilledField(
-                value = add.customName,
-                onValueChange = actions.onCustomNameChange,
-                label = stringResource(Res.string.habitants_custom_name),
-                isError = add.showCustomError,
-                errorMessage = error,
-            )
-            if (add.showCustomError) Text(error, Modifier.padding(start = 4.dp, top = 6.dp), color = MaterialTheme.colorScheme.error)
-        }
+        FilledField(
+            value = add.customName,
+            onValueChange = actions.onCustomNameChange,
+            label = stringResource(Res.string.habitants_custom_name),
+            modifier = Modifier.padding(horizontal = 16.dp),
+            // Only a blank name is the field's fault: a typed name with no family chosen leaves it as it is.
+            isError = add.showCustomError && add.customName.isBlank(),
+            errorMessage = error,
+        )
         GroupLabel(stringResource(Res.string.habitants_custom_family), Modifier.padding(top = 8.dp))
         FlowRow(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             DrawingFamily.entries.forEach { family ->
@@ -331,6 +330,8 @@ private fun CustomInhabitantFields(add: AddInhabitantUiState, aquarium: Aquarium
             GroupLabel(stringResource(Res.string.habitants_count_title), Modifier.padding(top = 8.dp))
             Box(Modifier.padding(horizontal = 8.dp)) { InhabitantCounter(add.count, actions.onCountChange) }
         }
+        // Right above « Ajouter », where the refused tap was, so it is seen even with the keyboard up or at large fonts.
+        if (add.showCustomError) Text(error, Modifier.padding(horizontal = 20.dp), color = MaterialTheme.colorScheme.error)
         Button(
             onClick = actions.onConfirm,
             enabled = !add.isSaving,
