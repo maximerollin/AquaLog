@@ -63,6 +63,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -461,24 +462,37 @@ private fun CheckRow(
     // The mark is spoken through the reason (or « pas encore mesuré »), so colour and symbol never carry it alone.
     val spoken = listOfNotNull(label, detail, value, check.reason?.explanation()?.takeIf { it != detail })
         .filter { it.isNotBlank() }.joinToString(", ")
+    // Large text puts the value under the label, full width: in a narrow end column « Red-Cherry-Garnele » broke mid-word.
+    val stacked = LocalDensity.current.fontScale >= LargeFontScale
+    val valueText = @Composable { align: TextAlign ->
+        Text(value, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface, textAlign = align)
+    }
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 8.dp).clearAndSetSemantics { contentDescription = spoken },
+        // The row speaks [spoken] alone: every part is silent, the label and value keep a test tag so a test can place them.
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 8.dp)
+            .semantics(mergeDescendants = true) { contentDescription = spoken },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         FitMark(check.status)
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
-            Text(label, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-            if (detail != null) Text(detail, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Box(Modifier.silentPart(CHECK_LABEL_TAG)) { Text(label, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface) }
+            if (detail != null) {
+                Box(Modifier.silentPart()) { Text(detail, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            }
+            if (stacked) Box(Modifier.padding(top = 4.dp).silentPart(CHECK_VALUE_TAG)) { valueText(TextAlign.Start) }
         }
-        Text(
-            value,
-            modifier = Modifier.padding(start = 8.dp).weight(1f, fill = false),
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.End,
-        )
+        if (!stacked) {
+            Box(Modifier.padding(start = 8.dp).weight(1f, fill = false).silentPart(CHECK_VALUE_TAG)) { valueText(TextAlign.End) }
+        }
     }
 }
+
+/** Test tags of a check row's criterion and of the Aquarium's value. */
+internal const val CHECK_LABEL_TAG = "check-label"
+internal const val CHECK_VALUE_TAG = "check-value"
+
+/** Nothing of it is spoken (its row speaks for it); only the [tag], if any, stays for tests. */
+private fun Modifier.silentPart(tag: String? = null) = clearAndSetSemantics { if (tag != null) testTag = tag }
 
 @Composable
 private fun rangeText(range: ValueRange, formatter: LocalizedFormatters) =

@@ -28,6 +28,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.habitants.AddInhabitantActions
 import com.maximerollin.aqualog.habitants.AddInhabitantContent
@@ -40,6 +41,8 @@ import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
+import com.maximerollin.aqualog.habitants.CHECK_LABEL_TAG
+import com.maximerollin.aqualog.habitants.CHECK_VALUE_TAG
 import com.maximerollin.aqualog.habitants.FICHE_DRAWING_TAG
 import com.maximerollin.aqualog.ui.theme.AquaLogTheme
 import java.io.File
@@ -136,6 +139,34 @@ class SpeciesFicheSemanticsTest {
             val row = hasContentDescription("pH", substring = true) and hasContentDescription("7,6", substring = true)
             scrolledTo(row)
             onNode(row).assertIsDisplayed()
+        }
+    }
+
+    /** The label and the value of the check row that speaks [value] (the Aquarium's pH, 7,6). */
+    private fun ComposeUiTest.checkParts(value: String): Pair<DpRect, DpRect> {
+        val row = hasContentDescription(value, substring = true)
+        scrolledTo(row)
+        val label = onNode(hasTestTag(CHECK_LABEL_TAG) and hasAnyAncestor(row), useUnmergedTree = true).getBoundsInRoot()
+        val shown = onNode(hasTestTag(CHECK_VALUE_TAG) and hasAnyAncestor(row), useUnmergedTree = true).getBoundsInRoot()
+        return label to shown
+    }
+
+    @Test
+    fun `check row value goes under its label at large fonts`() = withLocale(Locale.GERMAN) {
+        runComposeUiTest {
+            screen(language = "de", fontScale = 1.5f)
+            val (label, value) = checkParts("7,6")
+            assertTrue(value.top >= label.bottom, "value $value under label $label")
+            assertTrue(value.left == label.left, "value $value starts with label $label")
+        }
+    }
+
+    @Test
+    fun `check row value sits beside its label at normal size`() = french {
+        runComposeUiTest {
+            screen()
+            val (label, value) = checkParts("7,6")
+            assertTrue(value.left >= label.right, "value $value beside label $label")
         }
     }
 
