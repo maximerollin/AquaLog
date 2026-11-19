@@ -40,9 +40,9 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithText("Cycling").performClick()
         composeRule.onNodeWithText("Continue to Aquarium").performClick()
 
-        composeRule.onNodeWithText("Aquarium name")
+        composeRule.onNodeWithTag("aquarium-name")
             .performTextInput("Amazonien")
-        composeRule.onNodeWithText("Volume")
+        composeRule.onNodeWithTag("aquarium-volume")
             .performTextInput("120.5")
         composeRule.onNodeWithText("US gallons")
             .performClick()
@@ -55,7 +55,8 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithContentDescription("Enabled for Ammonia / ammonium")
             .assertIsOn()
         composeRule.onNodeWithTag("parameter-row-temperature").performScrollTo().performClick()
-        val temperatureUnit = composeRule.onNode(hasSetTextAction() and hasText("°C"))
+        // The unit FilledField carries its label as text on the editable node.
+        val temperatureUnit = composeRule.onNode(hasSetTextAction() and hasText("Unit"))
         temperatureUnit.performTextClearance()
         temperatureUnit.performTextInput("°F")
         composeRule.onNodeWithText("Done").performClick()
