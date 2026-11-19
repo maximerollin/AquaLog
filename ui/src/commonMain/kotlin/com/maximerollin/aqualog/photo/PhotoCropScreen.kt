@@ -47,7 +47,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.maximerollin.aqualog.StatusBarOverWater
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
@@ -70,7 +69,8 @@ fun PhotoCropScreen(image: ImageBitmap, onConfirm: (SquareCrop) -> Unit, onCance
         scale = next.first
         offset = next.second
     }
-    Dialog(onDismissRequest = onCancel, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // Under the system bars: the dark water reaches every edge, never the dimmed Home in a band under them.
+    Dialog(onDismissRequest = onCancel, properties = edgeToEdgeDialogProperties()) {
         Box(Modifier.fillMaxSize().background(CropBackdrop)) {
             StatusBarOverWater(true)
             Column(
