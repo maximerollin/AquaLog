@@ -1,9 +1,11 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -11,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -26,6 +29,7 @@ class AquariumPersistenceTest {
     @get:Rule
     val composeRule = createEmptyComposeRule()
 
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun onboarding_createsConfiguredAquarium_withoutPersistingPracticeValue() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -50,14 +54,12 @@ class AquariumPersistenceTest {
             .assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Enabled for Ammonia / ammonium")
             .assertIsOn()
-        val temperatureUnit = composeRule.onNodeWithContentDescription("Unit for Temperature")
-        temperatureUnit.performScrollTo()
+        composeRule.onNodeWithTag("parameter-row-temperature").performScrollTo().performClick()
+        val temperatureUnit = composeRule.onNode(hasSetTextAction() and hasText("°C"))
         temperatureUnit.performTextClearance()
         temperatureUnit.performTextInput("°F")
-        composeRule.onNodeWithContentDescription("Move pH up")
-            .performScrollTo()
-            .performClick()
-        composeRule.scrollToText("Try a mini Session")
+        composeRule.onNodeWithText("Done").performClick()
+        composeRule.onNodeWithTag("parameter-row-ph").performCustomAccessibilityActionWithLabel("Move pH up")
         composeRule.onNodeWithText("Try a mini Session").performClick()
 
         composeRule.onNodeWithContentDescription("Practice value for pH")

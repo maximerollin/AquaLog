@@ -22,8 +22,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,7 +38,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -70,6 +67,7 @@ import com.maximerollin.aqualog.habitants.AddInhabitantScreen
 import com.maximerollin.aqualog.home.TankHome
 import com.maximerollin.aqualog.home.plusEnabled
 import com.maximerollin.aqualog.onboarding.AquariumStepContent
+import com.maximerollin.aqualog.onboarding.ParametersContent
 import com.maximerollin.aqualog.onboarding.ProfileContent
 import com.maximerollin.aqualog.onboarding.WelcomeContent
 import com.maximerollin.aqualog.onboarding.onboardingActions
@@ -82,7 +80,6 @@ import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.Cloud
-import com.maximerollin.aqualog.ui.theme.CarnetDivider
 import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.FilledField
@@ -174,10 +171,12 @@ fun AquaLogContent(
             actions = onboardingActions,
             modifier = framed,
         )
-        state.step == OnboardingStep.PARAMETERS -> ParametersScreen(
-            state = state,
-            viewModel = viewModel,
-            modifier = inset,
+        state.step == OnboardingStep.PARAMETERS -> ParametersContent(
+            state.parameters,
+            state.profile,
+            state.showParameterValidationError,
+            onboardingActions,
+            framed,
         )
         state.step == OnboardingStep.PRACTICE -> PracticeScreen(
             state = state,
@@ -489,132 +488,6 @@ private fun PortableImportConfirmation(
                 Text(stringResource(Res.string.cancel))
             }
         },
-    )
-}
-
-@Composable
-private fun ParametersScreen(
-    state: HomeUiState,
-    viewModel: HomeViewModel,
-    modifier: Modifier,
-) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(24.dp),
-    ) {
-        item {
-            ScreenHeading(Res.string.parameters_title, Res.string.parameters_description)
-            Spacer(Modifier.height(16.dp))
-        }
-        itemsIndexed(state.parameters, key = { _, item -> item.parameter.storageValue }) { index, item ->
-            ParameterEditor(
-                state = item,
-                canMoveUp = index > 0,
-                canMoveDown = index < state.parameters.lastIndex,
-                viewModel = viewModel,
-            )
-        }
-        item { CarnetDivider() }
-        if (state.showParameterValidationError) {
-            item { ErrorText(Res.string.invalid_parameters) }
-        }
-        item {
-            Spacer(Modifier.height(16.dp))
-            PrimaryButton(Res.string.try_mini_session, viewModel::continueToPractice)
-        }
-    }
-}
-
-@Composable
-private fun ParameterEditor(
-    state: ParameterEditorState,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    viewModel: HomeViewModel,
-) {
-    val label = state.parameter.label()
-    val moveUpDescription = stringResource(Res.string.move_parameter_up, label)
-    val moveDownDescription = stringResource(Res.string.move_parameter_down, label)
-    val enabledDescription = stringResource(Res.string.enabled_for_parameter, label)
-    Column {
-        CarnetDivider()
-        Column(
-            modifier = Modifier.padding(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                TextButton(
-                    onClick = { viewModel.moveParameter(state.parameter, -1) },
-                    enabled = canMoveUp,
-                    modifier = Modifier.semantics { contentDescription = moveUpDescription },
-                ) { Text(stringResource(Res.string.move_up_symbol)) }
-                TextButton(
-                    onClick = { viewModel.moveParameter(state.parameter, 1) },
-                    enabled = canMoveDown,
-                    modifier = Modifier.semantics { contentDescription = moveDownDescription },
-                ) { Text(stringResource(Res.string.move_down_symbol)) }
-                Switch(
-                    checked = state.isActive,
-                    onCheckedChange = { viewModel.setParameterActive(state.parameter, it) },
-                    modifier = Modifier.semantics { contentDescription = enabledDescription },
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ParameterTextField(
-                    value = state.unit,
-                    onValueChange = { viewModel.updateParameterUnit(state.parameter, it) },
-                    label = stringResource(Res.string.parameter_unit),
-                    description = stringResource(Res.string.unit_for_parameter, label),
-                    modifier = Modifier.weight(1f),
-                )
-                ParameterTextField(
-                    value = state.precision,
-                    onValueChange = { viewModel.updateParameterPrecision(state.parameter, it) },
-                    label = stringResource(Res.string.parameter_precision),
-                    description = stringResource(Res.string.precision_for_parameter, label),
-                    keyboardType = KeyboardType.Number,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ParameterTextField(
-                    value = state.indicativeMinimum,
-                    onValueChange = { viewModel.updateParameterMinimum(state.parameter, it) },
-                    label = stringResource(Res.string.parameter_minimum),
-                    description = stringResource(Res.string.minimum_for_parameter, label),
-                    keyboardType = KeyboardType.Decimal,
-                    modifier = Modifier.weight(1f),
-                )
-                ParameterTextField(
-                    value = state.indicativeMaximum,
-                    onValueChange = { viewModel.updateParameterMaximum(state.parameter, it) },
-                    label = stringResource(Res.string.parameter_maximum),
-                    description = stringResource(Res.string.maximum_for_parameter, label),
-                    keyboardType = KeyboardType.Decimal,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ParameterTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    description: String,
-    modifier: Modifier,
-    keyboardType: KeyboardType = KeyboardType.Text,
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        modifier = modifier.semantics { contentDescription = description },
     )
 }
 
@@ -941,15 +814,6 @@ private fun PrimaryButton(label: StringResource, onClick: () -> Unit) {
     ) {
         Text(stringResource(label))
     }
-}
-
-@Composable
-private fun ErrorText(message: StringResource) {
-    Text(
-        stringResource(message),
-        color = MaterialTheme.colorScheme.error,
-        style = MaterialTheme.typography.bodyMedium,
-    )
 }
 
 @Composable
