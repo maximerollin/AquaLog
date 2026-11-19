@@ -88,6 +88,7 @@ import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.FilledField
 import com.maximerollin.aqualog.ui.theme.FloatingNavBar
 import com.maximerollin.aqualog.ui.theme.WaterFullScreen
+import com.maximerollin.aqualog.ui.theme.WaterPrimaryButtonText
 import com.maximerollin.aqualog.ui.theme.frauncesFamily
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -223,9 +224,6 @@ fun AquaLogContent(
 
 /** Test tag of the decorative cloud square that opens every account step. */
 internal const val ACCOUNT_CLOUD_TAG = "account-cloud"
-
-/** The label of a white primary button on the water: it keeps 4.5:1 on the white (ScenePhysicsTest). */
-internal val AccountPrimaryButtonText = Color(0xFF14675E)
 
 /** A glass button's fill on the full-screen backing: its white label keeps 4.5:1 (ScenePhysicsTest). */
 internal val AccountGlassButtonFill = Color.White.copy(alpha = .14f)
@@ -367,9 +365,9 @@ private fun WaterPrimaryButton(label: StringResource, onClick: () -> Unit, enabl
         shape = MaterialTheme.shapes.medium,
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.White,
-            contentColor = AccountPrimaryButtonText,
+            contentColor = WaterPrimaryButtonText,
             disabledContainerColor = Color.White.copy(alpha = .6f),
-            disabledContentColor = AccountPrimaryButtonText.copy(alpha = .7f),
+            disabledContentColor = WaterPrimaryButtonText.copy(alpha = .7f),
         ),
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
     ) {

@@ -1,6 +1,9 @@
 package com.maximerollin.aqualog.a11y
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
@@ -12,6 +15,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.text.TextLayoutResult
 import com.maximerollin.aqualog.photo.PhotoCropScreen
 import com.maximerollin.aqualog.photo.SquareCrop
 import com.maximerollin.aqualog.photo.centredCrop
@@ -31,8 +35,12 @@ class PhotoCropSemanticsTest {
         try { block() } finally { Locale.setDefault(previous) }
     }
 
-    private fun androidx.compose.ui.test.ComposeUiTest.crop(onConfirm: (SquareCrop) -> Unit = {}, onCancel: () -> Unit = {}) {
-        setContent { AquaLogTheme(false) { PhotoCropScreen(ImageBitmap(400, 300), onConfirm, onCancel) } }
+    private fun androidx.compose.ui.test.ComposeUiTest.crop(
+        onConfirm: (SquareCrop) -> Unit = {},
+        onCancel: () -> Unit = {},
+        dark: Boolean = false,
+    ) {
+        setContent { AquaLogTheme(dark) { PhotoCropScreen(ImageBitmap(400, 300), onConfirm, onCancel) } }
         waitForIdle()
     }
 
@@ -75,6 +83,20 @@ class PhotoCropSemanticsTest {
             crop()
             onNodeWithText("Recadrer la photo").assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
             assertTrue(onAllNodesWithText("Pincez pour zoomer", substring = true).fetchSemanticsNodes().isNotEmpty())
+        }
+    }
+
+    @Test
+    fun `confirm label keeps 4·5 to 1 on its white button in dark theme`() = french {
+        runComposeUiTest {
+            crop(dark = true)
+            val label = onNodeWithText("Utiliser cette photo", useUnmergedTree = true).fetchSemanticsNode()
+            val layouts = mutableListOf<TextLayoutResult>()
+            label.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+            val color = layouts.single().layoutInput.style.color
+            val (light, dark) = listOf(color.luminance(), Color.White.luminance()).sortedDescending()
+            val contrast = (light + .05f) / (dark + .05f)
+            assertTrue(contrast >= 4.5f, "label $color on white: $contrast")
         }
     }
 }

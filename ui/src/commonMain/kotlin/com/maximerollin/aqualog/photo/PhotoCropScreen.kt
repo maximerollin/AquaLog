@@ -54,6 +54,7 @@ import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.X
 import com.maximerollin.aqualog.ui.theme.CropBackdrop
 import com.maximerollin.aqualog.ui.theme.GlassIconButton
+import com.maximerollin.aqualog.ui.theme.WaterPrimaryButtonText
 import com.maximerollin.aqualog.ui.theme.frauncesFamily
 import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.stringResource
@@ -117,7 +118,8 @@ fun PhotoCropScreen(image: ImageBitmap, onConfirm: (SquareCrop) -> Unit, onCance
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color.White,
-                        contentColor = MaterialTheme.colorScheme.primary,
+                        // A fixed deep teal: the dark theme's primary is too light for the white.
+                        contentColor = WaterPrimaryButtonText,
                     ),
                 ) { Text(stringResource(Res.string.photo_crop_confirm)) }
                 TextButton(

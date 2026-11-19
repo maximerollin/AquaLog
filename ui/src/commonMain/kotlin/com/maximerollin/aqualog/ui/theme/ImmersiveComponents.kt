@@ -795,6 +795,12 @@ fun PickerTile(label: String, value: String, onClick: () -> Unit, modifier: Modi
 /** Test tag of the backed column of a [WaterFullScreen]: it starts where the content starts, not at the top of the screen. */
 internal const val FULL_SCREEN_BACKING_TAG = "full-screen-backing"
 
+/**
+ * The label of a white primary button on the water (the account screens, the photo crop): a fixed deep teal, so it keeps 4.5:1
+ * on the white in both themes (ScenePhysicsTest), where the dark theme's light [ColorScheme.primary] would not.
+ */
+internal val WaterPrimaryButtonText = Color(0xFF14675E)
+
 /** Behind the text of a [WaterFullScreen]: white keeps 4.5:1 over any water (ScenePhysicsTest). */
 internal val FullScreenContentBacking = Color(0xFF0A2824).copy(alpha = .88f)
 

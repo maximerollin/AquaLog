@@ -6,7 +6,6 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.AccountDescriptionText
 import com.maximerollin.aqualog.AccountGlassButtonFill
-import com.maximerollin.aqualog.AccountPrimaryButtonText
 import com.maximerollin.aqualog.ProBannerTextBottom
 import com.maximerollin.aqualog.ProBannerTextFraction
 import com.maximerollin.aqualog.ProBannerWater
@@ -22,6 +21,7 @@ import com.maximerollin.aqualog.ui.theme.HeroTextBacking
 import com.maximerollin.aqualog.ui.theme.WaterHeaderPhotoShade
 import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeBottom
 import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeTop
+import com.maximerollin.aqualog.ui.theme.WaterPrimaryButtonText
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -236,8 +236,8 @@ class ScenePhysicsTest {
 
     @Test
     fun `the account screens keep 4·5 to 1 on the full-screen backing`() {
-        // The primary button is white, its label deep teal.
-        assertTrue(contrast(AccountPrimaryButtonText, Color.White) >= 4.5f, "primary ${contrast(AccountPrimaryButtonText, Color.White)}")
+        // The primary button is white, its label deep teal (the photo crop's confirm button too).
+        assertTrue(contrast(WaterPrimaryButtonText, Color.White) >= 4.5f, "primary ${contrast(WaterPrimaryButtonText, Color.White)}")
         for (behind in listOf(Color(0xFFE3EAEC), Color(0xFFE8E0D0), Color(0xFFDCE0E6), Color.White)) {
             val backing = FullScreenContentBacking.compositeOver(behind)
             val glass = AccountGlassButtonFill.compositeOver(backing)
