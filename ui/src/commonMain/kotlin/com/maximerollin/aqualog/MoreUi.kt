@@ -345,6 +345,7 @@ internal fun MoreContent(state: HomeUiState, actions: MoreActions, modifier: Mod
             groups = state.inhabitants,
             encyclopedia = encyclopedia.orEmpty(),
             language = remember { Locale.getDefault().language },
+            aquariumName = aquarium.name,
             onRemove = actions.onRemoveInhabitants,
             onAdd = {
                 showHabitants = false

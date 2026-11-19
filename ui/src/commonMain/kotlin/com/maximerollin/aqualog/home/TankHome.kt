@@ -333,6 +333,7 @@ fun TankHome(
             groups = state.inhabitants,
             encyclopedia = encyclopedia.orEmpty(),
             language = remember { Locale.getDefault().language },
+            aquariumName = aquarium.name,
             onRemove = viewModel::removeInhabitants,
             onAdd = {
                 showHabitants = false
