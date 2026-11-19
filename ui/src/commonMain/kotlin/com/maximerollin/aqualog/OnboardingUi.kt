@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -71,11 +70,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maximerollin.aqualog.habitants.AddInhabitantScreen
 import com.maximerollin.aqualog.home.TankHome
+import com.maximerollin.aqualog.onboarding.ProfileContent
+import com.maximerollin.aqualog.onboarding.WelcomeContent
+import com.maximerollin.aqualog.onboarding.onboardingActions
 import com.maximerollin.aqualog.home.plusEnabled
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.shared.AccountDeletionPhase
 import com.maximerollin.aqualog.shared.Aquarium
-import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.FeedbackKind
 import com.maximerollin.aqualog.shared.FeedbackOutcome
@@ -162,18 +163,8 @@ fun AquaLogContent(
             modifier = inset,
         )
         state.setup != null -> AquariumShell(state, viewModel, onExportData, externalLinks, rateApp, framed)
-        state.step == OnboardingStep.WELCOME -> WelcomeScreen(
-            state = state.portableData,
-            onContinue = viewModel::startOnboarding,
-            onRequestImport = viewModel::requestPortableImport,
-            modifier = inset,
-        )
-        state.step == OnboardingStep.PROFILE -> ProfileScreen(
-            selected = state.profile,
-            onSelected = viewModel::selectProfile,
-            onContinue = viewModel::continueToAquarium,
-            modifier = inset,
-        )
+        state.step == OnboardingStep.WELCOME -> WelcomeContent(state.portableData, viewModel.onboardingActions(), modifier)
+        state.step == OnboardingStep.PROFILE -> ProfileContent(state.profile, viewModel.onboardingActions(), framed)
         state.step == OnboardingStep.AQUARIUM -> AquariumDetailsScreen(
             state = state,
             viewModel = viewModel,
@@ -449,32 +440,6 @@ private fun LoadingContent(modifier: Modifier) {
 }
 
 @Composable
-private fun WelcomeScreen(
-    state: PortableDataUiState,
-    onContinue: () -> Unit,
-    onRequestImport: () -> Unit,
-    modifier: Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Spacer(Modifier.weight(1f))
-        ScreenHeading(Res.string.welcome_title, Res.string.welcome_description)
-        PortableDataMessage(state)
-        Spacer(Modifier.weight(1f))
-        PrimaryButton(Res.string.get_started, onContinue)
-        OutlinedButton(
-            onClick = onRequestImport,
-            enabled = !state.isWorking,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) {
-            Text(stringResource(Res.string.restore_from_export))
-        }
-    }
-}
-
-@Composable
 private fun AccountDeletionCleanupScreen(
     state: AccountSettingsUiState,
     aquarium: Aquarium?,
@@ -521,75 +486,6 @@ private fun PortableImportConfirmation(
             }
         },
     )
-}
-
-@Composable
-private fun ProfileScreen(
-    selected: AquariumProfile,
-    onSelected: (AquariumProfile) -> Unit,
-    onContinue: () -> Unit,
-    modifier: Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        ScreenHeading(Res.string.profile_title, Res.string.profile_description)
-        Column(modifier = Modifier.selectableGroup()) {
-            ProfileOption(
-                title = stringResource(Res.string.profile_established),
-                description = stringResource(Res.string.profile_established_description),
-                selected = selected == AquariumProfile.ESTABLISHED,
-                onClick = { onSelected(AquariumProfile.ESTABLISHED) },
-            )
-            ProfileOption(
-                title = stringResource(Res.string.profile_cycling),
-                description = stringResource(Res.string.profile_cycling_description),
-                selected = selected == AquariumProfile.CYCLING,
-                onClick = { onSelected(AquariumProfile.CYCLING) },
-            )
-            ProfileOption(
-                title = stringResource(Res.string.profile_planted_shrimp),
-                description = stringResource(Res.string.profile_planted_shrimp_description),
-                selected = selected == AquariumProfile.PLANTED_SHRIMP,
-                onClick = { onSelected(AquariumProfile.PLANTED_SHRIMP) },
-            )
-            CarnetDivider()
-        }
-        Spacer(Modifier.height(8.dp))
-        PrimaryButton(Res.string.continue_to_aquarium, onContinue)
-    }
-}
-
-@Composable
-private fun ProfileOption(
-    title: String,
-    description: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Column {
-        CarnetDivider()
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .defaultMinSize(minHeight = 56.dp)
-                .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
-                .padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            RadioButton(selected = selected, onClick = null)
-            Spacer(Modifier.width(12.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
 }
 
 @Composable

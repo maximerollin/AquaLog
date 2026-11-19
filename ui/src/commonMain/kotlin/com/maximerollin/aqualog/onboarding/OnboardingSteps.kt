@@ -1,0 +1,258 @@
+package com.maximerollin.aqualog.onboarding
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.maximerollin.aqualog.HomeViewModel
+import com.maximerollin.aqualog.PortableDataMessage
+import com.maximerollin.aqualog.PortableDataUiState
+import com.maximerollin.aqualog.StatusBarOverWater
+import com.maximerollin.aqualog.home.TankScene
+import com.maximerollin.aqualog.rememberReducedMotion
+import com.maximerollin.aqualog.resources.Res
+import com.maximerollin.aqualog.resources.app_name
+import com.maximerollin.aqualog.resources.continue_to_aquarium
+import com.maximerollin.aqualog.resources.get_started
+import com.maximerollin.aqualog.resources.profile_cycling
+import com.maximerollin.aqualog.resources.profile_cycling_description
+import com.maximerollin.aqualog.resources.profile_description
+import com.maximerollin.aqualog.resources.profile_established
+import com.maximerollin.aqualog.resources.profile_established_description
+import com.maximerollin.aqualog.resources.profile_planted_shrimp
+import com.maximerollin.aqualog.resources.profile_planted_shrimp_description
+import com.maximerollin.aqualog.resources.profile_title
+import com.maximerollin.aqualog.resources.restore_from_export
+import com.maximerollin.aqualog.resources.welcome_description
+import com.maximerollin.aqualog.resources.welcome_title
+import com.maximerollin.aqualog.shared.AquariumProfile
+import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.ui.icon.AquagendaIcons
+import com.maximerollin.aqualog.ui.icon.Fish
+import com.maximerollin.aqualog.ui.icon.FlaskConical
+import com.maximerollin.aqualog.ui.icon.Leaf
+import com.maximerollin.aqualog.ui.theme.PaperSheetTop
+import com.maximerollin.aqualog.ui.theme.WaterPrimaryButtonText
+import com.maximerollin.aqualog.ui.theme.frauncesFamily
+import com.maximerollin.aqualog.ui.theme.fullScreenBacking
+import com.maximerollin.aqualog.ui.theme.overlapNext
+import org.jetbrains.compose.resources.stringResource
+
+/** What the onboarding screens ask of their ViewModel; every default does nothing, for tests. */
+class OnboardingActions(
+    val startOnboarding: () -> Unit = {},
+    val requestImport: () -> Unit = {},
+    val selectProfile: (AquariumProfile) -> Unit = {},
+    val continueToAquarium: () -> Unit = {},
+    val updateAquariumName: (String) -> Unit = {},
+    val updateVolume: (String) -> Unit = {},
+    val selectVolumeUnit: (VolumeUnit) -> Unit = {},
+    val continueToParameters: () -> Unit = {},
+    val setParameterActive: (BuiltInParameter, Boolean) -> Unit = { _, _ -> },
+    val moveParameter: (BuiltInParameter, Int) -> Unit = { _, _ -> },
+    val updateParameterUnit: (BuiltInParameter, String) -> Unit = { _, _ -> },
+    val updateParameterPrecision: (BuiltInParameter, String) -> Unit = { _, _ -> },
+    val updateParameterMinimum: (BuiltInParameter, String) -> Unit = { _, _ -> },
+    val updateParameterMaximum: (BuiltInParameter, String) -> Unit = { _, _ -> },
+    val continueToPractice: () -> Unit = {},
+    val updatePracticeValue: (BuiltInParameter, String) -> Unit = { _, _ -> },
+    val continueToPaywall: () -> Unit = {},
+)
+
+/** The ViewModel's onboarding calls as [OnboardingActions]; [onRequestImport] opens the import confirmation by default. */
+fun HomeViewModel.onboardingActions(onRequestImport: () -> Unit = ::requestPortableImport): OnboardingActions =
+    OnboardingActions(
+        startOnboarding = ::startOnboarding,
+        requestImport = onRequestImport,
+        selectProfile = ::selectProfile,
+        continueToAquarium = ::continueToAquarium,
+        updateAquariumName = ::updateAquariumName,
+        updateVolume = ::updateVolume,
+        selectVolumeUnit = ::selectVolumeUnit,
+        continueToParameters = ::continueToParameters,
+        setParameterActive = ::setParameterActive,
+        moveParameter = ::moveParameter,
+        updateParameterUnit = ::updateParameterUnit,
+        updateParameterPrecision = ::updateParameterPrecision,
+        updateParameterMinimum = ::updateParameterMinimum,
+        updateParameterMaximum = ::updateParameterMaximum,
+        continueToPractice = ::continueToPractice,
+        updatePracticeValue = ::updatePracticeValue,
+        continueToPaywall = ::continueToPaywall,
+    )
+
+/** The first screen: a full-frame animated tank, then at the bottom the promise, « Commencer » and the restore. */
+@Composable
+fun WelcomeContent(portableData: PortableDataUiState, actions: OnboardingActions, modifier: Modifier = Modifier) {
+    StatusBarOverWater(true)
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        val viewport = maxHeight
+        TankScene(
+            onboardingPreviewAquarium("", "", VolumeUnit.LITERS, AquariumProfile.ESTABLISHED),
+            inhabitants = emptyList(),
+            modifier = Modifier.matchParentSize(),
+            animate = !rememberReducedMotion(),
+        )
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            Column(Modifier.fillMaxWidth().heightIn(min = viewport), verticalArrangement = Arrangement.Bottom) {
+                Column(
+                    Modifier.fillMaxWidth().fullScreenBacking().navigationBarsPadding()
+                        .padding(start = 24.dp, end = 24.dp, top = 48.dp, bottom = 16.dp),
+                ) {
+                    Text(
+                        stringResource(Res.string.app_name).uppercase(),
+                        style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.78.sp),
+                        color = Color.White,
+                    )
+                    Text(
+                        stringResource(Res.string.welcome_title),
+                        modifier = Modifier.padding(top = 8.dp).semantics { heading() },
+                        style = TextStyle(
+                            fontFamily = frauncesFamily(), fontWeight = FontWeight.SemiBold, fontSize = 38.sp, lineHeight = 40.sp,
+                        ),
+                        color = Color.White,
+                    )
+                    Text(
+                        stringResource(Res.string.welcome_description),
+                        modifier = Modifier.padding(top = 12.dp),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
+                        color = Color.White,
+                    )
+                    PortableDataMessage(portableData)
+                    WelcomeDots(Modifier.padding(top = 22.dp, bottom = 18.dp))
+                    Button(
+                        onClick = actions.startOnboarding,
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = WaterPrimaryButtonText),
+                    ) { Text(stringResource(Res.string.get_started), fontWeight = FontWeight.SemiBold) }
+                    TextButton(
+                        onClick = actions.requestImport,
+                        enabled = !portableData.isWorking,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color.White,
+                            disabledContentColor = Color.White.copy(alpha = .6f),
+                        ),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    ) { Text(stringResource(Res.string.restore_from_export), fontWeight = FontWeight.SemiBold) }
+                }
+            }
+        }
+    }
+}
+
+/** Step 1: what the user follows, as three selectable cards under the water. */
+@Composable
+fun ProfileContent(selected: AquariumProfile, actions: OnboardingActions, modifier: Modifier = Modifier) {
+    val listState = rememberLazyListState()
+    OnboardingScaffold(
+        listState = listState,
+        primaryLabel = stringResource(Res.string.continue_to_aquarium),
+        onPrimary = actions.continueToAquarium,
+        modifier = modifier,
+    ) {
+        item {
+            OnboardingHeader(
+                aquarium = onboardingPreviewAquarium("", "", VolumeUnit.LITERS, selected),
+                minHeight = 300.dp,
+                animate = true,
+                modifier = Modifier.overlapNext(30.dp),
+                step = 1,
+            ) {
+                OnboardingTitle(stringResource(Res.string.profile_title), stringResource(Res.string.profile_description))
+            }
+        }
+        item { PaperSheetTop() }
+        item {
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp).selectableGroup(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                ProfileCard(
+                    stringResource(Res.string.profile_established),
+                    stringResource(Res.string.profile_established_description),
+                    AquagendaIcons.Fish,
+                    selected == AquariumProfile.ESTABLISHED,
+                ) { actions.selectProfile(AquariumProfile.ESTABLISHED) }
+                ProfileCard(
+                    stringResource(Res.string.profile_cycling),
+                    stringResource(Res.string.profile_cycling_description),
+                    AquagendaIcons.FlaskConical,
+                    selected == AquariumProfile.CYCLING,
+                ) { actions.selectProfile(AquariumProfile.CYCLING) }
+                ProfileCard(
+                    stringResource(Res.string.profile_planted_shrimp),
+                    stringResource(Res.string.profile_planted_shrimp_description),
+                    AquagendaIcons.Leaf,
+                    selected == AquariumProfile.PLANTED_SHRIMP,
+                ) { actions.selectProfile(AquariumProfile.PLANTED_SHRIMP) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileCard(title: String, description: String, icon: ImageVector, selected: Boolean, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(22.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .then(
+                if (selected) Modifier.shadow(6.dp, shape, ambientColor = Color.Black.copy(alpha = .15f), spotColor = Color.Black.copy(alpha = .15f))
+                    .background(colors.surface, shape).border(BorderStroke(2.dp, colors.primary), shape)
+                else Modifier.border(BorderStroke(1.dp, colors.outlineVariant), shape),
+            )
+            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
+            .padding(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier.size(44.dp).background(if (selected) colors.primary else colors.secondaryContainer, RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = if (selected) colors.onPrimary else colors.primary, modifier = Modifier.size(24.dp))
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = colors.onSurface)
+            Text(description, style = MaterialTheme.typography.bodyMedium, color = colors.onSurfaceVariant)
+        }
+    }
+}
