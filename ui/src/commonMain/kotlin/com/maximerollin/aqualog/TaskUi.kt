@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.ui.theme.IconTile
 import com.maximerollin.aqualog.ui.theme.LargeFontScale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -501,15 +502,7 @@ private fun TaskRow(occurrence: TaskOccurrence, recurrence: TaskRecurrence?, ove
                 if (completed) Icon(AquagendaIcons.Check, contentDescription = null, tint = colors.onPrimary, modifier = Modifier.size(16.dp))
             }
         }
-        Box(
-            Modifier.padding(start = 4.dp).size(34.dp).background(colors.secondaryContainer, RoundedCornerShape(11.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                occurrence.maintenanceActionType?.icon() ?: AquagendaIcons.Bell, contentDescription = null,
-                tint = colors.primary, modifier = Modifier.size(18.dp),
-            )
-        }
+        IconTile(occurrence.maintenanceActionType?.icon() ?: AquagendaIcons.Bell, Modifier.padding(start = 4.dp))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             // The icon tile already shows the linked action: the title does not repeat it.

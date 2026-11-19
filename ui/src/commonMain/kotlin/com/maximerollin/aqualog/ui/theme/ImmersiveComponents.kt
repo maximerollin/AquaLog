@@ -130,6 +130,8 @@ import com.maximerollin.aqualog.ui.icon.Fish
 import com.maximerollin.aqualog.ui.icon.Menu
 import com.maximerollin.aqualog.ui.icon.Plus
 import com.maximerollin.aqualog.ui.icon.RotateCcwClock
+import com.maximerollin.aqualog.ui.icon.Search
+import androidx.compose.ui.text.input.ImeAction
 import com.maximerollin.aqualog.ui.icon.TrendingUp
 import java.time.LocalDate
 import kotlinx.coroutines.launch
@@ -581,10 +583,7 @@ fun SettingsRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Box(
-                Modifier.alpha(dim).size(34.dp).background(colors.secondaryContainer, RoundedCornerShape(11.dp)),
-                contentAlignment = Alignment.Center,
-            ) { Icon(icon, contentDescription = null, tint = colors.primary, modifier = Modifier.size(18.dp)) }
+            IconTile(icon, Modifier.alpha(dim))
             Spacer(Modifier.width(12.dp))
         }
         val texts = @Composable {
@@ -717,6 +716,58 @@ fun FilledField(
                     color = if (isError || focused) accent else colors.onSurfaceVariant,
                 )
                 Box(Modifier.fillMaxWidth()) { innerTextField() }
+            }
+        },
+    )
+}
+
+/** The 34 dp square behind a row's icon: [secondaryContainer] with an 18 dp [primary] icon. Decorative, the row speaks. */
+@Composable
+fun IconTile(icon: ImageVector, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Box(modifier.size(34.dp).background(colors.secondaryContainer, RoundedCornerShape(11.dp)), contentAlignment = Alignment.Center) {
+        Icon(icon, contentDescription = null, tint = colors.primary, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** The water under the photo crop: white and 85% white keep 4.5:1 on it (ScenePhysicsTest). */
+internal val CropBackdrop = Color(0xFF0E2F2A)
+
+private val SearchPillShape = RoundedCornerShape(24.dp)
+
+/**
+ * A search field as a pill: 48 dp, a leading search icon and a ring that becomes 2 dp [primary] on focus. The [placeholder] is
+ * drawn in the decoration box while [query] is empty, so it belongs to the editable node and names it (the #45 pattern).
+ */
+@Composable
+fun SearchPill(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    testTag: String? = null,
+) {
+    val colors = MaterialTheme.colorScheme
+    var focused by remember { mutableStateOf(false) }
+    BasicTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp).let { if (testTag != null) it.testTag(testTag) else it }
+            .background(colors.surface, SearchPillShape)
+            .border(if (focused) 2.dp else 1.dp, if (focused) colors.primary else colors.outlineVariant, SearchPillShape)
+            .onFocusChanged { focused = it.isFocused },
+        textStyle = TextStyle(fontFamily = dmSansFamily(), fontSize = 16.sp, color = colors.onSurface),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        singleLine = true,
+        cursorBrush = SolidColor(colors.primary),
+        decorationBox = { innerTextField ->
+            Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(AquagendaIcons.Search, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                Box(Modifier.weight(1f).padding(vertical = 12.dp)) {
+                    if (query.isEmpty()) Text(placeholder, fontSize = 16.sp, color = colors.onSurfaceVariant)
+                    innerTextField()
+                }
             }
         },
     )

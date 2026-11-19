@@ -603,4 +603,11 @@
     <string name="rhythm_description">When Aquagenda suggests testing each parameter. “Auto” follows your Aquarium's profile.</string>
     <string name="session_details_context">%1$s · %2$s</string>
     <string name="session_notes_heading">Notes</string>
+    <string name="habitants_pill_good">Compatible</string>
+    <plurals name="habitants_pill_problems"><item quantity="one">%1$d problem</item><item quantity="other">%1$d problems</item></plurals>
+    <string name="habitants_fit_good">Does well in %1$s</string>
+    <string name="habitants_fit_caution">With precautions for %1$s</string>
+    <string name="habitants_fit_bad">Not recommended for %1$s</string>
+    <string name="habitants_count_in_aquarium">%1$d in %2$s</string>
+    <string name="photo_crop_hint">Pinch to zoom, drag to frame. This square is exactly what will be saved.</string>
 </resources>

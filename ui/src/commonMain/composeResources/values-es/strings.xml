@@ -603,4 +603,11 @@
     <string name="rhythm_description">Cuándo Aquagenda te propone analizar cada parámetro. «Auto» sigue el perfil de tu Acuario.</string>
     <string name="session_details_context">%1$s · %2$s</string>
     <string name="session_notes_heading">Notas</string>
+    <string name="habitants_pill_good">Compatible</string>
+    <plurals name="habitants_pill_problems"><item quantity="one">%1$d problema</item><item quantity="other">%1$d problemas</item></plurals>
+    <string name="habitants_fit_good">Va bien en %1$s</string>
+    <string name="habitants_fit_caution">Con precauciones para %1$s</string>
+    <string name="habitants_fit_bad">No recomendado para %1$s</string>
+    <string name="habitants_count_in_aquarium">%1$d en %2$s</string>
+    <string name="photo_crop_hint">Pellizca para ampliar, arrastra para encuadrar. Este cuadrado es exactamente lo que se guardará.</string>
 </resources>

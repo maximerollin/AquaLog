@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import com.maximerollin.aqualog.ui.theme.IconTile
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -263,10 +264,7 @@ private fun NoteRow(event: SessionEvent) {
         Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).semantics(mergeDescendants = true) {}.padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier.size(34.dp).background(colors.secondaryContainer, RoundedCornerShape(11.dp)),
-            contentAlignment = Alignment.Center,
-        ) { Icon(AquagendaIcons.NotepadText, contentDescription = null, tint = colors.primary, modifier = Modifier.size(18.dp)) }
+        IconTile(AquagendaIcons.NotepadText)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(

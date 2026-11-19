@@ -16,6 +16,7 @@ import com.maximerollin.aqualog.ProBannerTextFraction
 import com.maximerollin.aqualog.ProBannerWater
 import com.maximerollin.aqualog.proBannerShadeAlpha
 import androidx.compose.ui.unit.dp
+import com.maximerollin.aqualog.ui.theme.CropBackdrop
 import com.maximerollin.aqualog.ui.theme.FullScreenContentBacking
 import com.maximerollin.aqualog.ui.theme.HeroTextBacking
 import com.maximerollin.aqualog.ui.theme.WaterHeaderPhotoShade
@@ -261,5 +262,16 @@ class ScenePhysicsTest {
         assertTrue(contrast(Color.White, bubble) >= 4.5f, "over a bubble: ${contrast(Color.White, bubble)}")
         // The sand, the scene's lightest colour, rises 16 dp at most: the text never lies on it.
         assertTrue(ProBannerTextBottom > 16.dp)
+    }
+
+    @Test
+    fun `white text keeps 4·5 to 1 on the crop backdrop`() {
+        assertTrue(contrast(Color.White, CropBackdrop) >= 4.5f, "${contrast(Color.White, CropBackdrop)}")
+    }
+
+    @Test
+    fun `hint text keeps 4·5 to 1 on the crop backdrop`() {
+        val hint = Color.White.copy(alpha = .85f).compositeOver(CropBackdrop)
+        assertTrue(contrast(hint, CropBackdrop) >= 4.5f, "${contrast(hint, CropBackdrop)}")
     }
 }

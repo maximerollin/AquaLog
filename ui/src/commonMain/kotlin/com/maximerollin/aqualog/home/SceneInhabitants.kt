@@ -35,8 +35,13 @@ data class SceneSprite(val drawing: DrawableResource, val tint: Color?, val moti
 
 /** A group's drawing: its species' own, else its family silhouette tinted with the species colour (or a default one). */
 fun inhabitantDrawing(inhabitant: Inhabitant, species: Species?): Pair<DrawableResource, Color?> =
-    species?.drawing?.let { Res.allDrawableResources[it] }?.let { it to null }
-        ?: (familyDrawing(inhabitant.family) to Color(species?.color ?: if (inhabitant.family == DrawingFamily.PLANT) 0xFF4F9D5D else 0xFFF2A65A))
+    if (species != null) speciesDrawing(species)
+    else familyDrawing(inhabitant.family) to Color(if (inhabitant.family == DrawingFamily.PLANT) 0xFF4F9D5D else 0xFFF2A65A)
+
+/** A species' own drawing, else its family silhouette tinted with its colour. */
+fun speciesDrawing(species: Species): Pair<DrawableResource, Color?> =
+    species.drawing?.let { Res.allDrawableResources[it] }?.let { it to null }
+        ?: (familyDrawing(species.family) to Color(species.color))
 
 private fun familyDrawing(family: DrawingFamily): DrawableResource = when (family) {
     DrawingFamily.TETRA -> Res.drawable.family_tetra
