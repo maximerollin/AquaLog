@@ -1,3 +1,5 @@
+Guide pas à pas : [guide-test-ferme.md](guide-test-ferme.md)
+
 > Dossier historique : la matrice dev/beta/prod ci-dessous a été remplacée par une app et une configuration communes. Voir [déploiement actuel](deployment.md) et [RevenueCat](revenuecat-setup.md). Le retrait initial de LogSnag est également remplacé par son intégration ciblée, décrite dans le guide actuel. Les preuves datées restent celles des builds historiques.
 
 # Qualification V1 pour le test fermé — issue #19
