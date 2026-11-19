@@ -593,4 +593,25 @@
     <string name="habitants_fit_bad">Nicht empfohlen für %1$s</string>
     <string name="habitants_count_in_aquarium">%1$d in %2$s</string>
     <string name="photo_crop_hint">Zum Zoomen auseinanderziehen, zum Ausrichten verschieben. Genau dieses Quadrat wird gespeichert.</string>
+    <string name="onboarding_step_of">Schritt %1$d von %2$d</string>
+    <string name="parameters_hint">Zum Umsortieren ziehen, auf eine Zeile tippen, um ihren Richtbereich einzustellen</string>
+    <plurals name="parameters_count_active"><item quantity="one">%1$d erfasst</item><item quantity="other">%1$d erfasst</item></plurals>
+    <string name="parameter_range_none">Kein Bereich</string>
+    <string name="parameter_range_invalid">Bereich prüfen</string>
+    <string name="range_sheet_hint">Richtbereich: ein persönlicher Anhaltspunkt, keine Norm.</string>
+    <string name="range_sheet_invalid">Prüfen Sie Einheit und Bereich: Das Minimum darf das Maximum nicht überschreiten.</string>
+    <string name="range_sheet_decrease">%1$s verringern</string>
+    <string name="range_sheet_increase">%1$s erhöhen</string>
+    <string name="range_sheet_done">Fertig</string>
+    <string name="paywall_pro_overline">Aquagenda Pro</string>
+    <string name="paywall_headline">Alle Ihre Becken, ihre ganze Geschichte.</string>
+    <string name="paywall_benefit_aquariums">Mehrere Aquarien</string>
+    <string name="paywall_benefit_history">Verlauf über 90 Tage hinaus</string>
+    <string name="paywall_benefit_analysis">Vorher-nachher-Analyse eines Eingriffs</string>
+    <string name="paywall_plan_annual">Jährlich</string>
+    <string name="paywall_plan_lifetime">Lebenslang</string>
+    <string name="paywall_annual_terms">pro Jahr · %1$d Tage Testzeitraum</string>
+    <string name="paywall_lifetime_terms">einmalig, ohne Testzeitraum</string>
+    <string name="paywall_recommended">Empfohlen</string>
+    <string name="paywall_choose_pro">Pro wählen</string>
 </resources>

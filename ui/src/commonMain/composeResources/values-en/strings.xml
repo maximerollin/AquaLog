@@ -593,4 +593,25 @@
     <string name="habitants_fit_bad">Not recommended for %1$s</string>
     <string name="habitants_count_in_aquarium">%1$d in %2$s</string>
     <string name="photo_crop_hint">Pinch to zoom, drag to frame. This square is exactly what will be saved.</string>
+    <string name="onboarding_step_of">Step %1$d of %2$d</string>
+    <string name="parameters_hint">Drag to reorder, tap a row to set its range</string>
+    <plurals name="parameters_count_active"><item quantity="one">%1$d tracked</item><item quantity="other">%1$d tracked</item></plurals>
+    <string name="parameter_range_none">No range</string>
+    <string name="parameter_range_invalid">Range to check</string>
+    <string name="range_sheet_hint">Indicative range: a personal reference point, not a norm.</string>
+    <string name="range_sheet_invalid">Check the unit and the range: the minimum cannot be above the maximum.</string>
+    <string name="range_sheet_decrease">Decrease %1$s</string>
+    <string name="range_sheet_increase">Increase %1$s</string>
+    <string name="range_sheet_done">Done</string>
+    <string name="paywall_pro_overline">Aquagenda Pro</string>
+    <string name="paywall_headline">All your tanks, their whole story.</string>
+    <string name="paywall_benefit_aquariums">Several Aquariums</string>
+    <string name="paywall_benefit_history">History beyond 90 days</string>
+    <string name="paywall_benefit_analysis">Before / after analysis of an intervention</string>
+    <string name="paywall_plan_annual">Annual</string>
+    <string name="paywall_plan_lifetime">Lifetime</string>
+    <string name="paywall_annual_terms">per year · %1$d-day trial</string>
+    <string name="paywall_lifetime_terms">once, no trial</string>
+    <string name="paywall_recommended">Recommended</string>
+    <string name="paywall_choose_pro">Choose Pro</string>
 </resources>
