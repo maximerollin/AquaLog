@@ -89,8 +89,10 @@ internal fun HabitantsSheetBody(
                 color = MaterialTheme.colorScheme.onSurface,
             )
         }
-        val count: @Composable () -> Unit = {
+        val count: @Composable (Modifier) -> Unit = { modifier ->
             Text(
+                modifier = modifier,
+                text =
                 stringResource(Res.string.habitants_count_in_aquarium, total, aquariumName),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -100,12 +102,14 @@ internal fun HabitantsSheetBody(
         if (LocalDensity.current.fontScale >= LargeFontScale) {
             Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                 title()
-                count()
+                count(Modifier)
             }
         } else {
             Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 title()
-                count()
+                // A long Aquarium name wraps rather than squeezing the title.
+                Spacer(Modifier.width(12.dp))
+                count(Modifier.weight(1f, fill = false))
             }
         }
         groups.forEachIndexed { index, group ->
@@ -113,6 +117,17 @@ internal fun HabitantsSheetBody(
             val (drawing, tint) = inhabitantDrawing(group, species)
             val name = group.displayName(encyclopedia, language)
             if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            val large = LocalDensity.current.fontScale >= LargeFontScale
+            val removeLabel = stringResource(Res.string.habitants_remove_named, name)
+            val removeButton: @Composable () -> Unit = {
+                TextButton(
+                    onClick = { removing = group },
+                    // The visible « Retirer… » is the same on every row: TalkBack hears which group.
+                    modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = removeLabel },
+                ) {
+                    Text(stringResource(Res.string.habitants_remove))
+                }
+            }
             Row(
                 Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -131,15 +146,10 @@ internal fun HabitantsSheetBody(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                    // At large font sizes « Retirer… » sits under the name, not beside it.
+                    if (large) removeButton()
                 }
-                val removeLabel = stringResource(Res.string.habitants_remove_named, name)
-                TextButton(
-                    onClick = { removing = group },
-                    // The visible « Retirer… » is the same on every row: TalkBack hears which group.
-                    modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = removeLabel },
-                ) {
-                    Text(stringResource(Res.string.habitants_remove))
-                }
+                if (!large) removeButton()
             }
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

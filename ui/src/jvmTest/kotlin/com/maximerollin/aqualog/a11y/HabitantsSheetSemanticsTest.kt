@@ -2,7 +2,10 @@ package com.maximerollin.aqualog.a11y
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
@@ -21,6 +24,11 @@ import java.io.File
 import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 
 /** The Habitants sheet body in French: header count, rows with thumbnails, « Retirer » and « Ajouter » (lot 4b, Task 2). */
 @OptIn(ExperimentalTestApi::class)
@@ -36,11 +44,13 @@ class HabitantsSheetSemanticsTest {
         try { block() } finally { Locale.setDefault(previous) }
     }
 
-    private fun androidx.compose.ui.test.ComposeUiTest.sheet(groups: List<Inhabitant>, onAdd: () -> Unit = {}) {
+    private fun androidx.compose.ui.test.ComposeUiTest.sheet(groups: List<Inhabitant>, onAdd: () -> Unit = {}, language: String = "fr", fontScale: Float = 1f) {
         setContent {
             AquaLogTheme(false) {
-                Box(Modifier.size(360.dp, 760.dp)) {
-                    HabitantsSheetBody(groups, encyclopedia, "fr", "Salon", onRemove = { _, _, _ -> }, onAdd = onAdd)
+                CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
+                    Box(Modifier.size(360.dp, 760.dp)) {
+                        HabitantsSheetBody(groups, encyclopedia, language, "Salon", onRemove = { _, _, _ -> }, onAdd = onAdd)
+                    }
                 }
             }
         }
@@ -92,5 +102,19 @@ class HabitantsSheetSemanticsTest {
             onNodeWithText("Ajouter un habitant").performClick()
             assertEquals(1, added)
         }
+    }
+
+    @Test
+    fun `german at 150 percent puts remove under the name`() {
+        val previous = Locale.getDefault()
+        Locale.setDefault(Locale.GERMAN)
+        try {
+            runComposeUiTest {
+                sheet(listOf(cherry), language = "de", fontScale = 1.5f)
+                val name = onNode(hasText("\u00A0×\u00A010", substring = true)).getBoundsInRoot()
+                val button = onNode(hasClickAction() and hasContentDescription(" entfernen…", substring = true)).getBoundsInRoot()
+                assertTrue(button.top >= name.bottom, "button ${button.top} under name ${name.bottom}")
+            }
+        } finally { Locale.setDefault(previous) }
     }
 }
