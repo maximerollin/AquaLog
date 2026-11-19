@@ -108,8 +108,9 @@ fun AquaLogContent(
     // handles those insets itself, so they get the bare [modifier] and reach the bottom of the window. Every other screen gets
     // `framed`, kept clear of the gesture bar.
     val framed = modifier.padding(contentPadding).consumeWindowInsets(contentPadding)
-    // Screens whose water header draws under the status bar get `framed` as is: Tasks, Rhythm, the Session, Session details
-    // and the shell (the home, History, Trends and More). Every other screen gets `inset` and starts below the status bar.
+    // Screens whose water header draws under the status bar get `framed` as is: Tasks, Rhythm, the Session, Add inhabitant,
+    // Session details and the shell (the home, History, Trends and More). Every other screen gets `inset` and starts below the
+    // status bar.
     val inset = framed.windowInsetsPadding(WindowInsets.statusBars)
     when {
         state.isLoading -> LoadingContent(inset)
@@ -139,7 +140,7 @@ fun AquaLogContent(
             modifier = framed,
         )
         // Below entry: « Faire une analyse » opens a Session over the fiche, which comes back once it is closed.
-        state.addInhabitant != null && state.setup != null -> AddInhabitantScreen(state.addInhabitant, state, viewModel, inset)
+        state.addInhabitant != null && state.setup != null -> AddInhabitantScreen(state.addInhabitant, state, viewModel, framed)
         state.sessionDetail != null && state.setup != null -> SessionDetailsScreen(
             recorded = state.sessionDetail,
             setup = state.setup,

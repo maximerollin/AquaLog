@@ -61,9 +61,9 @@ class AddInhabitantFlowTest {
 
             composeRule.onNodeWithText(strings.getString(Res.string.habitants_search_hint)).performTextInput("oto")
             composeRule.waitUntil(5_000) { exists("Otocinclus vittatus") }
-            // The only result sits under « Vont bien dans ce bac », with the compatible badge.
-            composeRule.onNodeWithText(strings.getString(Res.string.habitants_group_good)).assertExists()
-            composeRule.onNodeWithText(strings.getString(Res.string.habitants_badge_good)).assertExists()
+            // The only result sits under « VONT BIEN DANS CE BAC » (a group label, in capitals), with the compatible pill.
+            composeRule.onNodeWithText(strings.getString(Res.string.habitants_group_good).uppercase()).assertExists()
+            composeRule.onNodeWithText(strings.getString(Res.string.habitants_pill_good)).assertExists()
             composeRule.onNodeWithText("Otocinclus vittatus").performClick()
 
             composeRule.onNodeWithText("6").assertExists()

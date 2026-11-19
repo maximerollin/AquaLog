@@ -43,7 +43,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.maximerollin.aqualog.HomeViewModel
 import com.maximerollin.aqualog.LocalizedFormatters
 import com.maximerollin.aqualog.currentLocalizedFormatters
 import com.maximerollin.aqualog.encyclopedia.displayName
@@ -52,7 +51,6 @@ import com.maximerollin.aqualog.label
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
-import com.maximerollin.aqualog.shared.FeedbackKind
 import com.maximerollin.aqualog.shared.Inhabitant
 import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.OnboardingPresets
@@ -90,7 +88,7 @@ internal fun SpeciesFiche(
     present: List<PresentGroup>,
     encyclopedia: List<Species>,
     language: String,
-    viewModel: HomeViewModel,
+    actions: AddInhabitantActions,
     modifier: Modifier = Modifier,
 ) {
     val assessment = remember(species, setup, readings, present, add.count) {
@@ -116,7 +114,7 @@ internal fun SpeciesFiche(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            BackButton(viewModel::backInAddInhabitant)
+            BackButton(actions.onBack)
         }
         Column(Modifier.semantics(mergeDescendants = true) {}) {
             Text(
@@ -150,7 +148,7 @@ internal fun SpeciesFiche(
         }
         if (assessment.checks.any { it.status == CriterionStatus.NOT_MEASURED }) {
             OutlinedButton(
-                onClick = { viewModel.openRapidSession() },
+                onClick = actions.onMeasure,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
             ) { Text(stringResource(Res.string.habitants_measure)) }
         }
@@ -168,10 +166,10 @@ internal fun SpeciesFiche(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            InhabitantCounter(add.count, viewModel::changeInhabitantCount)
+            InhabitantCounter(add.count, actions.onCountChange)
         }
         Button(
-            onClick = viewModel::confirmAddInhabitant,
+            onClick = actions.onConfirm,
             enabled = !add.isSaving,
             shape = MaterialTheme.shapes.medium,
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
@@ -187,7 +185,7 @@ internal fun SpeciesFiche(
         }
         if (add.saveFailed) Text(stringResource(Res.string.habitants_add_failed), color = MaterialTheme.colorScheme.error)
         TextButton(
-            onClick = { viewModel.openFeedback(FeedbackKind.SPECIES, species.id, name) },
+            onClick = { actions.onReportSpecies(species.id, name) },
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
         ) { Text(stringResource(Res.string.feedback_report_species)) }
         Spacer(Modifier.height(16.dp))

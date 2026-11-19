@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.getValue
@@ -52,6 +53,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import com.maximerollin.aqualog.ageDays
 import com.maximerollin.aqualog.resources.reading_age_days
@@ -737,7 +739,9 @@ private val SearchPillShape = RoundedCornerShape(24.dp)
 
 /**
  * A search field as a pill: 48 dp, a leading search icon and a ring that becomes 2 dp [primary] on focus. The [placeholder] is
- * drawn in the decoration box while [query] is empty, so it belongs to the editable node and names it (the #45 pattern).
+ * drawn in the decoration box while [query] is empty, so it belongs to the editable node and names it (the #45 pattern); once
+ * text is typed it stays the node's text, unseen, so the field never goes nameless. The keyboard's search key closes the
+ * keyboard: the results are already shown as one types, under it.
  */
 @Composable
 fun SearchPill(
@@ -748,16 +752,19 @@ fun SearchPill(
     testTag: String? = null,
 ) {
     val colors = MaterialTheme.colorScheme
+    val focusManager = LocalFocusManager.current
     var focused by remember { mutableStateOf(false) }
     BasicTextField(
         value = query,
         onValueChange = onQueryChange,
         modifier = modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp).let { if (testTag != null) it.testTag(testTag) else it }
+            .semantics { if (query.isNotEmpty()) text = AnnotatedString(placeholder) }
             .background(colors.surface, SearchPillShape)
             .border(if (focused) 2.dp else 1.dp, if (focused) colors.primary else colors.outlineVariant, SearchPillShape)
             .onFocusChanged { focused = it.isFocused },
         textStyle = TextStyle(fontFamily = dmSansFamily(), fontSize = 16.sp, color = colors.onSurface),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
         singleLine = true,
         cursorBrush = SolidColor(colors.primary),
         decorationBox = { innerTextField ->
