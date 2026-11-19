@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,6 +44,8 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
+internal const val SPECIES_THUMB_IMAGE_TAG = "species-thumb-image"
+
 /** A species' drawing in a 56 x 44 dp tile. Silent: the row beside it says the name. */
 @Composable
 fun SpeciesThumb(drawing: DrawableResource, tint: Color?, modifier: Modifier = Modifier) {
@@ -50,7 +54,7 @@ fun SpeciesThumb(drawing: DrawableResource, tint: Color?, modifier: Modifier = M
         contentAlignment = Alignment.Center,
     ) {
         Image(
-            painterResource(drawing), contentDescription = null, modifier = Modifier.width(40.dp),
+            painterResource(drawing), contentDescription = null, modifier = Modifier.testTag(SPECIES_THUMB_IMAGE_TAG).width(40.dp).fillMaxHeight(),
             contentScale = ContentScale.Fit, colorFilter = tint?.let { ColorFilter.tint(it) },
         )
     }
