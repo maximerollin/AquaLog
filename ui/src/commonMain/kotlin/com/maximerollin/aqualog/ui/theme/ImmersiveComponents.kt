@@ -59,9 +59,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -511,7 +514,7 @@ private object SettingsGroupScope : ColumnScope {
 @Composable
 fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(SettingsGroupRadius)
     SubcomposeLayout(
         modifier.fillMaxWidth().padding(horizontal = 16.dp)
             .shadow(2.dp, shape, ambientColor = Color.Black.copy(alpha = .12f), spotColor = Color.Black.copy(alpha = .12f))
@@ -541,6 +544,75 @@ fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScop
         }
     }
 }
+
+/** Where a [SettingsGroupSegment] sits in its card: it rounds the card's ends and draws the line above every row but the first. */
+enum class CardSegment {
+    SINGLE, TOP, MIDDLE, BOTTOM;
+
+    internal val roundsTop get() = this == SINGLE || this == TOP
+    internal val roundsBottom get() = this == SINGLE || this == BOTTOM
+
+    companion object {
+        /** The segment of row [index] in a card of [count] rows. */
+        fun of(index: Int, count: Int): CardSegment = when {
+            count <= 1 -> SINGLE
+            index == 0 -> TOP
+            index == count - 1 -> BOTTOM
+            else -> MIDDLE
+        }
+    }
+}
+
+/**
+ * One row of a [SettingsGroup] card, as its own list item: a long list stays lazy instead of composing every row at once.
+ * The segments stack into the same card (16 dp margins, 22 dp corners at its ends, a 1 dp line between rows). The group's
+ * shadow cannot run across items, so each segment draws a soft rim on its own outer edges: the sides, and the top or bottom
+ * when it ends the card, never between two rows.
+ */
+@Composable
+fun SettingsGroupSegment(segment: CardSegment, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val top = if (segment.roundsTop) SettingsGroupRadius else 0.dp
+    val bottom = if (segment.roundsBottom) SettingsGroupRadius else 0.dp
+    val shape = RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
+    Column(
+        modifier.fillMaxWidth().padding(horizontal = 16.dp)
+            .drawWithCache {
+                val rims = List(SegmentRimSteps) { step ->
+                    val spread = (step + 1) * SegmentRimStep.toPx()
+                    val topRadius = CornerRadius(if (segment.roundsTop) top.toPx() + spread else 0f)
+                    val bottomRadius = CornerRadius(if (segment.roundsBottom) bottom.toPx() + spread else 0f)
+                    Path().apply {
+                        addRoundRect(
+                            RoundRect(
+                                left = -spread,
+                                top = if (segment.roundsTop) -spread else 0f,
+                                right = size.width + spread,
+                                bottom = if (segment.roundsBottom) size.height + spread else size.height,
+                                topLeftCornerRadius = topRadius, topRightCornerRadius = topRadius,
+                                bottomLeftCornerRadius = bottomRadius, bottomRightCornerRadius = bottomRadius,
+                            ),
+                        )
+                    }
+                }
+                onDrawBehind { rims.forEach { drawPath(it, SegmentRimColor) } }
+            }
+            .background(colors.surface, shape)
+            .padding(horizontal = 14.dp),
+    ) {
+        if (!segment.roundsTop) {
+            Box(Modifier.fillMaxWidth().height(1.dp).background(colors.outlineVariant).testTag(SETTINGS_DIVIDER_TAG))
+        }
+        content()
+    }
+}
+
+private val SettingsGroupRadius = 22.dp
+
+// Three 1 dp rings of faint black, darker near the card: a soft edge close to the group's 2 dp shadow.
+private const val SegmentRimSteps = 3
+private val SegmentRimStep = 1.dp
+private val SegmentRimColor = Color.Black.copy(alpha = .035f)
 
 /**
  * The font scale from which layouts switch to their large-text form (stacked rows, fewer columns): Android's 130 % preset

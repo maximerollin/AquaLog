@@ -103,6 +103,26 @@ class AddInhabitantStateTest {
     }
 
     @Test
+    fun `search index filters as search then grouping and keeps its assessments`() = runTest {
+        val fixture = Fixture()
+        fixture.start()
+        val assessments = species.map { assessSpecies(it, fixture.setup, emptyList(), emptyList()) }
+            .mapIndexed { i, it -> if (i % 3 == 0) it.copy(fit = Fit.CAUTION) else if (i % 7 == 0) it.copy(fit = Fit.BAD) else it }
+        val index = SpeciesSearchIndex(assessments, "fr")
+        for (kind in listOf(null) + SpeciesKind.entries) {
+            for (query in listOf("", "  ", "n", "néon", "NEON", "paracheirodon", "zzz")) {
+                val found = searchSpecies(species, query, "fr", kind).map { it.id }.toSet()
+                val expected = groupedForAquarium(assessments.filter { it.species.id in found }, "fr")
+                assertEquals(expected, index.grouped(query, kind), "$query $kind")
+            }
+        }
+        // The same objects at every keystroke: a row kept on screen gets an identical argument.
+        val first = index.grouped("n", null).values.flatten().associateBy { it.species.id }
+        index.grouped("ne", null).values.flatten().forEach { assertTrue(it === first.getValue(it.species.id), it.species.id) }
+        fixture.close()
+    }
+
+    @Test
     fun `grouping keeps the three sections in order`() = runTest {
         val fixture = Fixture()
         fixture.start()

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,7 +29,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +62,7 @@ import com.maximerollin.aqualog.shared.encyclopedia.assessSpecies
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.ArrowLeft
 import com.maximerollin.aqualog.ui.icon.Plus
+import com.maximerollin.aqualog.ui.theme.CardSegment
 import com.maximerollin.aqualog.ui.theme.FilledField
 import com.maximerollin.aqualog.ui.theme.GlassIconButton
 import com.maximerollin.aqualog.ui.theme.GroupLabel
@@ -69,6 +70,7 @@ import com.maximerollin.aqualog.ui.theme.LargeFontScale
 import com.maximerollin.aqualog.ui.theme.PaperSheetTop
 import com.maximerollin.aqualog.ui.theme.SearchPill
 import com.maximerollin.aqualog.ui.theme.SettingsGroup
+import com.maximerollin.aqualog.ui.theme.SettingsGroupSegment
 import com.maximerollin.aqualog.ui.theme.SettingsRow
 import com.maximerollin.aqualog.ui.theme.WaterHeader
 import com.maximerollin.aqualog.ui.theme.overlapNext
@@ -171,12 +173,11 @@ private fun SpeciesSearch(
     actions: AddInhabitantActions,
     modifier: Modifier,
 ) {
-    val groups = remember(add.species, add.query, add.kind, setup, readings, present, language) {
-        groupedForAquarium(
-            searchSpecies(add.species.orEmpty(), add.query, language, add.kind).map { assessSpecies(it, setup, readings, present) },
-            language,
-        )
+    // Assessed and folded once; a keystroke only filters, and the rows it keeps get the same objects, so they skip.
+    val index = remember(add.species, setup, readings, present, language) {
+        SpeciesSearchIndex(add.species.orEmpty().map { assessSpecies(it, setup, readings, present) }, language)
     }
+    val groups = remember(index, add.query, add.kind) { index.grouped(add.query, add.kind) }
     val aquarium = setup.aquarium
     val listState = rememberLazyListState()
     val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -233,13 +234,10 @@ private fun SpeciesSearch(
                         Modifier.padding(top = 16.dp, bottom = 8.dp),
                     )
                 }
-                item(key = "group-${fit.name}") {
-                    SettingsGroup {
-                        assessments.forEach { assessment ->
-                            key(assessment.species.id) {
-                                SpeciesRow(assessment, language) { actions.onOpenFiche(assessment.species.id) }
-                            }
-                        }
+                // One item per row: about 150 rows on an empty search, composed only as they scroll in, so typing stays light.
+                itemsIndexed(assessments, key = { _, it -> it.species.id }, contentType = { _, _ -> "species" }) { index, assessment ->
+                    SettingsGroupSegment(CardSegment.of(index, assessments.size)) {
+                        SpeciesRow(assessment, language) { actions.onOpenFiche(assessment.species.id) }
                     }
                 }
             }
