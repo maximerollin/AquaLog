@@ -15,6 +15,27 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
+import com.maximerollin.aqualog.formattedVolume
+import com.maximerollin.aqualog.home.HeroText
+import com.maximerollin.aqualog.shared.VolumeUnit
+import com.maximerollin.aqualog.ui.icon.Lock
+import com.maximerollin.aqualog.ui.theme.FilledField
+import com.maximerollin.aqualog.ui.theme.PeriodSegmented
+import com.maximerollin.aqualog.resources.aquarium_details_description
+import com.maximerollin.aqualog.resources.aquarium_details_title
+import com.maximerollin.aqualog.resources.aquarium_name_label
+import com.maximerollin.aqualog.resources.aquarium_volume_label
+import com.maximerollin.aqualog.resources.continue_to_parameters
+import com.maximerollin.aqualog.resources.invalid_aquarium
+import com.maximerollin.aqualog.resources.unit_liters
+import com.maximerollin.aqualog.resources.unit_us_gallons
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -63,7 +84,6 @@ import com.maximerollin.aqualog.resources.welcome_description
 import com.maximerollin.aqualog.resources.welcome_title
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
-import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.Fish
 import com.maximerollin.aqualog.ui.icon.FlaskConical
@@ -222,6 +242,121 @@ fun ProfileContent(selected: AquariumProfile, actions: OnboardingActions, modifi
                     AquagendaIcons.Leaf,
                     selected == AquariumProfile.PLANTED_SHRIMP,
                 ) { actions.selectProfile(AquariumProfile.PLANTED_SHRIMP) }
+            }
+        }
+    }
+}
+
+/** Step 2: the name and volume, typed under a header that shows them on the water as they are typed. */
+@Composable
+fun AquariumStepContent(
+    name: String,
+    volumeInput: String,
+    unit: VolumeUnit,
+    profile: AquariumProfile,
+    showError: Boolean,
+    actions: OnboardingActions,
+    modifier: Modifier = Modifier,
+) {
+    val listState = rememberLazyListState()
+    val preview = onboardingPreviewAquarium(name, volumeInput, unit, profile)
+    val errorMessage = if (showError) stringResource(Res.string.invalid_aquarium) else null
+    OnboardingScaffold(
+        listState = listState,
+        primaryLabel = stringResource(Res.string.continue_to_parameters),
+        onPrimary = actions.continueToParameters,
+        modifier = modifier,
+    ) {
+        item {
+            OnboardingHeader(
+                aquarium = preview,
+                minHeight = 300.dp,
+                animate = false,
+                modifier = Modifier.overlapNext(30.dp),
+                step = 2,
+            ) {
+                // One polite live node: a screen reader hears the change, not the name again on every key.
+                Column(
+                    Modifier.testTag("onboarding-aquarium-live").semantics(mergeDescendants = true) {
+                        liveRegion = LiveRegionMode.Polite
+                    },
+                ) {
+                    Text(
+                        stringResource(Res.string.aquarium_details_title),
+                        fontSize = 13.sp,
+                        color = HeroText,
+                    )
+                    val blank = name.isBlank()
+                    Text(
+                        if (blank) stringResource(Res.string.aquarium_name_label) else name,
+                        modifier = Modifier.padding(top = 2.dp),
+                        style = TextStyle(
+                            fontFamily = frauncesFamily(), fontWeight = FontWeight.SemiBold,
+                            fontSize = 36.sp, lineHeight = 40.sp,
+                        ),
+                        color = if (blank) HeroText.copy(alpha = .6f) else HeroText,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (preview.volume > 0.0) {
+                        Text(
+                            preview.formattedVolume(),
+                            modifier = Modifier.padding(top = 4.dp),
+                            fontSize = 14.sp,
+                            color = HeroText,
+                        )
+                    }
+                }
+            }
+        }
+        item { PaperSheetTop() }
+        item {
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                FilledField(
+                    value = name,
+                    onValueChange = actions.updateAquariumName,
+                    label = stringResource(Res.string.aquarium_name_label),
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    isError = showError,
+                    errorMessage = errorMessage,
+                    valueStyle = TextStyle(fontFamily = frauncesFamily(), fontSize = 26.sp, fontWeight = FontWeight.SemiBold),
+                    testTag = "aquarium-name",
+                )
+                FilledField(
+                    value = volumeInput,
+                    onValueChange = actions.updateVolume,
+                    label = stringResource(Res.string.aquarium_volume_label),
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                    isError = showError,
+                    errorMessage = errorMessage,
+                    testTag = "aquarium-volume",
+                )
+                PeriodSegmented(
+                    labels = listOf(stringResource(Res.string.unit_liters), stringResource(Res.string.unit_us_gallons)),
+                    selectedIndex = if (unit == VolumeUnit.LITERS) 0 else 1,
+                    onSelect = { actions.selectVolumeUnit(if (it == 0) VolumeUnit.LITERS else VolumeUnit.US_GALLONS) },
+                )
+                Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(
+                        AquagendaIcons.Lock,
+                        contentDescription = null,
+                        modifier = Modifier.padding(top = 2.dp).size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        stringResource(Res.string.aquarium_details_description),
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (errorMessage != null) {
+                    Text(errorMessage, fontSize = 13.sp, color = MaterialTheme.colorScheme.error)
+                }
             }
         }
     }

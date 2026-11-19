@@ -21,12 +21,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -70,10 +68,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maximerollin.aqualog.habitants.AddInhabitantScreen
 import com.maximerollin.aqualog.home.TankHome
+import com.maximerollin.aqualog.home.plusEnabled
+import com.maximerollin.aqualog.onboarding.AquariumStepContent
 import com.maximerollin.aqualog.onboarding.ProfileContent
 import com.maximerollin.aqualog.onboarding.WelcomeContent
 import com.maximerollin.aqualog.onboarding.onboardingActions
-import com.maximerollin.aqualog.home.plusEnabled
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.shared.AccountDeletionPhase
 import com.maximerollin.aqualog.shared.Aquarium
@@ -114,6 +113,7 @@ fun AquaLogContent(
     // Session details and the shell (the home, History, Trends and More). Every other screen gets `inset` and starts below the
     // status bar.
     val inset = framed.windowInsetsPadding(WindowInsets.statusBars)
+    val onboardingActions = remember(viewModel) { viewModel.onboardingActions() }
     when {
         state.isLoading -> LoadingContent(inset)
         state.accountSettings.pendingDeletion?.phase == AccountDeletionPhase.CLOUD_DELETED -> {
@@ -163,12 +163,16 @@ fun AquaLogContent(
             modifier = inset,
         )
         state.setup != null -> AquariumShell(state, viewModel, onExportData, externalLinks, rateApp, framed)
-        state.step == OnboardingStep.WELCOME -> WelcomeContent(state.portableData, viewModel.onboardingActions(), modifier)
-        state.step == OnboardingStep.PROFILE -> ProfileContent(state.profile, viewModel.onboardingActions(), framed)
-        state.step == OnboardingStep.AQUARIUM -> AquariumDetailsScreen(
-            state = state,
-            viewModel = viewModel,
-            modifier = inset,
+        state.step == OnboardingStep.WELCOME -> WelcomeContent(state.portableData, onboardingActions, modifier)
+        state.step == OnboardingStep.PROFILE -> ProfileContent(state.profile, onboardingActions, framed)
+        state.step == OnboardingStep.AQUARIUM -> AquariumStepContent(
+            name = state.aquariumName,
+            volumeInput = state.volumeInput,
+            unit = state.volumeUnit,
+            profile = state.profile,
+            showError = state.showAquariumValidationError,
+            actions = onboardingActions,
+            modifier = framed,
         )
         state.step == OnboardingStep.PARAMETERS -> ParametersScreen(
             state = state,
@@ -486,65 +490,6 @@ private fun PortableImportConfirmation(
             }
         },
     )
-}
-
-@Composable
-private fun AquariumDetailsScreen(
-    state: HomeUiState,
-    viewModel: HomeViewModel,
-    modifier: Modifier,
-) {
-    StandardScreen(modifier) {
-        ScreenHeading(Res.string.aquarium_details_title, Res.string.aquarium_details_description)
-        OutlinedTextField(
-            value = state.aquariumName,
-            onValueChange = viewModel::updateAquariumName,
-            label = { Text(stringResource(Res.string.aquarium_name_label)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        OutlinedTextField(
-            value = state.volumeInput,
-            onValueChange = viewModel::updateVolume,
-            label = { Text(stringResource(Res.string.aquarium_volume_label)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        CarnetSectionTitle(stringResource(Res.string.volume_unit_label))
-        Column(Modifier.selectableGroup()) {
-            VolumeUnitOption(
-                text = stringResource(Res.string.unit_liters),
-                selected = state.volumeUnit == VolumeUnit.LITERS,
-                onClick = { viewModel.selectVolumeUnit(VolumeUnit.LITERS) },
-            )
-            VolumeUnitOption(
-                text = stringResource(Res.string.unit_us_gallons),
-                selected = state.volumeUnit == VolumeUnit.US_GALLONS,
-                onClick = { viewModel.selectVolumeUnit(VolumeUnit.US_GALLONS) },
-            )
-        }
-        if (state.showAquariumValidationError) {
-            ErrorText(Res.string.invalid_aquarium)
-        }
-        Spacer(Modifier.weight(1f))
-        PrimaryButton(Res.string.continue_to_parameters, viewModel::continueToParameters)
-    }
-}
-
-@Composable
-private fun VolumeUnitOption(text: String, selected: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(selected = selected, onClick = null)
-        Spacer(Modifier.width(8.dp))
-        Text(text)
-    }
 }
 
 @Composable
