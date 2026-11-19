@@ -16,10 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -136,11 +134,7 @@ internal fun AddInhabitantContent(
 ) {
     val fiche = add.ficheSpecies
     when {
-        // The fiche keeps its paper layout below the status bar until it gets its own water header.
-        fiche != null -> SpeciesFiche(
-            fiche, add, setup, readings, inhabitants, present, encyclopedia, language, actions,
-            modifier.windowInsetsPadding(WindowInsets.statusBars),
-        )
+        fiche != null -> SpeciesFiche(fiche, add, setup, readings, inhabitants, present, encyclopedia, language, actions, modifier)
         add.custom -> CustomInhabitantForm(add, setup.aquarium, actions, modifier)
         else -> SpeciesSearch(add, setup, readings, inhabitants, present, language, actions, modifier)
     }

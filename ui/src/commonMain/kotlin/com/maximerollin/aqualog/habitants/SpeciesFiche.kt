@@ -1,22 +1,35 @@
 package com.maximerollin.aqualog.habitants
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,23 +45,40 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maximerollin.aqualog.LocalizedFormatters
+import com.maximerollin.aqualog.StatusBarOverHeader
 import com.maximerollin.aqualog.currentLocalizedFormatters
 import com.maximerollin.aqualog.encyclopedia.displayName
 import com.maximerollin.aqualog.encyclopedia.localName
+import com.maximerollin.aqualog.home.HeroText
+import com.maximerollin.aqualog.home.TankScene
+import com.maximerollin.aqualog.home.speciesDrawing
 import com.maximerollin.aqualog.label
 import com.maximerollin.aqualog.resources.*
+import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumSetup
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.Inhabitant
@@ -67,17 +97,28 @@ import com.maximerollin.aqualog.shared.encyclopedia.SpeciesKind
 import com.maximerollin.aqualog.shared.encyclopedia.ValueRange
 import com.maximerollin.aqualog.shared.encyclopedia.assessSpecies
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
+import com.maximerollin.aqualog.ui.icon.ArrowLeft
 import com.maximerollin.aqualog.ui.icon.Minus
 import com.maximerollin.aqualog.ui.icon.Plus
-import com.maximerollin.aqualog.ui.theme.CarnetDivider
-import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
+import com.maximerollin.aqualog.ui.theme.FullScreenContentBacking
+import com.maximerollin.aqualog.ui.theme.GlassIconButton
+import com.maximerollin.aqualog.ui.theme.GroupLabel
+import com.maximerollin.aqualog.ui.theme.LargeFontScale
+import com.maximerollin.aqualog.ui.theme.PaperSheetTop
+import com.maximerollin.aqualog.ui.theme.SettingsGroup
 import com.maximerollin.aqualog.ui.theme.attentionMarkColor
 import com.maximerollin.aqualog.ui.theme.attentionTextColor
+import com.maximerollin.aqualog.ui.theme.frauncesFamily
 import com.maximerollin.aqualog.ui.theme.levelTextColor
+import com.maximerollin.aqualog.ui.theme.overlapNext
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
-/** One species judged against the Aquarium: verdict, criteria, facts, counter and the add button (never disabled by the verdict). */
+/**
+ * One species judged against the Aquarium: its drawing on the water, the verdict card, facts and criteria in a list, and a bar
+ * pinned to the bottom with the counter and the add button (never disabled by the verdict).
+ */
 @Composable
 internal fun SpeciesFiche(
     species: Species,
@@ -97,98 +138,226 @@ internal fun SpeciesFiche(
     var showDetails by rememberSaveable(species.id) { mutableStateOf(false) }
     val name = species.localName(language)
     val formatter = currentLocalizedFormatters()
-    Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
+    val listState = rememberLazyListState()
+    val density = LocalDensity.current
+    // The list ends with this much room, so its last item scrolls clear of the bar laid over it.
+    var barHeight by remember { mutableStateOf(0.dp) }
+    Box(modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        LazyColumn(Modifier.fillMaxSize().testTag("species-fiche-list"), state = listState) {
+            item(key = "header") { FicheHeader(species, setup.aquarium, name, actions.onBack, Modifier.overlapNext(30.dp)) }
+            item(key = "sheet-top") { PaperSheetTop() }
+            item(key = "verdict") { VerdictCard(assessment, setup.aquarium.name, Modifier.padding(horizontal = 16.dp)) }
+            if (assessment.cyclingWarning) {
+                item(key = "cycling") { Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) { CyclingBanner() } }
+            }
+            item(key = "facts") { FactTiles(species, formatter, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) }
+            item(key = "compared") {
+                Row(Modifier.fillMaxWidth().padding(top = 16.dp, end = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    GroupLabel(stringResource(Res.string.habitants_compared), Modifier.weight(1f))
+                    if (assessment.fit == Fit.GOOD && !showDetails) {
+                        Box(
+                            Modifier.defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+                                .clickable(role = Role.Button) { showDetails = true }
+                                .padding(horizontal = 8.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                stringResource(Res.string.habitants_details),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+                }
+            }
+            if (assessment.fit != Fit.GOOD || showDetails) {
+                item(key = "checks") {
+                    SettingsGroup {
+                        // COHABITATION may hold several checks, one per conflicting present species: each gets its row.
+                        assessment.checks.forEach { check -> CheckRow(check, species, setup, inhabitants, encyclopedia, language, formatter) }
+                    }
+                }
+            }
+            if (assessment.checks.any { it.status == CriterionStatus.NOT_MEASURED }) {
+                item(key = "measure") {
+                    OutlinedButton(
+                        onClick = actions.onMeasure,
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp).fillMaxWidth().heightIn(min = 48.dp),
+                    ) { Text(stringResource(Res.string.habitants_measure)) }
+                }
+            }
+            item(key = "report") {
+                TextButton(
+                    onClick = { actions.onReportSpecies(species.id, name) },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth().heightIn(min = 48.dp),
+                ) { Text(stringResource(Res.string.feedback_report_species)) }
+            }
+            item(key = "bar-room") { Spacer(Modifier.height(barHeight)) }
+        }
+        StatusBarOverHeader(listState)
+        FicheBottomBar(
+            species, add, assessment.fit, name, actions,
+            Modifier.align(Alignment.BottomCenter).onSizeChanged { barHeight = with(density) { it.height.toDp() } },
+        )
+    }
+}
+
+/** Height of the fiche's water; the paper sheet covers its bottom 30 dp. */
+private val FicheHeaderHeight = 300.dp
+
+/** The fade at the top of the name's backing, kept free of text: the name only lies on the solid part. */
+private val NameFade = 48.dp
+
+/**
+ * The still water with the species' drawing (silent: the name says it), the glass back button under the status bar, and the
+ * name with its scientific name on a deep backing at the bottom. It grows with large fonts rather than squeezing the name.
+ */
+@Composable
+private fun FicheHeader(species: Species, aquarium: Aquarium, name: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
+    val (drawing, tint) = speciesDrawing(species)
+    Box(modifier.fillMaxWidth().heightIn(min = FicheHeaderHeight)) {
+        TankScene(aquarium, inhabitants = emptyList(), modifier = Modifier.matchParentSize(), decorPlants = 0, animate = false)
+        Column(Modifier.fillMaxWidth().heightIn(min = FicheHeaderHeight)) {
+            Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+            Box(Modifier.fillMaxWidth().weight(1f).padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+                // Both sides bounded: with a width alone the painter keeps its small intrinsic height and Fit never scales up.
+                Image(
+                    painterResource(drawing), contentDescription = null, modifier = Modifier.width(200.dp).fillMaxHeight(),
+                    contentScale = ContentScale.Fit, colorFilter = tint?.let { ColorFilter.tint(it) },
+                )
+            }
+            Column(
+                Modifier.fillMaxWidth()
+                    .drawBehind {
+                        val fade = NameFade.toPx().coerceAtMost(size.height)
+                        drawRect(Brush.verticalGradient(listOf(Color.Transparent, FullScreenContentBacking), 0f, fade), size = Size(size.width, fade))
+                        drawRect(FullScreenContentBacking, topLeft = Offset(0f, fade), size = Size(size.width, (size.height - fade).coerceAtLeast(0f)))
+                    }
+                    // Text starts below the fade and ends above the sheet that overlaps the bottom.
+                    .padding(start = 20.dp, end = 20.dp, top = NameFade, bottom = 30.dp + 16.dp),
+            ) {
                 Text(
                     name,
                     modifier = Modifier.semantics { heading() },
-                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp),
+                    fontFamily = frauncesFamily(),
+                    fontSize = 32.sp,
+                    lineHeight = 38.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HeroText,
                 )
                 Text(
                     species.scientificName,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp),
+                    fontSize = 14.sp,
+                    fontStyle = FontStyle.Italic,
+                    color = HeroText.copy(alpha = .85f),
                 )
             }
-            BackButton(actions.onBack)
         }
-        Column(Modifier.semantics(mergeDescendants = true) {}) {
+        GlassIconButton(
+            AquagendaIcons.ArrowLeft, stringResource(Res.string.back), onBack,
+            Modifier.windowInsetsPadding(WindowInsets.statusBars).padding(start = 8.dp, top = 4.dp),
+        )
+    }
+}
+
+/** The fit in words on its own colour, the mark beside it decorative, and why: one node, read as one sentence. */
+@Composable
+private fun VerdictCard(assessment: Assessment, aquariumName: String, modifier: Modifier = Modifier) {
+    val color = fitColor(assessment.fit)
+    Row(
+        modifier.fillMaxWidth().background(fitFill(assessment.fit), RoundedCornerShape(20.dp)).padding(16.dp)
+            .semantics(mergeDescendants = true) {},
+    ) {
+        FitMark(assessment.fit.markStatus())
+        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+            Text(fitVerdict(assessment.fit, aquariumName), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = color)
+            Text(explanation(assessment), modifier = Modifier.padding(top = 2.dp), style = MaterialTheme.typography.bodyMedium, color = color)
+        }
+    }
+}
+
+/** Size, lifespan and group in a row of tiles (size only for a plant); stacked at large font scales. */
+@Composable
+private fun FactTiles(species: Species, formatter: LocalizedFormatters, modifier: Modifier = Modifier) {
+    val facts = buildList {
+        add(stringResource(Res.string.habitants_fact_size, formatter.number(species.adultSizeCm, 1)))
+        if (species.kind != SpeciesKind.PLANT) {
+            add(pluralStringResource(Res.plurals.habitants_fact_lifespan, species.lifespanYears, species.lifespanYears))
+            add(stringResource(Res.string.habitants_fact_group, species.minGroup))
+        }
+    }
+    if (LocalDensity.current.fontScale >= LargeFontScale) {
+        Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            facts.forEach { FactTile(it, Modifier.fillMaxWidth()) }
+        }
+    } else {
+        Row(modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            facts.forEach { FactTile(it, Modifier.weight(1f).fillMaxHeight()) }
+        }
+    }
+}
+
+@Composable
+private fun FactTile(text: String, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(16.dp)
+    Box(modifier.background(colors.surface, shape).border(1.dp, colors.outlineVariant, shape).padding(12.dp)) {
+        Text(text, fontSize = 14.sp, color = colors.onSurface)
+    }
+}
+
+/**
+ * Pinned under the list: the group minimum, the counter and the add button (its words wrap rather than cut), then the failure.
+ * It takes the taps on it, so none falls through to the list under it.
+ */
+@Composable
+private fun FicheBottomBar(
+    species: Species,
+    add: AddInhabitantUiState,
+    fit: Fit,
+    name: String,
+    actions: AddInhabitantActions,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    Column(
+        modifier.fillMaxWidth().testTag("fiche-bottom-bar")
+            .pointerInput(Unit) {}
+            .background(colors.surfaceContainer)
+            .drawBehind { drawRect(colors.outlineVariant, size = Size(size.width, 1.dp.toPx())) }
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+    ) {
+        if (species.minGroup > 1) {
             Text(
-                stringResource(
-                    when (assessment.fit) {
-                        Fit.GOOD -> Res.string.habitants_verdict_good
-                        Fit.CAUTION -> Res.string.habitants_verdict_caution
-                        Fit.BAD -> Res.string.habitants_verdict_bad
-                    },
-                    setup.aquarium.name,
-                ),
-                style = MaterialTheme.typography.titleMedium,
-                color = fitColor(assessment.fit),
+                stringResource(Res.string.habitants_count_minimum, species.minGroup),
+                fontSize = 12.sp,
+                color = colors.onSurfaceVariant,
             )
-            Text(explanation(assessment), style = MaterialTheme.typography.bodyMedium)
         }
-        if (assessment.cyclingWarning) CyclingBanner()
-        Column {
-            CarnetSectionTitle(
-                stringResource(Res.string.habitants_compared),
-                actionLabel = stringResource(Res.string.habitants_details).takeIf { assessment.fit == Fit.GOOD && !showDetails },
-                onAction = { showDetails = true },
-            )
-            if (assessment.fit != Fit.GOOD || showDetails) {
-                // COHABITATION may hold several checks, one per conflicting present species: each gets its row.
-                assessment.checks.forEach { check ->
-                    CarnetDivider()
-                    CheckRow(check, species, setup, inhabitants, encyclopedia, language, formatter)
-                }
-            }
-        }
-        if (assessment.checks.any { it.status == CriterionStatus.NOT_MEASURED }) {
-            OutlinedButton(
-                onClick = actions.onMeasure,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-            ) { Text(stringResource(Res.string.habitants_measure)) }
-        }
-        Column {
-            Text(stringResource(Res.string.habitants_fact_size, formatter.number(species.adultSizeCm, 1)))
-            if (species.kind != SpeciesKind.PLANT) Text(pluralStringResource(Res.plurals.habitants_fact_lifespan, species.lifespanYears, species.lifespanYears))
-            if (species.kind != SpeciesKind.PLANT) Text(stringResource(Res.string.habitants_fact_group, species.minGroup))
-        }
-        Column {
-            CarnetSectionTitle(stringResource(Res.string.habitants_count_title))
-            if (species.minGroup > 1) {
-                Text(
-                    stringResource(Res.string.habitants_count_minimum, species.minGroup),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        Row(verticalAlignment = Alignment.CenterVertically) {
             InhabitantCounter(add.count, actions.onCountChange)
+            Button(
+                onClick = actions.onConfirm,
+                enabled = !add.isSaving,
+                shape = MaterialTheme.shapes.medium,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.padding(start = 8.dp).weight(1f).heightIn(min = 48.dp),
+            ) {
+                Text(
+                    if (fit == Fit.BAD) {
+                        stringResource(Res.string.habitants_add_anyway)
+                    } else {
+                        stringResource(Res.string.habitants_add_button, add.count, name)
+                    },
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
-        Button(
-            onClick = actions.onConfirm,
-            enabled = !add.isSaving,
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) {
-            Text(
-                if (assessment.fit == Fit.BAD) {
-                    stringResource(Res.string.habitants_add_anyway)
-                } else {
-                    stringResource(Res.string.habitants_add_button, add.count, name)
-                },
-                textAlign = TextAlign.Center,
-            )
+        if (add.saveFailed) {
+            Text(stringResource(Res.string.habitants_add_failed), modifier = Modifier.padding(top = 4.dp), color = colors.error)
         }
-        if (add.saveFailed) Text(stringResource(Res.string.habitants_add_failed), color = MaterialTheme.colorScheme.error)
-        TextButton(
-            onClick = { actions.onReportSpecies(species.id, name) },
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) { Text(stringResource(Res.string.feedback_report_species)) }
-        Spacer(Modifier.height(16.dp))
     }
 }
 
@@ -250,30 +419,23 @@ private fun CheckRow(
             value = check.aquariumValue?.toInt()?.toString().orEmpty()
         }
     }
-    val (mark, color) = when (check.status) {
-        CriterionStatus.OK -> "✓" to MaterialTheme.colorScheme.primary
-        CriterionStatus.CAUTION -> "⚠" to fitColor(Fit.CAUTION)
-        CriterionStatus.PROBLEM -> "✗" to fitColor(Fit.BAD)
-        CriterionStatus.NOT_MEASURED, CriterionStatus.UNIT_NOT_COMPARED -> "–" to MaterialTheme.colorScheme.onSurfaceVariant
-    }
     // The mark is spoken through the reason (or « pas encore mesuré »), so colour and symbol never carry it alone.
     val spoken = listOfNotNull(label, detail, value, check.reason?.explanation()?.takeIf { it != detail })
         .filter { it.isNotBlank() }.joinToString(", ")
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(vertical = 6.dp).clearAndSetSemantics { contentDescription = spoken },
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(vertical = 8.dp).clearAndSetSemantics { contentDescription = spoken },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(mark, color = color, modifier = Modifier.width(24.dp))
-        Column(Modifier.weight(1f)) {
-            Text(label, style = MaterialTheme.typography.bodyLarge)
-            if (detail != null) {
-                Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+        FitMark(check.status)
+        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+            Text(label, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+            if (detail != null) Text(detail, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Text(
             value,
             modifier = Modifier.padding(start = 8.dp).weight(1f, fill = false),
-            style = MaterialTheme.typography.bodyMedium,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.End,
         )
     }

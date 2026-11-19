@@ -59,16 +59,28 @@ fun SpeciesThumb(drawing: DrawableResource, tint: Color?, modifier: Modifier = M
 /** The fit in words, in a pill: no symbol, the text is the semantics. */
 @Composable
 fun FitPill(text: String, fit: Fit, modifier: Modifier = Modifier) {
+    Box(
+        modifier.defaultMinSize(minHeight = 28.dp).background(fitFill(fit), RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) { Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = fitColor(fit)) }
+}
+
+/** The fill behind a fit's words (a [FitPill], the fiche's verdict card); the words are in [fitColor]. */
+@Composable
+internal fun fitFill(fit: Fit): Color {
     val colors = MaterialTheme.colorScheme
-    val fill = when (fit) {
+    return when (fit) {
         Fit.GOOD -> colors.secondaryContainer
         Fit.CAUTION -> levelContainerColor(ReadingLevel.ATTENTION)
         Fit.BAD -> levelContainerColor(ReadingLevel.ALERT)
     } ?: colors.surfaceVariant
-    Box(
-        modifier.defaultMinSize(minHeight = 28.dp).background(fill, RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 4.dp),
-        contentAlignment = Alignment.Center,
-    ) { Text(text, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = fitColor(fit)) }
+}
+
+/** The criterion status whose [FitMark] stands for [fit]. */
+internal fun Fit.markStatus(): CriterionStatus = when (this) {
+    Fit.GOOD -> CriterionStatus.OK
+    Fit.CAUTION -> CriterionStatus.CAUTION
+    Fit.BAD -> CriterionStatus.PROBLEM
 }
 
 /** A criterion's status as a 24 dp mark. Decorative: the row's own semantics say the status in words. */

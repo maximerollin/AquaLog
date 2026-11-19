@@ -10,7 +10,6 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.hasScrollAction
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -68,7 +67,7 @@ class AddInhabitantFlowTest {
 
             composeRule.onNodeWithText("6").assertExists()
             val addButton = strings.getString(Res.string.habitants_add_button, 6, "Otocinclus")
-            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(addButton))
+            // The add button sits in the bar pinned under the fiche's list: always on screen, no scrolling.
             composeRule.onNodeWithText(addButton).performClick()
 
             // The home comes back; tapping the scene opens the habitants sheet, which lists the six.
