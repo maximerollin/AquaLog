@@ -40,16 +40,37 @@ private fun String.folded() = Normalizer.normalize(this, Normalizer.Form.NFD).re
 fun searchSpecies(all: List<Species>, query: String, languageTag: String, kind: SpeciesKind?): List<Species> {
     val wanted = query.trim().folded()
     return all.filter { species ->
-        (kind == null || species.kind == kind) &&
-            (species.localName(languageTag).folded().contains(wanted) || species.scientificName.folded().contains(wanted))
+        species.matches(wanted, kind, species.localName(languageTag).folded(), species.scientificName.folded())
     }
 }
 
+private fun Species.matches(wanted: String, kind: SpeciesKind?, foldedName: String, foldedScientific: String) =
+    (kind == null || this.kind == kind) && (foldedName.contains(wanted) || foldedScientific.contains(wanted))
+
 /** The non-empty sections GOOD, CAUTION, BAD in that order, each alphabetical by localized name. */
 fun groupedForAquarium(assessments: List<Assessment>, languageTag: String): Map<Fit, List<Assessment>> =
-    Fit.entries.associateWith { fit ->
-        assessments.filter { it.fit == fit }.sortedBy { it.species.localName(languageTag).folded() }
-    }.filterValues { it.isNotEmpty() }
+    SpeciesSearchIndex(assessments, languageTag).grouped("", null)
+
+/**
+ * The search's list, built once per encyclopedia, Aquarium and language: every species assessed, its names folded once
+ * (not at every comparison of the sort), in the order shown. A keystroke then only filters it, as [searchSpecies] would,
+ * and hands back the same [Assessment] objects each time, so the rows that stay on screen are not composed again.
+ */
+class SpeciesSearchIndex(assessments: List<Assessment>, languageTag: String) {
+    private class Entry(val assessment: Assessment, val name: String, val scientific: String)
+
+    private val entries = assessments
+        .map { Entry(it, it.species.localName(languageTag).folded(), it.species.scientificName.folded()) }
+        .sortedBy { it.name }
+
+    /** The non-empty sections GOOD, CAUTION, BAD of the species of [kind] (all when null) whose names contain [query]. */
+    fun grouped(query: String, kind: SpeciesKind?): Map<Fit, List<Assessment>> {
+        val wanted = query.trim().folded()
+        val found = entries.filter { it.assessment.species.matches(wanted, kind, it.name, it.scientific) }
+        return Fit.entries.associateWith { fit -> found.filter { it.assessment.fit == fit }.map { it.assessment } }
+            .filterValues { it.isNotEmpty() }
+    }
+}
 
 /** The reasons the fiche's sentence names: the first two, problems before precautions. */
 fun explanationReasons(assessment: Assessment): List<Reason> =

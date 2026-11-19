@@ -2,11 +2,12 @@ package com.maximerollin.aqualog.home
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
 import com.maximerollin.aqualog.resources.Res
 import com.maximerollin.aqualog.resources.allDrawableResources
 import com.maximerollin.aqualog.resources.family_catfish
@@ -23,7 +24,6 @@ import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import com.maximerollin.aqualog.shared.encyclopedia.MotionFamily
 import com.maximerollin.aqualog.shared.encyclopedia.Species
 import com.maximerollin.aqualog.shared.encyclopedia.SwimZone
-import com.maximerollin.aqualog.encyclopedia.loadEncyclopedia
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.PI
 import kotlin.math.cos
@@ -35,8 +35,13 @@ data class SceneSprite(val drawing: DrawableResource, val tint: Color?, val moti
 
 /** A group's drawing: its species' own, else its family silhouette tinted with the species colour (or a default one). */
 fun inhabitantDrawing(inhabitant: Inhabitant, species: Species?): Pair<DrawableResource, Color?> =
-    species?.drawing?.let { Res.allDrawableResources[it] }?.let { it to null }
-        ?: (familyDrawing(inhabitant.family) to Color(species?.color ?: if (inhabitant.family == DrawingFamily.PLANT) 0xFF4F9D5D else 0xFFF2A65A))
+    if (species != null) speciesDrawing(species)
+    else familyDrawing(inhabitant.family) to Color(if (inhabitant.family == DrawingFamily.PLANT) 0xFF4F9D5D else 0xFFF2A65A)
+
+/** A species' own drawing, else its family silhouette tinted with its colour. */
+fun speciesDrawing(species: Species): Pair<DrawableResource, Color?> =
+    species.drawing?.let { Res.allDrawableResources[it] }?.let { it to null }
+        ?: (familyDrawing(species.family) to Color(species.color))
 
 private fun familyDrawing(family: DrawingFamily): DrawableResource = when (family) {
     DrawingFamily.TETRA -> Res.drawable.family_tetra

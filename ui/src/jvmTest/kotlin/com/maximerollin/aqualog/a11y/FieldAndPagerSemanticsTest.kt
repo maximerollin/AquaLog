@@ -1,6 +1,9 @@
 package com.maximerollin.aqualog.a11y
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -22,12 +25,18 @@ class FieldAndPagerSemanticsTest {
         Locale.setDefault(Locale.ENGLISH)
         try {
             runComposeUiTest {
-                setContent { MaterialTheme { SpeciesSearchField("neon", {}) } }
-                val config = onNodeWithTag("species-search").fetchSemanticsNode().config
-                assertNull(config.getOrNull(SemanticsProperties.ContentDescription))
-                assertEquals("neon", config.getOrNull(SemanticsProperties.EditableText)?.text)
-                val texts = config[SemanticsProperties.Text].map { it.text }
-                assertEquals(1, texts.count { it.startsWith("Search") }, "the label must appear exactly once: $texts")
+                // A search pill: the hint names it while empty, and still once text is typed.
+                var query by mutableStateOf("")
+                setContent { MaterialTheme { SpeciesSearchField(query, {}) } }
+                listOf("", "neon").forEach { typed ->
+                    query = typed
+                    waitForIdle()
+                    val config = onNodeWithTag("species-search").fetchSemanticsNode().config
+                    assertNull(config.getOrNull(SemanticsProperties.ContentDescription))
+                    assertEquals(typed, config.getOrNull(SemanticsProperties.EditableText)?.text)
+                    val texts = config[SemanticsProperties.Text].map { it.text }
+                    assertEquals(1, texts.count { it.startsWith("Search") }, "the label must appear exactly once: $texts")
+                }
             }
         } finally {
             Locale.setDefault(previous)

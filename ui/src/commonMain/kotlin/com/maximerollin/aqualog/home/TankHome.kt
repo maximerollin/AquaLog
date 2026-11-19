@@ -1,11 +1,6 @@
 package com.maximerollin.aqualog.home
 
-import com.maximerollin.aqualog.ui.icon.*
 import androidx.compose.foundation.background
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.ui.graphics.ImageBitmap
-import com.maximerollin.aqualog.photo.PhotoSheets
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,31 +16,33 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import com.maximerollin.aqualog.StatusBarOverHeader
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -57,44 +54,47 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.AccountInvitationPrompt
+import com.maximerollin.aqualog.AquariumAlert
 import com.maximerollin.aqualog.HomeOverview
 import com.maximerollin.aqualog.HomeUiState
 import com.maximerollin.aqualog.HomeViewModel
+import com.maximerollin.aqualog.LinkedTaskTitle
 import com.maximerollin.aqualog.MainDestination
-import com.maximerollin.aqualog.currentLocalizedFormatters
-import com.maximerollin.aqualog.AquariumAlert
-import com.maximerollin.aqualog.homeOverview
-import com.maximerollin.aqualog.otherAquariumAlerts
-import com.maximerollin.aqualog.joinLabels
-import com.maximerollin.aqualog.ProPurchaseStatus
-import com.maximerollin.aqualog.shortLabelResource
-import com.maximerollin.aqualog.shared.assistance.DueTest
-import com.maximerollin.aqualog.shared.assistance.looksCycled
 import com.maximerollin.aqualog.PistesSheet
-import com.maximerollin.aqualog.overdueLinkedAction
-import com.maximerollin.aqualog.pistesAdvices
-import com.maximerollin.aqualog.shared.MaintenanceActionType
-import com.maximerollin.aqualog.resources.*
+import com.maximerollin.aqualog.ProPurchaseStatus
 import com.maximerollin.aqualog.SEPARATOR
+import com.maximerollin.aqualog.StatusBarOverHeader
+import com.maximerollin.aqualog.currentLocalizedFormatters
+import com.maximerollin.aqualog.homeOverview
+import com.maximerollin.aqualog.joinLabels
+import com.maximerollin.aqualog.otherAquariumAlerts
+import com.maximerollin.aqualog.overdueLinkedAction
+import com.maximerollin.aqualog.photo.PhotoSheets
+import com.maximerollin.aqualog.pistesAdvices
+import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.shared.Aquarium
+import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.SyncFailureCategory
 import com.maximerollin.aqualog.shared.SyncStatus
 import com.maximerollin.aqualog.shared.TaskDate
 import com.maximerollin.aqualog.shared.TaskOccurrence
-import com.maximerollin.aqualog.LinkedTaskTitle
+import com.maximerollin.aqualog.shared.assistance.DueTest
+import com.maximerollin.aqualog.shared.assistance.ReadingSample
+import com.maximerollin.aqualog.shared.assistance.looksCycled
+import com.maximerollin.aqualog.shortLabelResource
 import com.maximerollin.aqualog.todayTasks
+import com.maximerollin.aqualog.ui.icon.*
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.FloatingNavBarClearance
 import com.maximerollin.aqualog.ui.theme.PaperSheetTop
-import com.maximerollin.aqualog.ui.theme.overlapNext
 import com.maximerollin.aqualog.ui.theme.ValueRow
 import com.maximerollin.aqualog.ui.theme.attentionTextColor
-import com.maximerollin.aqualog.shared.assistance.ReadingSample
+import com.maximerollin.aqualog.ui.theme.overlapNext
 import java.time.Instant
-import java.util.Locale
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -333,6 +333,7 @@ fun TankHome(
             groups = state.inhabitants,
             encyclopedia = encyclopedia.orEmpty(),
             language = remember { Locale.getDefault().language },
+            aquariumName = aquarium.name,
             onRemove = viewModel::removeInhabitants,
             onAdd = {
                 showHabitants = false

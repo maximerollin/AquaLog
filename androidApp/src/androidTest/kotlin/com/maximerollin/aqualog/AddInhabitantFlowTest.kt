@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog
 
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -7,10 +8,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.click
-import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -61,14 +60,14 @@ class AddInhabitantFlowTest {
 
             composeRule.onNodeWithText(strings.getString(Res.string.habitants_search_hint)).performTextInput("oto")
             composeRule.waitUntil(5_000) { exists("Otocinclus vittatus") }
-            // The only result sits under « Vont bien dans ce bac », with the compatible badge.
-            composeRule.onNodeWithText(strings.getString(Res.string.habitants_group_good)).assertExists()
-            composeRule.onNodeWithText(strings.getString(Res.string.habitants_badge_good)).assertExists()
+            // The only result sits under « VONT BIEN DANS CE BAC » (a group label, in capitals), with the compatible pill.
+            composeRule.onNodeWithText(strings.getString(Res.string.habitants_group_good).uppercase()).assertExists()
+            composeRule.onNodeWithText(strings.getString(Res.string.habitants_pill_good)).assertExists()
             composeRule.onNodeWithText("Otocinclus vittatus").performClick()
 
             composeRule.onNodeWithText("6").assertExists()
             val addButton = strings.getString(Res.string.habitants_add_button, 6, "Otocinclus")
-            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(addButton))
+            // The add button sits in the bar pinned under the fiche's list: always on screen, no scrolling.
             composeRule.onNodeWithText(addButton).performClick()
 
             // The home comes back; tapping the scene opens the habitants sheet, which lists the six.

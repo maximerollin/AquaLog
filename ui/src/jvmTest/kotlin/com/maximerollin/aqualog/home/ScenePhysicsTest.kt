@@ -1,30 +1,31 @@
 package com.maximerollin.aqualog.home
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.unit.dp
+import com.maximerollin.aqualog.AccountDescriptionText
+import com.maximerollin.aqualog.AccountGlassButtonFill
+import com.maximerollin.aqualog.ProBannerTextBottom
+import com.maximerollin.aqualog.ProBannerTextFraction
+import com.maximerollin.aqualog.ProBannerWater
+import com.maximerollin.aqualog.proBannerShadeAlpha
 import com.maximerollin.aqualog.shared.Inhabitant
 import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import com.maximerollin.aqualog.shared.encyclopedia.MotionFamily
 import com.maximerollin.aqualog.shared.encyclopedia.SwimZone
 import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.luminance
-import com.maximerollin.aqualog.AccountDescriptionText
-import com.maximerollin.aqualog.AccountGlassButtonFill
-import com.maximerollin.aqualog.AccountPrimaryButtonText
-import com.maximerollin.aqualog.ProBannerTextBottom
-import com.maximerollin.aqualog.ProBannerTextFraction
-import com.maximerollin.aqualog.ProBannerWater
-import com.maximerollin.aqualog.proBannerShadeAlpha
-import androidx.compose.ui.unit.dp
+import com.maximerollin.aqualog.ui.theme.CropBackdrop
 import com.maximerollin.aqualog.ui.theme.FullScreenContentBacking
 import com.maximerollin.aqualog.ui.theme.HeroTextBacking
 import com.maximerollin.aqualog.ui.theme.WaterHeaderPhotoShade
 import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeBottom
 import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeTop
+import com.maximerollin.aqualog.ui.theme.WaterPrimaryButtonText
 import java.io.File
-import kotlin.test.assertFailsWith
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -235,8 +236,8 @@ class ScenePhysicsTest {
 
     @Test
     fun `the account screens keep 4·5 to 1 on the full-screen backing`() {
-        // The primary button is white, its label deep teal.
-        assertTrue(contrast(AccountPrimaryButtonText, Color.White) >= 4.5f, "primary ${contrast(AccountPrimaryButtonText, Color.White)}")
+        // The primary button is white, its label deep teal (the photo crop's confirm button too).
+        assertTrue(contrast(WaterPrimaryButtonText, Color.White) >= 4.5f, "primary ${contrast(WaterPrimaryButtonText, Color.White)}")
         for (behind in listOf(Color(0xFFE3EAEC), Color(0xFFE8E0D0), Color(0xFFDCE0E6), Color.White)) {
             val backing = FullScreenContentBacking.compositeOver(behind)
             val glass = AccountGlassButtonFill.compositeOver(backing)
@@ -261,5 +262,16 @@ class ScenePhysicsTest {
         assertTrue(contrast(Color.White, bubble) >= 4.5f, "over a bubble: ${contrast(Color.White, bubble)}")
         // The sand, the scene's lightest colour, rises 16 dp at most: the text never lies on it.
         assertTrue(ProBannerTextBottom > 16.dp)
+    }
+
+    @Test
+    fun `white text keeps 4·5 to 1 on the crop backdrop`() {
+        assertTrue(contrast(Color.White, CropBackdrop) >= 4.5f, "${contrast(Color.White, CropBackdrop)}")
+    }
+
+    @Test
+    fun `hint text keeps 4·5 to 1 on the crop backdrop`() {
+        val hint = Color.White.copy(alpha = .85f).compositeOver(CropBackdrop)
+        assertTrue(contrast(hint, CropBackdrop) >= 4.5f, "${contrast(hint, CropBackdrop)}")
     }
 }

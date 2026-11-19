@@ -84,6 +84,8 @@ import com.maximerollin.aqualog.ui.theme.GlassChip
 import com.maximerollin.aqualog.ui.theme.PickerTile
 import com.maximerollin.aqualog.ui.theme.SETTINGS_DIVIDER_TAG
 import com.maximerollin.aqualog.ui.theme.SettingsGroup
+import com.maximerollin.aqualog.ui.theme.SettingsGroupSegment
+import com.maximerollin.aqualog.ui.theme.CardSegment
 import com.maximerollin.aqualog.ui.theme.SettingsRow
 import com.maximerollin.aqualog.ui.theme.FULL_SCREEN_BACKING_TAG
 import com.maximerollin.aqualog.ui.theme.WaterFullScreen
@@ -516,6 +518,25 @@ class ImmersiveSemanticsTest {
                     AquaLogTheme(false) { SettingsGroup { repeat(rows) { SettingsRow("R$it", null, onClick = {}) } } }
                 }
                 assertEquals(lines, onAllNodesWithTag(SETTINGS_DIVIDER_TAG, useUnmergedTree = true).fetchSemanticsNodes().size)
+            }
+        }
+    }
+
+    @Test
+    fun `card segments draw a line between rows only`() = withEnglish {
+        for (rows in listOf(1, 2, 5)) {
+            runComposeUiTest {
+                setContent {
+                    AquaLogTheme(false) {
+                        Column {
+                            repeat(rows) { index ->
+                                SettingsGroupSegment(CardSegment.of(index, rows)) { SettingsRow("R$index", null, onClick = {}) }
+                            }
+                        }
+                    }
+                }
+                assertEquals(rows - 1, onAllNodesWithTag(SETTINGS_DIVIDER_TAG, useUnmergedTree = true).fetchSemanticsNodes().size)
+                onAllNodes(hasClickAction()).assertCountEquals(rows)
             }
         }
     }

@@ -1,118 +1,119 @@
 package com.maximerollin.aqualog.ui.theme
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.takeOrElse
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.SubcomposeLayout
-import com.maximerollin.aqualog.StatusBarOverWater
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.padding
-import com.maximerollin.aqualog.SessionTileState
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.windowInsetsTopHeight
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.ui.layout.layout
-import androidx.compose.ui.layout.Layout
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Dp
-import com.maximerollin.aqualog.home.HeroText
-import com.maximerollin.aqualog.home.TankScene
-import com.maximerollin.aqualog.shared.Aquarium
 import androidx.compose.foundation.Canvas
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.testTag
-import com.maximerollin.aqualog.ageDays
-import com.maximerollin.aqualog.resources.reading_age_days
-import com.maximerollin.aqualog.shared.assistance.ReadingLevel
-import org.jetbrains.compose.resources.pluralStringResource
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.error
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.text
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maximerollin.aqualog.HomeValue
 import com.maximerollin.aqualog.LocalizedFormatters
 import com.maximerollin.aqualog.MainDestination
+import com.maximerollin.aqualog.SessionTileState
+import com.maximerollin.aqualog.StatusBarOverWater
+import com.maximerollin.aqualog.ageDays
+import com.maximerollin.aqualog.home.HeroText
+import com.maximerollin.aqualog.home.TankScene
 import com.maximerollin.aqualog.label
 import com.maximerollin.aqualog.resources.Res
 import com.maximerollin.aqualog.resources.home_no_measurement_yet
@@ -123,6 +124,9 @@ import com.maximerollin.aqualog.resources.navigation_history
 import com.maximerollin.aqualog.resources.navigation_more
 import com.maximerollin.aqualog.resources.navigation_tank
 import com.maximerollin.aqualog.resources.navigation_trends
+import com.maximerollin.aqualog.resources.reading_age_days
+import com.maximerollin.aqualog.shared.Aquarium
+import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.ChevronLeft
 import com.maximerollin.aqualog.ui.icon.ChevronRight
@@ -130,9 +134,11 @@ import com.maximerollin.aqualog.ui.icon.Fish
 import com.maximerollin.aqualog.ui.icon.Menu
 import com.maximerollin.aqualog.ui.icon.Plus
 import com.maximerollin.aqualog.ui.icon.RotateCcwClock
+import com.maximerollin.aqualog.ui.icon.Search
 import com.maximerollin.aqualog.ui.icon.TrendingUp
 import java.time.LocalDate
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -508,7 +514,7 @@ private object SettingsGroupScope : ColumnScope {
 @Composable
 fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(22.dp)
+    val shape = RoundedCornerShape(SettingsGroupRadius)
     SubcomposeLayout(
         modifier.fillMaxWidth().padding(horizontal = 16.dp)
             .shadow(2.dp, shape, ambientColor = Color.Black.copy(alpha = .12f), spotColor = Color.Black.copy(alpha = .12f))
@@ -538,6 +544,75 @@ fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScop
         }
     }
 }
+
+/** Where a [SettingsGroupSegment] sits in its card: it rounds the card's ends and draws the line above every row but the first. */
+enum class CardSegment {
+    SINGLE, TOP, MIDDLE, BOTTOM;
+
+    internal val roundsTop get() = this == SINGLE || this == TOP
+    internal val roundsBottom get() = this == SINGLE || this == BOTTOM
+
+    companion object {
+        /** The segment of row [index] in a card of [count] rows. */
+        fun of(index: Int, count: Int): CardSegment = when {
+            count <= 1 -> SINGLE
+            index == 0 -> TOP
+            index == count - 1 -> BOTTOM
+            else -> MIDDLE
+        }
+    }
+}
+
+/**
+ * One row of a [SettingsGroup] card, as its own list item: a long list stays lazy instead of composing every row at once.
+ * The segments stack into the same card (16 dp margins, 22 dp corners at its ends, a 1 dp line between rows). The group's
+ * shadow cannot run across items, so each segment draws a soft rim on its own outer edges: the sides, and the top or bottom
+ * when it ends the card, never between two rows.
+ */
+@Composable
+fun SettingsGroupSegment(segment: CardSegment, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val top = if (segment.roundsTop) SettingsGroupRadius else 0.dp
+    val bottom = if (segment.roundsBottom) SettingsGroupRadius else 0.dp
+    val shape = RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
+    Column(
+        modifier.fillMaxWidth().padding(horizontal = 16.dp)
+            .drawWithCache {
+                val rims = List(SegmentRimSteps) { step ->
+                    val spread = (step + 1) * SegmentRimStep.toPx()
+                    val topRadius = CornerRadius(if (segment.roundsTop) top.toPx() + spread else 0f)
+                    val bottomRadius = CornerRadius(if (segment.roundsBottom) bottom.toPx() + spread else 0f)
+                    Path().apply {
+                        addRoundRect(
+                            RoundRect(
+                                left = -spread,
+                                top = if (segment.roundsTop) -spread else 0f,
+                                right = size.width + spread,
+                                bottom = if (segment.roundsBottom) size.height + spread else size.height,
+                                topLeftCornerRadius = topRadius, topRightCornerRadius = topRadius,
+                                bottomLeftCornerRadius = bottomRadius, bottomRightCornerRadius = bottomRadius,
+                            ),
+                        )
+                    }
+                }
+                onDrawBehind { rims.forEach { drawPath(it, SegmentRimColor) } }
+            }
+            .background(colors.surface, shape)
+            .padding(horizontal = 14.dp),
+    ) {
+        if (!segment.roundsTop) {
+            Box(Modifier.fillMaxWidth().height(1.dp).background(colors.outlineVariant).testTag(SETTINGS_DIVIDER_TAG))
+        }
+        content()
+    }
+}
+
+private val SettingsGroupRadius = 22.dp
+
+// Three 1 dp rings of faint black, darker near the card: a soft edge close to the group's 2 dp shadow.
+private const val SegmentRimSteps = 3
+private val SegmentRimStep = 1.dp
+private val SegmentRimColor = Color.Black.copy(alpha = .035f)
 
 /**
  * The font scale from which layouts switch to their large-text form (stacked rows, fewer columns): Android's 130 % preset
@@ -581,10 +656,7 @@ fun SettingsRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Box(
-                Modifier.alpha(dim).size(34.dp).background(colors.secondaryContainer, RoundedCornerShape(11.dp)),
-                contentAlignment = Alignment.Center,
-            ) { Icon(icon, contentDescription = null, tint = colors.primary, modifier = Modifier.size(18.dp)) }
+            IconTile(icon, Modifier.alpha(dim))
             Spacer(Modifier.width(12.dp))
         }
         val texts = @Composable {
@@ -722,6 +794,63 @@ fun FilledField(
     )
 }
 
+/** The 34 dp square behind a row's icon: [secondaryContainer] with an 18 dp [primary] icon. Decorative, the row speaks. */
+@Composable
+fun IconTile(icon: ImageVector, modifier: Modifier = Modifier) {
+    val colors = MaterialTheme.colorScheme
+    Box(modifier.size(34.dp).background(colors.secondaryContainer, RoundedCornerShape(11.dp)), contentAlignment = Alignment.Center) {
+        Icon(icon, contentDescription = null, tint = colors.primary, modifier = Modifier.size(18.dp))
+    }
+}
+
+/** The water under the photo crop: white and 85% white keep 4.5:1 on it (ScenePhysicsTest). */
+internal val CropBackdrop = Color(0xFF0E2F2A)
+
+private val SearchPillShape = RoundedCornerShape(24.dp)
+
+/**
+ * A search field as a pill: 48 dp, a leading search icon and a ring that becomes 2 dp [primary] on focus. The [placeholder] is
+ * drawn in the decoration box while [query] is empty, so it belongs to the editable node and names it (the #45 pattern); once
+ * text is typed it stays the node's text, unseen, so the field never goes nameless. The keyboard's search key closes the
+ * keyboard: the results are already shown as one types, under it.
+ */
+@Composable
+fun SearchPill(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    testTag: String? = null,
+) {
+    val colors = MaterialTheme.colorScheme
+    val focusManager = LocalFocusManager.current
+    var focused by remember { mutableStateOf(false) }
+    BasicTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = modifier.fillMaxWidth().defaultMinSize(minHeight = 48.dp).let { if (testTag != null) it.testTag(testTag) else it }
+            .semantics { if (query.isNotEmpty()) text = AnnotatedString(placeholder) }
+            .background(colors.surface, SearchPillShape)
+            .border(if (focused) 2.dp else 1.dp, if (focused) colors.primary else colors.outlineVariant, SearchPillShape)
+            .onFocusChanged { focused = it.isFocused },
+        textStyle = TextStyle(fontFamily = dmSansFamily(), fontSize = 16.sp, color = colors.onSurface),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+        singleLine = true,
+        cursorBrush = SolidColor(colors.primary),
+        decorationBox = { innerTextField ->
+            Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(AquagendaIcons.Search, contentDescription = null, tint = colors.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                Box(Modifier.weight(1f).padding(vertical = 12.dp)) {
+                    if (query.isEmpty()) Text(placeholder, fontSize = 16.sp, color = colors.onSurfaceVariant)
+                    innerTextField()
+                }
+            }
+        },
+    )
+}
+
 /** A [FilledField]'s look without the typing: a label over a value, one button; both texts are merged into its one node. */
 @Composable
 fun PickerTile(label: String, value: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -738,8 +867,24 @@ fun PickerTile(label: String, value: String, onClick: () -> Unit, modifier: Modi
 /** Test tag of the backed column of a [WaterFullScreen]: it starts where the content starts, not at the top of the screen. */
 internal const val FULL_SCREEN_BACKING_TAG = "full-screen-backing"
 
+/**
+ * The label of a white primary button on the water (the account screens, the photo crop): a fixed deep teal, so it keeps 4.5:1
+ * on the white in both themes (ScenePhysicsTest), where the dark theme's light [ColorScheme.primary] would not.
+ */
+internal val WaterPrimaryButtonText = Color(0xFF14675E)
+
 /** Behind the text of a [WaterFullScreen]: white keeps 4.5:1 over any water (ScenePhysicsTest). */
 internal val FullScreenContentBacking = Color(0xFF0A2824).copy(alpha = .88f)
+
+/**
+ * Draws [FullScreenContentBacking] behind the content, faded in from transparent over its first [fade]; the caller keeps text
+ * below the fade. Shared by [WaterFullScreen] and the species fiche's name.
+ */
+internal fun Modifier.fullScreenBacking(fade: Dp = 48.dp): Modifier = drawBehind {
+    val faded = fade.toPx().coerceAtMost(size.height)
+    drawRect(Brush.verticalGradient(listOf(Color.Transparent, FullScreenContentBacking), 0f, faded), size = Size(size.width, faded))
+    drawRect(FullScreenContentBacking, topLeft = Offset(0f, faded), size = Size(size.width, (size.height - faded).coerceAtLeast(0f)))
+}
 
 /**
  * A full-bleed still water scene (deep water when [aquarium] is null) with [content] anchored to the bottom; it scrolls when taller
@@ -760,11 +905,7 @@ fun WaterFullScreen(aquarium: Aquarium?, modifier: Modifier = Modifier, content:
             Column(Modifier.fillMaxWidth().heightIn(min = viewport), verticalArrangement = Arrangement.Bottom) {
                 Column(
                     Modifier.fillMaxWidth().testTag(FULL_SCREEN_BACKING_TAG)
-                        .drawBehind {
-                            val fade = 48.dp.toPx().coerceAtMost(size.height)
-                            drawRect(Brush.verticalGradient(listOf(Color.Transparent, FullScreenContentBacking), 0f, fade), size = Size(size.width, fade))
-                            drawRect(FullScreenContentBacking, topLeft = Offset(0f, fade), size = Size(size.width, (size.height - fade).coerceAtLeast(0f)))
-                        }
+                        .fullScreenBacking()
                         .navigationBarsPadding().imePadding().padding(top = 48.dp),
                     content = content,
                 )

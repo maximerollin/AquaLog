@@ -17,16 +17,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -49,6 +46,7 @@ import com.maximerollin.aqualog.shared.assistance.readingLevel
 import com.maximerollin.aqualog.ui.icon.*
 import com.maximerollin.aqualog.ui.theme.GlassIconButton
 import com.maximerollin.aqualog.ui.theme.GroupLabel
+import com.maximerollin.aqualog.ui.theme.IconTile
 import com.maximerollin.aqualog.ui.theme.PaperSheetTop
 import com.maximerollin.aqualog.ui.theme.SettingsGroup
 import com.maximerollin.aqualog.ui.theme.SettingsRow
@@ -263,10 +261,7 @@ private fun NoteRow(event: SessionEvent) {
         Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).semantics(mergeDescendants = true) {}.padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier.size(34.dp).background(colors.secondaryContainer, RoundedCornerShape(11.dp)),
-            contentAlignment = Alignment.Center,
-        ) { Icon(AquagendaIcons.NotepadText, contentDescription = null, tint = colors.primary, modifier = Modifier.size(18.dp)) }
+        IconTile(AquagendaIcons.NotepadText)
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(

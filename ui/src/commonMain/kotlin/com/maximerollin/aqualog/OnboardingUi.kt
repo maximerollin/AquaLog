@@ -1,51 +1,44 @@
 package com.maximerollin.aqualog
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.intl.Locale
-import com.maximerollin.aqualog.resources.*
-import com.maximerollin.aqualog.home.TankHome
-import com.maximerollin.aqualog.habitants.AddInhabitantScreen
-import com.maximerollin.aqualog.ui.theme.CarnetDivider
-import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
-import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsPadding
-import com.maximerollin.aqualog.ui.theme.FloatingNavBar
-import com.maximerollin.aqualog.home.plusEnabled
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -54,43 +47,51 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import org.jetbrains.compose.resources.StringResource
-import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.maximerollin.aqualog.habitants.AddInhabitantScreen
+import com.maximerollin.aqualog.home.TankHome
+import com.maximerollin.aqualog.home.plusEnabled
+import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.shared.AccountDeletionPhase
-import com.maximerollin.aqualog.shared.FeedbackKind
-import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.FeedbackKind
+import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.VolumeUnit
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.unit.sp
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.Cloud
+import com.maximerollin.aqualog.ui.theme.CarnetDivider
+import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
+import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.FilledField
+import com.maximerollin.aqualog.ui.theme.FloatingNavBar
 import com.maximerollin.aqualog.ui.theme.WaterFullScreen
+import com.maximerollin.aqualog.ui.theme.WaterPrimaryButtonText
 import com.maximerollin.aqualog.ui.theme.frauncesFamily
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun AquaLogContent(
@@ -108,8 +109,9 @@ fun AquaLogContent(
     // handles those insets itself, so they get the bare [modifier] and reach the bottom of the window. Every other screen gets
     // `framed`, kept clear of the gesture bar.
     val framed = modifier.padding(contentPadding).consumeWindowInsets(contentPadding)
-    // Screens whose water header draws under the status bar get `framed` as is: Tasks, Rhythm, the Session, Session details
-    // and the shell (the home, History, Trends and More). Every other screen gets `inset` and starts below the status bar.
+    // Screens whose water header draws under the status bar get `framed` as is: Tasks, Rhythm, the Session, Add inhabitant,
+    // Session details and the shell (the home, History, Trends and More). Every other screen gets `inset` and starts below the
+    // status bar.
     val inset = framed.windowInsetsPadding(WindowInsets.statusBars)
     when {
         state.isLoading -> LoadingContent(inset)
@@ -139,7 +141,7 @@ fun AquaLogContent(
             modifier = framed,
         )
         // Below entry: « Faire une analyse » opens a Session over the fiche, which comes back once it is closed.
-        state.addInhabitant != null && state.setup != null -> AddInhabitantScreen(state.addInhabitant, state, viewModel, inset)
+        state.addInhabitant != null && state.setup != null -> AddInhabitantScreen(state.addInhabitant, state, viewModel, framed)
         state.sessionDetail != null && state.setup != null -> SessionDetailsScreen(
             recorded = state.sessionDetail,
             setup = state.setup,
@@ -222,9 +224,6 @@ fun AquaLogContent(
 
 /** Test tag of the decorative cloud square that opens every account step. */
 internal const val ACCOUNT_CLOUD_TAG = "account-cloud"
-
-/** The label of a white primary button on the water: it keeps 4.5:1 on the white (ScenePhysicsTest). */
-internal val AccountPrimaryButtonText = Color(0xFF14675E)
 
 /** A glass button's fill on the full-screen backing: its white label keeps 4.5:1 (ScenePhysicsTest). */
 internal val AccountGlassButtonFill = Color.White.copy(alpha = .14f)
@@ -366,9 +365,9 @@ private fun WaterPrimaryButton(label: StringResource, onClick: () -> Unit, enabl
         shape = MaterialTheme.shapes.medium,
         colors = ButtonDefaults.buttonColors(
             containerColor = Color.White,
-            contentColor = AccountPrimaryButtonText,
+            contentColor = WaterPrimaryButtonText,
             disabledContainerColor = Color.White.copy(alpha = .6f),
-            disabledContentColor = AccountPrimaryButtonText.copy(alpha = .7f),
+            disabledContentColor = WaterPrimaryButtonText.copy(alpha = .7f),
         ),
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
     ) {

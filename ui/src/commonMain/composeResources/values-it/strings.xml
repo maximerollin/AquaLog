@@ -77,7 +77,6 @@
     <string name="restore_purchase">Ripristina l'acquisto di Google Play</string>
     <string name="back_to_settings">Torna alle Impostazioni</string>
     <string name="subscription_settings_description">La versione gratuita include 90 giorni di cronologia. Rivedi Pro, riprova un acquisto o ripristina un abbonamento esistente.</string>
-    <string name="view_free_and_pro">Visualizza Gratis e Pro</string>
     <string name="pro_active">Pro attivo</string>
     <string name="pro_message_play_unavailable">Google Play non è disponibile. Non è stato avviato alcun acquisto.</string>
     <string name="pro_message_purchase_pending">Google Play sta ancora elaborando l’acquisto. Potrai ripristinarlo più tardi.</string>
@@ -91,8 +90,6 @@
     <string name="home_title">Il tuo acquario</string>
     <string name="aquarium_ready">Pronto per la tua prossima routine</string>
     <string name="open_tasks">Attività e promemoria</string>
-    <string name="more_section_tasks">Attività</string>
-    <string name="more_section_plan">Piano</string>
     <string name="more_section_help">Aiuto</string>
     <string name="volume_liters_format">%1$s L</string>
     <string name="volume_us_gallons_format">%1$s Gal</string>
@@ -164,9 +161,6 @@
     <string name="back_to_aquarium">Torniamo all'Acquario</string>
     <string name="view_session_details">Visualizza i dettagli della sessione</string>
     <string name="session_details">Dettagli della sessione</string>
-    <string name="session_date">Registrata il %1$s</string>
-    <string name="session_action_detail">%1$s · %2$s</string>
-    <string name="session_event_detail">%1$s · %2$s</string>
     <string name="edit_session">Modifica sessione</string>
     <string name="save_changes">Salva modifiche</string>
     <string name="delete_session">Elimina sessione</string>
@@ -200,7 +194,6 @@
     <string name="sync_failure_server">Il servizio di sincronizzazione non è riuscito a completare la richiesta. I tuoi dati locali rimangono disponibili.</string>
     <string name="sync_failure_unknown">La sincronizzazione non è stata completata. I tuoi dati locali rimangono disponibili.</string>
     <string name="sync_retry">Riprovare la sincronizzazione</string>
-    <string name="portable_data_title">Dati locali portatili</string>
     <string name="portable_data_replace_explanation">Il ripristino convalida prima l'intero file, quindi sostituisce atomicamente i dati di Aquarium su questo dispositivo. Gli ID stabili impediscono i duplicati. Le credenziali dell'account e i dati di fatturazione non vengono mai inclusi.</string>
     <string name="export_data">Esporta dati</string>
     <string name="restore_from_export">Ripristina dall'esportazione</string>
@@ -228,7 +221,6 @@
     <string name="portable_problem_account_linked">Disconnetti il ​​tuo account collegato prima di ripristinare una copia locale portatile. I tuoi dati locali e il tuo account non sono stati modificati.</string>
     <string name="portable_problem_database">Ripristino non riuscito durante la sostituzione della copia locale. Nessun dato importato è stato conservato.</string>
     <string name="portable_storage_error">Android non è riuscito a leggere o scrivere questo documento. Prova un'altra posizione.</string>
-    <string name="account_title">Account</string>
     <string name="account_local_only">Solo locale</string>
     <string name="account_local_only_description">Nessun account cloud è collegato. Aquagenda rimane completamente utilizzabile con i dati memorizzati su questo dispositivo.</string>
     <string name="account_actions">Azioni dell'account</string>
@@ -350,7 +342,6 @@
     <string name="task_monthly">Mensile</string>
     <string name="task_validation_error">Inserisci un titolo, una data valida e un'ora valida facoltativa.</string>
     <string name="save_task">Salva attività</string>
-    <string name="pending_tasks">Prossime occorrenze</string>
     <string name="no_pending_tasks">Nessuna attività in sospeso.</string>
     <string name="task_due_value">Scadenza %1$s · %2$s</string>
     <string name="task_no_time">nessun orario prescelto</string>
@@ -481,7 +472,6 @@
     <string name="photo_save_failed">Impossibile salvare la foto. Riprova.</string>
     <string name="photo_processing">Preparazione della foto…</string>
     <string name="habitants_title">Abitanti</string>
-    <string name="habitants_add_title">Aggiungi · %1$s</string>
     <string name="habitants_search_hint">Cerca una specie…</string>
     <string name="habitants_kind_fish">Pesci</string>
     <string name="habitants_kind_shrimp">Gamberetti</string>
@@ -490,9 +480,6 @@
     <string name="habitants_group_good">Adatti a questa vasca</string>
     <string name="habitants_group_caution">Con precauzioni</string>
     <string name="habitants_group_bad">Sconsigliati</string>
-    <string name="habitants_badge_good">✓ Compatibile</string>
-    <string name="habitants_badge_caution">⚠ %1$s</string>
-    <string name="habitants_badge_bad">✗ %1$s</string>
     <string name="habitants_reason_tank_too_small">Vasca piccola</string>
     <string name="habitants_reason_water_too_hard">Acqua dura</string>
     <string name="habitants_reason_water_too_soft">Acqua tenera</string>
@@ -525,9 +512,6 @@
     <string name="habitants_explain_two">%1$s e %2$s.</string>
     <string name="habitants_explain_good">Nessun problema con volume, ultime misurazioni e specie note della vasca.</string>
     <string name="habitants_explain_unmeasured">Nessun problema con volume e specie note della vasca; l'acqua non è ancora misurata.</string>
-    <string name="habitants_verdict_good">✓ Adatto a %1$s</string>
-    <string name="habitants_verdict_caution">⚠ Con precauzioni per %1$s</string>
-    <string name="habitants_verdict_bad">✗ Sconsigliato per %1$s</string>
     <string name="habitants_compared">Confronto con la tua vasca</string>
     <string name="habitants_details">Dettagli ›</string>
     <string name="habitants_criterion_volume">Volume</string>
@@ -575,7 +559,6 @@
     <string name="habitants_family_shrimp">Gamberetto</string>
     <string name="habitants_family_snail">Lumaca</string>
     <string name="habitants_family_plant">Pianta</string>
-    <plurals name="habitants_badge_problems"><item quantity="one">✗ %1$d problema</item><item quantity="other">✗ %1$d problemi</item></plurals>
     <plurals name="habitants_fact_lifespan"><item quantity="one">Durata di vita: %1$d anno</item><item quantity="other">Durata di vita: %1$d anni</item></plurals>
     <string name="feedback_kind_bug">Bug</string>
     <string name="feedback_kind_translation">Errore di traduzione</string>
@@ -603,4 +586,11 @@
     <string name="rhythm_description">Quando Aquagenda ti propone di testare ogni parametro. «Auto» segue il profilo del tuo Acquario.</string>
     <string name="session_details_context">%1$s · %2$s</string>
     <string name="session_notes_heading">Note</string>
+    <string name="habitants_pill_good">Compatibile</string>
+    <plurals name="habitants_pill_problems"><item quantity="one">%1$d problema</item><item quantity="other">%1$d problemi</item></plurals>
+    <string name="habitants_fit_good">Adatto a %1$s</string>
+    <string name="habitants_fit_caution">Con precauzioni per %1$s</string>
+    <string name="habitants_fit_bad">Sconsigliato per %1$s</string>
+    <string name="habitants_count_in_aquarium">%1$d in %2$s</string>
+    <string name="photo_crop_hint">Pizzica per ingrandire, trascina per inquadrare. Questo quadrato è esattamente ciò che verrà salvato.</string>
 </resources>
