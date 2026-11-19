@@ -9,6 +9,8 @@ import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -99,7 +101,10 @@ class SupabaseTwoDeviceSyncTest {
         composeRule.onNodeWithText("Water change · 20 %").assertIsDisplayed()
         composeRule.onNodeWithText("Downloaded from first installation").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Open Session details").performClick()
-        composeRule.onNodeWithText("Observation · Downloaded from first installation").assertIsDisplayed()
+        // On Session details, the note is a row: its kind, then the note, one node.
+        val observation = hasText("Observation") and hasText("Downloaded from first installation")
+        composeRule.onNodeWithTag("session-details-list").performScrollToNode(observation)
+        composeRule.onNode(observation).assertIsDisplayed()
         scenario.close()
         firstDatabase.close()
         secondDatabase.close()

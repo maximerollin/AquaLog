@@ -211,6 +211,8 @@ data class TaskUiState(
     val recurrence: TaskRecurrence = TaskRecurrence.ONCE,
     val linkedAction: MaintenanceActionType? = null,
     val pendingOccurrences: List<TaskOccurrence> = emptyList(),
+    /** Each Task's recurrence by Task id; a Task missing here shows none. */
+    val recurrenceByTaskId: Map<String, TaskRecurrence> = emptyMap(),
     val showValidationError: Boolean = false,
     val isSaving: Boolean = false,
     val batteryOptimizationActive: Boolean = false,
@@ -642,6 +644,11 @@ class HomeViewModel(
                     state.copy(tasks = state.tasks.copy(pendingOccurrences = occurrences))
                 }
                 refreshWeekly()
+            }
+        }
+        viewModelScope.launch {
+            aquariumRepository.observeTaskRecurrences().collectLatest { recurrences ->
+                mutableUiState.update { state -> state.copy(tasks = state.tasks.copy(recurrenceByTaskId = recurrences)) }
             }
         }
         viewModelScope.launch {

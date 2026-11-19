@@ -8,7 +8,17 @@ import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
+import com.maximerollin.aqualog.AccountDescriptionText
+import com.maximerollin.aqualog.AccountGlassButtonFill
+import com.maximerollin.aqualog.AccountPrimaryButtonText
+import com.maximerollin.aqualog.ProBannerTextBottom
+import com.maximerollin.aqualog.ProBannerTextFraction
+import com.maximerollin.aqualog.ProBannerWater
+import com.maximerollin.aqualog.proBannerShadeAlpha
+import androidx.compose.ui.unit.dp
+import com.maximerollin.aqualog.ui.theme.FullScreenContentBacking
 import com.maximerollin.aqualog.ui.theme.HeroTextBacking
+import com.maximerollin.aqualog.ui.theme.WaterHeaderPhotoShade
 import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeBottom
 import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeTop
 import java.io.File
@@ -206,5 +216,50 @@ class ScenePhysicsTest {
         val fill = HeroTextBacking.compositeOver(Color.White)
         assertTrue(contrast(fill, Color.White) >= 3f, "fill ${contrast(fill, Color.White)}")
         assertTrue(contrast(Color.White, fill) >= 3f, "icon ${contrast(Color.White, fill)}")
+    }
+
+    @Test
+    fun `white text keeps 4·5 to 1 over a white photo under the header shade`() {
+        val behind = WaterHeaderPhotoShade.compositeOver(Color.White)
+        assertTrue(contrast(Color.White, behind) >= 4.5f, "${contrast(Color.White, behind)}")
+    }
+
+    @Test
+    fun `white text keeps 4·5 to 1 on the full-screen backing`() {
+        val backing = FullScreenContentBacking
+        for (behind in listOf(Color(0xFFE3EAEC), Color(0xFFE8E0D0), Color(0xFFDCE0E6), Color.White)) {
+            val c = contrast(Color.White, backing.compositeOver(behind))
+            assertTrue(c >= 4.5f, "over $behind: $c")
+        }
+    }
+
+    @Test
+    fun `the account screens keep 4·5 to 1 on the full-screen backing`() {
+        // The primary button is white, its label deep teal.
+        assertTrue(contrast(AccountPrimaryButtonText, Color.White) >= 4.5f, "primary ${contrast(AccountPrimaryButtonText, Color.White)}")
+        for (behind in listOf(Color(0xFFE3EAEC), Color(0xFFE8E0D0), Color(0xFFDCE0E6), Color.White)) {
+            val backing = FullScreenContentBacking.compositeOver(behind)
+            val glass = AccountGlassButtonFill.compositeOver(backing)
+            assertTrue(contrast(Color.White, glass) >= 4.5f, "glass button over $behind: ${contrast(Color.White, glass)}")
+            val description = AccountDescriptionText.compositeOver(backing)
+            assertTrue(contrast(description, backing) >= 4.5f, "description over $behind: ${contrast(description, backing)}")
+        }
+    }
+
+    @Test
+    fun `white text on the Pro banner keeps 4·5 to 1 up to the text column's right edge`() {
+        // The shade thins to the right, so the column's right edge is its weakest point; the plants and the light rays
+        // are the lightest colours there (the text keeps above the sand).
+        val edge = ProBannerWater.copy(alpha = proBannerShadeAlpha(ProBannerTextFraction))
+        val water = Color(0xFF3D9184)
+        for (behind in listOf(Color(0xFF5FB36F), Color(0xFF4F9D5D), Color.White.copy(alpha = .14f).compositeOver(water))) {
+            val c = contrast(Color.White, edge.compositeOver(behind))
+            assertTrue(c >= 4.5f, "over $behind: $c")
+        }
+        // A bubble (white at .7 at most) rises at x = .34 at the furthest.
+        val bubble = ProBannerWater.copy(alpha = proBannerShadeAlpha(.34f)).compositeOver(Color.White.copy(alpha = .7f).compositeOver(water))
+        assertTrue(contrast(Color.White, bubble) >= 4.5f, "over a bubble: ${contrast(Color.White, bubble)}")
+        // The sand, the scene's lightest colour, rises 16 dp at most: the text never lies on it.
+        assertTrue(ProBannerTextBottom > 16.dp)
     }
 }

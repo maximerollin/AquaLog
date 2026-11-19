@@ -82,6 +82,20 @@ class SessionTilesTest {
     }
 
     @Test
+    fun `session details show three columns, two from 130 percent or under 308 dp`() {
+        // Three tiles at their 96 dp minimum and the two 10 dp gaps between them.
+        assertEquals(308.dp, ThreeDetailColumnsMinWidth)
+        assertEquals(3, sessionDetailsColumns(1.0f, 360.dp))
+        assertEquals(3, sessionDetailsColumns(1.29f, 360.dp))
+        // Android's 130 % preset is large text, as for the Session's own columns.
+        assertEquals(2, sessionDetailsColumns(1.3f, 360.dp))
+        assertEquals(1, sessionColumns(1.3f, 412.dp))
+        assertEquals(2, sessionDetailsColumns(1.5f, 412.dp))
+        assertEquals(3, sessionDetailsColumns(1.0f, 308.dp))
+        assertEquals(2, sessionDetailsColumns(1.0f, 307.dp))
+    }
+
+    @Test
     fun `count skips blank, invalid and inactive inputs`() {
         val ph = definition(BuiltInParameter.PH, 6.5, 7.5)
         val kh = definition(BuiltInParameter.KH)

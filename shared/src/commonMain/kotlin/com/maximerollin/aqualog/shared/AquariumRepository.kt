@@ -128,6 +128,9 @@ interface AquariumRepository {
 
     fun observeResolvedTaskOccurrences(): Flow<List<TaskOccurrence>>
 
+    /** Each Task's recurrence, by Task id: what an Occurrence alone does not say. */
+    fun observeTaskRecurrences(): Flow<Map<String, TaskRecurrence>> = flowOf(emptyMap())
+
     /** Emits each time what a widget shows may have changed (no initial emission). */
     fun observeChanges(): Flow<Unit> = emptyFlow()
 }
@@ -754,6 +757,14 @@ class RoomAquariumRepository(
 
     override fun observeResolvedTaskOccurrences(): Flow<List<TaskOccurrence>> =
         taskDao.observeResolved().map { occurrences -> occurrences.map(TaskOccurrenceEntity::toDomain) }
+
+    /** A stored recurrence this version does not know is left out (the row reads without one) rather than failing the flow. */
+    override fun observeTaskRecurrences(): Flow<Map<String, TaskRecurrence>> =
+        taskDao.observeTasks().map { tasks ->
+            tasks.mapNotNull { task ->
+                TaskRecurrence.entries.firstOrNull { it.storageValue == task.recurrence }?.let { task.id to it }
+            }.toMap()
+        }
 
     suspend fun sessionCount(aquariumId: String): Int = sessionDao.count(aquariumId)
 

@@ -1,5 +1,6 @@
 package com.maximerollin.aqualog.habitants
 
+import com.maximerollin.aqualog.ui.theme.LargeFontScale
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -174,7 +175,7 @@ internal fun SpeciesSearchField(query: String, onQueryChange: (String) -> Unit) 
 @Composable
 private fun SpeciesRow(assessment: Assessment, language: String, onClick: () -> Unit) {
     // Large text puts the badge on its own line, so a long name (« Spitzmaulkärpfling ») never breaks mid-word.
-    val stacked = LocalDensity.current.fontScale > 1.3f
+    val stacked = LocalDensity.current.fontScale >= LargeFontScale
     val rowModifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = Role.Button, onClick = onClick).padding(vertical = 8.dp)
     val names = @Composable {
         Text(assessment.species.localName(language), style = MaterialTheme.typography.bodyLarge)

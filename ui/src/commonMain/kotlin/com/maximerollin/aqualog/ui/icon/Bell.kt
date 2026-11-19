@@ -1,0 +1,54 @@
+package com.maximerollin.aqualog.ui.icon
+
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.unit.dp
+
+/** Lucide `bell` (ISC licence). */
+@Suppress("UnusedReceiverParameter")
+val AquagendaIcons.Bell: ImageVector
+    get() {
+        if (_Bell != null) {
+            return _Bell!!
+        }
+        _Bell = ImageVector.Builder(
+            name = "Bell",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round
+            ) {
+                moveTo(10.268f, 21f)
+                arcToRelative(2f, 2f, 0f, isMoreThanHalf = false, isPositiveArc = false, 3.464f, 0f)
+            }
+            path(
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round
+            ) {
+                moveTo(3.262f, 15.326f)
+                arcTo(1f, 1f, 0f, isMoreThanHalf = false, isPositiveArc = false, 4f, 17f)
+                horizontalLineToRelative(16f)
+                arcToRelative(1f, 1f, 0f, isMoreThanHalf = false, isPositiveArc = false, 0.74f, -1.673f)
+                curveTo(19.41f, 13.956f, 18f, 12.499f, 18f, 8f)
+                arcTo(6f, 6f, 0f, isMoreThanHalf = false, isPositiveArc = false, 6f, 8f)
+                curveToRelative(0f, 4.499f, -1.411f, 5.956f, -2.738f, 7.326f)
+            }
+        }.build()
+
+        return _Bell!!
+    }
+
+@Suppress("ObjectPropertyName")
+private var _Bell: ImageVector? = null

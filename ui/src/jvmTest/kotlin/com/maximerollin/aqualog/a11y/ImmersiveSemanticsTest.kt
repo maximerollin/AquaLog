@@ -2,6 +2,13 @@ package com.maximerollin.aqualog.a11y
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,6 +53,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.assertCountEquals
 import com.maximerollin.aqualog.ui.theme.AquaLogTheme
 import com.maximerollin.aqualog.ui.theme.FloatingNavBar
 import com.maximerollin.aqualog.ui.theme.LEVEL_MARK_TAG
@@ -60,6 +68,26 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.onAllNodesWithTag
+import com.maximerollin.aqualog.ui.icon.Pencil
+import com.maximerollin.aqualog.ui.icon.ArrowLeft
+import com.maximerollin.aqualog.ui.theme.FilledField
+import com.maximerollin.aqualog.ui.theme.LargeFontScale
+import com.maximerollin.aqualog.ui.theme.GlassChip
+import com.maximerollin.aqualog.ui.theme.PickerTile
+import com.maximerollin.aqualog.ui.theme.SETTINGS_DIVIDER_TAG
+import com.maximerollin.aqualog.ui.theme.SettingsGroup
+import com.maximerollin.aqualog.ui.theme.SettingsRow
+import com.maximerollin.aqualog.ui.theme.FULL_SCREEN_BACKING_TAG
+import com.maximerollin.aqualog.ui.theme.WaterFullScreen
+import androidx.compose.material3.Text
 
 @OptIn(ExperimentalTestApi::class)
 class ImmersiveSemanticsTest {
@@ -272,6 +300,24 @@ class ImmersiveSemanticsTest {
     }
 
     @Test
+    fun `settings row value moves under its label from the 130 percent preset`() {
+        for ((scale, stacked) in listOf(LargeFontScale - .01f to false, LargeFontScale to true)) {
+            runComposeUiTest {
+                setContent {
+                    AquaLogTheme(false) {
+                        CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = scale)) {
+                            Box(Modifier.width(360.dp)) { SettingsRow("Rythme", null, value = "Hebdomadaire") }
+                        }
+                    }
+                }
+                val label = onNodeWithText("Rythme", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+                val value = onNodeWithText("Hebdomadaire", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+                assertEquals(stacked, value.top >= label.bottom, "at $scale: label $label, value $value")
+            }
+        }
+    }
+
+    @Test
     fun `german period labels stay on one line at 150 percent`() = runComposeUiTest {
         val labels = listOf("Gesamter Zeitraum", "7 Tage", "30 Tage", "90 Tage")
         setContent {
@@ -363,6 +409,215 @@ class ImmersiveSemanticsTest {
             assertEquals(3, radios.size)
             assertEquals(listOf(false, false, false), radios.map { it.config[SemanticsProperties.Selected] })
             onNodeWithTag(PERIOD_PILL_TAG, useUnmergedTree = true).assertDoesNotExist()
+        }
+    }
+
+    private val aquariumSalon = Aquarium("a", "Salon", 120.0, VolumeUnit.LITERS, 0L)
+
+    private fun role(node: androidx.compose.ui.semantics.SemanticsNode) = node.config.getOrNull(SemanticsProperties.Role)
+
+    @Test
+    fun `settings row is one button with label and value`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    SettingsRow("Rythme d’analyse", AquagendaIcons.Pencil, value = "Chaque semaine", onClick = {})
+                }
+            }
+            val node = onNode(hasText("Rythme d’analyse") and hasClickAction()).fetchSemanticsNode()
+            assertEquals(Role.Button, role(node))
+            val spoken = node.config[SemanticsProperties.Text].joinToString(" ") { it.text }
+            assertTrue(spoken.contains("Chaque semaine"), spoken)
+            assertEquals(1, onAllNodes(hasText("Rythme d’analyse") and hasClickAction()).fetchSemanticsNodes().size)
+        }
+    }
+
+    @Test
+    fun `disabled settings row is not clickable`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) { SettingsRow("Archiver", AquagendaIcons.Pencil, onClick = {}, enabled = false) }
+            }
+            onNode(hasText("Archiver")).assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun `a long value leaves the label on one line`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    Box(Modifier.width(328.dp)) {
+                        SettingsRow("Local uniquement", AquagendaIcons.Pencil, value = "○ Synchronisation en attente")
+                    }
+                }
+            }
+            val layouts = mutableListOf<TextLayoutResult>()
+            onNode(hasText("Local uniquement"), useUnmergedTree = true).fetchSemanticsNode()
+                .config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+            assertEquals(1, layouts.single().lineCount)
+            onNode(hasText("○ Synchronisation en attente"), useUnmergedTree = true).assertExists()
+        }
+    }
+
+    /** Contrast of the darkest pixel of [text] against [background]: the glyphs' own colour, as drawn. */
+    private fun ComposeUiTest.inkContrast(text: String, background: Color): Float {
+        val pixels = onNode(hasText(text), useUnmergedTree = true).captureToImage().toPixelMap()
+        var darkest = background.luminance()
+        for (x in 0 until pixels.width) for (y in 0 until pixels.height) darkest = minOf(darkest, pixels[x, y].luminance())
+        return (background.luminance() + .05f) / (darkest + .05f)
+    }
+
+    @Test
+    fun `a disabled row dims its label but keeps its reason readable`() = withEnglish {
+        runComposeUiTest {
+            var surface = Color.Unspecified
+            setContent {
+                AquaLogTheme(false) {
+                    surface = MaterialTheme.colorScheme.surface
+                    // A large density gives the glyphs solid stems, so their darkest pixel is their colour.
+                    CompositionLocalProvider(LocalDensity provides Density(3f)) {
+                        Column(Modifier.background(surface)) {
+                            SettingsRow("Archive", AquagendaIcons.Pencil, supporting = "Only one Aquarium in Free", onClick = {}, enabled = false)
+                            SettingsRow("Rhythm", AquagendaIcons.Pencil, onClick = {})
+                        }
+                    }
+                }
+            }
+            onNode(hasText("Archive")).assertIsNotEnabled()
+            val reason = inkContrast("Only one Aquarium in Free", surface)
+            assertTrue(reason >= 4.5f, "reason $reason")
+            val dimmed = inkContrast("Archive", surface)
+            val live = inkContrast("Rhythm", surface)
+            assertTrue(dimmed < live * .7f, "label not dimmed: $dimmed vs $live")
+        }
+    }
+
+    @Test
+    fun `settings group draws a line between rows only`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    SettingsGroup {
+                        SettingsRow("A", null, onClick = {})
+                        SettingsRow("B", null, onClick = {})
+                    }
+                }
+            }
+            assertEquals(1, onAllNodesWithTag(SETTINGS_DIVIDER_TAG, useUnmergedTree = true).fetchSemanticsNodes().size)
+        }
+    }
+
+    @Test
+    fun `settings group has no line for one row and two for three`() = withEnglish {
+        for ((rows, lines) in listOf(1 to 0, 3 to 2)) {
+            runComposeUiTest {
+                setContent {
+                    AquaLogTheme(false) { SettingsGroup { repeat(rows) { SettingsRow("R$it", null, onClick = {}) } } }
+                }
+                assertEquals(lines, onAllNodesWithTag(SETTINGS_DIVIDER_TAG, useUnmergedTree = true).fetchSemanticsNodes().size)
+            }
+        }
+    }
+
+    @Test
+    fun `full-screen content sits at the bottom with the water free above it`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    Box(Modifier.width(360.dp).height(640.dp)) { WaterFullScreen(aquariumSalon) { Text("Bonjour") } }
+                }
+            }
+            val root = onRoot().fetchSemanticsNode().boundsInRoot
+            val text = onNodeWithText("Bonjour").fetchSemanticsNode().boundsInRoot
+            val backing = onNodeWithTag(FULL_SCREEN_BACKING_TAG).fetchSemanticsNode().boundsInRoot
+            assertTrue(backing.top > root.top + root.height / 2, "backing starts at the content, not the screen top: $root $backing")
+            assertTrue(text.top >= backing.top + 48 * density.density, "48 dp free of text: $backing $text")
+            assertTrue(text.top > root.top + root.height / 2, "$root $text")
+            assertTrue(text.bottom <= root.bottom, "$root $text")
+        }
+    }
+
+    @Test
+    fun `filled field is named by its label when empty`() = withEnglish {
+        runComposeUiTest {
+            var typed = ""
+            setContent { AquaLogTheme(false) { FilledField("", { typed = it }, "Titre de la tâche") } }
+            // The label is text on the editable node itself (M3's label slot); a contentDescription would hide the typed text (#45).
+            val config = onNode(hasSetTextAction()).fetchSemanticsNode().config
+            assertEquals(listOf("Titre de la tâche"), config.getOrNull(SemanticsProperties.Text)?.map { it.text }, "$config")
+            assertEquals(null, config.getOrNull(SemanticsProperties.ContentDescription), "$config")
+            onAllNodesWithText("Titre de la tâche").assertCountEquals(1)
+            onNode(hasSetTextAction()).performTextInput("x")
+            assertEquals("x", typed)
+        }
+    }
+
+    @Test
+    fun `filled field keeps its label and its typed text on one node`() = withEnglish {
+        runComposeUiTest {
+            setContent { AquaLogTheme(false) { FilledField("Vitre", {}, "Titre de la tâche", testTag = "title") } }
+            val config = onNode(hasSetTextAction()).fetchSemanticsNode().config
+            assertEquals("title", config.getOrNull(SemanticsProperties.TestTag))
+            assertEquals("Vitre", config.getOrNull(SemanticsProperties.EditableText)?.text)
+            assertEquals(listOf("Titre de la tâche"), config.getOrNull(SemanticsProperties.Text)?.map { it.text })
+            assertEquals(null, config.getOrNull(SemanticsProperties.ContentDescription))
+            onNode(hasSetTextAction()).assertHeightIsAtLeast(56.dp)
+        }
+    }
+
+    @Test
+    fun `filled field in error exposes its message`() = withEnglish {
+        runComposeUiTest {
+            setContent { AquaLogTheme(false) { FilledField("", {}, "Titre de la tâche", isError = true, errorMessage = "Requis") } }
+            val config = onNode(hasSetTextAction()).fetchSemanticsNode().config
+            assertEquals("Requis", config.getOrNull(SemanticsProperties.Error))
+        }
+    }
+
+    @Test
+    fun `picker tile speaks label and value`() = withEnglish {
+        runComposeUiTest {
+            setContent { AquaLogTheme(false) { PickerTile("Première date d'échéance", "12 nov. 2026", {}) } }
+            val node = onNode(hasClickAction()).fetchSemanticsNode()
+            assertEquals(Role.Button, role(node))
+            val spoken = node.config[SemanticsProperties.Text].joinToString(" ") { it.text }
+            assertTrue(spoken.contains("Première date d'échéance") && spoken.contains("12 nov. 2026"), spoken)
+        }
+    }
+
+    @Test
+    fun `glass chip is a 48 dp button`() = withEnglish {
+        runComposeUiTest {
+            setContent { AquaLogTheme(false) { GlassChip("Changer", {}, icon = AquagendaIcons.Pencil) } }
+            val chip = onNode(hasClickAction())
+            chip.assertHeightIsAtLeast(48.dp)
+            assertEquals(Role.Button, role(chip.fetchSemanticsNode()))
+        }
+    }
+
+    @Test
+    fun `water header leading slot comes before the title`() = withEnglish {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    WaterHeader(
+                        aquariumSalon, "Rythme", "Salon",
+                        leading = { GlassIconButton(AquagendaIcons.ArrowLeft, "Retour", {}) },
+                    )
+                }
+            }
+            val leading = onNodeWithContentDescription("Retour").fetchSemanticsNode().boundsInRoot
+            val title = onNodeWithText("Rythme").fetchSemanticsNode().boundsInRoot
+            assertTrue(leading.left < title.left, "$leading $title")
+        }
+    }
+
+    @Test
+    fun `water header honours its minimum height`() = withEnglish {
+        runComposeUiTest {
+            setContent { AquaLogTheme(false) { WaterHeader(aquariumSalon, "Plus", "Salon", minHeight = 190.dp) } }
+            onRoot().assertHeightIsAtLeast(190.dp)
         }
     }
 }

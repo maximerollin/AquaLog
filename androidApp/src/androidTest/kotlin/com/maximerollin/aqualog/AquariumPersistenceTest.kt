@@ -9,6 +9,7 @@ import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
@@ -86,7 +87,9 @@ class AquariumPersistenceTest {
         // The value tiles repeat « No measurement yet »: read the status card.
         composeRule.onNodeWithTag("status-card").assertTextContains("No measurement yet", substring = true)
         composeRule.onNode(hasLabel("More")).performClick()
-        composeRule.onNodeWithText("View Free and Pro").performClick()
+        // In Free, More offers Pro through its banner.
+        composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("Discover Pro"))
+        composeRule.onNodeWithText("Discover Pro").performClick()
         composeRule.onNodeWithText("Choose Free or Pro").assertIsDisplayed()
         composeRule.onNodeWithText("Back to Settings").performClick()
         scenario.close()

@@ -1,6 +1,7 @@
 package com.maximerollin.aqualog
 
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
@@ -41,7 +42,7 @@ class TaskFlowTest {
     fun taskDate_isChosenWithTouchFriendlyPicker() {
         val scenario = launchTaskScreen()
         try {
-            composeRule.onNodeWithText("New Task").performClick()
+            composeRule.onNodeWithContentDescription("New Task").performClick()
             composeRule.onNodeWithText("First due date").performClick()
             composeRule.onNodeWithTag("task-date-picker").assertIsDisplayed()
             pressBack()
@@ -54,7 +55,7 @@ class TaskFlowTest {
     fun optionalTaskTime_isChosenWithTouchFriendlyPicker() {
         val scenario = launchTaskScreen()
         try {
-            composeRule.onNodeWithText("New Task").performClick()
+            composeRule.onNodeWithContentDescription("New Task").performClick()
             composeRule.onNodeWithText("Time (optional)").performClick()
             composeRule.onNodeWithTag("task-time-picker").assertIsDisplayed()
             pressBack()
@@ -112,7 +113,7 @@ class TaskFlowTest {
                 )
             }
             composeRule.onNodeWithTag("task-list").performScrollToIndex(0)
-            composeRule.onNodeWithText("Back").performClick()
+            composeRule.onNodeWithContentDescription("Back").performClick()
             composeRule.onNode(hasLabel("History")).performClick()
             composeRule.onNode(hasText("Completed", substring = true)).assertIsDisplayed()
             composeRule.onNodeWithText("Change filter wool").assertIsDisplayed()
@@ -270,14 +271,14 @@ class TaskFlowTest {
         val scenario = launchTaskScreen()
         try {
             composeRule.onNodeWithText("No pending Task.").assertIsDisplayed()
-            composeRule.onNodeWithText("New Task").performClick()
+            composeRule.onNodeWithContentDescription("New Task").performClick()
             composeRule.onNodeWithText("Save Task").performClick()
-            composeRule.onNodeWithText("Task title").assertIsDisplayed()
-            composeRule.onNodeWithText("Task title").performTextInput("Clean the glass")
+            composeRule.onNode(hasText("Task title") and hasSetTextAction()).assertIsDisplayed()
+            composeRule.onNode(hasText("Task title") and hasSetTextAction()).performTextInput("Clean the glass")
             closeSoftKeyboard()
             composeRule.onNodeWithText("Save Task").performClick()
             composeRule.waitUntil(timeoutMillis = 10_000) {
-                composeRule.onAllNodes(hasText("Task title")).fetchSemanticsNodes().isEmpty()
+                composeRule.onAllNodes(hasText("Task title") and hasSetTextAction()).fetchSemanticsNodes().isEmpty()
             }
             composeRule.onNodeWithText("Clean the glass").assertIsDisplayed()
         } finally {

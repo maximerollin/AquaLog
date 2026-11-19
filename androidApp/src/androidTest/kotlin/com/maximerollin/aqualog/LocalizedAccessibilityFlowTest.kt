@@ -286,7 +286,7 @@ class LocalizedAccessibilityFlowTest {
                 assertAction(localized.getString(Res.string.new_task))
                 assertEssentialActionByTag("tasks-back")
                 captureAndInspect("tasks-$language-$mode.png")
-                compose.onNodeWithText(localized.getString(Res.string.new_task)).performClick()
+                compose.onNode(hasLabel(localized.getString(Res.string.new_task)) and hasClickAction()).performClick()
                 awaitText(localized.getString(Res.string.save_task))
                 compose.onNode(hasText(localized.getString(Res.string.save_task)) and hasClickAction()).performScrollTo()
                 assertAction(localized.getString(Res.string.save_task))
@@ -295,7 +295,7 @@ class LocalizedAccessibilityFlowTest {
                 compose.waitUntil(10_000) {
                     compose.onAllNodes(hasText(localized.getString(Res.string.save_task))).fetchSemanticsNodes().isEmpty()
                 }
-                compose.onNodeWithText(localized.getString(Res.string.back)).performClick()
+                compose.onNode(hasLabel(localized.getString(Res.string.back)) and hasClickAction()).performClick()
 
                 compose.onNode(hasLabel(localized.getString(Res.string.navigation_history))).performClick()
                 awaitText(localized.getString(Res.string.timeline_title))
@@ -315,15 +315,18 @@ class LocalizedAccessibilityFlowTest {
                 captureAndInspect("trends-$language-$mode.png")
 
                 compose.onNode(hasLabel(localized.getString(Res.string.navigation_more))).performClick()
-                awaitText(localized.getString(Res.string.aquariums_title))
+                // More opens on its Aquarium's water: switch and add are glass chips, edit is the pencil (a content description).
+                awaitText(localized.getString(Res.string.home_change_aquarium))
+                assertAction(localized.getString(Res.string.home_change_aquarium))
                 assertAction(localized.getString(Res.string.add_aquarium))
-                scrollSettingsAndAssertEssentialAction(localized.getString(Res.string.edit_aquarium))
+                scrollAndAssertEssentialAction(localized.getString(Res.string.edit_aquarium))
                 captureAndInspect("settings-aquariums-$language-$mode.png")
-                scrollSettingsTo(localized.getString(Res.string.portable_data_title))
+                // Group labels are shown in capitals.
+                scrollSettingsTo(localized.getString(Res.string.more_section_data_account).uppercase())
                 scrollSettingsAndAssertEssentialAction(localized.getString(Res.string.export_data))
                 scrollSettingsAndAssertEssentialAction(localized.getString(Res.string.restore_from_export))
                 captureAndInspect("settings-export-$language-$mode.png")
-                scrollSettingsTo(localized.getString(Res.string.account_actions))
+                scrollSettingsTo(localized.getString(Res.string.account_actions).uppercase())
                 captureAndInspect("settings-account-$language-$mode.png")
                 scrollSettingsTo(localized.getString(Res.string.feedback_title))
                 val sendFeedback = localized.getString(Res.string.send_feedback)
@@ -337,10 +340,11 @@ class LocalizedAccessibilityFlowTest {
                 captureAndInspect("feedback-dialog-$language-$mode.png")
                 compose.onNodeWithText(localized.getString(Res.string.cancel)).performClick()
 
+                // In Free, the offer is the Pro banner's « Discover Pro ».
                 compose.onNodeWithTag("settings-list").performScrollToNode(
-                    hasText(localized.getString(Res.string.view_free_and_pro)),
+                    hasText(localized.getString(Res.string.more_pro_banner_action)),
                 )
-                val viewPro = localized.getString(Res.string.view_free_and_pro)
+                val viewPro = localized.getString(Res.string.more_pro_banner_action)
                 assertAction(viewPro)
                 compose.onNodeWithText(viewPro).performClick()
                 awaitText(localized.getString(Res.string.paywall_title))

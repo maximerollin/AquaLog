@@ -103,8 +103,10 @@ class AccountControlSettingsTest {
                 }
                 composeRule.onAllNodesWithText("Account deletion incomplete").fetchSemanticsNodes().isNotEmpty()
             }
-            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Service temporarily unavailable"))
-            composeRule.onNodeWithText("Service temporarily unavailable").performScrollTo().assertIsDisplayed()
+            // The detail shows in the pending-deletion row and again in the footer: the row is the one that must carry it.
+            val pendingDetail = hasText("Account deletion incomplete") and hasText("Service temporarily unavailable")
+            composeRule.onNode(hasScrollAction()).performScrollToNode(pendingDetail)
+            composeRule.onNode(pendingDetail).performScrollTo().assertIsDisplayed()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Export data"))
             composeRule.onNodeWithText("Export data").performScrollTo().assertIsDisplayed()
             composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Retry account deletion"))

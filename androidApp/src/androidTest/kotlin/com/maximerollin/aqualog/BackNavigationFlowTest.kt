@@ -3,6 +3,10 @@ package com.maximerollin.aqualog
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasTestTag
@@ -119,6 +123,42 @@ class BackNavigationFlowTest {
             assertEquals(Lifecycle.State.RESUMED, scenario.state)
             val sessions = runBlocking { application.aquariumRepository.observeTimeline(TimelineFilter()).first() }
             assertTrue("$sessions", sessions.isEmpty())
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun backOnRhythmWithARowOpen_foldsTheRow_thenLeavesTheScreen() {
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.awaitLabel("More")
+            composeRule.onNode(hasLabel("More")).performClick()
+            composeRule.scrollAboveBar("settings-list", hasText("Analysis rhythm"))
+            composeRule.onNodeWithText("Analysis rhythm").performClick()
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasTestTag("rhythm-list")).fetchSemanticsNodes().isNotEmpty()
+            }
+            val temperature = hasText("Temperature") and hasClickAction()
+            composeRule.onNodeWithTag("rhythm-list").performScrollToNode(temperature)
+            composeRule.onNode(temperature).performClick()
+            composeRule.onNode(temperature).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Expanded"))
+            composeRule.onAllNodesWithText("Never").assertCountEquals(1)
+
+            pressBack()
+
+            // Still on Rhythm, the row folded.
+            composeRule.onNode(temperature).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Collapsed"))
+            composeRule.onAllNodesWithText("Never").assertCountEquals(0)
+            composeRule.onNodeWithTag("rhythm-list").assertIsDisplayed()
+
+            pressBack()
+
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasTestTag("rhythm-list")).fetchSemanticsNodes().isEmpty()
+            }
+            composeRule.onNodeWithTag("settings-list").assertIsDisplayed()
+            assertEquals(Lifecycle.State.RESUMED, scenario.state)
         } finally {
             scenario.close()
         }

@@ -113,7 +113,7 @@ class TankHomeDueTestsFlowTest {
                         ?.parameters?.single { it.id == nitrateId }?.analysisIntervalDays == NEVER_INTERVAL_DAYS
                 }
             }
-            composeRule.onNodeWithText("Back").performClick()
+            composeRule.onNode(hasLabel("Back")).performClick()
             composeRule.onNode(hasLabel("Tank")).performClick()
             composeRule.awaitLabel("Measure")
             composeRule.waitUntil(timeoutMillis = 5_000) {

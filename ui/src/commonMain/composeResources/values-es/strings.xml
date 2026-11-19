@@ -594,4 +594,13 @@
     <string name="trends_custom_period">Periodo personalizado</string>
     <string name="trends_hero_legend">▲ Cambio de agua · Referencia, no un diagnóstico</string>
     <plurals name="trends_hero_change_days"><item quantity="one">%1$s en %2$d día</item><item quantity="other">%1$s en %2$d días</item></plurals>
+    <string name="more_pro_banner_title">Varios acuarios, todo el historial</string>
+    <string name="more_pro_banner_action">Descubrir Pro</string>
+    <string name="more_section_data_account">Datos y cuenta</string>
+    <string name="task_day_tomorrow">Mañana</string>
+    <string name="task_overdue">Atrasada</string>
+    <string name="task_row_detail">%1$s · %2$s</string>
+    <string name="rhythm_description">Cuándo Aquagenda te propone analizar cada parámetro. «Auto» sigue el perfil de tu Acuario.</string>
+    <string name="session_details_context">%1$s · %2$s</string>
+    <string name="session_notes_heading">Notas</string>
 </resources>

@@ -694,6 +694,9 @@ abstract class TaskDao {
     @Query("SELECT * FROM task_occurrences WHERE resolution IS NOT NULL ORDER BY resolvedAtEpochMillis DESC")
     abstract fun observeResolved(): Flow<List<TaskOccurrenceEntity>>
 
+    @Query("SELECT * FROM tasks")
+    abstract fun observeTasks(): Flow<List<TaskEntity>>
+
     @Transaction
     open suspend fun create(task: TaskEntity, occurrence: TaskOccurrenceEntity) {
         insertTask(task)
