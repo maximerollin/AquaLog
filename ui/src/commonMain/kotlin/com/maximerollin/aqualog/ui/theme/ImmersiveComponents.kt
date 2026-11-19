@@ -805,6 +805,16 @@ internal val WaterPrimaryButtonText = Color(0xFF14675E)
 internal val FullScreenContentBacking = Color(0xFF0A2824).copy(alpha = .88f)
 
 /**
+ * Draws [FullScreenContentBacking] behind the content, faded in from transparent over its first [fade]; the caller keeps text
+ * below the fade. Shared by [WaterFullScreen] and the species fiche's name.
+ */
+internal fun Modifier.fullScreenBacking(fade: Dp = 48.dp): Modifier = drawBehind {
+    val faded = fade.toPx().coerceAtMost(size.height)
+    drawRect(Brush.verticalGradient(listOf(Color.Transparent, FullScreenContentBacking), 0f, faded), size = Size(size.width, faded))
+    drawRect(FullScreenContentBacking, topLeft = Offset(0f, faded), size = Size(size.width, (size.height - faded).coerceAtLeast(0f)))
+}
+
+/**
  * A full-bleed still water scene (deep water when [aquarium] is null) with [content] anchored to the bottom; it scrolls when taller
  * than the screen. The content lies on [FullScreenContentBacking], faded in over its first 48 dp, which are kept free of text.
  */
@@ -823,11 +833,7 @@ fun WaterFullScreen(aquarium: Aquarium?, modifier: Modifier = Modifier, content:
             Column(Modifier.fillMaxWidth().heightIn(min = viewport), verticalArrangement = Arrangement.Bottom) {
                 Column(
                     Modifier.fillMaxWidth().testTag(FULL_SCREEN_BACKING_TAG)
-                        .drawBehind {
-                            val fade = 48.dp.toPx().coerceAtMost(size.height)
-                            drawRect(Brush.verticalGradient(listOf(Color.Transparent, FullScreenContentBacking), 0f, fade), size = Size(size.width, fade))
-                            drawRect(FullScreenContentBacking, topLeft = Offset(0f, fade), size = Size(size.width, (size.height - fade).coerceAtLeast(0f)))
-                        }
+                        .fullScreenBacking()
                         .navigationBarsPadding().imePadding().padding(top = 48.dp),
                     content = content,
                 )

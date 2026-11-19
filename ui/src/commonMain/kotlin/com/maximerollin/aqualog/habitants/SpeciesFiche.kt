@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
@@ -45,13 +46,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -65,6 +66,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maximerollin.aqualog.LocalizedFormatters
@@ -99,15 +101,16 @@ import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.ArrowLeft
 import com.maximerollin.aqualog.ui.icon.Minus
 import com.maximerollin.aqualog.ui.icon.Plus
-import com.maximerollin.aqualog.ui.theme.FullScreenContentBacking
 import com.maximerollin.aqualog.ui.theme.GlassIconButton
 import com.maximerollin.aqualog.ui.theme.GroupLabel
 import com.maximerollin.aqualog.ui.theme.LargeFontScale
 import com.maximerollin.aqualog.ui.theme.PaperSheetTop
 import com.maximerollin.aqualog.ui.theme.SettingsGroup
+import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeTop
 import com.maximerollin.aqualog.ui.theme.attentionMarkColor
 import com.maximerollin.aqualog.ui.theme.attentionTextColor
 import com.maximerollin.aqualog.ui.theme.frauncesFamily
+import com.maximerollin.aqualog.ui.theme.fullScreenBacking
 import com.maximerollin.aqualog.ui.theme.levelTextColor
 import com.maximerollin.aqualog.ui.theme.overlapNext
 import org.jetbrains.compose.resources.painterResource
@@ -201,56 +204,88 @@ internal fun SpeciesFiche(
     }
 }
 
+/** Test tag of the species' drawing on the fiche's water. */
+internal const val FICHE_DRAWING_TAG = "fiche-drawing"
+
 /** Height of the fiche's water; the paper sheet covers its bottom 30 dp. */
 private val FicheHeaderHeight = 300.dp
+
+/** The least height of the drawing: a 2:1 fish still reaches its 200 dp width. The header grows past 300 dp to keep it. */
+private val DrawingMinHeight = 110.dp
+
+/** Room above and below the drawing, inside its share of the header. */
+private val DrawingPadding = 8.dp
 
 /** The fade at the top of the name's backing, kept free of text: the name only lies on the solid part. */
 private val NameFade = 48.dp
 
+/** Below the status bar, the top shade fades out over this height: past the back button, above the drawing's centre. */
+private val TopShadeFade = 56.dp
+
 /**
- * The still water with the species' drawing (silent: the name says it), the glass back button under the status bar, and the
- * name with its scientific name on a deep backing at the bottom. It grows with large fonts rather than squeezing the name.
+ * The still water with the species' drawing (silent: the name says it), the glass back button under the status bar on a top
+ * shade, and the name with its scientific name on a deep backing at the bottom. The drawing takes what the name leaves of the
+ * 300 dp, but never less than [DrawingMinHeight]: with large fonts the header grows rather than squeezing it.
  */
 @Composable
 private fun FicheHeader(species: Species, aquarium: Aquarium, name: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val (drawing, tint) = speciesDrawing(species)
+    val statusBars = WindowInsets.statusBars
     Box(modifier.fillMaxWidth().heightIn(min = FicheHeaderHeight)) {
         TankScene(aquarium, inhabitants = emptyList(), modifier = Modifier.matchParentSize(), decorPlants = 0, animate = false)
-        Column(Modifier.fillMaxWidth().heightIn(min = FicheHeaderHeight)) {
-            Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
-            Box(Modifier.fillMaxWidth().weight(1f).padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
-                // Both sides bounded: with a width alone the painter keeps its small intrinsic height and Fit never scales up.
-                Image(
-                    painterResource(drawing), contentDescription = null, modifier = Modifier.width(200.dp).fillMaxHeight(),
-                    contentScale = ContentScale.Fit, colorFilter = tint?.let { ColorFilter.tint(it) },
-                )
-            }
-            Column(
-                Modifier.fillMaxWidth()
-                    .drawBehind {
-                        val fade = NameFade.toPx().coerceAtMost(size.height)
-                        drawRect(Brush.verticalGradient(listOf(Color.Transparent, FullScreenContentBacking), 0f, fade), size = Size(size.width, fade))
-                        drawRect(FullScreenContentBacking, topLeft = Offset(0f, fade), size = Size(size.width, (size.height - fade).coerceAtLeast(0f)))
-                    }
-                    // Text starts below the fade and ends above the sheet that overlaps the bottom.
-                    .padding(start = 20.dp, end = 20.dp, top = NameFade, bottom = 30.dp + 16.dp),
-            ) {
-                Text(
-                    name,
-                    modifier = Modifier.semantics { heading() },
-                    fontFamily = frauncesFamily(),
-                    fontSize = 32.sp,
-                    lineHeight = 38.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = HeroText,
-                )
-                Text(
-                    species.scientificName,
-                    modifier = Modifier.padding(top = 2.dp),
-                    fontSize = 14.sp,
-                    fontStyle = FontStyle.Italic,
-                    color = HeroText.copy(alpha = .85f),
-                )
+        // As on every water header: the status bar's icons and the back button keep their contrast on the brightest water.
+        Column(Modifier.fillMaxWidth()) {
+            Spacer(Modifier.fillMaxWidth().windowInsetsTopHeight(statusBars).background(WaterHeaderShadeTop))
+            Spacer(
+                Modifier.fillMaxWidth().height(TopShadeFade)
+                    .background(Brush.verticalGradient(listOf(WaterHeaderShadeTop, Color.Transparent))),
+            )
+        }
+        Layout(
+            content = {
+                Box(Modifier.padding(vertical = DrawingPadding), contentAlignment = Alignment.Center) {
+                    // Both sides bounded: with a width alone the painter keeps its small intrinsic height and Fit never scales up.
+                    Image(
+                        painterResource(drawing), contentDescription = null,
+                        modifier = Modifier.width(200.dp).fillMaxHeight().testTag(FICHE_DRAWING_TAG),
+                        contentScale = ContentScale.Fit, colorFilter = tint?.let { ColorFilter.tint(it) },
+                    )
+                }
+                Column(
+                    Modifier.fullScreenBacking(NameFade)
+                        // Text starts below the fade and ends above the sheet that overlaps the bottom.
+                        .padding(start = 20.dp, end = 20.dp, top = NameFade, bottom = 30.dp + 16.dp),
+                ) {
+                    Text(
+                        name,
+                        modifier = Modifier.semantics { heading() },
+                        fontFamily = frauncesFamily(),
+                        fontSize = 32.sp,
+                        lineHeight = 38.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = HeroText,
+                    )
+                    Text(
+                        species.scientificName,
+                        modifier = Modifier.padding(top = 2.dp),
+                        fontSize = 14.sp,
+                        fontStyle = FontStyle.Italic,
+                        color = HeroText.copy(alpha = .85f),
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) { measurables, constraints ->
+            val width = constraints.maxWidth
+            val top = statusBars.getTop(this)
+            // The name first: the drawing gets the rest of the 300 dp, down to its floor.
+            val nameBlock = measurables[1].measure(Constraints(minWidth = width, maxWidth = width))
+            val floor = (DrawingMinHeight + DrawingPadding * 2).roundToPx()
+            val drawingHeight = maxOf(floor, FicheHeaderHeight.roundToPx() - top - nameBlock.height)
+            val drawingBox = measurables[0].measure(Constraints.fixed(width, drawingHeight))
+            layout(width, top + drawingHeight + nameBlock.height) {
+                drawingBox.place(0, top)
+                nameBlock.place(0, top + drawingHeight)
             }
         }
         GlassIconButton(
@@ -320,11 +355,16 @@ private fun FicheBottomBar(
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
+    // The host keeps the gesture bar's strip clear of the screen and consumes its inset, so `navigationBarsPadding()` adds
+    // nothing there: the bar's colour is drawn on down through that strip, to the window's bottom edge.
+    val belowBar = WindowInsets.safeDrawing.getBottom(LocalDensity.current)
     Column(
         modifier.fillMaxWidth().testTag("fiche-bottom-bar")
             .pointerInput(Unit) {}
-            .background(colors.surfaceContainer)
-            .drawBehind { drawRect(colors.outlineVariant, size = Size(size.width, 1.dp.toPx())) }
+            .drawBehind {
+                drawRect(colors.surfaceContainer, size = Size(size.width, size.height + belowBar))
+                drawRect(colors.outlineVariant, size = Size(size.width, 1.dp.toPx()))
+            }
             .navigationBarsPadding()
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {

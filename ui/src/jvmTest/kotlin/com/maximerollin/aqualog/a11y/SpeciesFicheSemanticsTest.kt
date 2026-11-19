@@ -11,6 +11,7 @@ import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.getBoundsInRoot
@@ -39,6 +40,7 @@ import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.encyclopedia.decodeSpecies
+import com.maximerollin.aqualog.habitants.FICHE_DRAWING_TAG
 import com.maximerollin.aqualog.ui.theme.AquaLogTheme
 import java.io.File
 import java.util.Locale
@@ -61,6 +63,9 @@ class SpeciesFicheSemanticsTest {
     private val setup = AquariumSetup(salon, listOf(ph))
     private val fiche = AddInhabitantUiState(salon.id, species = listOf(neon), ficheSpeciesId = neon.id, count = 10)
 
+    /** The longest German name of the encyclopedia: three lines of title at 150 %. */
+    private val ramirezi = encyclopedia.single { it.id == "ramirezi" }
+
     private fun withLocale(locale: Locale, block: () -> Unit) {
         val previous = Locale.getDefault()
         Locale.setDefault(locale)
@@ -75,13 +80,14 @@ class SpeciesFicheSemanticsTest {
         phValue: Double = 7.6,
         language: String = "fr",
         fontScale: Float = 1f,
+        add: AddInhabitantUiState = fiche,
     ) {
         setContent {
             AquaLogTheme(false) {
                 CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                     Box(Modifier.size(360.dp, 760.dp)) {
                         AddInhabitantContent(
-                            fiche, setup, listOf(LatestReading(ph.id, phValue, 0L)), emptyList(), emptyList(), encyclopedia, language, actions,
+                            add, setup, listOf(LatestReading(ph.id, phValue, 0L)), emptyList(), emptyList(), encyclopedia, language, actions,
                         )
                     }
                 }
@@ -217,6 +223,63 @@ class SpeciesFicheSemanticsTest {
             val banner = hasText("Attendez que les nitrites soient à 0 avant d'ajouter des poissons.")
             scrolledTo(banner)
             onNode(banner).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun `drawing keeps its floor under a long name at large fonts`() = withLocale(Locale.GERMAN) {
+        runComposeUiTest {
+            screen(language = "de", fontScale = 1.5f, add = fiche.copy(species = listOf(ramirezi), ficheSpeciesId = ramirezi.id))
+            onNode(isHeading() and hasText("Südamerikanischer Schmetterlingsbuntbarsch")).assertExists()
+            onNodeWithTag(FICHE_DRAWING_TAG).assertHeightIsAtLeast(110.dp)
+        }
+    }
+
+    @Test
+    fun `drawing keeps its floor at normal size`() = french {
+        runComposeUiTest {
+            screen()
+            onNodeWithTag(FICHE_DRAWING_TAG).assertHeightIsAtLeast(110.dp)
+        }
+    }
+
+    @Test
+    fun `details on a good fit reveal the compared rows`() = french {
+        runComposeUiTest {
+            screen(phValue = 7.0)
+            onNode(hasText("Va bien dans Salon")).assertExists()
+            val row = hasContentDescription("pH", substring = true)
+            onAllNodes(row).assertCountEquals(0)
+            val details = hasText("Détail ›")
+            scrolledTo(details)
+            onNode(details).assertHeightIsAtLeast(48.dp).performClick()
+            scrolledTo(row)
+            onNode(row).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun `measure opens a session`() = french {
+        runComposeUiTest {
+            var measured = 0
+            screen(actions = AddInhabitantActions(onMeasure = { measured++ }))
+            val measure = hasText("Faire une analyse")
+            scrolledTo(measure)
+            onNode(measure).performClick()
+            assertEquals(1, measured)
+        }
+    }
+
+    @Test
+    fun `report link sends the species id and its name`() = french {
+        runComposeUiTest {
+            var reported: Pair<String, String>? = null
+            screen(actions = AddInhabitantActions(onReportSpecies = { id, name -> reported = id to name }))
+            val report = hasText("Signaler une erreur")
+            scrolledTo(report)
+            scrolledToEnd()
+            onNode(report).performClick()
+            assertEquals("neon" to "Néon bleu", reported)
         }
     }
 }
