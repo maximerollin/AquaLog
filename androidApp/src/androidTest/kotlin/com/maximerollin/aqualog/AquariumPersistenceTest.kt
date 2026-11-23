@@ -3,6 +3,8 @@ package com.maximerollin.aqualog
 import com.maximerollin.aqualog.resources.*
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasSetTextAction
@@ -66,13 +68,16 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithTag("practice-ph")
             .performTextInput("6.8")
         composeRule.onNodeWithText("See Free and Pro").performClick()
-        composeRule.onNodeWithText("Free").assertIsDisplayed()
-        composeRule.onNodeWithText("Pro · annual or lifetime").assertIsDisplayed()
-        composeRule.onNodeWithText("€34.99 once. Lifetime access, with no trial.").assertIsDisplayed()
+        composeRule.onNodeWithText("All your tanks, their whole story.").assertIsDisplayed()
+        composeRule.onNodeWithTag("onboarding-list").performScrollToNode(hasTestTag("plan-annual"))
+        composeRule.onNodeWithTag("plan-annual").assertIsSelected()
         val billingDate = LocalizedFormatters(java.util.Locale.getDefault(java.util.Locale.Category.FORMAT))
             .date(1_792_528_000_000L)
         composeRule.onNodeWithText(LocalizedStrings().getString(Res.string.pro_offer_summary, "€14.99", 14, billingDate))
             .assertIsDisplayed()
+        composeRule.onNodeWithTag("plan-lifetime").performClick()
+        composeRule.onNodeWithText("€34.99 once. Lifetime access, with no trial.").assertIsDisplayed()
+        composeRule.onNodeWithTag("choose-pro").assertIsDisplayed()
         composeRule.onNodeWithText("Continue for free").performClick()
 
         waitForText("Amazonien")
@@ -93,7 +98,7 @@ class AquariumPersistenceTest {
         // In Free, More offers Pro through its banner.
         composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("Discover Pro"))
         composeRule.onNodeWithText("Discover Pro").performClick()
-        composeRule.onNodeWithText("Choose Free or Pro").assertIsDisplayed()
+        composeRule.onNodeWithText("All your tanks, their whole story.").assertIsDisplayed()
         composeRule.onNodeWithText("Back to Settings").performClick()
         scenario.close()
     }

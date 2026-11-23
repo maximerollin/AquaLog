@@ -200,7 +200,7 @@ class LocalizedAccessibilityFlowTest {
                     awaitText(continueLabel)
                     assertCriticalText(profile)
                     val continueAction = compose.onNode(hasText(continueLabel) and hasClickAction())
-                    continueAction.performScrollTo().assertIsDisplayed()
+                    continueAction.assertIsDisplayed()
                     assertEssentialActions(continueLabel)
                     captureAndInspect("profile-$language-$mode.png")
                 }
@@ -347,13 +347,13 @@ class LocalizedAccessibilityFlowTest {
                 val viewPro = localized.getString(Res.string.more_pro_banner_action)
                 assertAction(viewPro)
                 compose.onNodeWithText(viewPro).performClick()
-                awaitText(localized.getString(Res.string.paywall_title))
-                scrollAndAssertEssentialAction(localized.getString(Res.string.buy_lifetime_in_google_play))
-                scrollAndAssertEssentialAction(localized.getString(Res.string.start_trial_in_google_play))
+                awaitText(localized.getString(Res.string.paywall_headline))
+                compose.onNodeWithTag("onboarding-list").performScrollToNode(hasTestTag("plan-annual"))
+                assertEssentialActionByTag("plan-annual")
+                compose.onNodeWithTag("onboarding-list").performScrollToNode(hasTestTag("plan-lifetime"))
+                assertEssentialActionByTag("plan-lifetime")
                 scrollAndAssertEssentialAction(localized.getString(Res.string.restore_purchase))
-                compose.onNode(
-                    hasText(localized.getString(Res.string.back_to_settings)) and hasClickAction(),
-                ).performScrollTo()
+                assertEssentialActionByTag("choose-pro")
                 assertAction(localized.getString(Res.string.back_to_settings))
                 captureAndInspect("pro-$language-$mode.png")
             }

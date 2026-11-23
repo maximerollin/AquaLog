@@ -608,6 +608,7 @@
     <string name="paywall_benefit_aquariums">Several Aquariums</string>
     <string name="paywall_benefit_history">History beyond 90 days</string>
     <string name="paywall_benefit_analysis">Before / after analysis of an intervention</string>
+    <string name="paywall_benefit_widgets">Tracking widgets on your home screen</string>
     <string name="paywall_plan_annual">Annual</string>
     <string name="paywall_plan_lifetime">Lifetime</string>
     <string name="paywall_annual_terms">per year · %1$d-day trial</string>

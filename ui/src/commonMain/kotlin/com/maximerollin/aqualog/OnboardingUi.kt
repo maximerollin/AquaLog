@@ -67,6 +67,8 @@ import com.maximerollin.aqualog.home.TankHome
 import com.maximerollin.aqualog.home.plusEnabled
 import com.maximerollin.aqualog.onboarding.AquariumStepContent
 import com.maximerollin.aqualog.onboarding.ParametersContent
+import com.maximerollin.aqualog.onboarding.PaywallActions
+import com.maximerollin.aqualog.onboarding.PaywallContent
 import com.maximerollin.aqualog.onboarding.ProfileContent
 import com.maximerollin.aqualog.onboarding.PracticeContent
 import com.maximerollin.aqualog.onboarding.WelcomeContent
@@ -81,8 +83,6 @@ import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.Cloud
-import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
-import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.FilledField
 import com.maximerollin.aqualog.ui.theme.FloatingNavBar
 import com.maximerollin.aqualog.ui.theme.WaterFullScreen
@@ -149,16 +149,19 @@ fun AquaLogContent(
             viewModel = viewModel,
             modifier = framed,
         )
-        state.setup != null && state.pro.showPaywall -> PaywallScreen(
+        state.setup != null && state.pro.showPaywall -> PaywallContent(
             pro = state.pro,
             isSaving = state.isSaving,
             onboarding = state.pro.openedFromOnboarding,
-            onStartPurchase = viewModel::startProPurchase,
-            onStartLifetimePurchase = viewModel::startLifetimeProPurchase,
-            onRestore = viewModel::restoreProPurchase,
-            onRetryOffer = viewModel::loadProOffer,
-            onContinue = viewModel::closeProPaywall,
-            modifier = inset,
+            aquarium = state.setup.aquarium,
+            actions = PaywallActions(
+                onStartAnnual = viewModel::startProPurchase,
+                onStartLifetime = viewModel::startLifetimeProPurchase,
+                onRestore = viewModel::restoreProPurchase,
+                onRetryOffer = viewModel::loadProOffer,
+                onContinue = viewModel::closeProPaywall,
+            ),
+            modifier = framed,
         )
         state.setup != null -> AquariumShell(state, viewModel, onExportData, externalLinks, rateApp, framed)
         state.step == OnboardingStep.WELCOME -> WelcomeContent(state.portableData, onboardingActions, modifier)
@@ -186,16 +189,19 @@ fun AquaLogContent(
             onboardingActions,
             framed,
         )
-        else -> PaywallScreen(
+        else -> PaywallContent(
             pro = state.pro,
             isSaving = state.isSaving,
             onboarding = true,
-            onStartPurchase = viewModel::startProPurchase,
-            onStartLifetimePurchase = viewModel::startLifetimeProPurchase,
-            onRestore = viewModel::restoreProPurchase,
-            onRetryOffer = viewModel::loadProOffer,
-            onContinue = viewModel::finishForFree,
-            modifier = inset,
+            aquarium = onboardingPreviewAquarium(state.aquariumName, state.volumeInput, state.volumeUnit, state.profile),
+            actions = PaywallActions(
+                onStartAnnual = viewModel::startProPurchase,
+                onStartLifetime = viewModel::startLifetimeProPurchase,
+                onRestore = viewModel::restoreProPurchase,
+                onRetryOffer = viewModel::loadProOffer,
+                onContinue = viewModel::finishForFree,
+            ),
+            modifier = framed,
         )
     }
     if (state.portableData.showImportConfirmation) {
@@ -494,152 +500,6 @@ private fun PortableImportConfirmation(
 }
 
 @Composable
-private fun PaywallScreen(
-    pro: ProUiState,
-    isSaving: Boolean,
-    onboarding: Boolean,
-    onStartPurchase: () -> Unit,
-    onStartLifetimePurchase: () -> Unit,
-    onRestore: () -> Unit,
-    onRetryOffer: () -> Unit,
-    onContinue: () -> Unit,
-    modifier: Modifier,
-) {
-    val formatter = currentLocalizedFormatters()
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        ScreenHeading(Res.string.paywall_title, Res.string.paywall_description)
-        PlanCard(Res.string.free_plan, Res.string.free_plan_description)
-        PlanCard(Res.string.pro_plan, Res.string.pro_plan_description)
-        when {
-            pro.isLoadingOffer -> {
-                CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
-                Text(stringResource(Res.string.loading_google_play_offer))
-            }
-            pro.lifetimeOffer != null -> {
-                Text(
-                    stringResource(Res.string.pro_lifetime_offer_summary, pro.lifetimeOffer.formattedPrice),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Button(
-                    onClick = onStartLifetimePurchase,
-                    enabled = pro.purchaseStatus !in setOf(
-                        ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION,
-                        ProPurchaseStatus.PENDING,
-                        ProPurchaseStatus.VERIFYING,
-                        ProPurchaseStatus.ACTIVE,
-                    ),
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(Res.string.buy_lifetime_in_google_play))
-                }
-                pro.offer?.let { annualOffer ->
-                    Text(
-                        stringResource(
-                            Res.string.pro_offer_summary,
-                            annualOffer.formattedPrice,
-                            annualOffer.trialDays,
-                            annualOffer.localizedBillingDate(formatter),
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    OutlinedButton(
-                        onClick = onStartPurchase,
-                        enabled = pro.purchaseStatus !in setOf(
-                            ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION,
-                            ProPurchaseStatus.PENDING,
-                            ProPurchaseStatus.VERIFYING,
-                            ProPurchaseStatus.ACTIVE,
-                        ),
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                    ) {
-                        Text(stringResource(Res.string.start_trial_in_google_play))
-                    }
-                }
-            }
-            pro.offer != null -> {
-                Text(
-                    stringResource(
-                        Res.string.pro_offer_summary,
-                        pro.offer.formattedPrice,
-                        pro.offer.trialDays,
-                        pro.offer.localizedBillingDate(formatter),
-                    ),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Button(
-                    onClick = onStartPurchase,
-                    enabled = pro.purchaseStatus !in setOf(
-                        ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION,
-                        ProPurchaseStatus.PENDING,
-                        ProPurchaseStatus.VERIFYING,
-                        ProPurchaseStatus.ACTIVE,
-                    ),
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(Res.string.start_trial_in_google_play))
-                }
-            }
-            else -> {
-                Text(stringResource(Res.string.google_play_offer_unavailable), color = MaterialTheme.colorScheme.error)
-                TextButton(onClick = onRetryOffer, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(Res.string.try_again))
-                }
-            }
-        }
-        pro.message?.let { message ->
-            Text(
-                stringResource(message.resourceId()),
-                color = if (pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
-        }
-        TextButton(
-            onClick = onRestore,
-            enabled = pro.purchaseStatus != ProPurchaseStatus.VERIFYING,
-            modifier = Modifier.fillMaxWidth().height(48.dp),
-        ) {
-            Text(stringResource(Res.string.restore_purchase))
-        }
-        Spacer(Modifier.height(8.dp))
-        Button(
-            onClick = onContinue,
-            enabled = !isSaving,
-            modifier = Modifier.fillMaxWidth().height(48.dp),
-        ) {
-            if (isSaving) {
-                CircularProgressIndicator()
-            } else {
-                Text(
-                    stringResource(
-                        when {
-                            !onboarding -> Res.string.back_to_settings
-                            pro.purchaseStatus == ProPurchaseStatus.ACTIVE -> Res.string.continue_with_pro
-                            else -> Res.string.continue_for_free
-                        },
-                    ),
-                )
-            }
-        }
-    }
-}
-
-private fun ProMessage.resourceId(): StringResource = when (this) {
-    ProMessage.PLAY_UNAVAILABLE -> Res.string.pro_message_play_unavailable
-    ProMessage.PURCHASE_PENDING -> Res.string.pro_message_purchase_pending
-    ProMessage.PURCHASE_CANCELLED -> Res.string.pro_message_purchase_cancelled
-    ProMessage.AUTHENTICATION_REQUIRED -> Res.string.pro_message_authentication_required
-    ProMessage.ACTIVE -> Res.string.pro_message_active
-    ProMessage.VERIFICATION_FAILED -> Res.string.pro_message_verification_failed
-    ProMessage.SAVE_FAILED -> Res.string.pro_message_save_failed
-}
-
-@Composable
 internal fun AccountSettingsUiState.localizedSafeDetail(): String? = safeMessage?.let {
     stringResource(
         when (it) {
@@ -742,23 +602,6 @@ internal fun FeedbackDialog(
             }
         },
     )
-}
-
-@Composable
-private fun PlanCard(title: StringResource, description: StringResource) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        CarnetSectionTitle(stringResource(title))
-        Text(
-            stringResource(description),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun ScreenHeading(title: StringResource, description: StringResource) {
-    CarnetScreenTitle(stringResource(title), stringResource(description))
 }
 
 @Composable

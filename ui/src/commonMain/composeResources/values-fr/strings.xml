@@ -608,6 +608,7 @@
     <string name="paywall_benefit_aquariums">Plusieurs aquariums</string>
     <string name="paywall_benefit_history">Historique au-delà de 90 jours</string>
     <string name="paywall_benefit_analysis">Analyse avant / après une intervention</string>
+    <string name="paywall_benefit_widgets">Widgets de suivi sur l\'écran d\'accueil</string>
     <string name="paywall_plan_annual">Annuel</string>
     <string name="paywall_plan_lifetime">À vie</string>
     <string name="paywall_annual_terms">par an · essai de %1$d jours</string>

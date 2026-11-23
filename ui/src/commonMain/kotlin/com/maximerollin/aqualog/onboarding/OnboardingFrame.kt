@@ -177,7 +177,7 @@ fun OnboardingTitle(title: String, subtitle: String?) {
     }
 }
 
-/** A scrolling screen with a fixed bottom bar: one 56 dp primary button, and an optional [secondary] action under it. */
+/** A scrolling screen with a fixed bottom bar: one 56 dp primary button (tagged [primaryTag]), and an optional [secondary] action under it. */
 @Composable
 fun OnboardingScaffold(
     listState: LazyListState,
@@ -186,6 +186,7 @@ fun OnboardingScaffold(
     modifier: Modifier = Modifier,
     primaryEnabled: Boolean = true,
     secondary: (@Composable () -> Unit)? = null,
+    primaryTag: String = "onboarding-primary",
     content: LazyListScope.() -> Unit,
 ) {
     Column(modifier.fillMaxSize()) {
@@ -201,7 +202,7 @@ fun OnboardingScaffold(
             Button(
                 onClick = onPrimary,
                 enabled = primaryEnabled,
-                modifier = Modifier.fillMaxWidth().height(56.dp).testTag("onboarding-primary"),
+                modifier = Modifier.fillMaxWidth().height(56.dp).testTag(primaryTag),
             ) { Text(primaryLabel) }
             secondary?.invoke()
         }

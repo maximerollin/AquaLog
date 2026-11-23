@@ -608,6 +608,7 @@
     <string name="paywall_benefit_aquariums">Mehrere Aquarien</string>
     <string name="paywall_benefit_history">Verlauf über 90 Tage hinaus</string>
     <string name="paywall_benefit_analysis">Vorher-nachher-Analyse eines Eingriffs</string>
+    <string name="paywall_benefit_widgets">Übersichts-Widgets auf dem Startbildschirm</string>
     <string name="paywall_plan_annual">Jährlich</string>
     <string name="paywall_plan_lifetime">Lebenslang</string>
     <string name="paywall_annual_terms">pro Jahr · %1$d Tage Testzeitraum</string>
