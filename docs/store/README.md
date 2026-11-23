@@ -1,7 +1,7 @@
 # Aquagenda — icônes et captures de la fiche
 
 Ces fichiers rasterisent fidèlement la scène B2 approuvée dans
-[`scene-b2.svg`](../design/launcher-icon/scene-b2.svg), sans redessiner ni recadrer
+[`scene-b2.svg`](../../tools/design/scene-b2.svg), sans redessiner ni recadrer
 la composition. Tous sont en sRGB, carrés, entièrement opaques, sans masque
 d'arrondi ni ombre extérieure ajoutée.
 

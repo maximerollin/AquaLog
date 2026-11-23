@@ -35,7 +35,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -566,15 +565,21 @@ internal fun FeedbackDialog(
                 state.speciesName?.let { Text(stringResource(Res.string.feedback_species_line, it), style = MaterialTheme.typography.bodyMedium) }
                 // The label slot gives the field its accessible name (a separate Text or a contentDescription leaves the typed text
                 // nameless); a short label keeps it on one line, unbroken, in the narrow field at large font scales.
-                OutlinedTextField(
+                FilledField(
                     value = state.message,
                     onValueChange = onMessageChanged,
-                    label = { Text(stringResource(Res.string.feedback_message_label)) },
-                    supportingText = {
-                        Text(stringResource(Res.string.feedback_character_count, state.message.length))
-                    },
-                    minLines = 4,
-                    modifier = Modifier.fillMaxWidth().testTag("feedback-message"),
+                    label = stringResource(Res.string.feedback_message_label),
+                    singleLine = false,
+                    valueStyle = MaterialTheme.typography.bodyLarge,
+                    // About four lines of room, as the outlined field's minLines = 4 gave.
+                    modifier = Modifier.heightIn(min = 128.dp),
+                    testTag = "feedback-message",
+                )
+                Text(
+                    stringResource(Res.string.feedback_character_count, state.message.length),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp),
                 )
                 state.outcome?.let { outcome ->
                     val (text, color) = when (outcome) {

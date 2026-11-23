@@ -20,7 +20,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -148,7 +147,7 @@ private fun PhotoViewer(
                     } ?: TankScene(aquarium, modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)), animate = false)
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(onClick = onRemove, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                    TextButton(onClick = onRemove, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                         Text(stringResource(Res.string.photo_remove))
                     }
                     Button(onClick = onChange, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {

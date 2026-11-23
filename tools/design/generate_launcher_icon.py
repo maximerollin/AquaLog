@@ -264,7 +264,7 @@ def main():
         parser.error("--export-png cannot be combined with Android output paths")
     if not args.export_png and (args.resources is None or args.output is None):
         parser.error("provide Android resources and output paths, or use --export-png")
-    scene = ET.parse(ROOT / "docs/design/launcher-icon/scene-b2.svg").getroot()
+    scene = ET.parse(ROOT / "tools/design/scene-b2.svg").getroot()
     definitions = {element.attrib["id"]: element for element in scene.iter() if "id" in element.attrib}
     if not args.export_png:
         generate_android(scene, definitions, args.resources, args.output)
