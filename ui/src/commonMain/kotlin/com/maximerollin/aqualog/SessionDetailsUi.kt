@@ -1,6 +1,5 @@
 package com.maximerollin.aqualog
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +24,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -210,12 +208,11 @@ internal fun SessionDetailsContent(
                     Button(onClick = actions.onEdit, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                         Text(stringResource(Res.string.edit_session))
                     }
-                    val error = MaterialTheme.colorScheme.error
-                    OutlinedButton(
+                    // A red link, not a framed button (spec §4.7): the destructive action stays quiet under « Modifier ».
+                    TextButton(
                         onClick = actions.onRequestDeletion,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = error),
-                        border = BorderStroke(1.dp, error),
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                     ) {
                         Text(stringResource(Res.string.delete_session))
                     }

@@ -31,7 +31,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -74,6 +73,7 @@ import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
+import com.maximerollin.aqualog.ui.theme.FilledField
 import com.maximerollin.aqualog.ui.theme.GlassIconButton
 import com.maximerollin.aqualog.ui.theme.HeroTextBacking
 import com.maximerollin.aqualog.ui.theme.PaperSheetTop
@@ -233,11 +233,13 @@ fun RapidSessionScreen(
                             viewModel::toggleObservation,
                         )
                         if (state.showObservation) {
-                            OutlinedTextField(
+                            FilledField(
                                 value = state.observation,
                                 onValueChange = viewModel::updateObservation,
-                                label = { Text(stringResource(Res.string.observation)) },
-                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                label = stringResource(Res.string.observation),
+                                singleLine = false,
+                                valueStyle = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(top = 8.dp),
                             )
                         }
                     }
@@ -249,11 +251,13 @@ fun RapidSessionScreen(
                             viewModel::toggleIncident,
                         )
                         if (state.showIncident) {
-                            OutlinedTextField(
+                            FilledField(
                                 value = state.incident,
                                 onValueChange = viewModel::updateIncident,
-                                label = { Text(stringResource(Res.string.incident)) },
-                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                label = stringResource(Res.string.incident),
+                                singleLine = false,
+                                valueStyle = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(top = 8.dp),
                             )
                         }
                     }
@@ -416,29 +420,25 @@ private fun MaintenanceChip(type: MaintenanceActionType, action: MaintenanceActi
 @Composable
 private fun ActionDetails(action: MaintenanceActionInput, viewModel: HomeViewModel) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedTextField(
+        FilledField(
             value = action.quantity,
             onValueChange = { viewModel.updateMaintenanceQuantity(action.type, it) },
-            label = { Text(stringResource(Res.string.action_quantity)) },
+            label = stringResource(Res.string.action_quantity),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true,
             modifier = Modifier.weight(1f),
         )
-        OutlinedTextField(
+        FilledField(
             value = action.unit,
             onValueChange = { viewModel.updateMaintenanceUnit(action.type, it) },
-            label = { Text(stringResource(Res.string.parameter_unit)) },
-            singleLine = true,
+            label = stringResource(Res.string.parameter_unit),
             modifier = Modifier.weight(1f),
         )
     }
     if (action.type == MaintenanceActionType.FERTILIZATION) {
-        OutlinedTextField(
+        FilledField(
             value = action.product,
             onValueChange = { viewModel.updateMaintenanceProduct(action.type, it) },
-            label = { Text(stringResource(Res.string.action_product)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            label = stringResource(Res.string.action_product),
         )
     }
 }

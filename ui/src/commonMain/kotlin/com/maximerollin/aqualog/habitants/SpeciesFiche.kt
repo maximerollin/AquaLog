@@ -34,7 +34,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -100,6 +99,7 @@ import com.maximerollin.aqualog.shared.encyclopedia.ValueRange
 import com.maximerollin.aqualog.shared.encyclopedia.assessSpecies
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.ArrowLeft
+import com.maximerollin.aqualog.ui.icon.FlaskConical
 import com.maximerollin.aqualog.ui.icon.Minus
 import com.maximerollin.aqualog.ui.icon.Plus
 import com.maximerollin.aqualog.ui.theme.GlassIconButton
@@ -107,6 +107,7 @@ import com.maximerollin.aqualog.ui.theme.GroupLabel
 import com.maximerollin.aqualog.ui.theme.LargeFontScale
 import com.maximerollin.aqualog.ui.theme.PaperSheetTop
 import com.maximerollin.aqualog.ui.theme.SettingsGroup
+import com.maximerollin.aqualog.ui.theme.SettingsRow
 import com.maximerollin.aqualog.ui.theme.WaterHeaderShadeTop
 import com.maximerollin.aqualog.ui.theme.attentionMarkColor
 import com.maximerollin.aqualog.ui.theme.attentionTextColor
@@ -183,10 +184,13 @@ internal fun SpeciesFiche(
             }
             if (assessment.checks.any { it.status == CriterionStatus.NOT_MEASURED }) {
                 item(key = "measure") {
-                    OutlinedButton(
-                        onClick = actions.onMeasure,
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp).fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(stringResource(Res.string.habitants_measure)) }
+                    SettingsGroup(Modifier.padding(top = 12.dp)) {
+                        SettingsRow(
+                            label = stringResource(Res.string.habitants_measure),
+                            icon = AquagendaIcons.FlaskConical,
+                            onClick = actions.onMeasure,
+                        )
+                    }
                 }
             }
             item(key = "report") {

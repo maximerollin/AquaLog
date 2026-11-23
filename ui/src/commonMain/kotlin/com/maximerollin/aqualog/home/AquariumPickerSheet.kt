@@ -7,11 +7,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -25,6 +26,8 @@ import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.photo.AquariumThumbnail
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.Inhabitant
+import com.maximerollin.aqualog.ui.icon.AquagendaIcons
+import com.maximerollin.aqualog.ui.icon.Check
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import org.jetbrains.compose.resources.stringResource
 
@@ -52,10 +55,18 @@ fun AquariumPickerSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    RadioButton(selected = aquarium.id == currentId, onClick = null)
                     val scene = scenes[aquarium.id] ?: MiniScene.Empty
                     AquariumThumbnail(aquarium, 40.dp, loadPhoto, Modifier.clearAndSetSemantics {}, cachedPhoto, scene.sprites, scene.plants)
-                    Text(aquarium.name, style = MaterialTheme.typography.bodyLarge)
+                    Text(aquarium.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    // The current Aquarium carries a check, as the plan cards do; the row's selected state says it to TalkBack.
+                    if (aquarium.id == currentId) {
+                        Icon(
+                            AquagendaIcons.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
                 }
             }
             TextButton(onClick = onAdd, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {

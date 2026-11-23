@@ -18,7 +18,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -56,6 +55,7 @@ import com.maximerollin.aqualog.shared.TrendSnapshot
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.shared.assistance.readingLevel
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
+import com.maximerollin.aqualog.ui.theme.FilledField
 import com.maximerollin.aqualog.ui.theme.LEVEL_MARK_TAG
 import com.maximerollin.aqualog.ui.theme.LevelMark
 import com.maximerollin.aqualog.ui.theme.levelContainerColor
@@ -240,23 +240,26 @@ internal fun CustomPeriodSheet(state: HomeUiState, viewModel: HomeViewModel, onD
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
             ) { Text(stringResource(Res.string.trends_complete_history)) }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
+                FilledField(
                     value = trends.customStartDate,
                     onValueChange = viewModel::updateTrendCustomStart,
-                    label = { Text(stringResource(Res.string.trends_start_date)) },
-                    supportingText = { Text(stringResource(Res.string.date_format_hint)) },
-                    singleLine = true,
+                    label = stringResource(Res.string.trends_start_date),
                     modifier = Modifier.weight(1f),
                 )
-                OutlinedTextField(
+                FilledField(
                     value = trends.customEndDate,
                     onValueChange = viewModel::updateTrendCustomEnd,
-                    label = { Text(stringResource(Res.string.trends_end_date)) },
-                    supportingText = { Text(stringResource(Res.string.date_format_hint)) },
-                    singleLine = true,
+                    label = stringResource(Res.string.trends_end_date),
                     modifier = Modifier.weight(1f),
                 )
             }
+            // One hint for both dates, under the pair, as the filled fields have no supporting line of their own.
+            Text(
+                stringResource(Res.string.date_format_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp),
+            )
             Button(
                 onClick = {
                     viewModel.applyTrendCustomPeriod()
