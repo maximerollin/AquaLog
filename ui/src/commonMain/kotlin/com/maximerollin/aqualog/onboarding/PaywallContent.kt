@@ -167,7 +167,7 @@ fun PaywallContent(
                     enabled = !isSaving,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                 ) {
-                    if (isSaving) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Text(continueLabel)
+                    if (isSaving) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp) else Text(continueLabel, textAlign = TextAlign.Center)
                 }
             }
         },
@@ -231,7 +231,7 @@ fun PaywallContent(
                     selected == null -> {
                         Text(stringResource(Res.string.google_play_offer_unavailable), color = MaterialTheme.colorScheme.error)
                         TextButton(onClick = actions.onRetryOffer, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                            Text(stringResource(Res.string.try_again))
+                            Text(stringResource(Res.string.try_again), textAlign = TextAlign.Center)
                         }
                     }
                     else -> {
@@ -306,7 +306,7 @@ fun PaywallContent(
                     enabled = pro.purchaseStatus != ProPurchaseStatus.VERIFYING,
                     modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                 ) {
-                    Text(stringResource(Res.string.restore_purchase))
+                    Text(stringResource(Res.string.restore_purchase), textAlign = TextAlign.Center)
                 }
             }
         }

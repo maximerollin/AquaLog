@@ -36,6 +36,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -207,7 +208,7 @@ fun OnboardingScaffold(
                 enabled = primaryEnabled,
                 modifier = Modifier.fillMaxWidth().height(56.dp).testTag(primaryTag),
             ) {
-                if (primaryBusy) CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp) else Text(primaryLabel)
+                if (primaryBusy) CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp) else Text(primaryLabel, textAlign = TextAlign.Center)
             }
             secondary?.invoke()
         }
