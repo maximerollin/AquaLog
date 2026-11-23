@@ -20,14 +20,12 @@
     <string name="aquarium_details_description">Questo rimane sul tuo dispositivo. Non è richiesto alcun account o rete.</string>
     <string name="aquarium_name_label">Nome dell'acquario</string>
     <string name="aquarium_volume_label">Volume</string>
-    <string name="volume_unit_label">Unità di volume</string>
     <string name="unit_liters">Litri</string>
     <string name="unit_us_gallons">galloni americani</string>
     <string name="invalid_aquarium">Immettere un nome e un volume maggiore di zero.</string>
     <string name="continue_to_parameters">Continua con i parametri</string>
 
     <string name="parameters_title">Dai forma alla tua routine</string>
-    <string name="parameters_description">Abilita, riordina e modifica ogni parametro integrato. Gli intervalli indicativi sono solo punti di riferimento personali.</string>
     <string name="parameter_temperature">Temperatura</string>
     <string name="parameter_ph">pH</string>
     <string name="parameter_ammonia">Ammoniaca/ammonio</string>
@@ -41,38 +39,25 @@
     <string name="enabled_for_parameter">Abilitato per %1$s</string>
     <string name="move_parameter_up">Sposta %1$s verso l'alto</string>
     <string name="move_parameter_down">Sposta %1$s verso il basso</string>
-    <string name="move_up_symbol">↑</string>
-    <string name="move_down_symbol">↓</string>
     <string name="parameter_unit">Unità</string>
-    <string name="unit_for_parameter">Unità per %1$s</string>
     <string name="parameter_precision">Decimali</string>
-    <string name="precision_for_parameter">Precisione per %1$s</string>
     <string name="parameter_minimum">Minimo indicativo</string>
-    <string name="minimum_for_parameter">Minimo indicativo per %1$s</string>
     <string name="parameter_maximum">Massimo indicativo</string>
-    <string name="maximum_for_parameter">Massimo indicativo per %1$s</string>
     <string name="invalid_parameters">Mantieni attivo almeno un parametro. Le unità, la precisione e gli intervalli devono essere validi.</string>
     <string name="try_mini_session">Prova una mini sessione</string>
 
     <string name="practice_title">Prova la tua prima sessione</string>
     <string name="practice_description">Inserisci alcuni valori di esempio per sentire il flusso veloce. Questa pratica non viene mai salvata.</string>
-    <string name="practice_value_for_parameter">Valore pratico per %1$s</string>
     <string name="practice_not_saved">Solo pratica · non verrà creata alcuna sessione o misurazione</string>
     <string name="see_free_and_pro">Vedi Gratuito e Pro</string>
 
-    <string name="paywall_title">Scegli Gratuito o Pro</string>
     <string name="paywall_description">Continua gratuitamente in qualsiasi momento. Pro si avvia solo dopo aver confermato su Google Play.</string>
     <string name="free_plan">Gratuito</string>
-    <string name="free_plan_description">Un Acquario, Sessioni e Misurazioni illimitate, 90 giorni di storia.</string>
-    <string name="pro_plan">Pro · annuale o a vita</string>
-    <string name="pro_plan_description">Acquari multipli, storico oltre 90 giorni e analisi avanzate.</string>
     <string name="continue_for_free">Continua gratuitamente</string>
     <string name="continue_with_pro">Continua con Pro</string>
     <string name="loading_google_play_offer">Caricamento dell'offerta localizzata di Google Play…</string>
     <string name="pro_offer_summary">%1$s all'anno dopo %2$d giorni di prova gratuita. Primo addebito: %3$s.</string>
     <string name="pro_lifetime_offer_summary">%1$s una volta. Accesso a vita, senza prova.</string>
-    <string name="buy_lifetime_in_google_play">Acquista Pro a vita su Google Play</string>
-    <string name="start_trial_in_google_play">Controlla e conferma su Google Play</string>
     <string name="google_play_offer_unavailable">L'offerta localizzata di Google Play non è disponibile. Non è iniziata alcuna prova.</string>
     <string name="restore_purchase">Ripristina l'acquisto di Google Play</string>
     <string name="back_to_settings">Torna alle Impostazioni</string>
@@ -287,7 +272,6 @@
     <string name="trends_row_show_chart">Mostra il grafico</string>
     <string name="trends_row_hide_chart">Nascondi il grafico</string>
     <string name="trends_series_label">● Serie %1$s</string>
-    <string name="parameter_with_unit">%1$s (%2$s)</string>
     <string name="value_with_unit">%1$s %2$s</string>
     <string name="timeline_marker_line">%1$s · %2$s</string>
     <string name="trends_exact_values">Valori esatti</string>
@@ -593,4 +577,26 @@
     <string name="habitants_fit_bad">Sconsigliato per %1$s</string>
     <string name="habitants_count_in_aquarium">%1$d in %2$s</string>
     <string name="photo_crop_hint">Pizzica per ingrandire, trascina per inquadrare. Questo quadrato è esattamente ciò che verrà salvato.</string>
+    <string name="onboarding_step_of">Passo %1$d di %2$d</string>
+    <string name="parameters_hint">Trascina per riordinare, tocca una riga per regolarne l'intervallo</string>
+    <plurals name="parameters_count_active"><item quantity="one">%1$d monitorato</item><item quantity="other">%1$d monitorati</item></plurals>
+    <string name="parameter_range_none">Nessun intervallo</string>
+    <string name="parameter_range_invalid">Intervallo da rivedere</string>
+    <string name="range_sheet_hint">Intervallo indicativo: un riferimento personale, non una norma.</string>
+    <string name="range_sheet_invalid">Controlla unità e intervallo: il minimo non può superare il massimo.</string>
+    <string name="range_sheet_decrease">Diminuisci %1$s</string>
+    <string name="range_sheet_increase">Aumenta %1$s</string>
+    <string name="range_sheet_done">Fatto</string>
+    <string name="paywall_pro_overline">Aquagenda Pro</string>
+    <string name="paywall_headline">Tutte le tue vasche, tutta la loro storia.</string>
+    <string name="paywall_benefit_aquariums">Più acquari</string>
+    <string name="paywall_benefit_history">Cronologia oltre 90 giorni</string>
+    <string name="paywall_benefit_analysis">Analisi prima / dopo un intervento</string>
+    <string name="paywall_benefit_widgets">Widget di monitoraggio nella schermata Home</string>
+    <string name="paywall_plan_annual">Annuale</string>
+    <string name="paywall_plan_lifetime">A vita</string>
+    <string name="paywall_annual_terms">all'anno · prova di %1$d giorni</string>
+    <string name="paywall_lifetime_terms">una volta, senza prova</string>
+    <string name="paywall_recommended">Consigliato</string>
+    <string name="paywall_choose_pro">Scegli Pro</string>
 </resources>

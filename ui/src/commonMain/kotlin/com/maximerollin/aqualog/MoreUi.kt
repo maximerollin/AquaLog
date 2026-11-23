@@ -507,7 +507,11 @@ private fun InformationDialog(
 
 /** The outcome of the last export or restore, or why the file was refused; nothing when there is neither. */
 @Composable
-internal fun PortableDataMessage(state: PortableDataUiState) {
+internal fun PortableDataMessage(
+    state: PortableDataUiState,
+    modifier: Modifier = Modifier,
+    colorOverride: Color? = null,
+) {
     val string = when (state.importProblem) {
         PortableImportProblem.INVALID_DOCUMENT -> Res.string.portable_problem_invalid_document
         PortableImportProblem.MISSING_VERSION -> Res.string.portable_problem_missing_version
@@ -538,8 +542,9 @@ internal fun PortableDataMessage(state: PortableDataUiState) {
     }
     Text(
         stringResource(string),
+        modifier = modifier,
         style = MaterialTheme.typography.bodyMedium,
-        color = if (
+        color = colorOverride ?: if (
             state.message == PortableDataMessage.EXPORT_READY ||
             state.message == PortableDataMessage.IMPORT_COMPLETE
         ) {

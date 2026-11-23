@@ -10,11 +10,9 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,12 +20,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -43,7 +37,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -72,19 +65,24 @@ import androidx.compose.ui.unit.sp
 import com.maximerollin.aqualog.habitants.AddInhabitantScreen
 import com.maximerollin.aqualog.home.TankHome
 import com.maximerollin.aqualog.home.plusEnabled
+import com.maximerollin.aqualog.onboarding.AquariumStepContent
+import com.maximerollin.aqualog.onboarding.ParametersContent
+import com.maximerollin.aqualog.onboarding.PaywallActions
+import com.maximerollin.aqualog.onboarding.PaywallContent
+import com.maximerollin.aqualog.onboarding.ProfileContent
+import com.maximerollin.aqualog.onboarding.PracticeContent
+import com.maximerollin.aqualog.onboarding.WelcomeContent
+import com.maximerollin.aqualog.onboarding.onboardingPreviewAquarium
+import com.maximerollin.aqualog.onboarding.onboardingActions
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.shared.AccountDeletionPhase
 import com.maximerollin.aqualog.shared.Aquarium
-import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
 import com.maximerollin.aqualog.shared.FeedbackKind
 import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.Cloud
-import com.maximerollin.aqualog.ui.theme.CarnetDivider
-import com.maximerollin.aqualog.ui.theme.CarnetScreenTitle
-import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
 import com.maximerollin.aqualog.ui.theme.FilledField
 import com.maximerollin.aqualog.ui.theme.FloatingNavBar
 import com.maximerollin.aqualog.ui.theme.WaterFullScreen
@@ -113,6 +111,7 @@ fun AquaLogContent(
     // Session details and the shell (the home, History, Trends and More). Every other screen gets `inset` and starts below the
     // status bar.
     val inset = framed.windowInsetsPadding(WindowInsets.statusBars)
+    val onboardingActions = remember(viewModel) { viewModel.onboardingActions() }
     when {
         state.isLoading -> LoadingContent(inset)
         state.accountSettings.pendingDeletion?.phase == AccountDeletionPhase.CLOUD_DELETED -> {
@@ -150,56 +149,59 @@ fun AquaLogContent(
             viewModel = viewModel,
             modifier = framed,
         )
-        state.setup != null && state.pro.showPaywall -> PaywallScreen(
+        state.setup != null && state.pro.showPaywall -> PaywallContent(
             pro = state.pro,
             isSaving = state.isSaving,
             onboarding = state.pro.openedFromOnboarding,
-            onStartPurchase = viewModel::startProPurchase,
-            onStartLifetimePurchase = viewModel::startLifetimeProPurchase,
-            onRestore = viewModel::restoreProPurchase,
-            onRetryOffer = viewModel::loadProOffer,
-            onContinue = viewModel::closeProPaywall,
-            modifier = inset,
+            aquarium = state.setup.aquarium,
+            actions = PaywallActions(
+                onStartAnnual = viewModel::startProPurchase,
+                onStartLifetime = viewModel::startLifetimeProPurchase,
+                onRestore = viewModel::restoreProPurchase,
+                onRetryOffer = viewModel::loadProOffer,
+                onContinue = viewModel::closeProPaywall,
+            ),
+            modifier = framed,
         )
         state.setup != null -> AquariumShell(state, viewModel, onExportData, externalLinks, rateApp, framed)
-        state.step == OnboardingStep.WELCOME -> WelcomeScreen(
-            state = state.portableData,
-            onContinue = viewModel::startOnboarding,
-            onRequestImport = viewModel::requestPortableImport,
-            modifier = inset,
+        state.step == OnboardingStep.WELCOME -> WelcomeContent(state.portableData, onboardingActions, modifier)
+        state.step == OnboardingStep.PROFILE -> ProfileContent(state.profile, onboardingActions, framed)
+        state.step == OnboardingStep.AQUARIUM -> AquariumStepContent(
+            name = state.aquariumName,
+            volumeInput = state.volumeInput,
+            unit = state.volumeUnit,
+            profile = state.profile,
+            showError = state.showAquariumValidationError,
+            actions = onboardingActions,
+            modifier = framed,
         )
-        state.step == OnboardingStep.PROFILE -> ProfileScreen(
-            selected = state.profile,
-            onSelected = viewModel::selectProfile,
-            onContinue = viewModel::continueToAquarium,
-            modifier = inset,
+        state.step == OnboardingStep.PARAMETERS -> ParametersContent(
+            state.parameters,
+            state.profile,
+            state.showParameterValidationError,
+            onboardingActions,
+            framed,
         )
-        state.step == OnboardingStep.AQUARIUM -> AquariumDetailsScreen(
-            state = state,
-            viewModel = viewModel,
-            modifier = inset,
+        state.step == OnboardingStep.PRACTICE -> PracticeContent(
+            state.parameters,
+            state.practiceValues,
+            onboardingPreviewAquarium(state.aquariumName, state.volumeInput, state.volumeUnit, state.profile),
+            onboardingActions,
+            framed,
         )
-        state.step == OnboardingStep.PARAMETERS -> ParametersScreen(
-            state = state,
-            viewModel = viewModel,
-            modifier = inset,
-        )
-        state.step == OnboardingStep.PRACTICE -> PracticeScreen(
-            state = state,
-            onValueChanged = viewModel::updatePracticeValue,
-            onContinue = viewModel::continueToPaywall,
-            modifier = inset,
-        )
-        else -> PaywallScreen(
+        else -> PaywallContent(
             pro = state.pro,
             isSaving = state.isSaving,
             onboarding = true,
-            onStartPurchase = viewModel::startProPurchase,
-            onStartLifetimePurchase = viewModel::startLifetimeProPurchase,
-            onRestore = viewModel::restoreProPurchase,
-            onRetryOffer = viewModel::loadProOffer,
-            onContinue = viewModel::finishForFree,
-            modifier = inset,
+            aquarium = onboardingPreviewAquarium(state.aquariumName, state.volumeInput, state.volumeUnit, state.profile),
+            actions = PaywallActions(
+                onStartAnnual = viewModel::startProPurchase,
+                onStartLifetime = viewModel::startLifetimeProPurchase,
+                onRestore = viewModel::restoreProPurchase,
+                onRetryOffer = viewModel::loadProOffer,
+                onContinue = viewModel::finishForFree,
+            ),
+            modifier = framed,
         )
     }
     if (state.portableData.showImportConfirmation) {
@@ -449,32 +451,6 @@ private fun LoadingContent(modifier: Modifier) {
 }
 
 @Composable
-private fun WelcomeScreen(
-    state: PortableDataUiState,
-    onContinue: () -> Unit,
-    onRequestImport: () -> Unit,
-    modifier: Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Spacer(Modifier.weight(1f))
-        ScreenHeading(Res.string.welcome_title, Res.string.welcome_description)
-        PortableDataMessage(state)
-        Spacer(Modifier.weight(1f))
-        PrimaryButton(Res.string.get_started, onContinue)
-        OutlinedButton(
-            onClick = onRequestImport,
-            enabled = !state.isWorking,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-        ) {
-            Text(stringResource(Res.string.restore_from_export))
-        }
-    }
-}
-
-@Composable
 private fun AccountDeletionCleanupScreen(
     state: AccountSettingsUiState,
     aquarium: Aquarium?,
@@ -521,440 +497,6 @@ private fun PortableImportConfirmation(
             }
         },
     )
-}
-
-@Composable
-private fun ProfileScreen(
-    selected: AquariumProfile,
-    onSelected: (AquariumProfile) -> Unit,
-    onContinue: () -> Unit,
-    modifier: Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        ScreenHeading(Res.string.profile_title, Res.string.profile_description)
-        Column(modifier = Modifier.selectableGroup()) {
-            ProfileOption(
-                title = stringResource(Res.string.profile_established),
-                description = stringResource(Res.string.profile_established_description),
-                selected = selected == AquariumProfile.ESTABLISHED,
-                onClick = { onSelected(AquariumProfile.ESTABLISHED) },
-            )
-            ProfileOption(
-                title = stringResource(Res.string.profile_cycling),
-                description = stringResource(Res.string.profile_cycling_description),
-                selected = selected == AquariumProfile.CYCLING,
-                onClick = { onSelected(AquariumProfile.CYCLING) },
-            )
-            ProfileOption(
-                title = stringResource(Res.string.profile_planted_shrimp),
-                description = stringResource(Res.string.profile_planted_shrimp_description),
-                selected = selected == AquariumProfile.PLANTED_SHRIMP,
-                onClick = { onSelected(AquariumProfile.PLANTED_SHRIMP) },
-            )
-            CarnetDivider()
-        }
-        Spacer(Modifier.height(8.dp))
-        PrimaryButton(Res.string.continue_to_aquarium, onContinue)
-    }
-}
-
-@Composable
-private fun ProfileOption(
-    title: String,
-    description: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Column {
-        CarnetDivider()
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .defaultMinSize(minHeight = 56.dp)
-                .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
-                .padding(vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            RadioButton(selected = selected, onClick = null)
-            Spacer(Modifier.width(12.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun AquariumDetailsScreen(
-    state: HomeUiState,
-    viewModel: HomeViewModel,
-    modifier: Modifier,
-) {
-    StandardScreen(modifier) {
-        ScreenHeading(Res.string.aquarium_details_title, Res.string.aquarium_details_description)
-        OutlinedTextField(
-            value = state.aquariumName,
-            onValueChange = viewModel::updateAquariumName,
-            label = { Text(stringResource(Res.string.aquarium_name_label)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        OutlinedTextField(
-            value = state.volumeInput,
-            onValueChange = viewModel::updateVolume,
-            label = { Text(stringResource(Res.string.aquarium_volume_label)) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        CarnetSectionTitle(stringResource(Res.string.volume_unit_label))
-        Column(Modifier.selectableGroup()) {
-            VolumeUnitOption(
-                text = stringResource(Res.string.unit_liters),
-                selected = state.volumeUnit == VolumeUnit.LITERS,
-                onClick = { viewModel.selectVolumeUnit(VolumeUnit.LITERS) },
-            )
-            VolumeUnitOption(
-                text = stringResource(Res.string.unit_us_gallons),
-                selected = state.volumeUnit == VolumeUnit.US_GALLONS,
-                onClick = { viewModel.selectVolumeUnit(VolumeUnit.US_GALLONS) },
-            )
-        }
-        if (state.showAquariumValidationError) {
-            ErrorText(Res.string.invalid_aquarium)
-        }
-        Spacer(Modifier.weight(1f))
-        PrimaryButton(Res.string.continue_to_parameters, viewModel::continueToParameters)
-    }
-}
-
-@Composable
-private fun VolumeUnitOption(text: String, selected: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .selectable(selected = selected, onClick = onClick, role = Role.RadioButton),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RadioButton(selected = selected, onClick = null)
-        Spacer(Modifier.width(8.dp))
-        Text(text)
-    }
-}
-
-@Composable
-private fun ParametersScreen(
-    state: HomeUiState,
-    viewModel: HomeViewModel,
-    modifier: Modifier,
-) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(24.dp),
-    ) {
-        item {
-            ScreenHeading(Res.string.parameters_title, Res.string.parameters_description)
-            Spacer(Modifier.height(16.dp))
-        }
-        itemsIndexed(state.parameters, key = { _, item -> item.parameter.storageValue }) { index, item ->
-            ParameterEditor(
-                state = item,
-                canMoveUp = index > 0,
-                canMoveDown = index < state.parameters.lastIndex,
-                viewModel = viewModel,
-            )
-        }
-        item { CarnetDivider() }
-        if (state.showParameterValidationError) {
-            item { ErrorText(Res.string.invalid_parameters) }
-        }
-        item {
-            Spacer(Modifier.height(16.dp))
-            PrimaryButton(Res.string.try_mini_session, viewModel::continueToPractice)
-        }
-    }
-}
-
-@Composable
-private fun ParameterEditor(
-    state: ParameterEditorState,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    viewModel: HomeViewModel,
-) {
-    val label = state.parameter.label()
-    val moveUpDescription = stringResource(Res.string.move_parameter_up, label)
-    val moveDownDescription = stringResource(Res.string.move_parameter_down, label)
-    val enabledDescription = stringResource(Res.string.enabled_for_parameter, label)
-    Column {
-        CarnetDivider()
-        Column(
-            modifier = Modifier.padding(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                TextButton(
-                    onClick = { viewModel.moveParameter(state.parameter, -1) },
-                    enabled = canMoveUp,
-                    modifier = Modifier.semantics { contentDescription = moveUpDescription },
-                ) { Text(stringResource(Res.string.move_up_symbol)) }
-                TextButton(
-                    onClick = { viewModel.moveParameter(state.parameter, 1) },
-                    enabled = canMoveDown,
-                    modifier = Modifier.semantics { contentDescription = moveDownDescription },
-                ) { Text(stringResource(Res.string.move_down_symbol)) }
-                Switch(
-                    checked = state.isActive,
-                    onCheckedChange = { viewModel.setParameterActive(state.parameter, it) },
-                    modifier = Modifier.semantics { contentDescription = enabledDescription },
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ParameterTextField(
-                    value = state.unit,
-                    onValueChange = { viewModel.updateParameterUnit(state.parameter, it) },
-                    label = stringResource(Res.string.parameter_unit),
-                    description = stringResource(Res.string.unit_for_parameter, label),
-                    modifier = Modifier.weight(1f),
-                )
-                ParameterTextField(
-                    value = state.precision,
-                    onValueChange = { viewModel.updateParameterPrecision(state.parameter, it) },
-                    label = stringResource(Res.string.parameter_precision),
-                    description = stringResource(Res.string.precision_for_parameter, label),
-                    keyboardType = KeyboardType.Number,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ParameterTextField(
-                    value = state.indicativeMinimum,
-                    onValueChange = { viewModel.updateParameterMinimum(state.parameter, it) },
-                    label = stringResource(Res.string.parameter_minimum),
-                    description = stringResource(Res.string.minimum_for_parameter, label),
-                    keyboardType = KeyboardType.Decimal,
-                    modifier = Modifier.weight(1f),
-                )
-                ParameterTextField(
-                    value = state.indicativeMaximum,
-                    onValueChange = { viewModel.updateParameterMaximum(state.parameter, it) },
-                    label = stringResource(Res.string.parameter_maximum),
-                    description = stringResource(Res.string.maximum_for_parameter, label),
-                    keyboardType = KeyboardType.Decimal,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ParameterTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    description: String,
-    modifier: Modifier,
-    keyboardType: KeyboardType = KeyboardType.Text,
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        modifier = modifier.semantics { contentDescription = description },
-    )
-}
-
-@Composable
-private fun PracticeScreen(
-    state: HomeUiState,
-    onValueChanged: (BuiltInParameter, String) -> Unit,
-    onContinue: () -> Unit,
-    modifier: Modifier,
-) {
-    val activeParameters = state.parameters.filter(ParameterEditorState::isActive).take(3)
-    StandardScreen(modifier) {
-        ScreenHeading(Res.string.practice_title, Res.string.practice_description)
-        activeParameters.forEach { parameter ->
-            val label = parameter.parameter.label()
-            val practiceDescription = stringResource(Res.string.practice_value_for_parameter, label)
-            OutlinedTextField(
-                value = state.practiceValues[parameter.parameter].orEmpty(),
-                onValueChange = { onValueChanged(parameter.parameter, it) },
-                label = { Text(stringResource(Res.string.parameter_with_unit, label, parameter.unit)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics { contentDescription = practiceDescription },
-            )
-        }
-        Text(
-            stringResource(Res.string.practice_not_saved),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Spacer(Modifier.weight(1f))
-        PrimaryButton(Res.string.see_free_and_pro, onContinue)
-    }
-}
-
-@Composable
-private fun PaywallScreen(
-    pro: ProUiState,
-    isSaving: Boolean,
-    onboarding: Boolean,
-    onStartPurchase: () -> Unit,
-    onStartLifetimePurchase: () -> Unit,
-    onRestore: () -> Unit,
-    onRetryOffer: () -> Unit,
-    onContinue: () -> Unit,
-    modifier: Modifier,
-) {
-    val formatter = currentLocalizedFormatters()
-    Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        ScreenHeading(Res.string.paywall_title, Res.string.paywall_description)
-        PlanCard(Res.string.free_plan, Res.string.free_plan_description)
-        PlanCard(Res.string.pro_plan, Res.string.pro_plan_description)
-        when {
-            pro.isLoadingOffer -> {
-                CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
-                Text(stringResource(Res.string.loading_google_play_offer))
-            }
-            pro.lifetimeOffer != null -> {
-                Text(
-                    stringResource(Res.string.pro_lifetime_offer_summary, pro.lifetimeOffer.formattedPrice),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Button(
-                    onClick = onStartLifetimePurchase,
-                    enabled = pro.purchaseStatus !in setOf(
-                        ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION,
-                        ProPurchaseStatus.PENDING,
-                        ProPurchaseStatus.VERIFYING,
-                        ProPurchaseStatus.ACTIVE,
-                    ),
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(Res.string.buy_lifetime_in_google_play))
-                }
-                pro.offer?.let { annualOffer ->
-                    Text(
-                        stringResource(
-                            Res.string.pro_offer_summary,
-                            annualOffer.formattedPrice,
-                            annualOffer.trialDays,
-                            annualOffer.localizedBillingDate(formatter),
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    OutlinedButton(
-                        onClick = onStartPurchase,
-                        enabled = pro.purchaseStatus !in setOf(
-                            ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION,
-                            ProPurchaseStatus.PENDING,
-                            ProPurchaseStatus.VERIFYING,
-                            ProPurchaseStatus.ACTIVE,
-                        ),
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                    ) {
-                        Text(stringResource(Res.string.start_trial_in_google_play))
-                    }
-                }
-            }
-            pro.offer != null -> {
-                Text(
-                    stringResource(
-                        Res.string.pro_offer_summary,
-                        pro.offer.formattedPrice,
-                        pro.offer.trialDays,
-                        pro.offer.localizedBillingDate(formatter),
-                    ),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Button(
-                    onClick = onStartPurchase,
-                    enabled = pro.purchaseStatus !in setOf(
-                        ProPurchaseStatus.AWAITING_PLAY_CONFIRMATION,
-                        ProPurchaseStatus.PENDING,
-                        ProPurchaseStatus.VERIFYING,
-                        ProPurchaseStatus.ACTIVE,
-                    ),
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                ) {
-                    Text(stringResource(Res.string.start_trial_in_google_play))
-                }
-            }
-            else -> {
-                Text(stringResource(Res.string.google_play_offer_unavailable), color = MaterialTheme.colorScheme.error)
-                TextButton(onClick = onRetryOffer, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                    Text(stringResource(Res.string.try_again))
-                }
-            }
-        }
-        pro.message?.let { message ->
-            Text(
-                stringResource(message.resourceId()),
-                color = if (pro.purchaseStatus == ProPurchaseStatus.ACTIVE) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
-        }
-        TextButton(
-            onClick = onRestore,
-            enabled = pro.purchaseStatus != ProPurchaseStatus.VERIFYING,
-            modifier = Modifier.fillMaxWidth().height(48.dp),
-        ) {
-            Text(stringResource(Res.string.restore_purchase))
-        }
-        Spacer(Modifier.height(8.dp))
-        Button(
-            onClick = onContinue,
-            enabled = !isSaving,
-            modifier = Modifier.fillMaxWidth().height(48.dp),
-        ) {
-            if (isSaving) {
-                CircularProgressIndicator()
-            } else {
-                Text(
-                    stringResource(
-                        when {
-                            !onboarding -> Res.string.back_to_settings
-                            pro.purchaseStatus == ProPurchaseStatus.ACTIVE -> Res.string.continue_with_pro
-                            else -> Res.string.continue_for_free
-                        },
-                    ),
-                )
-            }
-        }
-    }
-}
-
-private fun ProMessage.resourceId(): StringResource = when (this) {
-    ProMessage.PLAY_UNAVAILABLE -> Res.string.pro_message_play_unavailable
-    ProMessage.PURCHASE_PENDING -> Res.string.pro_message_purchase_pending
-    ProMessage.PURCHASE_CANCELLED -> Res.string.pro_message_purchase_cancelled
-    ProMessage.AUTHENTICATION_REQUIRED -> Res.string.pro_message_authentication_required
-    ProMessage.ACTIVE -> Res.string.pro_message_active
-    ProMessage.VERIFICATION_FAILED -> Res.string.pro_message_verification_failed
-    ProMessage.SAVE_FAILED -> Res.string.pro_message_save_failed
 }
 
 @Composable
@@ -1059,55 +601,6 @@ internal fun FeedbackDialog(
                 Text(stringResource(Res.string.cancel))
             }
         },
-    )
-}
-
-@Composable
-private fun PlanCard(title: StringResource, description: StringResource) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        CarnetSectionTitle(stringResource(title))
-        Text(
-            stringResource(description),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun StandardScreen(
-    modifier: Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        content = content,
-    )
-}
-
-@Composable
-private fun ScreenHeading(title: StringResource, description: StringResource) {
-    CarnetScreenTitle(stringResource(title), stringResource(description))
-}
-
-@Composable
-private fun PrimaryButton(label: StringResource, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-    ) {
-        Text(stringResource(label))
-    }
-}
-
-@Composable
-private fun ErrorText(message: StringResource) {
-    Text(
-        stringResource(message),
-        color = MaterialTheme.colorScheme.error,
-        style = MaterialTheme.typography.bodyMedium,
     )
 }
 

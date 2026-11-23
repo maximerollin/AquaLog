@@ -308,10 +308,9 @@ class RapidSessionFlowTest {
     private fun completeMinimalOnboarding() {
         composeRule.onNodeWithText("Get started").performClick()
         composeRule.onNodeWithText("Continue to Aquarium").performClick()
-        composeRule.onNodeWithText("Aquarium name").performTextInput("Amazonien")
-        composeRule.onNodeWithText("Volume").performTextInput("120")
+        composeRule.onNodeWithTag("aquarium-name").performTextInput("Amazonien")
+        composeRule.onNodeWithTag("aquarium-volume").performTextInput("120")
         composeRule.onNodeWithText("Continue to Parameters").performClick()
-        composeRule.scrollToText("Try a mini Session")
         composeRule.onNodeWithText("Try a mini Session").performClick()
         composeRule.onNodeWithText("See Free and Pro").performClick()
         composeRule.onNodeWithText("Continue for free").performClick()

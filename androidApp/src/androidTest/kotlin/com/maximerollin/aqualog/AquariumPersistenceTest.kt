@@ -1,9 +1,13 @@
 package com.maximerollin.aqualog
 
 import com.maximerollin.aqualog.resources.*
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -11,6 +15,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
@@ -26,6 +31,7 @@ class AquariumPersistenceTest {
     @get:Rule
     val composeRule = createEmptyComposeRule()
 
+    @OptIn(ExperimentalTestApi::class)
     @Test
     fun onboarding_createsConfiguredAquarium_withoutPersistingPracticeValue() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -36,9 +42,9 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithText("Cycling").performClick()
         composeRule.onNodeWithText("Continue to Aquarium").performClick()
 
-        composeRule.onNodeWithText("Aquarium name")
+        composeRule.onNodeWithTag("aquarium-name")
             .performTextInput("Amazonien")
-        composeRule.onNodeWithText("Volume")
+        composeRule.onNodeWithTag("aquarium-volume")
             .performTextInput("120.5")
         composeRule.onNodeWithText("US gallons")
             .performClick()
@@ -50,26 +56,28 @@ class AquariumPersistenceTest {
             .assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Enabled for Ammonia / ammonium")
             .assertIsOn()
-        val temperatureUnit = composeRule.onNodeWithContentDescription("Unit for Temperature")
-        temperatureUnit.performScrollTo()
+        composeRule.onNodeWithTag("parameter-row-temperature").performScrollTo().performClick()
+        // The unit FilledField carries its label as text on the editable node.
+        val temperatureUnit = composeRule.onNode(hasSetTextAction() and hasText("Unit"))
         temperatureUnit.performTextClearance()
         temperatureUnit.performTextInput("°F")
-        composeRule.onNodeWithContentDescription("Move pH up")
-            .performScrollTo()
-            .performClick()
-        composeRule.scrollToText("Try a mini Session")
+        composeRule.onNodeWithText("Done").performClick()
+        composeRule.onNodeWithTag("parameter-row-ph").performCustomAccessibilityActionWithLabel("Move pH up")
         composeRule.onNodeWithText("Try a mini Session").performClick()
 
-        composeRule.onNodeWithContentDescription("Practice value for pH")
+        composeRule.onNodeWithTag("practice-ph")
             .performTextInput("6.8")
         composeRule.onNodeWithText("See Free and Pro").performClick()
-        composeRule.onNodeWithText("Free").assertIsDisplayed()
-        composeRule.onNodeWithText("Pro · annual or lifetime").assertIsDisplayed()
-        composeRule.onNodeWithText("€34.99 once. Lifetime access, with no trial.").assertIsDisplayed()
+        composeRule.onNodeWithText("All your tanks, their whole story.").assertIsDisplayed()
+        composeRule.onNodeWithTag("onboarding-list").performScrollToNode(hasTestTag("plan-annual"))
+        composeRule.onNodeWithTag("plan-annual").assertIsSelected()
         val billingDate = LocalizedFormatters(java.util.Locale.getDefault(java.util.Locale.Category.FORMAT))
             .date(1_792_528_000_000L)
         composeRule.onNodeWithText(LocalizedStrings().getString(Res.string.pro_offer_summary, "€14.99", 14, billingDate))
             .assertIsDisplayed()
+        composeRule.onNodeWithTag("plan-lifetime").performClick()
+        composeRule.onNodeWithText("€34.99 once. Lifetime access, with no trial.").assertIsDisplayed()
+        composeRule.onNodeWithTag("choose-pro").assertIsDisplayed()
         composeRule.onNodeWithText("Continue for free").performClick()
 
         waitForText("Amazonien")
@@ -90,7 +98,7 @@ class AquariumPersistenceTest {
         // In Free, More offers Pro through its banner.
         composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("Discover Pro"))
         composeRule.onNodeWithText("Discover Pro").performClick()
-        composeRule.onNodeWithText("Choose Free or Pro").assertIsDisplayed()
+        composeRule.onNodeWithText("All your tanks, their whole story.").assertIsDisplayed()
         composeRule.onNodeWithText("Back to Settings").performClick()
         scenario.close()
     }

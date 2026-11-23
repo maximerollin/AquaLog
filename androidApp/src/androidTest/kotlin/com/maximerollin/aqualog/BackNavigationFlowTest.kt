@@ -67,12 +67,12 @@ class BackNavigationFlowTest {
             composeRule.onNode(hasLabel("Trends") and SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)).performClick()
             composeRule.awaitLabel("Custom period")
             composeRule.onNode(hasLabel("Custom period")).performClick()
-            composeRule.awaitLabel("Choose Free or Pro")
+            composeRule.awaitLabel("All your tanks, their whole story.")
 
             pressBack()
 
             composeRule.awaitLabel("Custom period")
-            composeRule.onAllNodesWithText("Choose Free or Pro").assertCountEquals(0)
+            composeRule.onAllNodesWithText("All your tanks, their whole story.").assertCountEquals(0)
             composeRule.onNodeWithTag("trend-list").assertIsDisplayed()
             assertEquals(Lifecycle.State.RESUMED, scenario.state)
         } finally {

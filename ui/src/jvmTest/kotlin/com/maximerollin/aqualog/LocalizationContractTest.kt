@@ -138,6 +138,15 @@ class LocalizationContractTest {
     }
 
     @Test
+    fun `no catalog value escapes an apostrophe with a backslash`() {
+        // Compose resources keep the backslash, so users would read it.
+        catalogs.forEach { catalog ->
+            val xml = File(res, "$catalog/strings.xml").readText()
+            assertFalse(xml.contains("\\'"), "$catalog contains a backslash before an apostrophe")
+        }
+    }
+
+    @Test
     fun `interface locale does not choose measurement units`() {
         val frenchGallons = LocalizedFormatters(formatLocale = Locale.FRANCE).volume(12.5, com.maximerollin.aqualog.shared.VolumeUnit.US_GALLONS)
         val englishLiters = LocalizedFormatters(formatLocale = Locale.US).volume(12.5, com.maximerollin.aqualog.shared.VolumeUnit.LITERS)

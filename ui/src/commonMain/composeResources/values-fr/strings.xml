@@ -20,14 +20,12 @@
     <string name="aquarium_details_description">Cela reste sur votre appareil. Aucun compte ou réseau n'est requis.</string>
     <string name="aquarium_name_label">Nom de l'aquarium</string>
     <string name="aquarium_volume_label">Volume</string>
-    <string name="volume_unit_label">Unité de volume</string>
     <string name="unit_liters">Litres</string>
     <string name="unit_us_gallons">gallons américains</string>
     <string name="invalid_aquarium">Saisissez un nom et un volume supérieur à zéro.</string>
     <string name="continue_to_parameters">Continuer vers Paramètres</string>
 
     <string name="parameters_title">Façonnez votre routine</string>
-    <string name="parameters_description">Activez, réorganisez et modifiez chaque paramètre intégré. Les plages indicatives ne sont que des points de référence personnels.</string>
     <string name="parameter_temperature">Température</string>
     <string name="parameter_ph">pH</string>
     <string name="parameter_ammonia">Ammoniac / ammonium</string>
@@ -41,38 +39,25 @@
     <string name="enabled_for_parameter">Activé pour %1$s</string>
     <string name="move_parameter_up">Déplacer %1$s vers le haut</string>
     <string name="move_parameter_down">Déplacer %1$s vers le bas</string>
-    <string name="move_up_symbol">↑</string>
-    <string name="move_down_symbol">↓</string>
     <string name="parameter_unit">Unité</string>
-    <string name="unit_for_parameter">Unité pour %1$s</string>
     <string name="parameter_precision">Décimales</string>
-    <string name="precision_for_parameter">Précision pour %1$s</string>
     <string name="parameter_minimum">Min indicatif</string>
-    <string name="minimum_for_parameter">Minimum indicatif pour %1$s</string>
     <string name="parameter_maximum">Maximum indicatif</string>
-    <string name="maximum_for_parameter">Maximum indicatif pour %1$s</string>
     <string name="invalid_parameters">Gardez au moins un paramètre actif. Les unités, la précision et les plages doivent être valides.</string>
     <string name="try_mini_session">Essayer une mini-Session</string>
 
     <string name="practice_title">Essayez votre première Session</string>
     <string name="practice_description">Saisissez quelques valeurs d’exemple pour découvrir la saisie rapide. Cet essai n'est jamais enregistré.</string>
-    <string name="practice_value_for_parameter">Valeur pratique pour %1$s</string>
     <string name="practice_not_saved">Entraînement uniquement · aucune session ou mesure ne sera créée</string>
     <string name="see_free_and_pro">Voir Gratuit et Pro</string>
 
-    <string name="paywall_title">Choisissez Gratuit ou Pro</string>
     <string name="paywall_description">Continuez gratuitement à tout moment. Pro ne démarre qu'après confirmation dans Google Play.</string>
     <string name="free_plan">Gratuit</string>
-    <string name="free_plan_description">Un aquarium, sessions et mesures illimitées, 90 jours d'historique.</string>
-    <string name="pro_plan">Pro · annuel ou à vie</string>
-    <string name="pro_plan_description">Aquariums multiples, historique au-delà de 90 jours et analyse avancée.</string>
     <string name="continue_for_free">Continuez gratuitement</string>
     <string name="continue_with_pro">Continuer avec Pro</string>
     <string name="loading_google_play_offer">Chargement de l'offre Google Play localisée…</string>
     <string name="pro_offer_summary">%1$s par an après un essai gratuit de %2$d jours. Première facturation : %3$s.</string>
     <string name="pro_lifetime_offer_summary">%1$s une fois. Accès à vie, sans essai.</string>
-    <string name="buy_lifetime_in_google_play">Acheter Pro à vie sur Google Play</string>
-    <string name="start_trial_in_google_play">Vérifier et confirmer dans Google Play</string>
     <string name="google_play_offer_unavailable">L'offre Google Play localisée n'est pas disponible. Aucun essai n'a commencé.</string>
     <string name="restore_purchase">Restaurer l'achat Google Play</string>
     <string name="back_to_settings">Retour aux paramètres</string>
@@ -287,7 +272,6 @@
     <string name="trends_row_show_chart">Afficher le graphique</string>
     <string name="trends_row_hide_chart">Masquer le graphique</string>
     <string name="trends_series_label">● Série %1$s</string>
-    <string name="parameter_with_unit">%1$s (%2$s)</string>
     <string name="value_with_unit">%1$s %2$s</string>
     <string name="timeline_marker_line">%1$s · %2$s</string>
     <string name="trends_exact_values">Valeurs exactes</string>
@@ -593,4 +577,26 @@
     <string name="habitants_fit_bad">Déconseillé pour %1$s</string>
     <string name="habitants_count_in_aquarium">%1$d dans %2$s</string>
     <string name="photo_crop_hint">Pincez pour zoomer, glissez pour cadrer. Ce carré est exactement ce qui sera enregistré.</string>
+    <string name="onboarding_step_of">Étape %1$d sur %2$d</string>
+    <string name="parameters_hint">Glissez pour réordonner, touchez une ligne pour régler sa plage</string>
+    <plurals name="parameters_count_active"><item quantity="one">%1$d suivi</item><item quantity="other">%1$d suivis</item></plurals>
+    <string name="parameter_range_none">Aucune plage</string>
+    <string name="parameter_range_invalid">Plage à revoir</string>
+    <string name="range_sheet_hint">Plage indicative : un repère personnel, pas une norme.</string>
+    <string name="range_sheet_invalid">Vérifiez l'unité et la plage : le minimum ne peut pas dépasser le maximum.</string>
+    <string name="range_sheet_decrease">Diminuer %1$s</string>
+    <string name="range_sheet_increase">Augmenter %1$s</string>
+    <string name="range_sheet_done">Valider</string>
+    <string name="paywall_pro_overline">Aquagenda Pro</string>
+    <string name="paywall_headline">Tous vos bacs, toute leur histoire.</string>
+    <string name="paywall_benefit_aquariums">Plusieurs aquariums</string>
+    <string name="paywall_benefit_history">Historique au-delà de 90 jours</string>
+    <string name="paywall_benefit_analysis">Analyse avant / après une intervention</string>
+    <string name="paywall_benefit_widgets">Widgets de suivi sur l'écran d'accueil</string>
+    <string name="paywall_plan_annual">Annuel</string>
+    <string name="paywall_plan_lifetime">À vie</string>
+    <string name="paywall_annual_terms">par an · essai de %1$d jours</string>
+    <string name="paywall_lifetime_terms">une fois, sans essai</string>
+    <string name="paywall_recommended">Recommandé</string>
+    <string name="paywall_choose_pro">Choisir Pro</string>
 </resources>

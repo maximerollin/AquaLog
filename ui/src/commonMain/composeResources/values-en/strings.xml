@@ -20,14 +20,12 @@
     <string name="aquarium_details_description">This stays on your device. No account or network is required.</string>
     <string name="aquarium_name_label">Aquarium name</string>
     <string name="aquarium_volume_label">Volume</string>
-    <string name="volume_unit_label">Volume unit</string>
     <string name="unit_liters">Liters</string>
     <string name="unit_us_gallons">US gallons</string>
     <string name="invalid_aquarium">Enter a name and a volume greater than zero.</string>
     <string name="continue_to_parameters">Continue to Parameters</string>
 
     <string name="parameters_title">Shape your routine</string>
-    <string name="parameters_description">Enable, reorder and edit every built-in Parameter. Indicative ranges are only personal reference points.</string>
     <string name="parameter_temperature">Temperature</string>
     <string name="parameter_ph">pH</string>
     <string name="parameter_ammonia">Ammonia / ammonium</string>
@@ -41,38 +39,25 @@
     <string name="enabled_for_parameter">Enabled for %1$s</string>
     <string name="move_parameter_up">Move %1$s up</string>
     <string name="move_parameter_down">Move %1$s down</string>
-    <string name="move_up_symbol">↑</string>
-    <string name="move_down_symbol">↓</string>
     <string name="parameter_unit">Unit</string>
-    <string name="unit_for_parameter">Unit for %1$s</string>
     <string name="parameter_precision">Decimals</string>
-    <string name="precision_for_parameter">Precision for %1$s</string>
     <string name="parameter_minimum">Indicative min</string>
-    <string name="minimum_for_parameter">Indicative minimum for %1$s</string>
     <string name="parameter_maximum">Indicative max</string>
-    <string name="maximum_for_parameter">Indicative maximum for %1$s</string>
     <string name="invalid_parameters">Keep at least one Parameter active. Units, precision and ranges must be valid.</string>
     <string name="try_mini_session">Try a mini Session</string>
 
     <string name="practice_title">Try your first Session</string>
     <string name="practice_description">Enter a few example values to feel the quick flow. This practice is never saved.</string>
-    <string name="practice_value_for_parameter">Practice value for %1$s</string>
     <string name="practice_not_saved">Practice only · no Session or Measurement will be created</string>
     <string name="see_free_and_pro">See Free and Pro</string>
 
-    <string name="paywall_title">Choose Free or Pro</string>
     <string name="paywall_description">Continue free at any time. Pro starts only after you confirm in Google Play.</string>
     <string name="free_plan">Free</string>
-    <string name="free_plan_description">One Aquarium, unlimited Sessions and Measurements, 90 days of history.</string>
-    <string name="pro_plan">Pro · annual or lifetime</string>
-    <string name="pro_plan_description">Multiple Aquariums, history beyond 90 days and advanced analysis.</string>
     <string name="continue_for_free">Continue for free</string>
     <string name="continue_with_pro">Continue with Pro</string>
     <string name="loading_google_play_offer">Loading the localized Google Play offer…</string>
     <string name="pro_offer_summary">%1$s per year after a %2$d-day free trial. First billing date: %3$s.</string>
     <string name="pro_lifetime_offer_summary">%1$s once. Lifetime access, with no trial.</string>
-    <string name="buy_lifetime_in_google_play">Buy lifetime Pro in Google Play</string>
-    <string name="start_trial_in_google_play">Review and confirm in Google Play</string>
     <string name="google_play_offer_unavailable">The localized Google Play offer is unavailable. No trial has started.</string>
     <string name="restore_purchase">Restore Google Play purchase</string>
     <string name="back_to_settings">Back to Settings</string>
@@ -287,7 +272,6 @@
     <string name="trends_row_show_chart">Show chart</string>
     <string name="trends_row_hide_chart">Hide chart</string>
     <string name="trends_series_label">● %1$s series</string>
-    <string name="parameter_with_unit">%1$s (%2$s)</string>
     <string name="value_with_unit">%1$s %2$s</string>
     <string name="timeline_marker_line">%1$s · %2$s</string>
     <string name="trends_exact_values">Exact values</string>
@@ -593,4 +577,26 @@
     <string name="habitants_fit_bad">Not recommended for %1$s</string>
     <string name="habitants_count_in_aquarium">%1$d in %2$s</string>
     <string name="photo_crop_hint">Pinch to zoom, drag to frame. This square is exactly what will be saved.</string>
+    <string name="onboarding_step_of">Step %1$d of %2$d</string>
+    <string name="parameters_hint">Drag to reorder, tap a row to set its range</string>
+    <plurals name="parameters_count_active"><item quantity="one">%1$d tracked</item><item quantity="other">%1$d tracked</item></plurals>
+    <string name="parameter_range_none">No range</string>
+    <string name="parameter_range_invalid">Range to check</string>
+    <string name="range_sheet_hint">Indicative range: a personal reference point, not a norm.</string>
+    <string name="range_sheet_invalid">Check the unit and the range: the minimum cannot be above the maximum.</string>
+    <string name="range_sheet_decrease">Decrease %1$s</string>
+    <string name="range_sheet_increase">Increase %1$s</string>
+    <string name="range_sheet_done">Done</string>
+    <string name="paywall_pro_overline">Aquagenda Pro</string>
+    <string name="paywall_headline">All your tanks, their whole story.</string>
+    <string name="paywall_benefit_aquariums">Several Aquariums</string>
+    <string name="paywall_benefit_history">History beyond 90 days</string>
+    <string name="paywall_benefit_analysis">Before / after analysis of an intervention</string>
+    <string name="paywall_benefit_widgets">Tracking widgets on your home screen</string>
+    <string name="paywall_plan_annual">Annual</string>
+    <string name="paywall_plan_lifetime">Lifetime</string>
+    <string name="paywall_annual_terms">per year · %1$d-day trial</string>
+    <string name="paywall_lifetime_terms">once, no trial</string>
+    <string name="paywall_recommended">Recommended</string>
+    <string name="paywall_choose_pro">Choose Pro</string>
 </resources>
