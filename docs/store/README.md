@@ -1,4 +1,4 @@
-# Icônes Aquagenda — exports PNG
+# Aquagenda — icônes et captures de la fiche
 
 Ces fichiers rasterisent fidèlement la scène B2 approuvée dans
 [`scene-b2.svg`](../design/launcher-icon/scene-b2.svg), sans redessiner ni recadrer
@@ -13,7 +13,57 @@ d'arrondi ni ombre extérieure ajoutée.
 | `aqualog-icon-256.png` | 256 × 256 | Petit format générique pour avatars et intégrations. |
 | `aqualog-icon-master-2048.png` | 2048 × 2048 | Master haute définition pour de futurs exports. |
 
-## Régénérer
+## Captures de la fiche Google Play
+
+`screenshots/<langue Play>/` contient six captures téléphone par fiche (`fr-FR`, `en-US`,
+`de-DE`, `it-IT`, `es-ES`), en PNG 24 bits sans alpha, 1080 × 1920 (9:16, le format que
+Google Play demande pour la mise en avant) :
+
+| Fichier | Écran |
+| --- | --- |
+| `01-home.png` | Accueil, le bac et ses valeurs |
+| `02-session.png` | Nouvelle Session en tuiles |
+| `03-history.png` | Chronologie |
+| `04-trends.png` | Tendances, nitrate à surveiller |
+| `05-onboarding.png` | Premier écran de l'onboarding |
+| `06-offer.png` | Offre Pro et ses deux formules |
+
+Elles sortent du test instrumenté `PlayStoreScreenshotsTest`, qui remplit un bac planté de
+120 L avec huit semaines de Sessions, des habitants et une tâche, dans chaque langue. Il est
+ignoré dans la suite normale. Sur l'émulateur Pixel_9a, depuis la racine du dépôt :
+
+```sh
+adb shell wm size 1080x1920
+adb shell settings put global sysui_demo_allowed 1
+adb shell am broadcast -a com.android.systemui.demo -e command enter
+adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm 0941
+adb shell am broadcast -a com.android.systemui.demo -e command battery -e level 100 -e plugged false
+adb shell am broadcast -a com.android.systemui.demo -e command network -e wifi show -e level 4 -e fully true
+adb shell am broadcast -a com.android.systemui.demo -e command network -e mobile hide
+adb shell am broadcast -a com.android.systemui.demo -e command notifications -e visible false
+./gradlew :androidApp:connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.class=com.maximerollin.aqualog.PlayStoreScreenshotsTest \
+  -Pandroid.testInstrumentationRunnerArguments.playStoreScreenshots=true
+```
+
+`-Pandroid.testInstrumentationRunnerArguments.playStoreLanguages=fr,en` limite les langues.
+Les PNG arrivent sous
+`androidApp/build/outputs/connected_android_test_additional_output/debugAndroidTest/connected/*/play-store/<langue>/`.
+Les copier dans `screenshots/` (`fr` → `fr-FR`, `en` → `en-US`, `de` → `de-DE`,
+`it` → `it-IT`, `es` → `es-ES`), puis remettre l'émulateur en état :
+
+```sh
+adb shell am broadcast -a com.android.systemui.demo -e command exit
+adb shell settings put global sysui_demo_allowed 0
+adb shell wm size reset
+adb shell settings put system font_scale 1.0
+adb shell cmd uimode night no
+```
+
+Le test rétablit la langue par appli, le thème et l'échelle de police à la fin, et Gradle
+désinstalle l'appli après le passage.
+
+## Régénérer les icônes
 
 Depuis la racine du dépôt, avec [uv](https://docs.astral.sh/uv/) :
 

@@ -21,7 +21,7 @@
     <string name="aquarium_name_label">Nom de l'aquarium</string>
     <string name="aquarium_volume_label">Volume</string>
     <string name="unit_liters">Litres</string>
-    <string name="unit_us_gallons">gallons américains</string>
+    <string name="unit_us_gallons">Gallons américains</string>
     <string name="invalid_aquarium">Saisissez un nom et un volume supérieur à zéro.</string>
     <string name="continue_to_parameters">Continuer vers Paramètres</string>
 
@@ -41,7 +41,7 @@
     <string name="move_parameter_down">Déplacer %1$s vers le bas</string>
     <string name="parameter_unit">Unité</string>
     <string name="parameter_precision">Décimales</string>
-    <string name="parameter_minimum">Min indicatif</string>
+    <string name="parameter_minimum">Minimum indicatif</string>
     <string name="parameter_maximum">Maximum indicatif</string>
     <string name="invalid_parameters">Gardez au moins un paramètre actif. Les unités, la précision et les plages doivent être valides.</string>
     <string name="try_mini_session">Essayer une mini-Session</string>
@@ -212,7 +212,7 @@
     <string name="account_sign_out_failed">La déconnexion n’a pas abouti. Vos données locales n’ont pas été modifiées.</string>
     <string name="account_deletion_resume_failed">La suppression du compte n’a pas pu reprendre. Vos données locales n’ont pas été modifiées.</string>
     <string name="authentication_link_processing_failed">Le lien d’authentification n’a pas pu être traité en toute sécurité. Réessayez.</string>
-    <string name="sign_out">se déconnecter</string>
+    <string name="sign_out">Se déconnecter</string>
     <string name="sign_out_copy_choice">Choisissez ce qui arrive à la copie locale de cet appareil. Le conserver déconnecte la propriété du cloud et les téléchargements en attente. Le supprimer supprime les données locales de l'Aquarium.</string>
     <string name="keep_local_copy">Conserver une copie locale</string>
     <string name="remove_local_copy">Supprimer la copie locale</string>

@@ -4,7 +4,7 @@
 
     <string name="welcome_title">Una sesión. Toda tu rutina.</string>
     <string name="welcome_description">Registre varias mediciones de agua, acciones de mantenimiento y una observación juntas, sin crear una cuenta.</string>
-    <string name="get_started">empezar</string>
+    <string name="get_started">Empezar</string>
 
     <string name="profile_title">¿Qué estás rastreando?</string>
     <string name="profile_description">Aquagenda sugerirá un conjunto de parámetros editable. Nada queda fijado.</string>
@@ -21,7 +21,7 @@
     <string name="aquarium_name_label">Nombre del acuario</string>
     <string name="aquarium_volume_label">Volumen</string>
     <string name="unit_liters">Litros</string>
-    <string name="unit_us_gallons">galones estadounidenses</string>
+    <string name="unit_us_gallons">Galones estadounidenses</string>
     <string name="invalid_aquarium">Introduzca un nombre y un volumen mayor que cero.</string>
     <string name="continue_to_parameters">Continuar a Parámetros</string>
 
@@ -32,7 +32,7 @@
     <string name="parameter_nitrite">Nitrito</string>
     <string name="parameter_nitrate">Nitrato</string>
     <string name="parameter_gh">GH</string>
-    <string name="parameter_kh">kh</string>
+    <string name="parameter_kh">KH</string>
     <string name="parameter_tds">TDS</string>
     <string name="parameter_phosphate">Fosfato</string>
     <string name="parameter_salinity">Salinidad</string>
@@ -40,8 +40,8 @@
     <string name="move_parameter_up">Mover %1$s hacia arriba</string>
     <string name="move_parameter_down">Mover %1$s hacia abajo</string>
     <string name="parameter_unit">Unidad</string>
-    <string name="parameter_precision">decimales</string>
-    <string name="parameter_minimum">mín. indicativo</string>
+    <string name="parameter_precision">Decimales</string>
+    <string name="parameter_minimum">Mínimo indicativo</string>
     <string name="parameter_maximum">Máximo indicativo</string>
     <string name="invalid_parameters">Mantenga activo al menos un parámetro. Las unidades, precisión y rangos deben ser válidos.</string>
     <string name="try_mini_session">Prueba una mini sesión</string>
@@ -289,7 +289,7 @@
     <string name="date_format_hint">AAAA-MM-DD</string>
     <string name="trends_apply_custom_period">Aplicar período personalizado</string>
     <string name="trends_invalid_custom_period">Ingrese una fecha de inicio y finalización ordenada como AAAA-MM-DD.</string>
-    <string name="trends_advanced_analysis">Análisis profesional avanzado</string>
+    <string name="trends_advanced_analysis">Análisis Pro avanzado</string>
     <string name="trends_descriptive_disclaimer">Contexto descriptivo únicamente. Aquagenda no diagnostica las condiciones del agua ni recomienda tratamientos.</string>
     <string name="trends_choose_intervention">Elija una intervención para comparar el antes y el después</string>
     <string name="trends_before_after">Antes y después de la intervención</string>
@@ -337,7 +337,7 @@
     <string name="task_more_actions">Más acciones</string>
     <string name="task_completed">Terminado</string>
     <string name="task_postponed">Aplazado</string>
-    <string name="task_ignored">ignorado</string>
+    <string name="task_ignored">Ignorado</string>
     <string name="allow_notifications">Permitir notificaciones</string>
     <string name="notification_permission_explanation">Se requiere permiso de notificación de Android para mostrar recordatorios de tareas. Las tareas permanecen disponibles en Aquagenda si las rechaza.</string>
     <string name="battery_optimization_explanation">La optimización de la batería de Android está activa. Puede retrasar los recordatorios; Las tareas y sus fechas de vencimiento permanecen almacenadas localmente.</string>
