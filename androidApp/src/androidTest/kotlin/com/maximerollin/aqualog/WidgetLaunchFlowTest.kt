@@ -156,7 +156,7 @@ class WidgetLaunchFlowTest {
             scenario.onActivity { it.startActivity(widgetIntent(null, WidgetTarget.PRO)) }
             Thread.sleep(1_000)
             composeRule.waitForIdle()
-            composeRule.onAllNodes(hasText("Choose Free or Pro")).assertCountEquals(0)
+            composeRule.onAllNodes(hasText("All your tanks, their whole story.")).assertCountEquals(0)
             composeRule.onNodeWithText("Aqua 120").assertIsDisplayed()
         } finally {
             finishByHand(scenario)
@@ -168,7 +168,7 @@ class WidgetLaunchFlowTest {
         twoAquariums(pro = false)
         val scenario = ActivityScenario.launch<MainActivity>(widgetIntent(null, WidgetTarget.PRO))
         try {
-            waitForText("Choose Free or Pro")
+            waitForText("All your tanks, their whole story.")
         } finally {
             scenario.close()
         }

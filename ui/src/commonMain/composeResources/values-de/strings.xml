@@ -20,7 +20,6 @@
     <string name="aquarium_details_description">Dies verbleibt auf Ihrem Gerät. Es ist kein Konto oder Netzwerk erforderlich.</string>
     <string name="aquarium_name_label">Name des Aquariums</string>
     <string name="aquarium_volume_label">Volumen</string>
-    <string name="volume_unit_label">Volumeneinheit</string>
     <string name="unit_liters">Liter</string>
     <string name="unit_us_gallons">US-Gallonen</string>
     <string name="invalid_aquarium">Gib einen Namen und ein Volumen größer als null ein.</string>
@@ -41,38 +40,26 @@
     <string name="enabled_for_parameter">Aktiviert für %1$s</string>
     <string name="move_parameter_up">Verschieben Sie %1$s nach oben</string>
     <string name="move_parameter_down">Bewegen Sie %1$s nach unten</string>
-    <string name="move_up_symbol">↑</string>
-    <string name="move_down_symbol">↓</string>
     <string name="parameter_unit">Einheit</string>
-    <string name="unit_for_parameter">Einheit für %1$s</string>
     <string name="parameter_precision">Dezimalstellen</string>
-    <string name="precision_for_parameter">Präzision für %1$s</string>
     <string name="parameter_minimum">Richtwert min</string>
-    <string name="minimum_for_parameter">Richtminimum für %1$s</string>
     <string name="parameter_maximum">Richtwert max</string>
-    <string name="maximum_for_parameter">Indikatives Maximum für %1$s</string>
     <string name="invalid_parameters">Lassen Sie mindestens einen Parameter aktiv. Einheiten, Genauigkeit und Bereiche müssen gültig sein.</string>
     <string name="try_mini_session">Probieren Sie eine Mini-Sitzung aus</string>
 
     <string name="practice_title">Probieren Sie Ihre erste Sitzung aus</string>
     <string name="practice_description">Geben Sie einige Beispielwerte ein, um den schnellen Ablauf zu spüren. Diese Praxis wird niemals gespeichert.</string>
-    <string name="practice_value_for_parameter">Übungswert für %1$s</string>
     <string name="practice_not_saved">Nur zum Üben. Es wird keine Sitzung oder Messung erstellt</string>
     <string name="see_free_and_pro">Siehe Free und Pro</string>
 
-    <string name="paywall_title">Wählen Sie „Kostenlos“ oder „Pro“.</string>
     <string name="paywall_description">Jederzeit kostenlos weitermachen. Pro startet erst nach Bestätigung in Google Play.</string>
     <string name="free_plan">Frei</string>
     <string name="free_plan_description">Ein Aquarium, unbegrenzte Sitzungen und Messungen, 90 Tage Verlauf.</string>
-    <string name="pro_plan">Pro · jährlich oder lebenslang</string>
-    <string name="pro_plan_description">Mehrere Aquarien, Verlauf über 90 Tage hinaus und erweiterte Analyse.</string>
     <string name="continue_for_free">Kostenlos weitermachen</string>
     <string name="continue_with_pro">Fahren Sie mit Pro fort</string>
     <string name="loading_google_play_offer">Laden des lokalisierten Google Play-Angebots…</string>
     <string name="pro_offer_summary">%1$s pro Jahr nach %2$d kostenlosen Testtagen. Erste Abrechnung: %3$s.</string>
     <string name="pro_lifetime_offer_summary">%1$s einmal. Lebenslanger Zugriff, ohne Testversion.</string>
-    <string name="buy_lifetime_in_google_play">Pro auf Lebenszeit bei Google Play kaufen</string>
-    <string name="start_trial_in_google_play">In Google Play prüfen und bestätigen</string>
     <string name="google_play_offer_unavailable">Das lokalisierte Google Play-Angebot ist nicht verfügbar. Es wurde kein Testzeitraum gestartet.</string>
     <string name="restore_purchase">Stellen Sie den Google Play-Kauf wieder her</string>
     <string name="back_to_settings">Zurück zu den Einstellungen</string>
@@ -287,7 +274,6 @@
     <string name="trends_row_show_chart">Diagramm anzeigen</string>
     <string name="trends_row_hide_chart">Diagramm ausblenden</string>
     <string name="trends_series_label">● Datenreihe %1$s</string>
-    <string name="parameter_with_unit">%1$s (%2$s)</string>
     <string name="value_with_unit">%1$s %2$s</string>
     <string name="timeline_marker_line">%1$s · %2$s</string>
     <string name="trends_exact_values">Genaue Werte</string>

@@ -124,7 +124,7 @@ class WeeklySummaryFlowTest {
             assertAbsent("NO₃ 20 → 35, rising")
             scrollTo("Value changes and next week's tests with Pro")
             composeRule.onNodeWithText("Value changes and next week's tests with Pro").performClick()
-            waitForText("Choose Free or Pro")
+            waitForText("All your tanks, their whole story.")
         } finally {
             scenario.close()
         }

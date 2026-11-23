@@ -298,9 +298,9 @@ class TrendsFlowTest {
         composeRule.awaitLabel("Custom period")
         composeRule.onNode(hasLabel("Custom period")).performClick()
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule.onAllNodes(hasText("Choose Free or Pro")).fetchSemanticsNodes().isNotEmpty()
+            composeRule.onAllNodes(hasText("All your tanks, their whole story.")).fetchSemanticsNodes().isNotEmpty()
         }
-        composeRule.onNodeWithText("Choose Free or Pro").assertIsDisplayed()
+        composeRule.onNodeWithText("All your tanks, their whole story.").assertIsDisplayed()
         composeRule.onAllNodesWithText("Show complete history").assertCountEquals(0)
         scenario.close()
     }

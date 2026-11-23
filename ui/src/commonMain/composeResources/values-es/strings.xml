@@ -20,7 +20,6 @@
     <string name="aquarium_details_description">Esto permanece en su dispositivo. No se requiere cuenta ni red.</string>
     <string name="aquarium_name_label">Nombre del acuario</string>
     <string name="aquarium_volume_label">Volumen</string>
-    <string name="volume_unit_label">unidad de volumen</string>
     <string name="unit_liters">Litros</string>
     <string name="unit_us_gallons">galones estadounidenses</string>
     <string name="invalid_aquarium">Introduzca un nombre y un volumen mayor que cero.</string>
@@ -41,38 +40,26 @@
     <string name="enabled_for_parameter">Habilitado para %1$s</string>
     <string name="move_parameter_up">Mover %1$s hacia arriba</string>
     <string name="move_parameter_down">Mover %1$s hacia abajo</string>
-    <string name="move_up_symbol">↑</string>
-    <string name="move_down_symbol">↓</string>
     <string name="parameter_unit">Unidad</string>
-    <string name="unit_for_parameter">Unidad para %1$s</string>
     <string name="parameter_precision">decimales</string>
-    <string name="precision_for_parameter">Precisión para %1$s</string>
     <string name="parameter_minimum">mín. indicativo</string>
-    <string name="minimum_for_parameter">Mínimo indicativo para %1$s</string>
     <string name="parameter_maximum">Máximo indicativo</string>
-    <string name="maximum_for_parameter">Máximo indicativo para %1$s</string>
     <string name="invalid_parameters">Mantenga activo al menos un parámetro. Las unidades, precisión y rangos deben ser válidos.</string>
     <string name="try_mini_session">Prueba una mini sesión</string>
 
     <string name="practice_title">Prueba tu primera sesión</string>
     <string name="practice_description">Ingrese algunos valores de ejemplo para sentir el flujo rápido. Esta práctica nunca se salva.</string>
-    <string name="practice_value_for_parameter">Valor de práctica para %1$s</string>
     <string name="practice_not_saved">Sólo práctica · no se creará ninguna sesión ni medición</string>
     <string name="see_free_and_pro">Ver Gratis y Pro</string>
 
-    <string name="paywall_title">Elige Gratis o Pro</string>
     <string name="paywall_description">Continuar gratis en cualquier momento. Pro comienza solo después de confirmar en Google Play.</string>
     <string name="free_plan">Gratis</string>
     <string name="free_plan_description">Un Acuario, Sesiones y Mediciones ilimitadas, 90 días de historia.</string>
-    <string name="pro_plan">Pro · anual o vitalicio</string>
-    <string name="pro_plan_description">Múltiples acuarios, historial más allá de 90 días y análisis avanzado.</string>
     <string name="continue_for_free">Continuar gratis</string>
     <string name="continue_with_pro">Continuar con Pro</string>
     <string name="loading_google_play_offer">Cargando la oferta localizada de Google Play...</string>
     <string name="pro_offer_summary">%1$s al año después de %2$d días de prueba gratuita. Primer cobro: %3$s.</string>
     <string name="pro_lifetime_offer_summary">%1$s una vez. Acceso de por vida, sin prueba.</string>
-    <string name="buy_lifetime_in_google_play">Comprar Pro de por vida en Google Play</string>
-    <string name="start_trial_in_google_play">Revisar y confirmar en Google Play</string>
     <string name="google_play_offer_unavailable">La oferta localizada de Google Play no está disponible. No se ha iniciado ninguna prueba.</string>
     <string name="restore_purchase">Restaurar compra de Google Play</string>
     <string name="back_to_settings">Volver a configuración</string>
@@ -287,7 +274,6 @@
     <string name="trends_row_show_chart">Mostrar el gráfico</string>
     <string name="trends_row_hide_chart">Ocultar el gráfico</string>
     <string name="trends_series_label">● Serie %1$s</string>
-    <string name="parameter_with_unit">%1$s (%2$s)</string>
     <string name="value_with_unit">%1$s %2$s</string>
     <string name="timeline_marker_line">%1$s · %2$s</string>
     <string name="trends_exact_values">Valores exactos</string>

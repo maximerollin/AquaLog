@@ -30,6 +30,7 @@ import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.input.ImeAction
@@ -203,6 +204,42 @@ class LocalizedAccessibilityFlowTest {
                     continueAction.assertIsDisplayed()
                     assertEssentialActions(continueLabel)
                     captureAndInspect("profile-$language-$mode.png")
+
+                    compose.onNode(hasText(continueLabel) and hasClickAction()).performClick()
+                    val toParameters = localized.getString(Res.string.continue_to_parameters)
+                    awaitText(toParameters)
+                    compose.onNodeWithTag("aquarium-name").performTextInput("Salon")
+                    compose.onNodeWithTag("aquarium-volume").performTextInput("120")
+                    assertEssentialActions(toParameters)
+                    captureAndInspect("aquarium-$language-$mode.png")
+
+                    compose.onNode(hasText(toParameters) and hasClickAction()).performClick()
+                    val toPractice = localized.getString(Res.string.try_mini_session)
+                    awaitText(toPractice)
+                    assertEssentialActions(toPractice)
+                    captureAndInspect("parameters-$language-$mode.png")
+
+                    compose.onNodeWithTag("parameter-row-ph").performScrollTo().performClick()
+                    val done = localized.getString(Res.string.range_sheet_done)
+                    awaitText(done)
+                    compose.onNodeWithTag("range-sheet").assertIsDisplayed()
+                    assertEssentialActions(done)
+                    captureAndInspect("range-sheet-$language-$mode.png")
+                    compose.onNode(hasText(done) and hasClickAction()).performClick()
+                    compose.waitUntil(10_000) { compose.onAllNodesWithTag("range-sheet").fetchSemanticsNodes().isEmpty() }
+
+                    compose.onNode(hasText(toPractice) and hasClickAction()).performClick()
+                    val toOffer = localized.getString(Res.string.see_free_and_pro)
+                    awaitText(toOffer)
+                    compose.onNodeWithTag("practice-ph").performTextInput("7.2")
+                    assertEssentialActions(toOffer)
+                    captureAndInspect("practice-$language-$mode.png")
+
+                    compose.onNode(hasText(toOffer) and hasClickAction()).performClick()
+                    val continueFree = localized.getString(Res.string.continue_for_free)
+                    awaitText(continueFree)
+                    assertEssentialActions(localized.getString(Res.string.paywall_choose_pro), continueFree)
+                    captureAndInspect("offer-$language-$mode.png")
                 }
             }
         }
