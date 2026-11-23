@@ -88,6 +88,14 @@ class TestAquaLogApplication : AquaLogApplication() {
     var clockMillis: Long? = null
     override val currentTimeMillis: () -> Long = { clockMillis ?: System.currentTimeMillis() }
 
+    /** A fixed clock for what the repository records next (an inhabitant's arrival); null follows the system time. */
+    var repositoryClockMillis: Long? = null
+
+    /** The Google Play prices and first billing date the fake offers show, as Play would format them. */
+    var annualPrice = "€14.99"
+    var lifetimePrice = "€34.99"
+    var annualBillingDateMillis = 1_792_528_000_000L
+
     override val aquariumRepository: AquariumRepository
         get() = requireNotNull(repository) { "resetRepository() must run before launching MainActivity" }
 
@@ -96,15 +104,15 @@ class TestAquaLogApplication : AquaLogApplication() {
             override val purchaseUpdates: Flow<PlayPurchaseUpdate> = emptyFlow()
             override suspend fun loadAnnualOffer() = AnnualProOffer(
                 productId = ANNUAL_PRO_PRODUCT_ID,
-                formattedPrice = "€14.99",
+                formattedPrice = annualPrice,
                 trialDays = 14,
-                billingDateEpochMillis = 1_792_528_000_000L,
+                billingDateEpochMillis = annualBillingDateMillis,
             )
             override suspend fun launchAnnualPurchase(obfuscatedAccountId: String) = BillingLaunchResult.Started
             override suspend fun restoreAnnualPurchase(): PlayPurchaseUpdate? = null
             override suspend fun loadLifetimeOffer() = LifetimeProOffer(
                 productId = LIFETIME_PRO_PRODUCT_ID,
-                formattedPrice = "€34.99",
+                formattedPrice = lifetimePrice,
             )
             override suspend fun launchLifetimePurchase(obfuscatedAccountId: String) = BillingLaunchResult.Started
             override suspend fun restoreLifetimePurchase(): PlayPurchaseUpdate? = null
@@ -151,13 +159,17 @@ class TestAquaLogApplication : AquaLogApplication() {
         val newRepository = RoomAquariumRepository(
             database = newDatabase,
             generateId = { UUID.randomUUID().toString() },
-            currentTimeMillis = System::currentTimeMillis,
+            currentTimeMillis = { repositoryClockMillis ?: System.currentTimeMillis() },
             photoStore = aquariumPhotoStore,
         )
         bindRepository(newRepository, newDatabase)
         deletionResult = CloudAccountDeletionResult.Completed
         recordingTaskReminderScheduler.reset()
         clockMillis = null
+        repositoryClockMillis = null
+        annualPrice = "€14.99"
+        lifetimePrice = "€34.99"
+        annualBillingDateMillis = 1_792_528_000_000L
         analyticsPayloads.clear()
         recordedFeedback.clear()
         verifiedProEntitlement = null
