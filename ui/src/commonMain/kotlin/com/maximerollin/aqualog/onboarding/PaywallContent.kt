@@ -127,9 +127,10 @@ fun PaywallContent(
 ) {
     val listState = rememberLazyListState()
     val formatter = currentLocalizedFormatters()
-    val plans = availablePlans(pro)
+    // While the offer reloads the content shows only the spinner: no plan can be chosen.
+    val plans = if (pro.isLoadingOffer) emptyList() else availablePlans(pro)
     var stored by rememberSaveable { mutableStateOf(initialPlan(pro)?.name) }
-    val selected = plans.firstOrNull { it.name == stored } ?: initialPlan(pro)
+    val selected = plans.firstOrNull { it.name == stored } ?: plans.firstOrNull()
     val continueLabel = stringResource(
         when {
             !onboarding -> Res.string.back_to_settings
@@ -148,6 +149,7 @@ fun PaywallContent(
         },
         modifier = modifier,
         primaryEnabled = if (selected != null) !pro.purchaseBusy() else !isSaving,
+        primaryBusy = selected == null && isSaving,
         primaryTag = if (selected != null) "choose-pro" else "onboarding-primary",
         secondary = if (selected == null) null else {
             {

@@ -8,7 +8,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasProgressBarRangeInfo
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
@@ -68,12 +72,12 @@ class PaywallSemanticsTest {
         try { block() } finally { Locale.setDefault(previous) }
     }
 
-    private fun ComposeUiTest.paywall(pro: ProUiState, onboarding: Boolean = true, fontScale: Float = 1f, height: Int = 800) {
+    private fun ComposeUiTest.paywall(pro: ProUiState, onboarding: Boolean = true, fontScale: Float = 1f, height: Int = 800, isSaving: Boolean = false) {
         setContent {
             AquaLogTheme(false) {
                 CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                     Box(Modifier.requiredSize(360.dp, height.dp)) {
-                        PaywallContent(pro, isSaving = false, onboarding = onboarding, aquarium = aquarium, actions = actions)
+                        PaywallContent(pro, isSaving = isSaving, onboarding = onboarding, aquarium = aquarium, actions = actions)
                     }
                 }
             }
@@ -137,6 +141,29 @@ class PaywallSemanticsTest {
             onNodeWithTag("plan-annual").assertDoesNotExist()
             onNodeWithTag("choose-pro").assertDoesNotExist()
             onNodeWithText(text { getString(Res.string.continue_for_free) }).assertExists()
+        }
+    }
+
+    @Test
+    fun `reloading the offer hides choose pro`() = french {
+        runComposeUiTest {
+            paywall(both.copy(isLoadingOffer = true))
+            onNodeWithTag("choose-pro").assertDoesNotExist()
+            onNodeWithTag("plan-annual").assertDoesNotExist()
+            onNodeWithText(text { getString(Res.string.loading_google_play_offer) }).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun `no offer while saving shows a spinner in the disabled primary`() = french {
+        runComposeUiTest {
+            paywall(ProUiState(), isSaving = true)
+            onNodeWithTag("onboarding-primary").assertIsNotEnabled()
+            onNode(
+                hasAnyAncestor(hasTestTag("onboarding-primary")) and hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate),
+                useUnmergedTree = true,
+            ).assertExists()
+            onNodeWithText(text { getString(Res.string.continue_for_free) }).assertDoesNotExist()
         }
     }
 

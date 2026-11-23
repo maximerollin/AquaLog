@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -187,6 +188,7 @@ fun OnboardingScaffold(
     primaryEnabled: Boolean = true,
     secondary: (@Composable () -> Unit)? = null,
     primaryTag: String = "onboarding-primary",
+    primaryBusy: Boolean = false,
     content: LazyListScope.() -> Unit,
 ) {
     Column(modifier.fillMaxSize()) {
@@ -203,7 +205,9 @@ fun OnboardingScaffold(
                 onClick = onPrimary,
                 enabled = primaryEnabled,
                 modifier = Modifier.fillMaxWidth().height(56.dp).testTag(primaryTag),
-            ) { Text(primaryLabel) }
+            ) {
+                if (primaryBusy) CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp) else Text(primaryLabel)
+            }
             secondary?.invoke()
         }
     }
