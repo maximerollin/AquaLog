@@ -21,7 +21,7 @@
     <string name="aquarium_name_label">Nome dell'acquario</string>
     <string name="aquarium_volume_label">Volume</string>
     <string name="unit_liters">Litri</string>
-    <string name="unit_us_gallons">galloni americani</string>
+    <string name="unit_us_gallons">Galloni americani</string>
     <string name="invalid_aquarium">Immettere un nome e un volume maggiore di zero.</string>
     <string name="continue_to_parameters">Continua con i parametri</string>
 
@@ -212,7 +212,7 @@
     <string name="account_sign_out_failed">Non è stato possibile completare la disconnessione. I dati locali non sono stati modificati.</string>
     <string name="account_deletion_resume_failed">Non è stato possibile riprendere l’eliminazione dell’account. I dati locali non sono stati modificati.</string>
     <string name="authentication_link_processing_failed">Non è stato possibile elaborare in sicurezza il link di autenticazione. Riprova.</string>
-    <string name="sign_out">disconnessione</string>
+    <string name="sign_out">Esci</string>
     <string name="sign_out_copy_choice">Scegli cosa succede alla copia locale di questo dispositivo. Mantenerlo disconnette la proprietà del cloud e i caricamenti in sospeso. Rimuovendolo si cancellano i dati locali dell'Acquario.</string>
     <string name="keep_local_copy">Conserva la copia locale</string>
     <string name="remove_local_copy">Rimuovi la copia locale</string>
@@ -289,7 +289,7 @@
     <string name="date_format_hint">AAAA-MM-GG</string>
     <string name="trends_apply_custom_period">Applica periodo personalizzato</string>
     <string name="trends_invalid_custom_period">Inserisci una data di inizio e di fine ordinate nel formato AAAA-MM-GG.</string>
-    <string name="trends_advanced_analysis">Analisi professionale avanzata</string>
+    <string name="trends_advanced_analysis">Analisi Pro avanzata</string>
     <string name="trends_descriptive_disclaimer">Solo contesto descrittivo. Aquagenda non diagnostica le condizioni dell'acqua né consiglia il trattamento.</string>
     <string name="trends_choose_intervention">Scegli un intervento da confrontare prima e dopo</string>
     <string name="trends_before_after">Prima e dopo l'intervento</string>

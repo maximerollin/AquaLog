@@ -220,7 +220,7 @@ class MoreSemanticsTest {
             row(
                 "Aucun compte cloud n'est lié. Aquagenda reste entièrement utilisable avec les données stockées sur cet appareil.",
             ).assertExists()
-            assertEquals(0, onAllNodesWithText("se déconnecter").fetchSemanticsNodes().size)
+            assertEquals(0, onAllNodesWithText("Se déconnecter").fetchSemanticsNodes().size)
             assertEquals(0, onAllNodesWithText("Supprimer le compte").fetchSemanticsNodes().size)
         }
     }
@@ -247,7 +247,7 @@ class MoreSemanticsTest {
         runComposeUiTest {
             more(free.copy(accountSettings = AccountSettingsUiState(identity = AccountIdentity("u", "marie@example.org"))))
             row("marie@example.org").assertExists()
-            row("se déconnecter").assertIsEnabled()
+            row("Se déconnecter").assertIsEnabled()
             row("Supprimer le compte").assertIsEnabled()
         }
     }
@@ -260,7 +260,7 @@ class MoreSemanticsTest {
             row(
                 "Aucun compte cloud n'est lié. Aquagenda reste entièrement utilisable avec les données stockées sur cet appareil.",
             ).assertExists()
-            assertEquals(0, onAllNodesWithText("se déconnecter").fetchSemanticsNodes().size)
+            assertEquals(0, onAllNodesWithText("Se déconnecter").fetchSemanticsNodes().size)
             assertEquals(0, onAllNodesWithText("Supprimer le compte").fetchSemanticsNodes().size)
         }
     }
@@ -299,7 +299,7 @@ class MoreSemanticsTest {
             onNode(hasText("Nom de l'aquarium") and hasText("Salon") and hasSetTextAction()).assertExists()
             onNode(hasText("Volume") and hasText("120") and hasSetTextAction()).assertExists()
             val radio = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
-            onNode(hasText("gallons américains") and radio).assertIsSelected()
+            onNode(hasText("Gallons américains") and radio).assertIsSelected()
             onNode(hasText("Litres") and radio).assertIsNotSelected().performClick()
             assertEquals(listOf(VolumeUnit.LITERS), units)
         }
