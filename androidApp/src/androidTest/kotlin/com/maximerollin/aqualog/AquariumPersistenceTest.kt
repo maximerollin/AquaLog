@@ -63,7 +63,7 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithTag("parameter-row-ph").performCustomAccessibilityActionWithLabel("Move pH up")
         composeRule.onNodeWithText("Try a mini Session").performClick()
 
-        composeRule.onNodeWithContentDescription("Practice value for pH")
+        composeRule.onNodeWithTag("practice-ph")
             .performTextInput("6.8")
         composeRule.onNodeWithText("See Free and Pro").performClick()
         composeRule.onNodeWithText("Free").assertIsDisplayed()

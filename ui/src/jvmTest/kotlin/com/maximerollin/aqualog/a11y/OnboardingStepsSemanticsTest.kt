@@ -23,7 +23,15 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.PortableDataUiState
 import com.maximerollin.aqualog.onboarding.AquariumStepContent
+import com.maximerollin.aqualog.ParameterEditorState
 import com.maximerollin.aqualog.onboarding.OnboardingActions
+import com.maximerollin.aqualog.onboarding.PracticeContent
+import com.maximerollin.aqualog.onboarding.onboardingPreviewAquarium
+import com.maximerollin.aqualog.resources.practice_not_saved
+import com.maximerollin.aqualog.resources.see_free_and_pro
+import com.maximerollin.aqualog.resources.session_tile_above
+import com.maximerollin.aqualog.shared.BuiltInParameter
+import androidx.compose.ui.test.performTextInput
 import com.maximerollin.aqualog.onboarding.ProfileContent
 import com.maximerollin.aqualog.onboarding.WelcomeContent
 import com.maximerollin.aqualog.resources.Res
@@ -57,6 +65,8 @@ class OnboardingStepsSemanticsTest {
         selectProfile = { calls += "selectProfile($it)" },
         continueToAquarium = { calls += "continueToAquarium" },
         selectVolumeUnit = { calls += "selectVolumeUnit($it)" },
+        updatePracticeValue = { p, v -> calls += "updatePracticeValue($p, $v)" },
+        continueToPaywall = { calls += "continueToPaywall" },
     )
 
     private fun inLocale(locale: Locale, block: () -> Unit) {
@@ -255,6 +265,85 @@ class OnboardingStepsSemanticsTest {
             showAquarium(name = "Mein grosses Gesellschaftsbecken im Wohnzimmer", fontScale = 1.5f)
             headerNode().assertIsDisplayed()
             onNodeWithTag("onboarding-primary").assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun `aquarium live header is a heading`() = french {
+        runComposeUiTest {
+            showAquarium()
+            assertTrue(headerNode().fetchSemanticsNode().config.contains(SemanticsProperties.Heading))
+        }
+    }
+
+    private val editors = listOf(
+        ParameterEditorState(BuiltInParameter.TEMPERATURE, false, "°C", "1", "24", "26"),
+        ParameterEditorState(BuiltInParameter.PH, true, "pH", "1", "6,5", "7,5"),
+        ParameterEditorState(BuiltInParameter.AMMONIA, true, "mg/L", "2", "", "0,05"),
+        ParameterEditorState(BuiltInParameter.NITRITE, true, "mg/L", "2", "", "0,1"),
+        ParameterEditorState(BuiltInParameter.NITRATE, true, "mg/L", "0", "", "40"),
+    )
+
+    private fun androidx.compose.ui.test.ComposeUiTest.showPractice(values: Map<BuiltInParameter, String> = emptyMap()) {
+        setContent {
+            AquaLogTheme(false) {
+                Box(Modifier.size(360.dp, 760.dp)) {
+                    PracticeContent(
+                        editors, values,
+                        onboardingPreviewAquarium("Salon", "120", VolumeUnit.LITERS, AquariumProfile.ESTABLISHED),
+                        actions,
+                    )
+                }
+            }
+        }
+        waitForIdle()
+    }
+
+    @Test
+    fun `practice shows three tiles of active parameters`() = french {
+        runComposeUiTest {
+            showPractice()
+            for (p in listOf(BuiltInParameter.PH, BuiltInParameter.AMMONIA, BuiltInParameter.NITRITE)) {
+                onNodeWithTag("practice-${p.storageValue}").assertExists()
+            }
+            onNodeWithTag("practice-${BuiltInParameter.TEMPERATURE.storageValue}").assertDoesNotExist()
+            onNodeWithTag("practice-${BuiltInParameter.NITRATE.storageValue}").assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun `practice says training only`() = french {
+        runComposeUiTest {
+            showPractice()
+            onNodeWithText(str { getString(Res.string.practice_not_saved) }).assertIsDisplayed()
+        }
+    }
+
+    @Test
+    fun `typing in a tile calls updatePracticeValue`() = french {
+        runComposeUiTest {
+            showPractice()
+            onNodeWithTag("practice-ph").performTextInput("7,2")
+            assertTrue("updatePracticeValue(PH, 7,2)" in calls, calls.toString())
+        }
+    }
+
+    @Test
+    fun `tile shows its range state`() = french {
+        runComposeUiTest {
+            showPractice(mapOf(BuiltInParameter.PH to "7,8"))
+            val state = onNodeWithTag("practice-ph").fetchSemanticsNode().config.getOrNull(SemanticsProperties.StateDescription)
+            val above = str { getString(Res.string.session_tile_above) }
+            assertTrue(state != null && state.startsWith(above), state.toString())
+        }
+    }
+
+    @Test
+    fun `practice primary goes to the offer`() = french {
+        runComposeUiTest {
+            showPractice()
+            onNodeWithText(str { getString(Res.string.see_free_and_pro) }).performClick()
+            assertTrue("continueToPaywall" in calls, calls.toString())
         }
     }
 }

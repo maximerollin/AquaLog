@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -69,7 +68,9 @@ import com.maximerollin.aqualog.home.plusEnabled
 import com.maximerollin.aqualog.onboarding.AquariumStepContent
 import com.maximerollin.aqualog.onboarding.ParametersContent
 import com.maximerollin.aqualog.onboarding.ProfileContent
+import com.maximerollin.aqualog.onboarding.PracticeContent
 import com.maximerollin.aqualog.onboarding.WelcomeContent
+import com.maximerollin.aqualog.onboarding.onboardingPreviewAquarium
 import com.maximerollin.aqualog.onboarding.onboardingActions
 import com.maximerollin.aqualog.resources.*
 import com.maximerollin.aqualog.shared.AccountDeletionPhase
@@ -178,11 +179,12 @@ fun AquaLogContent(
             onboardingActions,
             framed,
         )
-        state.step == OnboardingStep.PRACTICE -> PracticeScreen(
-            state = state,
-            onValueChanged = viewModel::updatePracticeValue,
-            onContinue = viewModel::continueToPaywall,
-            modifier = inset,
+        state.step == OnboardingStep.PRACTICE -> PracticeContent(
+            state.parameters,
+            state.practiceValues,
+            onboardingPreviewAquarium(state.aquariumName, state.volumeInput, state.volumeUnit, state.profile),
+            onboardingActions,
+            framed,
         )
         else -> PaywallScreen(
             pro = state.pro,
@@ -492,40 +494,6 @@ private fun PortableImportConfirmation(
 }
 
 @Composable
-private fun PracticeScreen(
-    state: HomeUiState,
-    onValueChanged: (BuiltInParameter, String) -> Unit,
-    onContinue: () -> Unit,
-    modifier: Modifier,
-) {
-    val activeParameters = state.parameters.filter(ParameterEditorState::isActive).take(3)
-    StandardScreen(modifier) {
-        ScreenHeading(Res.string.practice_title, Res.string.practice_description)
-        activeParameters.forEach { parameter ->
-            val label = parameter.parameter.label()
-            val practiceDescription = stringResource(Res.string.practice_value_for_parameter, label)
-            OutlinedTextField(
-                value = state.practiceValues[parameter.parameter].orEmpty(),
-                onValueChange = { onValueChanged(parameter.parameter, it) },
-                label = { Text(stringResource(Res.string.parameter_with_unit, label, parameter.unit)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics { contentDescription = practiceDescription },
-            )
-        }
-        Text(
-            stringResource(Res.string.practice_not_saved),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Spacer(Modifier.weight(1f))
-        PrimaryButton(Res.string.see_free_and_pro, onContinue)
-    }
-}
-
-@Composable
 private fun PaywallScreen(
     pro: ProUiState,
     isSaving: Boolean,
@@ -789,31 +757,8 @@ private fun PlanCard(title: StringResource, description: StringResource) {
 }
 
 @Composable
-private fun StandardScreen(
-    modifier: Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        content = content,
-    )
-}
-
-@Composable
 private fun ScreenHeading(title: StringResource, description: StringResource) {
     CarnetScreenTitle(stringResource(title), stringResource(description))
-}
-
-@Composable
-private fun PrimaryButton(label: StringResource, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-    ) {
-        Text(stringResource(label))
-    }
 }
 
 @Composable

@@ -10,37 +10,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextOverflow
-import com.maximerollin.aqualog.formattedVolume
-import com.maximerollin.aqualog.home.HeroText
-import com.maximerollin.aqualog.shared.VolumeUnit
-import com.maximerollin.aqualog.ui.icon.Lock
-import com.maximerollin.aqualog.ui.theme.FilledField
-import com.maximerollin.aqualog.ui.theme.PeriodSegmented
-import com.maximerollin.aqualog.resources.aquarium_details_description
-import com.maximerollin.aqualog.resources.aquarium_details_title
-import com.maximerollin.aqualog.resources.aquarium_name_label
-import com.maximerollin.aqualog.resources.aquarium_volume_label
-import com.maximerollin.aqualog.resources.continue_to_parameters
-import com.maximerollin.aqualog.resources.invalid_aquarium
-import com.maximerollin.aqualog.resources.unit_liters
-import com.maximerollin.aqualog.resources.unit_us_gallons
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -52,25 +32,49 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maximerollin.aqualog.HomeViewModel
+import com.maximerollin.aqualog.MeasureTile
+import com.maximerollin.aqualog.MeasureTileRow
+import com.maximerollin.aqualog.ParameterEditorState
 import com.maximerollin.aqualog.PortableDataMessage
 import com.maximerollin.aqualog.PortableDataUiState
 import com.maximerollin.aqualog.StatusBarOverWater
+import com.maximerollin.aqualog.currentLocalizedFormatters
+import com.maximerollin.aqualog.formattedVolume
+import com.maximerollin.aqualog.home.HeroText
 import com.maximerollin.aqualog.home.TankScene
 import com.maximerollin.aqualog.rememberReducedMotion
 import com.maximerollin.aqualog.resources.Res
 import com.maximerollin.aqualog.resources.app_name
+import com.maximerollin.aqualog.resources.aquarium_details_description
+import com.maximerollin.aqualog.resources.aquarium_details_title
+import com.maximerollin.aqualog.resources.aquarium_name_label
+import com.maximerollin.aqualog.resources.aquarium_volume_label
 import com.maximerollin.aqualog.resources.continue_to_aquarium
+import com.maximerollin.aqualog.resources.continue_to_parameters
 import com.maximerollin.aqualog.resources.get_started
+import com.maximerollin.aqualog.resources.invalid_aquarium
+import com.maximerollin.aqualog.resources.practice_description
+import com.maximerollin.aqualog.resources.practice_not_saved
+import com.maximerollin.aqualog.resources.practice_title
 import com.maximerollin.aqualog.resources.profile_cycling
 import com.maximerollin.aqualog.resources.profile_cycling_description
 import com.maximerollin.aqualog.resources.profile_description
@@ -80,15 +84,25 @@ import com.maximerollin.aqualog.resources.profile_planted_shrimp
 import com.maximerollin.aqualog.resources.profile_planted_shrimp_description
 import com.maximerollin.aqualog.resources.profile_title
 import com.maximerollin.aqualog.resources.restore_from_export
+import com.maximerollin.aqualog.resources.see_free_and_pro
+import com.maximerollin.aqualog.resources.unit_liters
+import com.maximerollin.aqualog.resources.unit_us_gallons
 import com.maximerollin.aqualog.resources.welcome_description
 import com.maximerollin.aqualog.resources.welcome_title
+import com.maximerollin.aqualog.sessionColumns
+import com.maximerollin.aqualog.sessionImeAction
+import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.BuiltInParameter
+import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.ui.icon.AquagendaIcons
 import com.maximerollin.aqualog.ui.icon.Fish
 import com.maximerollin.aqualog.ui.icon.FlaskConical
 import com.maximerollin.aqualog.ui.icon.Leaf
+import com.maximerollin.aqualog.ui.icon.Lock
+import com.maximerollin.aqualog.ui.theme.FilledField
 import com.maximerollin.aqualog.ui.theme.PaperSheetTop
+import com.maximerollin.aqualog.ui.theme.PeriodSegmented
 import com.maximerollin.aqualog.ui.theme.WaterPrimaryButtonText
 import com.maximerollin.aqualog.ui.theme.frauncesFamily
 import com.maximerollin.aqualog.ui.theme.fullScreenBacking
@@ -278,6 +292,7 @@ fun AquariumStepContent(
                 // One polite live node: a screen reader hears the change, not the name again on every key.
                 Column(
                     Modifier.testTag("onboarding-aquarium-live").semantics(mergeDescendants = true) {
+                        heading()
                         liveRegion = LiveRegionMode.Polite
                     },
                 ) {
@@ -356,6 +371,90 @@ fun AquariumStepContent(
                 }
                 if (errorMessage != null) {
                     Text(errorMessage, fontSize = 13.sp, color = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
+    }
+}
+
+/** Step 4: the Session's tiles on three active Parameters, marked as training: nothing typed here is saved. */
+@Composable
+fun PracticeContent(
+    parameters: List<ParameterEditorState>,
+    values: Map<BuiltInParameter, String>,
+    aquarium: Aquarium,
+    actions: OnboardingActions,
+    modifier: Modifier = Modifier,
+) {
+    val listState = rememberLazyListState()
+    val formatter = currentLocalizedFormatters()
+    val focusManager = LocalFocusManager.current
+    val definitions = parameters.withIndex()
+        .filter { it.value.isActive }
+        .mapNotNull { (index, editor) -> editor.toPreviewDefinition(index) }
+        .take(3)
+    OnboardingScaffold(
+        listState = listState,
+        primaryLabel = stringResource(Res.string.see_free_and_pro),
+        onPrimary = actions.continueToPaywall,
+        modifier = modifier,
+    ) {
+        item {
+            OnboardingHeader(
+                aquarium = aquarium,
+                minHeight = 170.dp,
+                animate = false,
+                modifier = Modifier.overlapNext(30.dp),
+                step = 4,
+            ) {
+                OnboardingTitle(stringResource(Res.string.practice_title), aquarium.name)
+            }
+        }
+        item { PaperSheetTop() }
+        item {
+            Column(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    stringResource(Res.string.practice_description),
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    stringResource(Res.string.practice_not_saved),
+                    modifier = Modifier.fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(14.dp))
+                        .padding(12.dp),
+                    style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val columns = sessionColumns(LocalDensity.current.fontScale, maxWidth)
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        definitions.chunked(columns).forEachIndexed { rowIndex, row ->
+                            MeasureTileRow(
+                                tiles = row.mapIndexed { column, definition ->
+                                    val index = rowIndex * columns + column
+                                    val tile: @Composable (Modifier) -> Unit = { tileModifier ->
+                                        MeasureTile(
+                                            definition = definition,
+                                            input = values[definition.parameter].orEmpty(),
+                                            profile = aquarium.profile,
+                                            formatter = formatter,
+                                            imeAction = sessionImeAction(index, definitions.lastIndex),
+                                            onValueChange = { actions.updatePracticeValue(definition.parameter, it) },
+                                            onNext = { focusManager.moveFocus(FocusDirection.Next) },
+                                            onDone = { focusManager.clearFocus() },
+                                            modifier = tileModifier.testTag("practice-${definition.parameter.storageValue}"),
+                                        )
+                                    }
+                                    tile
+                                },
+                                columns = columns,
+                            )
+                        }
+                    }
                 }
             }
         }
