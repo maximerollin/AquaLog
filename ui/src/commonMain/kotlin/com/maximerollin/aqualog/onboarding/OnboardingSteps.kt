@@ -31,6 +31,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
@@ -172,7 +174,7 @@ fun WelcomeContent(portableData: PortableDataUiState, actions: OnboardingActions
                 ) {
                     Text(
                         stringResource(Res.string.app_name).uppercase(),
-                        style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.78.sp),
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.78.sp),
                         color = Color.White,
                     )
                     Text(
@@ -189,7 +191,11 @@ fun WelcomeContent(portableData: PortableDataUiState, actions: OnboardingActions
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
                         color = Color.White,
                     )
-                    PortableDataMessage(portableData)
+                    PortableDataMessage(
+                        portableData,
+                        modifier = Modifier.padding(top = 10.dp),
+                        colorOverride = Color.White,
+                    )
                     WelcomeDots(Modifier.padding(top = 22.dp, bottom = 18.dp))
                     Button(
                         onClick = actions.startOnboarding,
@@ -204,7 +210,13 @@ fun WelcomeContent(portableData: PortableDataUiState, actions: OnboardingActions
                             disabledContentColor = Color.White.copy(alpha = .6f),
                         ),
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    ) { Text(stringResource(Res.string.restore_from_export), fontWeight = FontWeight.SemiBold) }
+                    ) {
+                        Text(
+                            stringResource(Res.string.restore_from_export),
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
         }
@@ -426,7 +438,7 @@ fun PracticeContent(
                     modifier = Modifier.fillMaxWidth()
                         .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(14.dp))
                         .padding(12.dp),
-                    style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
                 BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -473,6 +485,7 @@ private fun ProfileCard(title: String, description: String, icon: ImageVector, s
                     .background(colors.surface, shape).border(BorderStroke(2.dp, colors.primary), shape)
                 else Modifier.border(BorderStroke(1.dp, colors.outlineVariant), shape),
             )
+            .clip(shape)
             .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
             .padding(14.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),

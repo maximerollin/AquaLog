@@ -60,6 +60,8 @@ import com.maximerollin.aqualog.ui.icon.Plus
 import com.maximerollin.aqualog.ui.theme.FilledField
 import com.maximerollin.aqualog.ui.theme.dmSansFamily
 import com.maximerollin.aqualog.ui.theme.frauncesFamily
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
 import org.jetbrains.compose.resources.stringResource
@@ -71,7 +73,10 @@ import org.jetbrains.compose.resources.stringResource
 fun stepRangeInput(input: String, precision: Int, direction: Int, decimalSeparator: Char): String? {
     val current = if (input.isBlank()) BigDecimal.ZERO else input.trim().replace(',', '.').toBigDecimalOrNull() ?: return null
     val step = BigDecimal.ONE.movePointLeft(precision).multiply(BigDecimal(direction))
-    return current.add(step).max(BigDecimal.ZERO).setScale(precision, RoundingMode.HALF_UP)
+    // An input finer than the precision first snaps to the grid in the direction of the step: 6,5 gives 7 or 6 at 0 decimals.
+    val snapped = current.setScale(precision, if (direction > 0) RoundingMode.CEILING else RoundingMode.FLOOR)
+    val next = if (snapped.compareTo(current) == 0) current.add(step) else snapped
+    return next.max(BigDecimal.ZERO).setScale(precision, RoundingMode.HALF_UP)
         .toPlainString().replace('.', decimalSeparator)
 }
 
@@ -91,9 +96,15 @@ fun RangeSheet(state: ParameterEditorState, actions: OnboardingActions, onDismis
     // The steppers move by the typed decimals; an invalid value steps by tenths until it is fixed.
     val precision = state.precision.trim().toIntOrNull()?.coerceIn(0, 3) ?: 1
     val enabledDescription = stringResource(Res.string.enabled_for_parameter, label)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    // Hide with the sheet's own animation first; the caller drops it once it is gone.
+    val hideThenDismiss: () -> Unit = {
+        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+    }
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        onDismissRequest = hideThenDismiss,
+        sheetState = sheetState,
         modifier = Modifier.testTag("range-sheet"),
     ) {
         Column(
@@ -154,7 +165,7 @@ fun RangeSheet(state: ParameterEditorState, actions: OnboardingActions, onDismis
             if (state.toDraft(0) == null) {
                 Text(stringResource(Res.string.range_sheet_invalid), fontSize = 13.sp, color = colors.error)
             }
-            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+            Button(onClick = hideThenDismiss, modifier = Modifier.fillMaxWidth().height(56.dp)) {
                 Text(stringResource(Res.string.range_sheet_done))
             }
         }

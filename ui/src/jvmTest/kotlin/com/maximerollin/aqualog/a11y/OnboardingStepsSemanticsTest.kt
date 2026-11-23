@@ -22,6 +22,8 @@ import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import com.maximerollin.aqualog.PortableDataUiState
+import com.maximerollin.aqualog.shared.PortableImportProblem
+import com.maximerollin.aqualog.resources.portable_problem_invalid_document
 import com.maximerollin.aqualog.onboarding.AquariumStepContent
 import com.maximerollin.aqualog.ParameterEditorState
 import com.maximerollin.aqualog.onboarding.OnboardingActions
@@ -101,6 +103,21 @@ class OnboardingStepsSemanticsTest {
             }
             waitForIdle()
             onNodeWithText(str { getString(Res.string.restore_from_export) }).assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun `welcome shows an import problem`() = french {
+        runComposeUiTest {
+            setContent {
+                AquaLogTheme(false) {
+                    Box(Modifier.size(360.dp, 760.dp)) {
+                        WelcomeContent(PortableDataUiState(importProblem = PortableImportProblem.INVALID_DOCUMENT), actions)
+                    }
+                }
+            }
+            waitForIdle()
+            onNodeWithText(str { getString(Res.string.portable_problem_invalid_document) }).assertIsDisplayed()
         }
     }
 

@@ -17,6 +17,7 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -190,6 +191,25 @@ class PaywallSemanticsTest {
         runComposeUiTest {
             paywall(both.copy(purchaseStatus = ProPurchaseStatus.ACTIVE))
             onNodeWithText(text { getString(Res.string.continue_with_pro) }).assertExists()
+        }
+    }
+
+    @Test
+    fun `active onboarding makes continue the primary and drops choose pro`() = french {
+        runComposeUiTest {
+            paywall(both.copy(purchaseStatus = ProPurchaseStatus.ACTIVE))
+            onNodeWithTag("choose-pro").assertDoesNotExist()
+            onNodeWithTag("onboarding-primary").assertTextContains(text { getString(Res.string.continue_with_pro) }).assertIsEnabled()
+            onNodeWithTag("plan-annual").assertExists()
+        }
+    }
+
+    @Test
+    fun `active from More gives back to settings as the primary`() = french {
+        runComposeUiTest {
+            paywall(both.copy(purchaseStatus = ProPurchaseStatus.ACTIVE), onboarding = false)
+            onNodeWithTag("choose-pro").assertDoesNotExist()
+            onNodeWithTag("onboarding-primary").assertTextContains(text { getString(Res.string.back_to_settings) })
         }
     }
 

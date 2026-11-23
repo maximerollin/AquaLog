@@ -13,6 +13,12 @@ class RangeStepTest {
     }
 
     @Test
+    fun `input is rounded to the precision before stepping`() {
+        assertEquals("7", stepRangeInput("6,5", 0, 1, ','))
+        assertEquals("6", stepRangeInput("6,5", 0, -1, ','))
+    }
+
+    @Test
     fun `minus clamps at zero`() {
         assertEquals("0,0", stepRangeInput("0", 1, -1, ','))
         assertEquals("0,0", stepRangeInput("0,05", 1, -1, ','))

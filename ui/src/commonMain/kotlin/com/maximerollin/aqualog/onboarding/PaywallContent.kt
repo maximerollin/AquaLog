@@ -33,6 +33,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.maximerollin.aqualog.ui.theme.dmSansFamily
+import androidx.compose.runtime.remember
+import androidx.compose.material3.ripple
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.indication
+import androidx.compose.foundation.border
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -139,19 +146,21 @@ fun PaywallContent(
         },
     )
     val continueAction = actions.onContinue
+    // Once Pro is active there is nothing left to choose: Continue becomes the primary.
+    val choosing = selected.takeIf { pro.purchaseStatus != ProPurchaseStatus.ACTIVE }
     OnboardingScaffold(
         listState = listState,
-        primaryLabel = if (selected != null) stringResource(Res.string.paywall_choose_pro) else continueLabel,
-        onPrimary = when (selected) {
+        primaryLabel = if (choosing != null) stringResource(Res.string.paywall_choose_pro) else continueLabel,
+        onPrimary = when (choosing) {
             ProPlan.ANNUAL -> actions.onStartAnnual
             ProPlan.LIFETIME -> actions.onStartLifetime
             null -> continueAction
         },
         modifier = modifier,
-        primaryEnabled = if (selected != null) !pro.purchaseBusy() else !isSaving,
-        primaryBusy = selected == null && isSaving,
-        primaryTag = if (selected != null) "choose-pro" else "onboarding-primary",
-        secondary = if (selected == null) null else {
+        primaryEnabled = if (choosing != null) !pro.purchaseBusy() else !isSaving,
+        primaryBusy = choosing == null && isSaving,
+        primaryTag = if (choosing != null) "choose-pro" else "onboarding-primary",
+        secondary = if (choosing == null) null else {
             {
                 TextButton(
                     onClick = continueAction,
@@ -173,7 +182,7 @@ fun PaywallContent(
             ) {
                 Text(
                     stringResource(Res.string.paywall_pro_overline).uppercase(),
-                    style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp),
+                    style = MaterialTheme.typography.labelLarge.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp),
                     color = HeroText,
                 )
                 Text(
@@ -187,7 +196,7 @@ fun PaywallContent(
                 Text(
                     stringResource(Res.string.paywall_description),
                     modifier = Modifier.padding(top = 6.dp),
-                    style = TextStyle(fontSize = 13.sp),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
                     color = HeroText,
                 )
             }
@@ -277,7 +286,7 @@ fun PaywallContent(
                                     pro.lifetimeOffer!!.formattedPrice,
                                 )
                             },
-                            style = TextStyle(fontSize = 12.5.sp),
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.5.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -330,26 +339,38 @@ private fun PlanCard(
 ) {
     val shape = RoundedCornerShape(20.dp)
     val colors = MaterialTheme.colorScheme
+    val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .selectable(
+                selected = selected, role = Role.RadioButton, onClick = onClick,
+                interactionSource = interaction, indication = null,
+            )
             .testTag(tag),
     ) {
         Surface(
-            modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(top = 11.dp),
+            modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(top = 11.dp)
+                .clip(shape).indication(interaction, ripple()),
             shape = shape,
             color = colors.surface,
             border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) colors.primary else colors.outlineVariant),
         ) {
             Column(Modifier.padding(horizontal = 12.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(title, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold), modifier = Modifier.padding(end = 24.dp))
-                Text(price, style = TextStyle(fontSize = 19.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"))
-                Text(terms, style = TextStyle(fontSize = 12.sp), color = colors.onSurfaceVariant)
+                Text(title, style = MaterialTheme.typography.titleSmall.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold), modifier = Modifier.padding(end = 24.dp))
+                Text(
+                    price,
+                    style = TextStyle(
+                        fontFamily = dmSansFamily(), fontSize = 19.sp, fontWeight = FontWeight.SemiBold,
+                        fontFeatureSettings = "tnum",
+                    ),
+                )
+                Text(terms, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), color = colors.onSurfaceVariant)
             }
         }
         Box(
             Modifier.align(Alignment.TopEnd).padding(top = 21.dp, end = 10.dp).size(20.dp)
-                .background(if (selected) colors.primary else colors.surface, CircleShape),
+                .background(if (selected) colors.primary else colors.surface, CircleShape)
+                .then(if (selected) Modifier else Modifier.border(1.5.dp, colors.outlineVariant, CircleShape)),
             contentAlignment = Alignment.Center,
         ) {
             if (selected) {
@@ -360,9 +381,9 @@ private fun PlanCard(
             Text(
                 badge.uppercase(),
                 modifier = Modifier.align(Alignment.TopStart).offset(x = 12.dp)
-                    .height(22.dp).background(colors.primary, CircleShape).padding(horizontal = 10.dp)
+                    .heightIn(min = 22.dp).background(colors.primary, CircleShape).padding(horizontal = 10.dp)
                     .wrapContentHeight(Alignment.CenterVertically),
-                style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
                 color = colors.onPrimary,
             )
         }
