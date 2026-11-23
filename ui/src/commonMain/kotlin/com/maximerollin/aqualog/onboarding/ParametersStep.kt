@@ -50,6 +50,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.zIndex
 import com.maximerollin.aqualog.ParameterEditorState
 import com.maximerollin.aqualog.SEPARATOR
@@ -275,6 +276,12 @@ private fun ParameterRow(
             .fillMaxWidth()
             .heightIn(min = 56.dp)
             .testTag("parameter-row-$storageValue")
+            .clip(
+                if (dragging) shape else RoundedCornerShape(
+                    topStart = if (canMoveUp) 0.dp else 22.dp, topEnd = if (canMoveUp) 0.dp else 22.dp,
+                    bottomStart = if (canMoveDown) 0.dp else 22.dp, bottomEnd = if (canMoveDown) 0.dp else 22.dp,
+                ),
+            )
             .clickable(role = Role.Button, onClick = onOpen)
             .semantics {
                 customActions = listOfNotNull(

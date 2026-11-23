@@ -26,7 +26,6 @@
     <string name="continue_to_parameters">Continue to Parameters</string>
 
     <string name="parameters_title">Shape your routine</string>
-    <string name="parameters_description">Enable, reorder and edit every built-in Parameter. Indicative ranges are only personal reference points.</string>
     <string name="parameter_temperature">Temperature</string>
     <string name="parameter_ph">pH</string>
     <string name="parameter_ammonia">Ammonia / ammonium</string>
@@ -54,7 +53,6 @@
 
     <string name="paywall_description">Continue free at any time. Pro starts only after you confirm in Google Play.</string>
     <string name="free_plan">Free</string>
-    <string name="free_plan_description">One Aquarium, unlimited Sessions and Measurements, 90 days of history.</string>
     <string name="continue_for_free">Continue for free</string>
     <string name="continue_with_pro">Continue with Pro</string>
     <string name="loading_google_play_offer">Loading the localized Google Play offer…</string>

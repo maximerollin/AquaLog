@@ -104,6 +104,7 @@ fun OnboardingHeader(
         Column(Modifier.fillMaxWidth().heightIn(min = minHeight)) {
             Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
             if (step != null) OnboardingProgress(step, modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 12.dp))
+            if (step != null) Spacer(Modifier.height(12.dp))
             Spacer(Modifier.weight(1f))
             Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), content = content)
             Spacer(Modifier.height(30.dp + 16.dp))
