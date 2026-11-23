@@ -4,7 +4,7 @@
 
     <string name="welcome_title">Una sesión. Toda tu rutina.</string>
     <string name="welcome_description">Registre varias mediciones de agua, acciones de mantenimiento y una observación juntas, sin crear una cuenta.</string>
-    <string name="get_started">empezar</string>
+    <string name="get_started">Empezar</string>
 
     <string name="profile_title">¿Qué estás rastreando?</string>
     <string name="profile_description">Aquagenda sugerirá un conjunto de parámetros editable. Nada queda fijado.</string>
@@ -32,7 +32,7 @@
     <string name="parameter_nitrite">Nitrito</string>
     <string name="parameter_nitrate">Nitrato</string>
     <string name="parameter_gh">GH</string>
-    <string name="parameter_kh">kh</string>
+    <string name="parameter_kh">KH</string>
     <string name="parameter_tds">TDS</string>
     <string name="parameter_phosphate">Fosfato</string>
     <string name="parameter_salinity">Salinidad</string>
