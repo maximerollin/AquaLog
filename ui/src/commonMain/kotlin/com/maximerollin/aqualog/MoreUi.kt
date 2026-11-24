@@ -86,6 +86,8 @@ fun MoreScreen(
     rateApp: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
+    // Archiving cannot be undone from the app, so it is never a single tap.
+    var confirmArchive by remember { mutableStateOf(false) }
     MoreContent(
         state = state,
         actions = MoreActions(
@@ -93,6 +95,7 @@ fun MoreScreen(
             onSelectAquarium = viewModel::selectAquarium,
             onAddAquarium = viewModel::openCreateAquarium,
             onOpenRhythm = viewModel::openRhythmSettings,
+            onOpenParameters = viewModel::openParameterSettings,
             onOpenTasks = viewModel::openTasks,
             onRemoveInhabitants = viewModel::removeInhabitants,
             onAddInhabitant = viewModel::openAddInhabitant,
@@ -105,21 +108,29 @@ fun MoreScreen(
             onOpenFeedback = { viewModel.openFeedback() },
             rateApp = rateApp,
             onShowAccountDialog = viewModel::showAccountSettingsDialog,
-            onArchive = viewModel::archiveCurrentAquarium,
+            onArchive = { confirmArchive = true },
             loadPhoto = viewModel::aquariumPhoto,
             cachedPhoto = viewModel::cachedAquariumPhoto,
         ),
         modifier = modifier,
     )
     AccountSettingsDialog(state.accountSettings.dialog, viewModel, externalLinks)
-    state.aquariumEditor?.let { editor ->
-        AquariumEditorDialog(
-            editor = editor,
-            onNameChange = viewModel::updateAquariumEditorName,
-            onVolumeChange = viewModel::updateAquariumEditorVolume,
-            onUnitChange = viewModel::updateAquariumEditorUnit,
-            onSave = viewModel::saveAquariumEditor,
-            onDismiss = viewModel::dismissAquariumEditor,
+    if (confirmArchive) {
+        AlertDialog(
+            onDismissRequest = { confirmArchive = false },
+            title = { Text(stringResource(Res.string.archive_aquarium_title)) },
+            text = { Text(stringResource(Res.string.archive_aquarium_description)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmArchive = false
+                        viewModel.archiveCurrentAquarium()
+                    },
+                ) { Text(stringResource(Res.string.archive_aquarium_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmArchive = false }) { Text(stringResource(Res.string.cancel)) }
+            },
         )
     }
 }
@@ -130,6 +141,7 @@ internal class MoreActions(
     val onSelectAquarium: (String) -> Unit = {},
     val onAddAquarium: () -> Unit = {},
     val onOpenRhythm: () -> Unit = {},
+    val onOpenParameters: () -> Unit = {},
     val onOpenTasks: () -> Unit = {},
     val onRemoveInhabitants: (inhabitantId: String, count: Int, onFailed: () -> Unit) -> Unit = { _, _, _ -> },
     val onAddInhabitant: () -> Unit = {},
@@ -215,6 +227,10 @@ internal fun MoreContent(state: HomeUiState, actions: MoreActions, modifier: Mod
                         stringResource(Res.string.habitants_title), AquagendaIcons.Fish,
                         value = inhabitantCount.takeIf { it > 0 }?.let { formatter.number(it.toDouble(), 0) },
                         onClick = { showHabitants = true },
+                    )
+                    SettingsRow(
+                        stringResource(Res.string.measured_parameters_title), AquagendaIcons.FlaskConical,
+                        onClick = actions.onOpenParameters,
                     )
                     SettingsRow(stringResource(Res.string.rhythm_title), AquagendaIcons.Calendar, onClick = actions.onOpenRhythm)
                     SettingsRow(

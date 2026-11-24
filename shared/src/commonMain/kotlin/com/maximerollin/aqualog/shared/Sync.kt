@@ -10,7 +10,9 @@ enum class SyncEntityType(val storageValue: String) {
     MEASUREMENT("measurement"),
     MAINTENANCE_ACTION("maintenance_action"),
     EVENT("event"),
-    INHABITANT("inhabitant");
+    INHABITANT("inhabitant"),
+    TASK("task"),
+    TASK_OCCURRENCE("task_occurrence");
 
     companion object {
         fun fromStorageValue(value: String) = entries.first { it.storageValue == value }
@@ -74,6 +76,8 @@ data class PendingSyncBatch(
     /** Aquariums whose photo is uploaded: only their upserts carry photo_id, so a stale one never wins remotely. */
     val photoAquariumIds: Set<String> = emptySet(),
     val inhabitants: List<Inhabitant> = emptyList(),
+    val tasks: List<AquariumTask> = emptyList(),
+    val taskOccurrences: List<TaskOccurrence> = emptyList(),
 )
 
 data class RemoteEntityVersion(
@@ -126,6 +130,10 @@ data class SyncSession(
 
 interface SyncSessionProvider {
     suspend fun currentSession(): SyncSession?
+    /**
+     * Null when the refresh token is rejected: the user must sign in again. Throws [SyncNetworkException] when the
+     * refresh could not be completed (offline, server error): the stored tokens are still good and must be kept.
+     */
     suspend fun refreshSession(expiredSession: SyncSession): SyncSession? = null
     suspend fun requireReauthentication() = Unit
 }
@@ -232,7 +240,12 @@ class SyncCoordinator(
                     sessionProvider.requireReauthentication()
                     return SyncRunResult.SignedOut
                 }
-                session = sessionProvider.refreshSession(session) ?: run {
+                val renewed = try {
+                    sessionProvider.refreshSession(session)
+                } catch (_: SyncNetworkException) {
+                    return SyncRunResult.Retry(retryPolicy.delayMillis(1))
+                }
+                session = renewed ?: run {
                     sessionProvider.requireReauthentication()
                     return SyncRunResult.SignedOut
                 }

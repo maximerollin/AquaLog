@@ -80,7 +80,7 @@ class MoreSemanticsTest {
     private val pro = free.copy(pro = ProUiState(purchaseStatus = ProPurchaseStatus.ACTIVE))
 
     private fun occurrence(id: String, aquariumId: String) =
-        TaskOccurrence(id, "t-$id", aquariumId, "Changement d'eau", TaskDate(2026, 11, 20), null, "UTC", null, null)
+        TaskOccurrence(id, "t-$id", aquariumId, "Changement d’eau", TaskDate(2026, 11, 20), null, "UTC", null, null)
 
     private fun withLocale(locale: Locale, block: () -> Unit) {
         val previous = Locale.getDefault()
@@ -135,9 +135,9 @@ class MoreSemanticsTest {
     fun `archive is disabled in free with its reason`() = french {
         runComposeUiTest {
             more(free)
-            row("Archiver l'Aquarium").assertIsNotEnabled()
+            row("Archiver l’aquarium").assertIsNotEnabled()
             row(
-                "Free conserve toutes les données existantes et autorise un seul aquarium. Pro débloque des aquariums supplémentaires.",
+                "La version gratuite conserve toutes les données existantes et autorise un seul aquarium. Pro débloque des aquariums supplémentaires.",
             ).assertExists()
         }
     }
@@ -147,7 +147,7 @@ class MoreSemanticsTest {
         runComposeUiTest {
             var archived = 0
             more(pro, MoreActions(onArchive = { archived++ }))
-            row("Archiver l'Aquarium").assertIsEnabled().performClick()
+            row("Archiver l’aquarium").assertIsEnabled().performClick()
             assertEquals(1, archived)
         }
     }
@@ -174,7 +174,7 @@ class MoreSemanticsTest {
             var edited = 0
             more(free, MoreActions(onAddAquarium = { added++ }, onEditAquarium = { edited++ }))
             onNode(hasText("Ajouter un aquarium")).performClick()
-            onNode(hasContentDescription("Modifier l'aquarium")).performClick()
+            onNode(hasContentDescription("Modifier l’aquarium")).performClick()
             assertEquals(1, added)
             assertEquals(1, edited)
         }
@@ -185,7 +185,7 @@ class MoreSemanticsTest {
         runComposeUiTest {
             more(free)
             onNode(hasText("Salon") and SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading)).assertIsDisplayed()
-            onNode(hasText("120 L · Planté / crevette · 16 habitants")).assertIsDisplayed()
+            onNode(hasText("120 L · Planté / crevettes · 16 habitants")).assertIsDisplayed()
         }
     }
 
@@ -214,11 +214,11 @@ class MoreSemanticsTest {
                 MoreActions(onRetryAccountDeletion = { retried++ }),
             )
             row("Suppression du compte incomplète").assertExists()
-            row("Réessayez de supprimer le compte").performClick()
+            row("Réessayer la suppression du compte").performClick()
             assertEquals(1, retried)
             // A pending deletion takes the sign-out and delete rows away: « Actions du compte » shows the local-only line instead.
             row(
-                "Aucun compte cloud n'est lié. Aquagenda reste entièrement utilisable avec les données stockées sur cet appareil.",
+                "Aucun compte cloud n’est lié. Aquagenda reste entièrement utilisable avec les données stockées sur cet appareil.",
             ).assertExists()
             assertEquals(0, onAllNodesWithText("Se déconnecter").fetchSemanticsNodes().size)
             assertEquals(0, onAllNodesWithText("Supprimer le compte").fetchSemanticsNodes().size)
@@ -238,7 +238,7 @@ class MoreSemanticsTest {
                 ),
             )
             row("Continuer avec Google").assertExists()
-            assertEquals(0, onAllNodesWithText("Réessayez de supprimer le compte").fetchSemanticsNodes().size)
+            assertEquals(0, onAllNodesWithText("Réessayer la suppression du compte").fetchSemanticsNodes().size)
         }
     }
 
@@ -258,7 +258,7 @@ class MoreSemanticsTest {
             more(free)
             row("Local uniquement").assertExists()
             row(
-                "Aucun compte cloud n'est lié. Aquagenda reste entièrement utilisable avec les données stockées sur cet appareil.",
+                "Aucun compte cloud n’est lié. Aquagenda reste entièrement utilisable avec les données stockées sur cet appareil.",
             ).assertExists()
             assertEquals(0, onAllNodesWithText("Se déconnecter").fetchSemanticsNodes().size)
             assertEquals(0, onAllNodesWithText("Supprimer le compte").fetchSemanticsNodes().size)
@@ -274,9 +274,9 @@ class MoreSemanticsTest {
                     accountSettings = AccountSettingsUiState(safeDetail = "Réseau indisponible"),
                 ),
             )
-            row("Android n'a pas pu lire ou écrire ce document. Essayez un autre emplacement.").assertExists()
-            row("Exporter des données").assertIsNotEnabled()
-            row("Restaurer depuis l'exportation").assertIsNotEnabled()
+            row("Android n’a pas pu lire ou écrire ce document. Essayez un autre emplacement.").assertExists()
+            row("Exporter les données").assertIsNotEnabled()
+            row("Restaurer depuis un export").assertIsNotEnabled()
             onNodeWithTag("settings-list").performScrollToNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate))
             row("Réseau indisponible").assertExists()
         }
@@ -296,7 +296,7 @@ class MoreSemanticsTest {
             }
             waitForIdle()
             // Each field is named by its label, carried as text on the editable node with its value.
-            onNode(hasText("Nom de l'aquarium") and hasText("Salon") and hasSetTextAction()).assertExists()
+            onNode(hasText("Nom de l’aquarium") and hasText("Salon") and hasSetTextAction()).assertExists()
             onNode(hasText("Volume") and hasText("120") and hasSetTextAction()).assertExists()
             val radio = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton)
             onNode(hasText("Gallons américains") and radio).assertIsSelected()

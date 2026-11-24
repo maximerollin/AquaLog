@@ -61,7 +61,14 @@ fun ProEntitlement?.isActiveAt(nowEpochMillis: Long): Boolean =
 interface ProEntitlementCache {
     fun read(): ProEntitlement?
     fun write(entitlement: ProEntitlement?)
+
+    /** When the server last confirmed what [read] returns; null when it never did. */
+    fun confirmedAtEpochMillis(): Long? = null
+    fun markConfirmed(atEpochMillis: Long) {}
 }
+
+/** How long the app itself trusts the last server answer while the server cannot be reached. */
+const val PRO_OFFLINE_GRACE_MILLIS = 24L * 60 * 60 * 1000
 
 sealed interface PurchaseVerificationResult {
     data class Verified(val entitlement: ProEntitlement) : PurchaseVerificationResult
@@ -90,6 +97,7 @@ class ProPurchaseCoordinator(
     private val billingGateway: ProBillingGateway,
     private val purchaseVerifier: ProPurchaseVerifier,
     private val entitlementCache: ProEntitlementCache? = null,
+    private val currentTimeMillis: () -> Long = System::currentTimeMillis,
 ) {
     val purchaseUpdates: Flow<PlayPurchaseUpdate> get() = billingGateway.purchaseUpdates
 
@@ -108,10 +116,28 @@ class ProPurchaseCoordinator(
 
     suspend fun loadLifetimeOffer(): LifetimeProOffer = billingGateway.loadLifetimeOffer()
 
-    suspend fun refreshEntitlement(): ProPurchaseOutcome = applyVerification(
-        purchaseVerifier.loadEntitlement(),
-        rejectionIsFailure = false,
-    )
+    /**
+     * Pro as the server last answered it, usable before (or without) a network answer, for [PRO_OFFLINE_GRACE_MILLIS]
+     * after that answer: a refund or an expiry the device has not heard of is honoured within a day.
+     */
+    fun restoreCachedEntitlement(): ProEntitlement? {
+        val cache = entitlementCache ?: return null
+        val now = currentTimeMillis()
+        val confirmedAt = cache.confirmedAtEpochMillis() ?: return null
+        if (now - confirmedAt !in 0 until PRO_OFFLINE_GRACE_MILLIS) return null
+        return cache.read()?.takeIf { it.isActiveAt(now) }?.also { entitlement = it }
+    }
+
+    suspend fun refreshEntitlement(): ProPurchaseOutcome {
+        val result = purchaseVerifier.loadEntitlement()
+        if (result is PurchaseVerificationResult.Failed) {
+            // The server gave no verdict (offline, outage): a paying user keeps what it confirmed within the last day.
+            restoreCachedEntitlement()?.let { return ProPurchaseOutcome.Entitled(it) }
+            entitlement = null
+            return ProPurchaseOutcome.Failed(result.reason)
+        }
+        return applyVerification(result, rejectionIsFailure = false)
+    }
 
     suspend fun startPurchase(): ProPurchaseOutcome = when (val identity = purchaseVerifier.loadPurchaseAccountIdentity()) {
         is PurchaseAccountIdentityResult.Available -> {
@@ -182,6 +208,7 @@ class ProPurchaseCoordinator(
             is PurchaseVerificationResult.Verified -> {
                 entitlement = result.entitlement
                 entitlementCache?.write(result.entitlement)
+                entitlementCache?.markConfirmed(currentTimeMillis())
                 ProPurchaseOutcome.Entitled(result.entitlement)
             }
             is PurchaseVerificationResult.Rejected -> {

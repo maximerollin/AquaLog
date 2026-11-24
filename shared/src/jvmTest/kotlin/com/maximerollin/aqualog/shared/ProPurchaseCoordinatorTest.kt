@@ -313,6 +313,37 @@ class ProPurchaseCoordinatorTest {
     }
 
     @Test
+    fun `an unreachable server keeps Pro for a day after its last confirmation, never past the expiry`() = runTest {
+        val day = PRO_OFFLINE_GRACE_MILLIS
+        val entitlement = ProEntitlement(LIFETIME_PRO_PRODUCT_ID, null)
+        val cache = InMemoryProEntitlementCache()
+        var now = 1_000L
+        val verifier = DeterministicPurchaseVerifier(
+            result = PurchaseVerificationResult.Rejected("unused"),
+            loadedEntitlement = PurchaseVerificationResult.Verified(entitlement),
+        )
+        val coordinator = ProPurchaseCoordinator(DeterministicBillingGateway(), verifier, cache, currentTimeMillis = { now })
+        coordinator.refreshEntitlement()
+        verifier.loadedEntitlement = PurchaseVerificationResult.Failed("offline")
+
+        now = 1_000L + day - 1
+        assertEquals(entitlement, coordinator.restoreCachedEntitlement())
+        assertEquals(ProPurchaseOutcome.Entitled(entitlement), coordinator.refreshEntitlement())
+
+        now = 1_000L + day
+        assertEquals(ProPurchaseOutcome.Failed("offline"), coordinator.refreshEntitlement())
+        assertFalse(coordinator.hasProEntitlement)
+        // The widget still reads the cache: only a server answer clears it.
+        assertEquals(entitlement, cache.read())
+
+        val annual = ProEntitlement(ANNUAL_PRO_PRODUCT_ID, 5_000L)
+        cache.write(annual)
+        cache.markConfirmed(4_000L)
+        now = 5_000L
+        assertEquals(null, coordinator.restoreCachedEntitlement())
+    }
+
+    @Test
     fun `an expired annual entitlement is not active`() {
         val annual = ProEntitlement(ANNUAL_PRO_PRODUCT_ID, 1_000)
 
@@ -326,8 +357,14 @@ class ProPurchaseCoordinatorTest {
 
 private class InMemoryProEntitlementCache : ProEntitlementCache {
     private var stored: ProEntitlement? = null
+    private var confirmedAt: Long? = null
     override fun read() = stored
-    override fun write(entitlement: ProEntitlement?) { stored = entitlement }
+    override fun write(entitlement: ProEntitlement?) {
+        stored = entitlement
+        if (entitlement == null) confirmedAt = null
+    }
+    override fun confirmedAtEpochMillis() = confirmedAt
+    override fun markConfirmed(atEpochMillis: Long) { confirmedAt = atEpochMillis }
 }
 
 private class DeterministicBillingGateway(

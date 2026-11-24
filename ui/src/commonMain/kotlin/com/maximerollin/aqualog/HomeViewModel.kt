@@ -40,6 +40,7 @@ import com.maximerollin.aqualog.shared.MaintenanceAction
 import com.maximerollin.aqualog.shared.MaintenanceActionInput
 import com.maximerollin.aqualog.shared.MaintenanceActionType
 import com.maximerollin.aqualog.shared.OnboardingPresets
+import com.maximerollin.aqualog.shared.ParameterDefinition
 import com.maximerollin.aqualog.shared.ParameterDefinitionDraft
 import com.maximerollin.aqualog.shared.AnnualProOffer
 import com.maximerollin.aqualog.shared.LifetimeProOffer
@@ -313,13 +314,44 @@ data class AccountSettingsUiState(
     val failure: AccountControlFailure? = null,
     val safeDetail: String? = null,
     val safeMessage: AccountSafeMessage? = null,
+    val safeMessageArgument: String? = null,
     val requiresDeletionReauthentication: Boolean = false,
 ) {
     val showDeletionReauthenticationAction: Boolean
         get() = pendingDeletion?.phase == AccountDeletionPhase.CLOUD_PENDING && requiresDeletionReauthentication
 }
 
-enum class AccountSafeMessage { SIGN_OUT_FAILED, DELETION_RESUME_FAILED, AUTHENTICATION_LINK_FAILED }
+private fun HomeUiState.withFreshOnboarding(): HomeUiState {
+    val fresh = HomeUiState()
+    return copy(
+        step = fresh.step,
+        profile = fresh.profile,
+        aquariumName = fresh.aquariumName,
+        volumeInput = fresh.volumeInput,
+        volumeUnit = fresh.volumeUnit,
+        parameters = fresh.parameters,
+        practiceValues = fresh.practiceValues,
+        destination = fresh.destination,
+        showRhythmSettings = false,
+        showParameterSettings = false,
+        pro = pro.copy(showPaywall = false),
+    )
+}
+
+enum class AccountSafeMessage {
+    SIGN_OUT_FAILED,
+    DELETION_RESUME_FAILED,
+    AUTHENTICATION_LINK_FAILED,
+    DELETION_AUTHENTICATION_IN_BROWSER,
+    DELETION_LINK_SENT,
+    DELETION_AUTHENTICATION_CANCELLED,
+    DELETION_LINK_EXPIRED,
+    DELETION_LINK_MISMATCH,
+
+    /** Shown with the expected e-mail as [AccountSettingsUiState.safeMessageArgument]. */
+    DELETION_WRONG_ACCOUNT,
+    DELETION_WRONG_ACCOUNT_UNKNOWN,
+}
 
 internal enum class AuthenticationCallbackTarget { ACCOUNT_ACTIVATION, ACCOUNT_DELETION }
 
@@ -371,6 +403,8 @@ data class ParameterEditorState(
 
 data class HomeUiState(
     val isLoading: Boolean = true,
+    /** Signed in from the welcome screen: the account's Aquariums are being downloaded, the onboarding waits. */
+    val isRestoringAccount: Boolean = false,
     val setup: AquariumSetup? = null,
     val aquariums: List<Aquarium> = emptyList(),
     val aquariumEditor: AquariumEditorUiState? = null,
@@ -406,6 +440,7 @@ data class HomeUiState(
     /** The displayed Aquarium's Sunday summary, on Sunday and Monday only. */
     val weeklySummary: WeeklySummary? = null,
     val showRhythmSettings: Boolean = false,
+    val showParameterSettings: Boolean = false,
     /** Id of the Session after which the « looks cycled » card was set aside for the displayed Aquarium, if any. */
     val cycledDismissedSessionId: String? = null,
     /** False until the dismissals of the displayed Aquarium were read, so a dismissed card never flashes. */
@@ -415,6 +450,8 @@ data class HomeUiState(
     val reviewDiscoveryVisible: Boolean = false,
     val account: AccountUiState = AccountUiState(),
     val sessionDetail: RecordedSession? = null,
+    /** The setup of [sessionDetail]'s Aquarium when it is not the current one (History lists every Aquarium). */
+    val sessionDetailSetup: AquariumSetup? = null,
     val sessionDetailReturnsToTimeline: Boolean = false,
     val showDeleteConfirmation: Boolean = false,
     val destination: MainDestination = MainDestination.TANK,
@@ -567,7 +604,10 @@ class HomeViewModel(
         }
         viewModelScope.launch {
             aquariumRepository.observeCurrentSetup().collectLatest { setup ->
-                mutableUiState.update {
+                mutableUiState.update { previous ->
+                    // The last Aquarium is gone (local copy removed, account deleted): the onboarding starts again from
+                    // its first screen, not from the step and the answers of the Aquarium that was just removed.
+                    val it = if (setup == null && previous.setup != null) previous.withFreshOnboarding() else previous
                     it.copy(
                         isLoading = false,
                         setup = setup,
@@ -678,6 +718,8 @@ class HomeViewModel(
             refreshAccountSettings()
         }
         if (proPurchaseCoordinator != null) {
+            // Known before the server answers, so a Pro user is not sent to the paywall in the first seconds.
+            if (proPurchaseCoordinator.restoreCachedEntitlement() != null) updatePro(ProPurchaseStatus.ACTIVE)
             viewModelScope.launch { refreshProEntitlement() }
             viewModelScope.launch {
                 proPurchaseCoordinator.purchaseUpdates.collect { update ->
@@ -781,8 +823,8 @@ class HomeViewModel(
 
     /** An open view that may hold typed input: a widget tap only brings the app forward. */
     private fun HomeUiState.holdsInput() =
-        rapidSession != null || account.step != AccountStep.HIDDEN || showRhythmSettings || aquariumEditor != null ||
-            addInhabitant != null
+        rapidSession != null || account.step != AccountStep.HIDDEN || showRhythmSettings || showParameterSettings ||
+            aquariumEditor != null || addInhabitant != null
 
     fun openCreateAquarium() {
         val state = mutableUiState.value
@@ -1120,38 +1162,35 @@ class HomeViewModel(
                 }
                 is AccountControlResult.SignedOut,
                 is AccountControlResult.SignOutIncomplete,
-                -> updateDeletionAuthenticationMessage("Account deletion could not be resumed.")
+                -> updateDeletionAuthenticationMessage(AccountSafeMessage.DELETION_RESUME_FAILED)
             }
-            AccountDeletionReauthenticationResult.AwaitingAuthentication -> updateDeletionAuthenticationMessage(
-                "Finish authentication in your browser to resume account deletion.",
-            )
-            AccountDeletionReauthenticationResult.MagicLinkSent -> updateDeletionAuthenticationMessage(
-                "Open the sign-in link sent to your account email to resume deletion.",
-            )
-            AccountDeletionReauthenticationResult.Cancelled -> updateDeletionAuthenticationMessage(
-                "Authentication was cancelled. Account deletion is still pending.",
-            )
-            AccountDeletionReauthenticationResult.ExpiredLink -> updateDeletionAuthenticationMessage(
-                "This sign-in link has expired. Request a new link to resume deletion.",
-            )
-            AccountDeletionReauthenticationResult.IgnoredCallback -> updateDeletionAuthenticationMessage(
-                "This sign-in link does not match the pending deletion.",
-            )
-            is AccountDeletionReauthenticationResult.WrongAccount -> updateDeletionAuthenticationMessage(
-                result.expectedEmail?.let { "Sign in as $it to resume deletion." }
-                    ?: "Sign in with the account awaiting deletion.",
-            )
-            is AccountDeletionReauthenticationResult.Failed -> updateDeletionAuthenticationMessage(result.safeDetail)
+            AccountDeletionReauthenticationResult.AwaitingAuthentication ->
+                updateDeletionAuthenticationMessage(AccountSafeMessage.DELETION_AUTHENTICATION_IN_BROWSER)
+            AccountDeletionReauthenticationResult.MagicLinkSent ->
+                updateDeletionAuthenticationMessage(AccountSafeMessage.DELETION_LINK_SENT)
+            AccountDeletionReauthenticationResult.Cancelled ->
+                updateDeletionAuthenticationMessage(AccountSafeMessage.DELETION_AUTHENTICATION_CANCELLED)
+            AccountDeletionReauthenticationResult.ExpiredLink ->
+                updateDeletionAuthenticationMessage(AccountSafeMessage.DELETION_LINK_EXPIRED)
+            AccountDeletionReauthenticationResult.IgnoredCallback ->
+                updateDeletionAuthenticationMessage(AccountSafeMessage.DELETION_LINK_MISMATCH)
+            is AccountDeletionReauthenticationResult.WrongAccount -> result.expectedEmail
+                ?.let { updateDeletionAuthenticationMessage(AccountSafeMessage.DELETION_WRONG_ACCOUNT, it) }
+                ?: updateDeletionAuthenticationMessage(AccountSafeMessage.DELETION_WRONG_ACCOUNT_UNKNOWN)
+            // The detail is a technical English sentence: the person gets the localized one.
+            is AccountDeletionReauthenticationResult.Failed ->
+                updateDeletionAuthenticationMessage(AccountSafeMessage.DELETION_RESUME_FAILED)
         }
     }
 
-    private fun updateDeletionAuthenticationMessage(message: String) {
+    private fun updateDeletionAuthenticationMessage(message: AccountSafeMessage, argument: String? = null) {
         mutableUiState.update { state ->
             state.copy(
                 accountSettings = state.accountSettings.copy(
                     isWorking = false,
-                    safeDetail = message,
-                    safeMessage = null,
+                    safeDetail = null,
+                    safeMessage = message,
+                    safeMessageArgument = argument,
                 ),
             )
         }
@@ -1485,6 +1524,14 @@ class HomeViewModel(
         }
     }
 
+    /** The pending-Occurrences flow then cancels the reminder through [TaskReminderScheduler.reconcile]. */
+    fun deleteTask(occurrence: TaskOccurrence) {
+        viewModelScope.launch {
+            runCatching { aquariumRepository.deleteTask(occurrence.taskId) }
+                .onSuccess { taskReminderScheduler.cancel(occurrence.id) }
+        }
+    }
+
     fun resolveTask(occurrence: TaskOccurrence, resolution: TaskResolution) {
         viewModelScope.launch {
             if (resolution == TaskResolution.COMPLETED) {
@@ -1492,10 +1539,10 @@ class HomeViewModel(
                 return@launch
             }
             val postponed = if (resolution == TaskResolution.POSTPONED) {
-                LocalDate.of(
-                    occurrence.dueDate.year,
-                    occurrence.dueDate.month,
-                    occurrence.dueDate.day,
+                // From today when the Occurrence is late: one day after an old due date would still be overdue.
+                maxOf(
+                    LocalDate.of(occurrence.dueDate.year, occurrence.dueDate.month, occurrence.dueDate.day),
+                    LocalDate.now(ZoneId.of(currentTimeZoneId())),
                 ).plusDays(1)
             } else {
                 null
@@ -1724,6 +1771,64 @@ class HomeViewModel(
 
     fun openRhythmSettings() = mutableUiState.update { it.copy(showRhythmSettings = true) }
 
+    /** The editor shared with onboarding, filled with the current Aquarium's Parameters as they are stored. */
+    fun openParameterSettings() {
+        val setup = mutableUiState.value.setup ?: return
+        mutableUiState.update { state ->
+            state.copy(
+                showParameterSettings = true,
+                showParameterValidationError = false,
+                parameters = setup.parameters.sortedBy(ParameterDefinition::position).map { definition ->
+                    ParameterEditorState.from(
+                        ParameterDefinitionDraft(
+                            parameter = definition.parameter,
+                            isActive = definition.isActive,
+                            position = definition.position,
+                            unit = definition.unit,
+                            precision = definition.precision,
+                            indicativeMinimum = definition.indicativeMinimum,
+                            indicativeMaximum = definition.indicativeMaximum,
+                        ),
+                    )
+                },
+            )
+        }
+    }
+
+    /** Saves what changed, then leaves. An invalid row, or no active Parameter, keeps the screen open with its error. */
+    fun closeParameterSettings() {
+        val setup = mutableUiState.value.setup
+        if (setup == null) {
+            mutableUiState.update { it.copy(showParameterSettings = false) }
+            return
+        }
+        val drafts = configuredParameters()?.takeIf { it.any(ParameterDefinitionDraft::isActive) } ?: run {
+            mutableUiState.update { it.copy(showParameterValidationError = true) }
+            return
+        }
+        val stored = setup.parameters.associateBy(ParameterDefinition::parameter)
+        viewModelScope.launch {
+            runCatching {
+                drafts.forEach { draft ->
+                    val current = stored[draft.parameter] ?: return@forEach
+                    val updated = current.copy(
+                        isActive = draft.isActive,
+                        position = draft.position,
+                        unit = draft.unit,
+                        precision = draft.precision,
+                        indicativeMinimum = draft.indicativeMinimum,
+                        indicativeMaximum = draft.indicativeMaximum,
+                    )
+                    if (updated != current) aquariumRepository.updateParameterDefinition(updated)
+                }
+            }.onSuccess {
+                mutableUiState.update { it.copy(showParameterSettings = false) }
+            }.onFailure {
+                mutableUiState.update { it.copy(showParameterValidationError = true) }
+            }
+        }
+    }
+
     fun closeRhythmSettings() = mutableUiState.update { it.copy(showRhythmSettings = false) }
 
     /** null follows the profile default; [NEVER_INTERVAL_DAYS] never reminds. */
@@ -1794,6 +1899,7 @@ class HomeViewModel(
             state.copy(
                 pistesAfterSave = emptyList(),
                 sessionDetail = state.latestSession,
+                sessionDetailSetup = null,
                 sessionDetailReturnsToTimeline = false,
             )
         }
@@ -1803,6 +1909,7 @@ class HomeViewModel(
         mutableUiState.update {
             it.copy(
                 sessionDetail = null,
+                sessionDetailSetup = null,
                 sessionDetailReturnsToTimeline = false,
                 showDeleteConfirmation = false,
             )
@@ -1820,7 +1927,7 @@ class HomeViewModel(
         )
         setRapidSession(draft)
         viewModelScope.launch {
-            val context = aquariumRepository.loadRapidSessionContext(setup.aquarium.id)
+            val context = aquariumRepository.loadRapidSessionContext(recorded.session.aquariumId)
             val observations = recorded.events.associateBy { it.type }
             mutableUiState.update { state ->
                 val current = state.rapidSession
@@ -1863,7 +1970,7 @@ class HomeViewModel(
         mutableUiState.update { it.copy(showDeleteConfirmation = false) }
         viewModelScope.launch {
             aquariumRepository.deleteSession(sessionId)
-            mutableUiState.update { it.copy(sessionDetail = null) }
+            mutableUiState.update { it.copy(sessionDetail = null, sessionDetailSetup = null) }
         }
     }
 
@@ -1979,8 +2086,19 @@ class HomeViewModel(
                     maintenanceActions = entry.maintenanceActions,
                     events = entry.events,
                 ),
+                sessionDetailSetup = null,
                 sessionDetailReturnsToTimeline = true,
             )
+        }
+        // A Session of another Aquarium is read and edited against that Aquarium's name and Parameters.
+        val state = mutableUiState.value
+        val aquariumId = state.sessionDetail?.session?.takeIf { it.id == sessionId }?.aquariumId ?: return
+        if (aquariumId == state.setup?.aquarium?.id) return
+        viewModelScope.launch {
+            val setup = aquariumRepository.loadSetup(aquariumId) ?: return@launch
+            mutableUiState.update {
+                if (it.sessionDetail?.session?.id == sessionId) it.copy(sessionDetailSetup = setup) else it
+            }
         }
     }
 
@@ -2282,6 +2400,21 @@ class HomeViewModel(
         }
     }
 
+    /** Whether this build can sign in: the welcome screen then offers it to someone who already has an account. */
+    val canSignIn: Boolean get() = accountCoordinator != null
+
+    /**
+     * Signing in before any Aquarium exists: the first synchronization brings the account's own. Until it lands (or a
+     * moment passes for an empty account or no network) the onboarding stays hidden, so no second Aquarium is created.
+     */
+    private fun awaitAccountAquariums() {
+        mutableUiState.update { it.copy(isRestoringAccount = true) }
+        viewModelScope.launch {
+            withTimeoutOrNull(ACCOUNT_RESTORE_TIMEOUT_MILLIS) { uiState.first { it.setup != null } }
+            mutableUiState.update { it.copy(isRestoringAccount = false) }
+        }
+    }
+
     fun retryAccountMigration() = launchAccountAction(AccountError.MIGRATION) {
         requireNotNull(accountCoordinator).resumePendingMigration()
     }
@@ -2319,6 +2452,7 @@ class HomeViewModel(
         }
         if (result == AccountActivationResult.Activated) {
             refreshAccountSettings()
+            if (mutableUiState.value.setup == null) awaitAccountAquariums()
             val continuation = mutableUiState.value.pro.actionAfterAuthentication
             viewModelScope.launch {
                 refreshProEntitlement()
@@ -2518,7 +2652,8 @@ class HomeViewModel(
     private fun activateAquariumContext(aquariumId: String) {
         mutableUiState.update { state ->
             state.copy(
-                timeline = state.timeline.copy(aquariumId = aquariumId),
+                // The Parameter filter is an id of the previous Aquarium: kept, it would match nothing and blank History.
+                timeline = state.timeline.copy(aquariumId = aquariumId, parameterDefinitionId = null),
                 trends = state.trends.copy(selectedParameterDefinitionId = null),
             )
         }
@@ -2703,6 +2838,7 @@ class HomeViewModel(
         }
 
     companion object {
+        private const val ACCOUNT_RESTORE_TIMEOUT_MILLIS = 20_000L
         private const val rapidSessionDraftKey = "rapid-session-draft"
         internal const val photoTargetKey = "photo-target"
 

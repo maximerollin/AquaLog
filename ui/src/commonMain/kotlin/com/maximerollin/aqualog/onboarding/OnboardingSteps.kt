@@ -66,6 +66,7 @@ import com.maximerollin.aqualog.home.TankScene
 import com.maximerollin.aqualog.rememberReducedMotion
 import com.maximerollin.aqualog.resources.Res
 import com.maximerollin.aqualog.resources.app_name
+import com.maximerollin.aqualog.resources.welcome_sign_in
 import com.maximerollin.aqualog.resources.aquarium_details_description
 import com.maximerollin.aqualog.resources.aquarium_details_title
 import com.maximerollin.aqualog.resources.aquarium_name_label
@@ -115,6 +116,8 @@ import org.jetbrains.compose.resources.stringResource
 class OnboardingActions(
     val startOnboarding: () -> Unit = {},
     val requestImport: () -> Unit = {},
+    /** Null when this build cannot sign in: the welcome screen then has no sign-in entry. */
+    val signIn: (() -> Unit)? = null,
     val selectProfile: (AquariumProfile) -> Unit = {},
     val continueToAquarium: () -> Unit = {},
     val updateAquariumName: (String) -> Unit = {},
@@ -137,6 +140,7 @@ fun HomeViewModel.onboardingActions(onRequestImport: () -> Unit = ::requestPorta
     OnboardingActions(
         startOnboarding = ::startOnboarding,
         requestImport = onRequestImport,
+        signIn = if (canSignIn) ::openAccountMethods else null,
         selectProfile = ::selectProfile,
         continueToAquarium = ::continueToAquarium,
         updateAquariumName = ::updateAquariumName,
@@ -216,6 +220,20 @@ fun WelcomeContent(portableData: PortableDataUiState, actions: OnboardingActions
                             fontWeight = FontWeight.SemiBold,
                             textAlign = TextAlign.Center,
                         )
+                    }
+                    // Before any Aquarium exists: someone reinstalling gets their own back instead of creating a second one.
+                    actions.signIn?.let { signIn ->
+                        TextButton(
+                            onClick = signIn,
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                        ) {
+                            Text(
+                                stringResource(Res.string.welcome_sign_in),
+                                fontWeight = FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
                     }
                 }
             }

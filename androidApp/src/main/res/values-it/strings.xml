@@ -4,23 +4,23 @@
     <string name="task_notification_channel">Promemoria attività</string>
     <string name="due_tests_notification_channel">Test da fare</string>
     <string name="weekly_summary_notification_channel">Riepilogo della settimana</string>
-    <string name="task_notification_text">Apri Aquagenda per completare, posticipare o ignorare questo evento.</string>
+    <string name="task_notification_text">Apri Aquagenda per completare, posticipare o ignorare questa attività.</string>
     <string name="due_tests_notification_text">Test da fare: %1$s</string>
     <string name="weekly_summary_notification_ready">Il riepilogo della settimana è pronto</string>
     <plurals name="weekly_summary_notification">
         <item quantity="one">Il riepilogo della settimana è pronto · %1$d settimana di cura regolare</item>
         <item quantity="other">Il riepilogo della settimana è pronto · %1$d settimane di cura regolare</item>
     </plurals>
-    <string name="widget_small_label">Il mio Acquario</string>
-    <string name="widget_medium_label">Il mio Acquario in dettaglio</string>
-    <string name="widget_tanks_label">I miei Acquari</string>
-    <string name="widget_small_description">Lo stato del tuo Acquario e la prossima cosa da fare</string>
+    <string name="widget_small_label">Il mio acquario</string>
+    <string name="widget_medium_label">Il mio acquario in dettaglio</string>
+    <string name="widget_tanks_label">I miei acquari</string>
+    <string name="widget_small_description">Lo stato del tuo acquario e la prossima cosa da fare</string>
     <string name="widget_medium_description">Stato, attività di oggi e Misura</string>
-    <string name="widget_tanks_description">Tutti i tuoi Acquari, una riga ciascuno</string>
+    <string name="widget_tanks_description">Tutti i tuoi acquari, una riga ciascuno</string>
     <string name="widget_needs_pro">Il widget fa parte di Aquagenda Pro</string>
     <string name="widget_needs_pro_action">Scopri Pro</string>
-    <string name="widget_no_aquarium">Apri Aquagenda per creare il tuo Acquario</string>
-    <string name="widget_configure_title">Scegli l’Acquario</string>
+    <string name="widget_no_aquarium">Apri Aquagenda per creare il tuo acquario</string>
+    <string name="widget_configure_title">Scegli l’acquario</string>
     <string name="widget_measure_action">Misura</string>
     <string name="widget_task_overdue_label">in ritardo</string>
 </resources>

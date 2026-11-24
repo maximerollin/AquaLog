@@ -28,8 +28,8 @@ import com.maximerollin.aqualog.ProPurchaseStatus
 import com.maximerollin.aqualog.ProUiState
 import com.maximerollin.aqualog.onboarding.PaywallActions
 import com.maximerollin.aqualog.onboarding.PaywallContent
+import com.maximerollin.aqualog.resources.close
 import com.maximerollin.aqualog.resources.Res
-import com.maximerollin.aqualog.resources.back_to_settings
 import com.maximerollin.aqualog.resources.continue_for_free
 import com.maximerollin.aqualog.resources.continue_with_pro
 import com.maximerollin.aqualog.resources.google_play_offer_unavailable
@@ -181,7 +181,7 @@ class PaywallSemanticsTest {
     fun `from More the continue reads back to settings`() = french {
         runComposeUiTest {
             paywall(both, onboarding = false)
-            onNodeWithText(text { getString(Res.string.back_to_settings) }).assertExists()
+            onNodeWithText(text { getString(Res.string.close) }).assertExists()
             onNodeWithTag("onboarding-progress").assertDoesNotExist()
         }
     }
@@ -209,7 +209,7 @@ class PaywallSemanticsTest {
         runComposeUiTest {
             paywall(both.copy(purchaseStatus = ProPurchaseStatus.ACTIVE), onboarding = false)
             onNodeWithTag("choose-pro").assertDoesNotExist()
-            onNodeWithTag("onboarding-primary").assertTextContains(text { getString(Res.string.back_to_settings) })
+            onNodeWithTag("onboarding-primary").assertTextContains(text { getString(Res.string.close) })
         }
     }
 

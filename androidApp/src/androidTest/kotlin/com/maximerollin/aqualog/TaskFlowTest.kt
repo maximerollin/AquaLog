@@ -316,10 +316,13 @@ class TaskFlowTest {
             composeRule.onNode(hasText("See all") and hasClickAction()).performClick()
             composeRule.onNodeWithContentDescription("More actions, Rinse the filter").performClick()
             composeRule.onNodeWithText("+1 day").performClick()
+            // A late Task is postponed from today, not from its old due date, or it would stay overdue.
+            val tomorrow = java.time.LocalDate.now().plusDays(1)
+                .let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 runBlocking {
                     application.aquariumRepository.observePendingTaskOccurrences().first()
-                        .any { it.title == "Rinse the filter" && it.dueDate == TaskDate(2026, 10, 8) }
+                        .any { it.title == "Rinse the filter" && it.dueDate == tomorrow }
                 }
             }
             composeRule.onNodeWithContentDescription("More actions, Trim the plants").performClick()

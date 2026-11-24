@@ -91,7 +91,7 @@ class TrendsFlowTest {
         composeRule.onNodeWithText("24.5", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText("7.2", substring = true).assertIsDisplayed()
         val chartDescription = "Temperature trend chart · solid line and circle point markers · " +
-            "hatched indicative target · diamond Event markers"
+            "hatched indicative range · diamond Event markers"
         composeRule.onNodeWithContentDescription(chartDescription).assertIsDisplayed()
         // The exact values stay folded: only the hero's button shows, collapsed.
         composeRule.onAllNodesWithText("Exact values").assertCountEquals(1)
@@ -140,7 +140,7 @@ class TrendsFlowTest {
             hasTestTag("trend-row") and hasContentDescription("7.2, pH") and
                 SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Expanded"),
         ).assertIsDisplayed()
-        val phTarget = "Indicative target 6.5–7.5 pH · reference only, not a diagnosis"
+        val phTarget = "Indicative range 6.5–7.5 pH · reference only, not a diagnosis"
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasText(phTarget))
         composeRule.onNodeWithText(phTarget).assertIsDisplayed()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription("Exact value 7.2 pH"))
@@ -162,8 +162,8 @@ class TrendsFlowTest {
         composeRule.scrollAboveBar("trend-list", hasText("TDS") and hasClickAction())
         parameterRow("TDS").performClick()
         composeRule.onNodeWithTag("trend-list")
-            .performScrollToNode(hasText("Indicative target 100–300 ppm · reference only, not a diagnosis"))
-        composeRule.onNodeWithText("Indicative target 100–300 ppm · reference only, not a diagnosis")
+            .performScrollToNode(hasText("Indicative range 100–300 ppm · reference only, not a diagnosis"))
+        composeRule.onNodeWithText("Indicative range 100–300 ppm · reference only, not a diagnosis")
             .assertIsDisplayed()
         composeRule.onNodeWithTag("trend-list").performScrollToNode(hasContentDescription("Exact value 100 ppm"))
         composeRule.onNodeWithContentDescription("Exact value 100 ppm").assertIsDisplayed()

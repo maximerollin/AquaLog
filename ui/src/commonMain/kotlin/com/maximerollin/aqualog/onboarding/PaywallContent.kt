@@ -57,12 +57,13 @@ import com.maximerollin.aqualog.currentLocalizedFormatters
 import com.maximerollin.aqualog.home.HeroText
 import com.maximerollin.aqualog.localizedBillingDate
 import com.maximerollin.aqualog.resources.Res
-import com.maximerollin.aqualog.resources.back_to_settings
+import com.maximerollin.aqualog.resources.close
 import com.maximerollin.aqualog.resources.continue_for_free
 import com.maximerollin.aqualog.resources.continue_with_pro
 import com.maximerollin.aqualog.resources.google_play_offer_unavailable
 import com.maximerollin.aqualog.resources.loading_google_play_offer
 import com.maximerollin.aqualog.resources.paywall_annual_terms
+import com.maximerollin.aqualog.resources.paywall_annual_terms_no_trial
 import com.maximerollin.aqualog.resources.paywall_benefit_analysis
 import com.maximerollin.aqualog.resources.paywall_benefit_aquariums
 import com.maximerollin.aqualog.resources.paywall_benefit_history
@@ -84,6 +85,7 @@ import com.maximerollin.aqualog.resources.pro_message_purchase_pending
 import com.maximerollin.aqualog.resources.pro_message_save_failed
 import com.maximerollin.aqualog.resources.pro_message_verification_failed
 import com.maximerollin.aqualog.resources.pro_offer_summary
+import com.maximerollin.aqualog.resources.pro_offer_summary_no_trial
 import com.maximerollin.aqualog.resources.restore_purchase
 import com.maximerollin.aqualog.resources.try_again
 import com.maximerollin.aqualog.shared.Aquarium
@@ -140,7 +142,8 @@ fun PaywallContent(
     val selected = plans.firstOrNull { it.name == stored } ?: plans.firstOrNull()
     val continueLabel = stringResource(
         when {
-            !onboarding -> Res.string.back_to_settings
+            // Opened from the home, Trends, More or a widget: it closes back to wherever that was.
+            !onboarding -> Res.string.close
             pro.purchaseStatus == ProPurchaseStatus.ACTIVE -> Res.string.continue_with_pro
             else -> Res.string.continue_for_free
         },
@@ -241,7 +244,11 @@ fun PaywallContent(
                                     ProPlan.ANNUAL -> PlanCard(
                                         title = stringResource(Res.string.paywall_plan_annual),
                                         price = pro.offer!!.formattedPrice,
-                                        terms = stringResource(Res.string.paywall_annual_terms, pro.offer.trialDays),
+                                        terms = if (pro.offer.trialDays > 0) {
+                                            stringResource(Res.string.paywall_annual_terms, pro.offer.trialDays)
+                                        } else {
+                                            stringResource(Res.string.paywall_annual_terms_no_trial)
+                                        },
                                         badge = stringResource(Res.string.paywall_recommended),
                                         selected = selected == plan,
                                         onClick = { stored = plan.name },
@@ -275,12 +282,16 @@ fun PaywallContent(
                         }
                         Text(
                             when (selected) {
-                                ProPlan.ANNUAL -> stringResource(
-                                    Res.string.pro_offer_summary,
-                                    pro.offer!!.formattedPrice,
-                                    pro.offer.trialDays,
-                                    pro.offer.localizedBillingDate(formatter),
-                                )
+                                ProPlan.ANNUAL -> if (pro.offer!!.trialDays > 0) {
+                                    stringResource(
+                                        Res.string.pro_offer_summary,
+                                        pro.offer.formattedPrice,
+                                        pro.offer.trialDays,
+                                        pro.offer.localizedBillingDate(formatter),
+                                    )
+                                } else {
+                                    stringResource(Res.string.pro_offer_summary_no_trial, pro.offer.formattedPrice)
+                                }
                                 ProPlan.LIFETIME -> stringResource(
                                     Res.string.pro_lifetime_offer_summary,
                                     pro.lifetimeOffer!!.formattedPrice,

@@ -223,6 +223,48 @@ class TaskRepositoryContractTest {
         reopened.close()
     }
 
+    @Test
+    fun `deleting a Task removes what is pending and keeps what was resolved`() = runTest {
+        val fixture = taskFixture()
+        val aquariumId = fixture.createAquarium().aquarium.id
+        fun input(title: String) = TaskInput(aquariumId, title, TaskRecurrence.DAILY, TaskDate(2027, 1, 10), null, "Europe/Paris")
+        val mistake = fixture.repository.createTask(input("Mistake"))
+        val dosing = fixture.repository.createTask(input("Dose"))
+        val done = fixture.repository.resolveTaskOccurrence(
+            TaskResolutionInput(dosing.occurrence.id, TaskResolution.COMPLETED, 1_800_000_000_000L),
+        )
+
+        fixture.repository.deleteTask(mistake.task.id)
+        fixture.repository.deleteTask(dosing.task.id)
+
+        assertTrue(fixture.repository.observePendingTaskOccurrences().first().isEmpty())
+        assertEquals(listOf(done.resolved.id), fixture.repository.observeResolvedTaskOccurrences().first().map { it.id })
+        assertEquals(setOf(dosing.task.id), fixture.repository.observeTaskRecurrences().first().keys)
+        fixture.close()
+    }
+
+    @Test
+    fun `the Occurrences of an archived Aquarium are no longer pending`() = runTest {
+        val fixture = taskFixture()
+        val kept = fixture.createAquarium().aquarium.id
+        val archived = fixture.repository.createConfiguredAquarium(
+            name = "Nano",
+            volume = 30.0,
+            volumeUnit = VolumeUnit.LITERS,
+            profile = AquariumProfile.ESTABLISHED,
+            parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            access = AquariumCreationAccess.PRO,
+        ).aquarium.id
+        listOf(kept, archived).forEach {
+            fixture.repository.createTask(TaskInput(it, "Glass", TaskRecurrence.WEEKLY, TaskDate(2027, 1, 10), null, "Europe/Paris"))
+        }
+
+        fixture.repository.archiveAquarium(archived)
+
+        assertEquals(listOf(kept), fixture.repository.observePendingTaskOccurrences().first().map { it.aquariumId })
+        fixture.close()
+    }
+
     private fun taskFixture(
         path: String = Files.createTempDirectory("aqualog-tasks").resolve("aqualog.db").toString(),
     ): TaskFixture {

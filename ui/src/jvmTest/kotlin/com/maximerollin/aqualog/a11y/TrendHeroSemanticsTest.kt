@@ -98,7 +98,7 @@ class TrendHeroSemanticsTest {
             val series = series(7.1, 7.8)
             setContent { AquaLogTheme(false) { TrendHeroCard(series, snapshot(series), expanded = false, onToggleValues = {}) } }
             onNodeWithContentDescription(
-                "pH trend chart · solid line and circle point markers · hatched indicative target · diamond Event markers",
+                "pH trend chart · solid line and circle point markers · hatched indicative range · diamond Event markers",
             ).assertExists()
         }
     }

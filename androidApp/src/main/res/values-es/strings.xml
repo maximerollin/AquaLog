@@ -4,23 +4,23 @@
     <string name="task_notification_channel">Recordatorios de tareas</string>
     <string name="due_tests_notification_channel">Pruebas pendientes</string>
     <string name="weekly_summary_notification_channel">Resumen de la semana</string>
-    <string name="task_notification_text">Abra Aquagenda para completar, posponer o ignorar este suceso.</string>
+    <string name="task_notification_text">Abre Aquagenda para completar, posponer o ignorar esta tarea.</string>
     <string name="due_tests_notification_text">Pruebas pendientes: %1$s</string>
-    <string name="weekly_summary_notification_ready">Su resumen de la semana está listo</string>
+    <string name="weekly_summary_notification_ready">Tu resumen de la semana está listo</string>
     <plurals name="weekly_summary_notification">
-        <item quantity="one">Su resumen de la semana está listo · %1$d semana de cuidado regular</item>
-        <item quantity="other">Su resumen de la semana está listo · %1$d semanas de cuidado regular</item>
+        <item quantity="one">Tu resumen de la semana está listo · %1$d semana de cuidado regular</item>
+        <item quantity="other">Tu resumen de la semana está listo · %1$d semanas de cuidado regular</item>
     </plurals>
-    <string name="widget_small_label">Mi Acuario</string>
-    <string name="widget_medium_label">Mi Acuario en detalle</string>
-    <string name="widget_tanks_label">Mis Acuarios</string>
-    <string name="widget_small_description">El estado de su Acuario y lo próximo que hacer</string>
+    <string name="widget_small_label">Mi acuario</string>
+    <string name="widget_medium_label">Mi acuario en detalle</string>
+    <string name="widget_tanks_label">Mis acuarios</string>
+    <string name="widget_small_description">El estado de tu acuario y lo próximo por hacer</string>
     <string name="widget_medium_description">Estado, tareas de hoy y Medir</string>
-    <string name="widget_tanks_description">Todos sus Acuarios, una línea cada uno</string>
+    <string name="widget_tanks_description">Todos tus acuarios, una línea cada uno</string>
     <string name="widget_needs_pro">El widget forma parte de Aquagenda Pro</string>
     <string name="widget_needs_pro_action">Descubrir Pro</string>
-    <string name="widget_no_aquarium">Abra Aquagenda para crear su Acuario</string>
-    <string name="widget_configure_title">Elegir el Acuario</string>
+    <string name="widget_no_aquarium">Abre Aquagenda para crear tu acuario</string>
+    <string name="widget_configure_title">Elegir el acuario</string>
     <string name="widget_measure_action">Medir</string>
     <string name="widget_task_overdue_label">atrasada</string>
 </resources>

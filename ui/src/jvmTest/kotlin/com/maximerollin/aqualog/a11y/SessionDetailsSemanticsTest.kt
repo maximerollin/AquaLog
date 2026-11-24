@@ -139,7 +139,7 @@ class SessionDetailsSemanticsTest {
             details()
             val date = LocalizedFormatters(Locale.FRENCH).shortDateTime(occurredAt)
             onNode(hasText(date) and isHeading()).assertIsDisplayed()
-            onNode(hasText("Détails de la Session · Salon")).assertIsDisplayed()
+            onNode(hasText("Détails de la session · Salon")).assertIsDisplayed()
         }
     }
 
@@ -236,11 +236,11 @@ class SessionDetailsSemanticsTest {
                     ),
                 ),
             )
-            row(hasText("ACTIONS D'ENTRETIEN") and isHeading()).assertIsDisplayed()
-            val water = row(hasText("Changement d'eau") and hasText("20 %"))
+            row(hasText("ACTIONS D’ENTRETIEN") and isHeading()).assertIsDisplayed()
+            val water = row(hasText("Changement d’eau") and hasText("20 %"))
             water.assertIsDisplayed()
             assertTrue(!water.fetchSemanticsNode().config.contains(SemanticsProperties.Role), "a maintenance row is not a button")
-            onAllNodes(hasText("Changement d'eau") and hasClickAction()).assertCountEquals(0)
+            onAllNodes(hasText("Changement d’eau") and hasClickAction()).assertCountEquals(0)
 
             row(hasText("NOTES") and isHeading()).assertIsDisplayed()
             // Its kind, then the note: one node each, in reading order.
@@ -249,7 +249,7 @@ class SessionDetailsSemanticsTest {
             row(hasText("Incident") and hasText("Filtre bouché")).assertIsDisplayed()
             onAllNodes(hasText("Eau claire") and hasClickAction()).assertCountEquals(0)
             val notesLabel = row(hasText("NOTES")).fetchSemanticsNode().boundsInRoot
-            val waterTop = row(hasText("Changement d'eau") and hasText("20 %")).fetchSemanticsNode().boundsInRoot.top
+            val waterTop = row(hasText("Changement d’eau") and hasText("20 %")).fetchSemanticsNode().boundsInRoot.top
             assertTrue(waterTop < notesLabel.top, "maintenance before notes")
         }
     }
@@ -277,7 +277,7 @@ class SessionDetailsSemanticsTest {
             // The buttons close the list: once they are composed, everything above them was too.
             row(hasText("Modifier la session")).assertIsDisplayed()
             row(hasText("pH, 7,8, hors de votre plage indicative"))
-            onAllNodes(hasText("ACTIONS D'ENTRETIEN")).assertCountEquals(0)
+            onAllNodes(hasText("ACTIONS D’ENTRETIEN")).assertCountEquals(0)
             onAllNodes(hasText("NOTES")).assertCountEquals(0)
         }
     }
@@ -291,7 +291,7 @@ class SessionDetailsSemanticsTest {
             row(hasText("Modifier la session") and hasClickAction())
                 .assert(button).assertHeightIsAtLeast(48.dp).performClick()
             assertEquals(1, edits)
-            val delete = row(hasText("Supprimer la Session") and hasClickAction())
+            val delete = row(hasText("Supprimer la session") and hasClickAction())
             delete.assert(button).assertHeightIsAtLeast(48.dp)
             val editBounds = row(hasText("Modifier la session")).fetchSemanticsNode().boundsInRoot
             assertTrue(delete.fetchSemanticsNode().boundsInRoot.top >= editBounds.bottom, "delete under edit")
@@ -311,7 +311,7 @@ class SessionDetailsSemanticsTest {
                 actions = SessionDetailsActions(onConfirmDeletion = { confirmed++ }, onCancelDeletion = { cancelled++ }),
             )
             // The catalog puts a no-break space before « ? ».
-            onNode(hasText("Supprimer cette session\u00A0?")).assertIsDisplayed()
+            onNode(hasText("Supprimer cette session\u202F?")).assertIsDisplayed()
             onNode(hasText("Supprimer") and hasClickAction()).performClick()
             assertEquals(1, confirmed)
             onNode(hasText("Annuler") and hasClickAction()).performClick()

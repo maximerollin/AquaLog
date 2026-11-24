@@ -112,6 +112,9 @@ interface AquariumRepository {
 
     suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult
 
+    /** Removes the Task's pending Occurrences so it never recurs; what was already resolved stays in the history. */
+    suspend fun deleteTask(taskId: String)
+
     /**
      * Resolves as COMPLETED every pending linked Occurrence of the Aquarium due on or before [today], plus
      * [alsoOccurrenceId] whatever its date. Each next Occurrence falls strictly after [today].
@@ -432,8 +435,10 @@ class RoomAquariumRepository(
     override suspend fun updateSession(input: SessionEditInput): RecordedSession {
         val setup = requireNotNull(aquariumDao.getSetup(input.aquariumId)) { "Aquarium does not exist" }.toDomain()
         val existing = requireNotNull(sessionDao.getById(input.sessionId)) { "Session does not exist" }.toDomain()
-        val activeParameters = setup.parameters.filter(ParameterDefinition::isActive).associateBy(ParameterDefinition::id)
         val existingMeasurements = existing.measurements.associateBy(Measurement::parameterDefinitionId)
+        // A Parameter switched off since keeps the Measurement this Session already has: editing must not fail on it.
+        val activeParameters = setup.parameters.filter { it.isActive || it.id in existingMeasurements }
+            .associateBy(ParameterDefinition::id)
         val existingActions = existing.maintenanceActions.associateBy(MaintenanceAction::type)
         val existingEvents = existing.events.associateBy(SessionEvent::type)
         val measurements = input.measurementInputs.mapNotNull { (parameterId, rawValue) ->
@@ -687,12 +692,34 @@ class RoomAquariumRepository(
             resolvedAtEpochMillis = null,
             maintenanceActionType = input.maintenanceActionType,
         )
-        taskDao.create(task.toEntity(), occurrence.toEntity())
+        taskDao.create(
+            task.toEntity(),
+            occurrence.toEntity(),
+            listOf(
+                newSyncOperation(SyncEntityType.TASK, task.id),
+                newSyncOperation(SyncEntityType.TASK_OCCURRENCE, occurrence.id),
+            ),
+        )
+        onSyncNeeded()
         return CreatedTask(task, occurrence)
     }
 
     override suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult =
         resolve(input, catchUpAfter = null)
+
+    override suspend fun deleteTask(taskId: String) {
+        val operations = taskDao.pendingOccurrenceIds(taskId)
+            .map { newSyncOperation(SyncEntityType.TASK_OCCURRENCE, it, SyncOperationKind.DELETE) }
+            // The Task row itself only goes when no resolved Occurrence still refers to it.
+            .plus(
+                listOfNotNull(
+                    newSyncOperation(SyncEntityType.TASK, taskId, SyncOperationKind.DELETE)
+                        .takeIf { taskDao.resolvedOccurrenceCount(taskId) == 0 },
+                ),
+            )
+        taskDao.delete(taskId, operations)
+        onSyncNeeded()
+    }
 
     /** [catchUpAfter] skips the recurrence dates up to that day, so a late Occurrence is not completed again at once. */
     private suspend fun resolve(input: TaskResolutionInput, catchUpAfter: TaskDate?): TaskResolutionResult {
@@ -701,8 +728,7 @@ class RoomAquariumRepository(
         val pending = observePendingTaskOccurrences().first().firstOrNull { it.id == input.occurrenceId }
             ?: error("Occurrence is not pending")
         val next = when (input.resolution) {
-            TaskResolution.POSTPONED -> pending.next(
-                id = generateId(),
+            TaskResolution.POSTPONED -> pending.following(
                 date = requireNotNull(input.postponedUntil) { "A postponed date is required" },
                 minute = input.postponedMinuteOfDay ?: pending.minuteOfDay,
                 zone = input.postponedTimeZoneId ?: pending.timeZoneId,
@@ -710,8 +736,7 @@ class RoomAquariumRepository(
             TaskResolution.COMPLETED, TaskResolution.IGNORED -> if (task.recurrence == TaskRecurrence.ONCE) {
                 null
             } else {
-                pending.next(
-                    id = generateId(),
+                pending.following(
                     date = generateSequence(nextTaskDate(pending.dueDate, task.recurrence, task.monthlyAnchorDay)) {
                         nextTaskDate(it, task.recurrence, task.monthlyAnchorDay)
                     }.first {
@@ -728,7 +753,9 @@ class RoomAquariumRepository(
             resolution = input.resolution.storageValue,
             resolvedAt = input.resolvedAtEpochMillis,
             nextOccurrence = next?.toEntity(),
+            syncOperation = { newSyncOperation(SyncEntityType.TASK_OCCURRENCE, it) },
         )
+        onSyncNeeded()
         return TaskResolutionResult(resolvedEntity.toDomain(), nextEntity?.toDomain())
     }
 
@@ -807,6 +834,11 @@ class RoomAquariumRepository(
         aquariumDao.markAllPhotosPending()
         // migrate-initial-copy does not carry inhabitants: these upserts send them.
         inhabitantDao.insertSyncOperations(inhabitantDao.all().map { newSyncOperation(SyncEntityType.INHABITANT, it.id) })
+        // Nor Tasks and their Occurrences; a Task goes before its Occurrences, which reference it.
+        taskDao.insertSyncOperations(
+            taskDao.allTasks().map { newSyncOperation(SyncEntityType.TASK, it.id) } +
+                taskDao.allOccurrences().map { newSyncOperation(SyncEntityType.TASK_OCCURRENCE, it.id) },
+        )
         accountDao.upsert(
             AccountStateEntity(
                 accountId = accountId,
@@ -895,6 +927,11 @@ class RoomAquariumRepository(
             photoAquariumIds = aquariums.map(Aquarium::id).filter { it in photoAquariumIds }.toSet(),
             inhabitants = inhabitantDao.all().filter { it.id in idsByType[SyncEntityType.INHABITANT].orEmpty() }
                 .map(InhabitantEntity::toDomain),
+            tasks = taskDao.allTasks().filter { it.id in idsByType[SyncEntityType.TASK].orEmpty() }
+                .map(TaskEntity::toDomain),
+            taskOccurrences = taskDao.allOccurrences()
+                .filter { it.id in idsByType[SyncEntityType.TASK_OCCURRENCE].orEmpty() }
+                .map(TaskOccurrenceEntity::toDomain),
         )
     }
 
@@ -935,6 +972,8 @@ class RoomAquariumRepository(
             actions = copy.maintenanceActions.map(MaintenanceAction::toEntity),
             events = copy.events.map(SessionEvent::toEntity),
             inhabitants = copy.inhabitants.map(Inhabitant::toEntity),
+            tasks = copy.tasks.map(AquariumTask::toEntity),
+            taskOccurrences = copy.taskOccurrences.map(TaskOccurrence::toEntity),
             acknowledgedOperationIds = acknowledgedOperationIds,
         )
     }
@@ -955,6 +994,8 @@ class RoomAquariumRepository(
             actions = snapshot.copy.maintenanceActions.map(MaintenanceAction::toEntity),
             events = snapshot.copy.events.map(SessionEvent::toEntity),
             inhabitants = snapshot.copy.inhabitants.map(Inhabitant::toEntity),
+            tasks = snapshot.copy.tasks.map(AquariumTask::toEntity),
+            taskOccurrences = snapshot.copy.taskOccurrences.map(TaskOccurrence::toEntity),
             versions = snapshot.versions.map {
                 SyncEntityVersionEntity(
                     entityType = it.entityType.storageValue,
@@ -1057,8 +1098,8 @@ private fun TaskOccurrenceEntity.toDomain() = TaskOccurrence(
     maintenanceActionType = maintenanceActionType?.let(MaintenanceActionType::fromStorageValue),
 )
 
-private fun TaskOccurrence.next(id: String, date: TaskDate, minute: Int?, zone: String) = copy(
-    id = id,
+private fun TaskOccurrence.following(date: TaskDate, minute: Int?, zone: String) = copy(
+    id = nextOccurrenceId(taskId, date, minute, zone),
     dueDate = date,
     minuteOfDay = minute,
     timeZoneId = zone,

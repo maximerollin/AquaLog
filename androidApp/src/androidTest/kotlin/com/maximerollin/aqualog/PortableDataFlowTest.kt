@@ -62,7 +62,8 @@ class PortableDataFlowTest {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
             composeRule.onNode(hasLabel("More")).performClick()
-            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Export data"))
+            // Above the floating bar: a row left under it would not receive the click.
+            composeRule.scrollAboveBar("settings-list", hasText("Export data"))
             composeRule.onNodeWithText("Export data").performClick()
 
             intended(allOf(hasAction(Intent.ACTION_CREATE_DOCUMENT), hasType("application/json")))

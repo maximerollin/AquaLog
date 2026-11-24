@@ -115,3 +115,12 @@ fun daysInMonth(year: Int, month: Int): Int = when (month) {
     2 -> if (year % 400 == 0 || (year % 4 == 0 && year % 100 != 0)) 29 else 28
     else -> error("Invalid month")
 }
+
+/**
+ * The id of the Occurrence that follows a resolved one. It is derived from what makes the Occurrence unique, so two
+ * devices that resolve the same Occurrence before they synchronize create one next Occurrence, not two.
+ */
+fun nextOccurrenceId(taskId: String, date: TaskDate, minuteOfDay: Int?, timeZoneId: String): String =
+    java.util.UUID.nameUUIDFromBytes(
+        "$taskId|${date.year}-${date.month}-${date.day}|${minuteOfDay ?: -1}|$timeZoneId".toByteArray(Charsets.UTF_8),
+    ).toString()

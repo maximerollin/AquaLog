@@ -54,7 +54,7 @@ class TaskSemanticsTest {
     private val salon = Aquarium("a", "Salon", 120.0, VolumeUnit.LITERS, 0L)
     private val today = TaskDate(2026, 11, 17)
     private val overdue = TaskOccurrence(
-        "o1", "t1", salon.id, "Changement d'eau", TaskDate(2026, 11, 15), 9 * 60, "Europe/Paris", null, null,
+        "o1", "t1", salon.id, "Changement d’eau", TaskDate(2026, 11, 15), 9 * 60, "Europe/Paris", null, null,
         MaintenanceActionType.WATER_CHANGE,
     )
     private val evening = TaskOccurrence("o2", "t2", salon.id, "Nettoyer la vitre", today, 18 * 60, "Europe/Paris", null, null)
@@ -102,14 +102,14 @@ class TaskSemanticsTest {
             assertTrue(dueDate.startsWith("15 nov."), dueDate)
             val detail = row(hasText("En retard", substring = true)).fetchSemanticsNode()
             val text = detail.config[SemanticsProperties.Text].single()
-            assertEquals("En retard · $dueDate · Hebdomadaire", text.text)
+            assertEquals("En retard · $dueDate · Chaque semaine", text.text)
             // « En retard » is in the alert colour, and only it.
             val alert = text.spanStyles.single { it.item.color == errorColor }
             assertEquals("En retard", text.text.substring(alert.start, alert.end))
 
             // Under « Aujourd'hui », before today's own task.
             val label = row(hasText("AUJOURD’HUI")).fetchSemanticsNode().boundsInRoot
-            val overdueTop = row(hasText("Changement d'eau")).fetchSemanticsNode().boundsInRoot.top
+            val overdueTop = row(hasText("Changement d’eau")).fetchSemanticsNode().boundsInRoot.top
             val eveningTop = row(hasText("Nettoyer la vitre")).fetchSemanticsNode().boundsInRoot.top
             assertTrue(label.bottom <= overdueTop && overdueTop < eveningTop, "label $label, overdue $overdueTop, evening $eveningTop")
         }
@@ -119,9 +119,9 @@ class TaskSemanticsTest {
     fun `a linked task row shows its action icon once, in the tile`() = french {
         runComposeUiTest {
             tasks(TaskUiState(pendingOccurrences = listOf(overdue)))
-            row(hasText("Changement d'eau"))
+            row(hasText("Changement d’eau"))
             // No second icon before the title: the title starts where the detail line under it starts.
-            val title = onNodeWithText("Changement d'eau", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+            val title = onNodeWithText("Changement d’eau", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
             val detail = onNodeWithText("En retard", substring = true, useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
             assertEquals(detail.left, title.left, "title $title, detail $detail")
         }
@@ -134,7 +134,7 @@ class TaskSemanticsTest {
             val formatter = LocalizedFormatters(Locale.FRENCH)
             row(hasText(formatter.time(18 * 60)))
             // An undated time reads as such, under « Demain ».
-            val untimed = row(hasText("pas d'heure choisie")).fetchSemanticsNode().boundsInRoot
+            val untimed = row(hasText("sans heure")).fetchSemanticsNode().boundsInRoot
             val tomorrow = row(hasText("DEMAIN")).fetchSemanticsNode().boundsInRoot
             assertTrue(tomorrow.bottom <= untimed.top)
             onAllNodes(hasText(" · ", substring = true)).assertCountEquals(0)
@@ -149,7 +149,7 @@ class TaskSemanticsTest {
                 TaskUiState(pendingOccurrences = listOf(overdue)),
                 TaskActions(onComplete = { occurrence, _ -> completed += occurrence.id }),
             )
-            val check = row(hasContentDescription("Fait, Changement d'eau"))
+            val check = row(hasContentDescription("Fait, Changement d’eau"))
             check.assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox))
                 .assert(SemanticsMatcher.expectValue(SemanticsProperties.ToggleableState, ToggleableState.Off))
                 .assertWidthIsAtLeast(48.dp)
@@ -184,7 +184,7 @@ class TaskSemanticsTest {
         runComposeUiTest {
             tasks(TaskUiState(batteryOptimizationActive = true))
             row(hasText("Aucune tâche en attente.")).assertExists()
-            row(hasText("L'optimisation de la batterie Android est active", substring = true)).assertExists()
+            row(hasText("L’optimisation de la batterie Android est active", substring = true)).assertExists()
         }
     }
 
@@ -194,8 +194,8 @@ class TaskSemanticsTest {
             tasks(TaskUiState())
             onNode(hasContentDescription("Nouvelle tâche") and hasClickAction()).performClick()
             waitForIdle()
-            val date = onNode(hasText("Première date d'échéance") and hasClickAction()).fetchSemanticsNode().boundsInRoot
-            val time = onNode(hasText("Heure (facultatif)") and hasClickAction()).fetchSemanticsNode().boundsInRoot
+            val date = onNode(hasText("Première date d’échéance") and hasClickAction()).fetchSemanticsNode().boundsInRoot
+            val time = onNode(hasText("Heure (facultative)") and hasClickAction()).fetchSemanticsNode().boundsInRoot
             assertEquals(date.top, time.top)
             assertTrue(time.left >= date.right, "date $date, time $time")
         }
@@ -208,7 +208,7 @@ class TaskSemanticsTest {
             onNode(hasContentDescription("Neue Aufgabe") and hasClickAction()).performClick()
             waitForIdle()
             val date = onNode(hasText("Erster Fälligkeitstermin") and hasClickAction()).fetchSemanticsNode().boundsInRoot
-            val time = onNode(hasText("Zeit (optional)") and hasClickAction()).fetchSemanticsNode().boundsInRoot
+            val time = onNode(hasText("Uhrzeit (optional)") and hasClickAction()).fetchSemanticsNode().boundsInRoot
             assertTrue(time.top >= date.bottom, "date $date, time $time")
         }
     }

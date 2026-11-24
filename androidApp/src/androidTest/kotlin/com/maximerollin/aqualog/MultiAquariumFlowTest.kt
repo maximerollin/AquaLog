@@ -94,6 +94,8 @@ class MultiAquariumFlowTest {
             waitForText("Nano")
             composeRule.scrollAboveBar("settings-list", hasText("Archive Aquarium"))
             composeRule.onNodeWithText("Archive Aquarium").performClick()
+            waitForText("Archive this Aquarium?")
+            composeRule.onNodeWithText("Archive").performClick()
             // The current Aquarium's name is in More's header, scrolled away to reach « Archive ».
             composeRule.onNodeWithTag("settings-list").performScrollToIndex(0)
             waitForText("Salon")

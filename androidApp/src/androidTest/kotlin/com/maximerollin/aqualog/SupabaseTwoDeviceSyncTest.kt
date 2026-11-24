@@ -25,6 +25,12 @@ import com.maximerollin.aqualog.shared.SyncCoordinator
 import com.maximerollin.aqualog.shared.SyncRunResult
 import com.maximerollin.aqualog.shared.SyncSession
 import com.maximerollin.aqualog.shared.SyncSessionProvider
+import com.maximerollin.aqualog.shared.TaskDate
+import com.maximerollin.aqualog.shared.TaskInput
+import com.maximerollin.aqualog.shared.TaskRecurrence
+import com.maximerollin.aqualog.shared.TaskResolution
+import com.maximerollin.aqualog.shared.TaskResolutionInput
+import com.maximerollin.aqualog.shared.TimelineFilter
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.createAndroidDatabaseBuilder
 import com.maximerollin.aqualog.shared.createAquaLogDatabase
@@ -201,6 +207,104 @@ class SupabaseTwoDeviceSyncTest {
             val history = second.observeInhabitantHistory(aquarium.id).first()
             assertEquals(1, history.count { it.removedAtEpochMillis != null })
             assertEquals(first.observeInhabitantHistory(aquarium.id).first().toSet(), history.toSet())
+        }
+        firstDatabase.close()
+        secondDatabase.close()
+    }
+
+    @Test
+    fun productionAdapter_syncsTasksToASecondDevice() {
+        val configuration = SupabaseConfiguration.fromBuildConfig()
+        assumeTrue("Local Supabase URL and anon key are required", configuration.isConfigured)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val suffix = UUID.randomUUID().toString()
+        val authenticated = signUp(configuration, email = "android-tasks-$suffix@example.com", password = "Aq!$suffix")
+        val firstDatabase = createAquaLogDatabase(createAndroidDatabaseBuilder(context, "tasks-first-$suffix.db"))
+        val secondDatabase = createAquaLogDatabase(createAndroidDatabaseBuilder(context, "tasks-second-$suffix.db"))
+        val first = RoomAquariumRepository(firstDatabase, { UUID.randomUUID().toString() }, System::currentTimeMillis)
+        val second = RoomAquariumRepository(secondDatabase, { UUID.randomUUID().toString() }, System::currentTimeMillis)
+        val provider = object : SyncSessionProvider {
+            override suspend fun currentSession() = authenticated
+        }
+        val backend = SupabaseSyncBackend(configuration)
+        val firstCoordinator = SyncCoordinator(first, backend, provider)
+        val secondCoordinator = SyncCoordinator(second, backend, provider)
+        suspend fun synchronizeBoth() = repeat(2) {
+            firstCoordinator.runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
+            secondCoordinator.runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
+        }
+
+        runBlocking {
+            val aquarium = first.createConfiguredAquarium(
+                "Android tasks", 90.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            ).aquarium
+            val created = first.createTask(
+                TaskInput(
+                    aquarium.id, "Water change", TaskRecurrence.WEEKLY, TaskDate(2027, 1, 10), 18 * 60 + 30, "Europe/Paris",
+                    MaintenanceActionType.WATER_CHANGE,
+                ),
+            )
+            synchronizeBoth()
+            assertEquals(listOf(created.occurrence), second.observePendingTaskOccurrences().first())
+
+            // Resolved on both before they synchronize: one next Occurrence, the same row on each.
+            val completed = TaskResolutionInput(created.occurrence.id, TaskResolution.COMPLETED, 1_800_000_000_000L)
+            first.resolveTaskOccurrence(completed)
+            second.resolveTaskOccurrence(completed)
+            synchronizeBoth()
+            val pending = first.observePendingTaskOccurrences().first()
+            assertEquals(listOf(TaskDate(2027, 1, 17)), pending.map { it.dueDate })
+            assertEquals(pending, second.observePendingTaskOccurrences().first())
+            assertEquals(listOf(created.occurrence.id), second.observeResolvedTaskOccurrences().first().map { it.id })
+
+            second.deleteTask(created.task.id)
+            synchronizeBoth()
+            assertTrue(first.observePendingTaskOccurrences().first().isEmpty())
+            assertEquals(listOf(created.occurrence.id), first.observeResolvedTaskOccurrences().first().map { it.id })
+        }
+        firstDatabase.close()
+        secondDatabase.close()
+    }
+
+    @Test
+    fun productionAdapter_drainsALongOfflineQueue_whoseFirstBatchHoldsASessionDeletedSince() {
+        val configuration = SupabaseConfiguration.fromBuildConfig()
+        assumeTrue("Local Supabase URL and anon key are required", configuration.isConfigured)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val suffix = UUID.randomUUID().toString()
+        val authenticated = signUp(configuration, email = "android-queue-$suffix@example.com", password = "Aq!$suffix")
+        val firstDatabase = createAquaLogDatabase(createAndroidDatabaseBuilder(context, "queue-first-$suffix.db"))
+        val secondDatabase = createAquaLogDatabase(createAndroidDatabaseBuilder(context, "queue-second-$suffix.db"))
+        val first = RoomAquariumRepository(firstDatabase, { UUID.randomUUID().toString() }, System::currentTimeMillis)
+        val second = RoomAquariumRepository(secondDatabase, { UUID.randomUUID().toString() }, System::currentTimeMillis)
+        val provider = object : SyncSessionProvider {
+            override suspend fun currentSession() = authenticated
+        }
+        val backend = SupabaseSyncBackend(configuration)
+
+        runBlocking {
+            val setup = first.createConfiguredAquarium(
+                "Android queue", 90.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+            val temperature = setup.parameters.first { it.isActive }
+            // More than one batch of 100 operations, recorded before any account exists.
+            val sessions = (0 until 70).map { index ->
+                first.saveRapidSession(
+                    RapidSessionInput(
+                        setup.aquarium.id, 1_700_000_000_000L + index * 86_400_000L, "queue-$suffix-$index",
+                        mapOf(temperature.id to "24.5"), emptyList(),
+                    ),
+                )
+            }
+            // Its upsert sits in the first batch, its delete far behind: the push used to fail on it forever.
+            first.deleteSession(sessions.first().session.id)
+
+            SyncCoordinator(first, backend, provider).runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
+            SyncCoordinator(second, backend, provider).runOnce().let { assertTrue(it.toString(), it is SyncRunResult.Synchronized) }
+            val downloaded = second.observeTimeline(TimelineFilter()).first().map { it.session.id }.toSet()
+            assertEquals(sessions.drop(1).map { it.session.id }.toSet(), downloaded)
         }
         firstDatabase.close()
         secondDatabase.close()

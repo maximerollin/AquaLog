@@ -9,6 +9,7 @@ internal enum class BackStep {
     ToAccountMethods,
     CloseTasks,
     CloseRhythm,
+    CloseParameters,
     CloseSession,
     BackInAddInhabitant,
     CloseSessionDetails,
@@ -21,7 +22,7 @@ internal enum class BackStep {
  * system (a screen without a close or back control, Bac, the onboarding). Sheets and dialogs handle Back themselves.
  */
 internal fun backStep(state: HomeUiState): BackStep? = when {
-    state.isLoading -> null
+    state.isLoading || state.isRestoringAccount -> null
     state.accountSettings.pendingDeletion?.phase == AccountDeletionPhase.CLOUD_DELETED -> null
     state.account.step != AccountStep.HIDDEN -> when (state.account.step) {
         AccountStep.INVITATION,
@@ -35,6 +36,7 @@ internal fun backStep(state: HomeUiState): BackStep? = when {
     }
     state.tasks.isOpen && state.setup != null -> BackStep.CloseTasks
     state.showRhythmSettings && state.setup != null -> BackStep.CloseRhythm
+    state.showParameterSettings && state.setup != null -> BackStep.CloseParameters
     state.rapidSession != null && state.setup != null -> BackStep.CloseSession
     state.addInhabitant != null && state.setup != null -> BackStep.BackInAddInhabitant
     state.sessionDetail != null && state.setup != null -> BackStep.CloseSessionDetails
@@ -49,6 +51,7 @@ internal fun HomeViewModel.perform(step: BackStep) = when (step) {
     BackStep.ToAccountMethods -> openAccountMethods()
     BackStep.CloseTasks -> closeTasks()
     BackStep.CloseRhythm -> closeRhythmSettings()
+    BackStep.CloseParameters -> closeParameterSettings()
     BackStep.CloseSession -> closeRapidSession()
     BackStep.BackInAddInhabitant -> backInAddInhabitant()
     BackStep.CloseSessionDetails -> closeSessionDetails()

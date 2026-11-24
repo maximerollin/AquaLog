@@ -101,4 +101,19 @@ class SupabaseStorageTest {
 
         assertEquals(listOf(neons, custom), rows.map { it.toInhabitant() })
     }
+
+    @Test
+    fun `a table larger than one page is read to its end`() {
+        val rows = (0 until 1_250).toList()
+        val offsets = mutableListOf<Int>()
+
+        val read = readAllPages(pageSize = 500) { offset ->
+            offsets += offset
+            rows.drop(offset).take(500)
+        }
+
+        assertEquals(rows, read)
+        assertEquals(listOf(0, 500, 1_000), offsets)
+        assertEquals(listOf(0), mutableListOf<Int>().also { seen -> readAllPages(500) { seen += it; emptyList<Int>() } })
+    }
 }

@@ -102,8 +102,8 @@ class TankHomeDueTestsFlowTest {
         try {
             waitForText("Test NO₃")
             composeRule.onNode(hasLabel("More")).performClick()
-            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Analysis rhythm"))
-            composeRule.onNodeWithText("Analysis rhythm").performClick()
+            composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Testing schedule"))
+            composeRule.onNodeWithText("Testing schedule").performClick()
             waitForText("Nitrate")
             composeRule.onNodeWithText("Nitrate").performClick()
             composeRule.onNodeWithText("Never").performClick()
@@ -144,7 +144,7 @@ class TankHomeDueTestsFlowTest {
             repository.saveRapidSession(RapidSessionInput(setup.aquarium.id, System.currentTimeMillis() - 86_400_000L, "first", zeros))
             setup to repository.loadSetup(setup.aquarium.id)!!.parameters
         }
-        val proposal = "Your tank looks cycled. Switch to the rhythm of an established tank?"
+        val proposal = "Your tank looks cycled. Switch to an established-tank schedule?"
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
             waitForText(proposal)

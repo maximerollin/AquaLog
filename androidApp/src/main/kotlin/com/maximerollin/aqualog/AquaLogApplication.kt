@@ -121,6 +121,9 @@ open class AquaLogApplication : Application() {
 
     /** The home's clock; instrumented tests replace it. */
     open val currentTimeMillis: () -> Long = System::currentTimeMillis
+
+    /** Whether the app itself may open the system notification prompt and start a sync when it comes forward. */
+    open val runsForegroundPrompts: Boolean = true
     open val currentTimeZoneId: () -> String = { ZoneId.systemDefault().id }
 
     private val observabilityConfiguration by lazy { ObservabilityConfiguration.fromBuildConfig() }

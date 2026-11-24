@@ -44,9 +44,17 @@ import com.maximerollin.aqualog.shared.SyncSessionProvider
 import com.maximerollin.aqualog.shared.SyncOperation
 import com.maximerollin.aqualog.shared.SyncOperationKind
 import com.maximerollin.aqualog.shared.SyncWorkScheduler
+import com.maximerollin.aqualog.shared.AquariumTask
+import com.maximerollin.aqualog.shared.TaskDate
+import com.maximerollin.aqualog.shared.TaskOccurrence
+import com.maximerollin.aqualog.shared.TaskRecurrence
+import com.maximerollin.aqualog.shared.TaskResolution
 import com.maximerollin.aqualog.shared.VolumeUnit
 import com.maximerollin.aqualog.shared.encyclopedia.DrawingFamily
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONException
@@ -70,11 +78,19 @@ class LocalAccountSyncSessionProvider(
         return SyncSession(account.accountId, tokens.accessToken)
     }
 
-    override suspend fun refreshSession(expiredSession: SyncSession): SyncSession? {
+    // Sync and the Pro check share this provider: without the lock both would spend the same refresh token.
+    private val refreshMutex = Mutex()
+
+    override suspend fun refreshSession(expiredSession: SyncSession): SyncSession? = refreshMutex.withLock {
         val lease = operationGate?.acquire()
         if (operationGate != null && lease == null) return null
-        val refreshToken = tokenStorage.read()?.refreshToken ?: return null
-        val refreshed = authGateway.refreshSession(refreshToken) as? AuthenticationResult.Authenticated ?: return null
+        val tokens = tokenStorage.read() ?: return null
+        if (tokens.accessToken != expiredSession.accessToken) {
+            return SyncSession(expiredSession.accountId, tokens.accessToken)
+        }
+        val result = authGateway.refreshSession(tokens.refreshToken)
+        if (result is AuthenticationResult.Failed && result.transient) throw SyncNetworkException(result.reason)
+        val refreshed = result as? AuthenticationResult.Authenticated ?: return null
         if (refreshed.account.accountId != expiredSession.accountId) return null
         if (operationGate != null) {
             val saved = operationGate.runIfCurrent(requireNotNull(lease)) {
@@ -84,7 +100,7 @@ class LocalAccountSyncSessionProvider(
         } else {
             tokenStorage.save(AuthTokens(refreshed.account.accessToken, refreshed.account.refreshToken))
         }
-        return SyncSession(refreshed.account.accountId, refreshed.account.accessToken)
+        SyncSession(refreshed.account.accountId, refreshed.account.accessToken)
     }
 
     override suspend fun requireReauthentication() {
@@ -114,10 +130,14 @@ class SupabaseSyncBackend(
                         ?.toRemoteJson(session.accountId)
                     SyncEntityType.INHABITANT -> batch.inhabitants.firstOrNull { it.id == operation.entityId }
                         ?.toRemoteJson(session.accountId)
+                    SyncEntityType.TASK -> batch.tasks.firstOrNull { it.id == operation.entityId }
+                        ?.toRemoteJson(session.accountId)
+                    SyncEntityType.TASK_OCCURRENCE -> batch.taskOccurrences.firstOrNull { it.id == operation.entityId }
+                        ?.toRemoteJson(session.accountId)
                 }
-                require(operation.kind == SyncOperationKind.DELETE || payload != null) {
-                    "Pending upsert payload is missing"
-                }
+                // The row was deleted after this upsert was queued and its delete sits in a later batch:
+                // there is nothing to send, and failing here would block every later sync.
+                if (operation.kind == SyncOperationKind.UPSERT && payload == null) return@forEach
                 request(
                     path = "/rest/v1/rpc/apply_sync_operation",
                     method = "POST",
@@ -147,6 +167,8 @@ class SupabaseSyncBackend(
         val actions = get("maintenance_actions", session.accessToken)
         val events = get("session_events", session.accessToken)
         val inhabitants = get("inhabitants", session.accessToken).withKnownFamily()
+        val tasks = get("tasks", session.accessToken).withKnownTaskValues()
+        val taskOccurrences = get("task_occurrences", session.accessToken).withKnownTaskValues()
         RemoteSyncSnapshot(
             copy = InitialAccountCopy(
             aquariums = aquariums.filterLive().map { value ->
@@ -210,6 +232,8 @@ class SupabaseSyncBackend(
                 )
             },
             inhabitants = inhabitants.filterLive().map { it.toInhabitant() },
+            tasks = tasks.filterLive().map { it.toTask() },
+            taskOccurrences = taskOccurrences.filterLive().map { it.toTaskOccurrence() },
             ),
             versions = buildList {
                 addAll(aquariums.toVersions(SyncEntityType.AQUARIUM))
@@ -219,20 +243,23 @@ class SupabaseSyncBackend(
                 addAll(actions.toVersions(SyncEntityType.MAINTENANCE_ACTION))
                 addAll(events.toVersions(SyncEntityType.EVENT))
                 addAll(inhabitants.toVersions(SyncEntityType.INHABITANT))
+                addAll(tasks.toVersions(SyncEntityType.TASK))
+                addAll(taskOccurrences.toVersions(SyncEntityType.TASK_OCCURRENCE))
             },
         )
     }
 
-    private fun get(table: String, accessToken: String): List<JSONObject> {
+    /** PostgREST caps a response at its max_rows (1000), so a table is read page by page. */
+    private fun get(table: String, accessToken: String): List<JSONObject> = readAllPages(PULL_PAGE_SIZE) { offset ->
         val values = JSONArray(
             request(
-                path = "/rest/v1/$table?select=*",
+                path = "/rest/v1/$table?select=*&order=id&limit=$PULL_PAGE_SIZE&offset=$offset",
                 method = "GET",
                 accessToken = accessToken,
             ),
         )
-        return List(values.length()) { index -> values.getJSONObject(index) }
-    }
+        List(values.length()) { index -> values.getJSONObject(index) }
+    }.distinctBy { it.getString("id") }
 
     override suspend fun uploadAquariumPhoto(session: SyncSession, aquariumId: String, jpeg: ByteArray) {
         withContext(Dispatchers.IO) {
@@ -338,6 +365,16 @@ class SupabaseSyncBackend(
     }
 }
 
+private const val PULL_PAGE_SIZE = 500
+
+/** Reads pages until a short one. A row inserted meanwhile can shift a page, so the caller removes duplicates. */
+internal fun <T> readAllPages(pageSize: Int, readPage: (offset: Int) -> List<T>): List<T> = buildList {
+    do {
+        val page = readPage(size)
+        addAll(page)
+    } while (page.size >= pageSize)
+}
+
 /**
  * The latest operation per entity, ordered by when the entity was first touched: a later update must not
  * move an Aquarium's insert after the rows that reference it.
@@ -380,6 +417,10 @@ class AquaLogSyncWorker(
             scheduler = AndroidSyncWorkScheduler(applicationContext),
             currentTimeMillis = System::currentTimeMillis,
         ).runOnce()
+        // Occurrences another device created or resolved: their reminders follow without waiting for the app to open.
+        runCatching {
+            application.taskReminderScheduler.reconcile(application.aquariumRepository.observePendingTaskOccurrences().first())
+        }
         return Result.success()
     }
 }
@@ -482,6 +523,49 @@ internal fun JSONObject.toInhabitant() = Inhabitant(
     count = getInt("count"),
     addedAtEpochMillis = getLong("added_at_epoch_millis"),
     removedAtEpochMillis = if (isNull("removed_at_epoch_millis")) null else getLong("removed_at_epoch_millis"),
+)
+
+internal fun AquariumTask.toRemoteJson(accountId: String) = JSONObject()
+    .put("id", id).put("account_id", accountId).put("aquarium_id", aquariumId).put("title", title)
+    .put("recurrence", recurrence.storageValue).put("monthly_anchor_day", monthlyAnchorDay)
+    .putNullable("maintenance_action_type", maintenanceActionType?.storageValue)
+
+internal fun TaskOccurrence.toRemoteJson(accountId: String) = JSONObject()
+    .put("id", id).put("account_id", accountId).put("task_id", taskId).put("aquarium_id", aquariumId)
+    .put("title", title).put("due_year", dueDate.year).put("due_month", dueDate.month).put("due_day", dueDate.day)
+    .putNullable("minute_of_day", minuteOfDay).put("time_zone_id", timeZoneId)
+    .putNullable("resolution", resolution?.storageValue)
+    .putNullable("resolved_at_epoch_millis", resolvedAtEpochMillis)
+    .putNullable("maintenance_action_type", maintenanceActionType?.storageValue)
+
+/** A recurrence, resolution or action a newer build wrote is skipped, row and version, until an update knows it. */
+internal fun List<JSONObject>.withKnownTaskValues() = filter { row ->
+    fun known(name: String, values: List<String>) = row.isNull(name) || row.optString(name) in values
+    known("recurrence", TaskRecurrence.entries.map { it.storageValue }) &&
+        known("resolution", TaskResolution.entries.map { it.storageValue }) &&
+        known("maintenance_action_type", MaintenanceActionType.entries.map { it.storageValue })
+}
+
+internal fun JSONObject.toTask() = AquariumTask(
+    id = getString("id"),
+    aquariumId = getString("aquarium_id"),
+    title = getString("title"),
+    recurrence = TaskRecurrence.fromStorageValue(getString("recurrence")),
+    monthlyAnchorDay = getInt("monthly_anchor_day"),
+    maintenanceActionType = nullableString("maintenance_action_type")?.let(MaintenanceActionType::fromStorageValue),
+)
+
+internal fun JSONObject.toTaskOccurrence() = TaskOccurrence(
+    id = getString("id"),
+    taskId = getString("task_id"),
+    aquariumId = getString("aquarium_id"),
+    title = getString("title"),
+    dueDate = TaskDate(getInt("due_year"), getInt("due_month"), getInt("due_day")),
+    minuteOfDay = nullableInt("minute_of_day"),
+    timeZoneId = getString("time_zone_id"),
+    resolution = nullableString("resolution")?.let(TaskResolution::fromStorageValue),
+    resolvedAtEpochMillis = if (isNull("resolved_at_epoch_millis")) null else getLong("resolved_at_epoch_millis"),
+    maintenanceActionType = nullableString("maintenance_action_type")?.let(MaintenanceActionType::fromStorageValue),
 )
 
 private fun JSONObject.putNullable(name: String, value: Any?): JSONObject = put(name, value ?: JSONObject.NULL)

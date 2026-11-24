@@ -688,8 +688,26 @@ abstract class TaskDao {
     @Query("UPDATE task_occurrences SET resolution = :resolution, resolvedAtEpochMillis = :resolvedAt WHERE id = :occurrenceId AND resolution IS NULL")
     protected abstract suspend fun markResolved(occurrenceId: String, resolution: String, resolvedAt: Long): Int
 
-    @Query("SELECT * FROM task_occurrences WHERE resolution IS NULL ORDER BY dueYear, dueMonth, dueDay, dueMinuteOfDay")
+    // An archived Aquarium is out of reach: its Occurrences must neither be listed nor remind.
+    @Query(
+        "SELECT o.* FROM task_occurrences o JOIN aquariums a ON a.id = o.aquariumId " +
+            "WHERE o.resolution IS NULL AND a.isArchived = 0 ORDER BY o.dueYear, o.dueMonth, o.dueDay, o.dueMinuteOfDay",
+    )
     abstract fun observePending(): Flow<List<TaskOccurrenceEntity>>
+
+    @Query("DELETE FROM task_occurrences WHERE taskId = :taskId AND resolution IS NULL")
+    protected abstract suspend fun deletePendingOccurrences(taskId: String)
+
+    @Query("DELETE FROM tasks WHERE id = :taskId AND NOT EXISTS (SELECT 1 FROM task_occurrences WHERE taskId = :taskId)")
+    protected abstract suspend fun deleteTaskWithoutHistory(taskId: String)
+
+    /** Stops the Task: nothing is left to do or to recur. Its resolved Occurrences stay in the Chronology. */
+    @Transaction
+    open suspend fun delete(taskId: String, syncOperations: List<SyncOperationEntity>) {
+        deletePendingOccurrences(taskId)
+        deleteTaskWithoutHistory(taskId)
+        insertSyncOperations(syncOperations)
+    }
 
     @Query("SELECT * FROM task_occurrences WHERE resolution IS NOT NULL ORDER BY resolvedAtEpochMillis DESC")
     abstract fun observeResolved(): Flow<List<TaskOccurrenceEntity>>
@@ -697,10 +715,26 @@ abstract class TaskDao {
     @Query("SELECT * FROM tasks")
     abstract fun observeTasks(): Flow<List<TaskEntity>>
 
+    @Insert
+    abstract suspend fun insertSyncOperations(operations: List<SyncOperationEntity>)
+
+    @Query("SELECT * FROM tasks")
+    abstract suspend fun allTasks(): List<TaskEntity>
+
+    @Query("SELECT * FROM task_occurrences")
+    abstract suspend fun allOccurrences(): List<TaskOccurrenceEntity>
+
+    @Query("SELECT id FROM task_occurrences WHERE taskId = :taskId AND resolution IS NULL")
+    abstract suspend fun pendingOccurrenceIds(taskId: String): List<String>
+
+    @Query("SELECT COUNT(*) FROM task_occurrences WHERE taskId = :taskId AND resolution IS NOT NULL")
+    abstract suspend fun resolvedOccurrenceCount(taskId: String): Int
+
     @Transaction
-    open suspend fun create(task: TaskEntity, occurrence: TaskOccurrenceEntity) {
+    open suspend fun create(task: TaskEntity, occurrence: TaskOccurrenceEntity, syncOperations: List<SyncOperationEntity>) {
         insertTask(task)
         check(insertOccurrence(occurrence) != -1L)
+        insertSyncOperations(syncOperations)
     }
 
     @Transaction
@@ -709,6 +743,7 @@ abstract class TaskDao {
         resolution: String,
         resolvedAt: Long,
         nextOccurrence: TaskOccurrenceEntity?,
+        syncOperation: suspend (occurrenceId: String) -> SyncOperationEntity,
     ): Pair<TaskOccurrenceEntity, TaskOccurrenceEntity?> {
         val current = requireNotNull(getOccurrence(occurrenceId)) { "Occurrence does not exist" }
         require(current.resolution == null) { "Occurrence is already resolved" }
@@ -727,6 +762,8 @@ abstract class TaskDao {
                 ),
             )
         }
+        // The next Occurrence may be one that already existed for that due date: its own id is the one synchronized.
+        insertSyncOperations(listOfNotNull(syncOperation(resolved.id), next?.let { syncOperation(it.id) }))
         return resolved to next
     }
 
@@ -1145,6 +1182,44 @@ abstract class SyncDao {
     @Upsert
     protected abstract suspend fun upsertInhabitants(inhabitants: List<InhabitantEntity>)
 
+    @Upsert
+    protected abstract suspend fun upsertTasks(tasks: List<TaskEntity>)
+
+    @Upsert
+    protected abstract suspend fun upsertTaskOccurrence(occurrence: TaskOccurrenceEntity)
+
+    @Query(
+        "DELETE FROM task_occurrences WHERE id != :id AND taskId = :taskId AND dueYear = :year AND dueMonth = :month " +
+            "AND dueDay = :day AND dueMinuteOfDay = :minute AND timeZoneId = :timeZoneId",
+    )
+    protected abstract suspend fun deleteOtherOccurrenceWithSameDue(
+        id: String,
+        taskId: String,
+        year: Int,
+        month: Int,
+        day: Int,
+        minute: Int,
+        timeZoneId: String,
+    )
+
+    /** A Task has one Occurrence per due date: the remote one replaces a local twin created under another id. */
+    private suspend fun upsertTaskOccurrences(occurrences: List<TaskOccurrenceEntity>) = occurrences.forEach {
+        deleteOtherOccurrenceWithSameDue(it.id, it.taskId, it.dueYear, it.dueMonth, it.dueDay, it.dueMinuteOfDay, it.timeZoneId)
+        upsertTaskOccurrence(it)
+    }
+
+    @Query("DELETE FROM tasks WHERE id IN (:ids)")
+    protected abstract suspend fun deleteTasks(ids: List<String>)
+
+    @Query("DELETE FROM task_occurrences WHERE id IN (:ids)")
+    protected abstract suspend fun deleteTaskOccurrences(ids: List<String>)
+
+    @Query("DELETE FROM tasks WHERE aquariumId IN (:aquariumIds)")
+    protected abstract suspend fun deleteTasksOfAquariums(aquariumIds: List<String>)
+
+    @Query("DELETE FROM task_occurrences WHERE aquariumId IN (:aquariumIds)")
+    protected abstract suspend fun deleteTaskOccurrencesOfAquariums(aquariumIds: List<String>)
+
     @Query("SELECT * FROM sync_entity_versions")
     protected abstract suspend fun allVersions(): List<SyncEntityVersionEntity>
 
@@ -1199,6 +1274,8 @@ abstract class SyncDao {
         actions: List<MaintenanceActionEntity>,
         events: List<SessionEventEntity>,
         inhabitants: List<InhabitantEntity>,
+        tasks: List<TaskEntity>,
+        taskOccurrences: List<TaskOccurrenceEntity>,
         acknowledgedOperationIds: List<Long>,
     ) {
         if (acknowledgedOperationIds.isNotEmpty()) acknowledge(acknowledgedOperationIds)
@@ -1228,6 +1305,9 @@ abstract class SyncDao {
         if (cleanActions.isNotEmpty()) upsertMaintenanceActions(cleanActions)
         if (cleanEvents.isNotEmpty()) upsertEvents(cleanEvents)
         if (cleanInhabitants.isNotEmpty()) upsertInhabitants(cleanInhabitants)
+        tasks.filterNot { SyncEntityType.TASK.storageValue to it.id in dirty }
+            .takeIf(List<TaskEntity>::isNotEmpty)?.let { upsertTasks(it) }
+        upsertTaskOccurrences(taskOccurrences.filterNot { SyncEntityType.TASK_OCCURRENCE.storageValue to it.id in dirty })
     }
 
     @Transaction
@@ -1239,6 +1319,8 @@ abstract class SyncDao {
         actions: List<MaintenanceActionEntity>,
         events: List<SessionEventEntity>,
         inhabitants: List<InhabitantEntity>,
+        tasks: List<TaskEntity>,
+        taskOccurrences: List<TaskOccurrenceEntity>,
         versions: List<SyncEntityVersionEntity>,
         acknowledgedOperationIds: List<Long>,
     ) {
@@ -1275,6 +1357,9 @@ abstract class SyncDao {
             .takeIf(List<SessionEventEntity>::isNotEmpty)?.let { upsertEvents(it) }
         inhabitants.filter { accepted(SyncEntityType.INHABITANT, it.id) }
             .takeIf(List<InhabitantEntity>::isNotEmpty)?.let { upsertInhabitants(it) }
+        tasks.filter { accepted(SyncEntityType.TASK, it.id) }
+            .takeIf(List<TaskEntity>::isNotEmpty)?.let { upsertTasks(it) }
+        upsertTaskOccurrences(taskOccurrences.filter { accepted(SyncEntityType.TASK_OCCURRENCE, it.id) })
 
         val tombstones = acceptedVersions.filter { it.deletedAtEpochMillis != null }.groupBy { it.entityType }
         tombstones[SyncEntityType.MEASUREMENT.storageValue]?.map(SyncEntityVersionEntity::entityId)
@@ -1289,11 +1374,17 @@ abstract class SyncDao {
             ?.takeIf(List<String>::isNotEmpty)?.let { deleteParameters(it) }
         tombstones[SyncEntityType.INHABITANT.storageValue]?.map(SyncEntityVersionEntity::entityId)
             ?.takeIf(List<String>::isNotEmpty)?.let { deleteInhabitants(it) }
+        tombstones[SyncEntityType.TASK_OCCURRENCE.storageValue]?.map(SyncEntityVersionEntity::entityId)
+            ?.takeIf(List<String>::isNotEmpty)?.let { deleteTaskOccurrences(it) }
+        tombstones[SyncEntityType.TASK.storageValue]?.map(SyncEntityVersionEntity::entityId)
+            ?.takeIf(List<String>::isNotEmpty)?.let { deleteTasks(it) }
         // No foreign key locally: an Aquarium's inhabitants go with it.
         // shortcut: this also deletes rows with pending ops, which would block the push (require(payload != null)); unreachable while no Aquarium DELETE op exists, drop those pending ops in the same transaction when Aquarium deletion lands.
         tombstones[SyncEntityType.AQUARIUM.storageValue]?.map(SyncEntityVersionEntity::entityId)
             ?.takeIf(List<String>::isNotEmpty)?.let {
                 deleteInhabitantsOfAquariums(it)
+                deleteTaskOccurrencesOfAquariums(it)
+                deleteTasksOfAquariums(it)
                 deleteAquariums(it)
             }
         if (acceptedVersions.isNotEmpty()) upsertVersions(acceptedVersions)

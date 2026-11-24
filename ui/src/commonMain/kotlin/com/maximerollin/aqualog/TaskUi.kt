@@ -35,6 +35,11 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import com.maximerollin.aqualog.resources.cancel
+import com.maximerollin.aqualog.resources.delete
+import com.maximerollin.aqualog.resources.task_delete
+import com.maximerollin.aqualog.resources.task_delete_title
+import com.maximerollin.aqualog.resources.task_delete_description
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -117,6 +122,7 @@ fun TaskScreen(
             onBack = viewModel::closeTasks,
             onComplete = viewModel::completeTask,
             onResolve = viewModel::resolveTask,
+            onDelete = viewModel::deleteTask,
             onTitleChange = viewModel::updateTaskTitle,
             onDueDateChange = viewModel::updateTaskDueDate,
             onTimeChange = viewModel::updateTaskTime,
@@ -133,6 +139,7 @@ internal class TaskActions(
     val onBack: () -> Unit = {},
     val onComplete: (occurrence: TaskOccurrence, onFailed: () -> Unit) -> Unit = { _, _ -> },
     val onResolve: (TaskOccurrence, TaskResolution) -> Unit = { _, _ -> },
+    val onDelete: (TaskOccurrence) -> Unit = {},
     val onTitleChange: (String) -> Unit = {},
     val onDueDateChange: (String) -> Unit = {},
     val onTimeChange: (String) -> Unit = {},
@@ -464,6 +471,7 @@ private fun TaskRow(occurrence: TaskOccurrence, recurrence: TaskRecurrence?, ove
     // Guards against a double tap resolving the occurrence twice before the list refreshes.
     var completed by remember(occurrence.id) { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
+    var confirmDelete by remember(occurrence.id) { mutableStateOf(false) }
     val completeDescription = "${stringResource(Res.string.task_complete)}, ${occurrence.title}"
     val moreDescription = "${stringResource(Res.string.task_more_actions)}, ${occurrence.title}"
     val overdueLabel = stringResource(Res.string.task_overdue)
@@ -528,8 +536,33 @@ private fun TaskRow(occurrence: TaskOccurrence, recurrence: TaskRecurrence?, ove
                         actions.onResolve(occurrence, TaskResolution.IGNORED)
                     },
                 )
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.task_delete), color = colors.error) },
+                    onClick = {
+                        menuOpen = false
+                        confirmDelete = true
+                    },
+                )
             }
         }
+    }
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text(stringResource(Res.string.task_delete_title)) },
+            text = { Text(stringResource(Res.string.task_delete_description)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmDelete = false
+                        actions.onDelete(occurrence)
+                    },
+                ) { Text(stringResource(Res.string.delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) { Text(stringResource(Res.string.cancel)) }
+            },
+        )
     }
 }
 

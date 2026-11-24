@@ -7,6 +7,7 @@ import com.maximerollin.aqualog.shared.ProEntitlementCache
 import com.maximerollin.aqualog.shared.ProPurchaseVerifier
 import com.maximerollin.aqualog.shared.PurchaseAccountIdentityResult
 import com.maximerollin.aqualog.shared.PurchaseVerificationResult
+import com.maximerollin.aqualog.shared.SyncNetworkException
 import com.maximerollin.aqualog.shared.SyncSessionProvider
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
@@ -42,7 +43,15 @@ internal class SharedPreferencesProEntitlementCache(
         onChanged()
     }
 
+    override fun confirmedAtEpochMillis(): Long? = preferences.getLong(CONFIRMED_AT, 0L).takeIf { it > 0L }
+
+    // No onChanged: the widget shows the same entitlement.
+    override fun markConfirmed(atEpochMillis: Long) {
+        if (read() != null) preferences.edit().putLong(CONFIRMED_AT, atEpochMillis).apply()
+    }
+
     private companion object {
+        const val CONFIRMED_AT = "confirmedAt"
         const val PRODUCT_ID = "productId"
         const val VALID_UNTIL = "validUntil"
         const val LIFETIME = -1L
@@ -96,7 +105,12 @@ internal class SupabaseProPurchaseVerifier(
         var session = sessionProvider.currentSession() ?: return ProPurchaseServerResponse.Unauthorized
         var response = request(session.accessToken)
         if (response != ProPurchaseServerResponse.Unauthorized) return response
-        session = sessionProvider.refreshSession(session) ?: run {
+        val renewed = try {
+            sessionProvider.refreshSession(session)
+        } catch (failure: SyncNetworkException) {
+            return ProPurchaseServerResponse.Failure(failure.message ?: "Session refresh failed")
+        }
+        session = renewed ?: run {
             sessionProvider.requireReauthentication()
             return ProPurchaseServerResponse.Unauthorized
         }

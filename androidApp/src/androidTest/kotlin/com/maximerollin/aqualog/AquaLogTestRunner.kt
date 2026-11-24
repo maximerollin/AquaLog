@@ -81,6 +81,9 @@ class TestAquaLogApplication : AquaLogApplication() {
     // The repository is swapped between tests, so no collector is bound to it.
     override fun keepWidgetsFresh() = Unit
 
+    // No system permission dialog over the screens under test, no background sync started by a launch.
+    override val runsForegroundPrompts: Boolean = false
+
     override val taskReminderScheduler: TaskReminderScheduler
         get() = recordingTaskReminderScheduler
 

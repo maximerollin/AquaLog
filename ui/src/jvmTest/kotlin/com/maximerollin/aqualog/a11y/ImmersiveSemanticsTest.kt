@@ -308,12 +308,12 @@ class ImmersiveSemanticsTest {
                 setContent {
                     AquaLogTheme(false) {
                         CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = scale)) {
-                            Box(Modifier.width(360.dp)) { SettingsRow("Rythme", null, value = "Hebdomadaire") }
+                            Box(Modifier.width(360.dp)) { SettingsRow("Rythme", null, value = "Chaque semaine") }
                         }
                     }
                 }
                 val label = onNodeWithText("Rythme", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
-                val value = onNodeWithText("Hebdomadaire", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+                val value = onNodeWithText("Chaque semaine", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
                 assertEquals(stacked, value.top >= label.bottom, "at $scale: label $label, value $value")
             }
         }
@@ -599,11 +599,11 @@ class ImmersiveSemanticsTest {
     @Test
     fun `picker tile speaks label and value`() = withEnglish {
         runComposeUiTest {
-            setContent { AquaLogTheme(false) { PickerTile("Première date d'échéance", "12 nov. 2026", {}) } }
+            setContent { AquaLogTheme(false) { PickerTile("Première date d’échéance", "12 nov. 2026", {}) } }
             val node = onNode(hasClickAction()).fetchSemanticsNode()
             assertEquals(Role.Button, role(node))
             val spoken = node.config[SemanticsProperties.Text].joinToString(" ") { it.text }
-            assertTrue(spoken.contains("Première date d'échéance") && spoken.contains("12 nov. 2026"), spoken)
+            assertTrue(spoken.contains("Première date d’échéance") && spoken.contains("12 nov. 2026"), spoken)
         }
     }
 

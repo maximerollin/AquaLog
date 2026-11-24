@@ -98,7 +98,7 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithTag("settings-list").performScrollToNode(hasText("Discover Pro"))
         composeRule.onNodeWithText("Discover Pro").performClick()
         composeRule.onNodeWithText("All your tanks, their whole story.").assertIsDisplayed()
-        composeRule.onNodeWithText("Back to Settings").performClick()
+        composeRule.onNodeWithText("Close").performClick()
         scenario.close()
     }
 
