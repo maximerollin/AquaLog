@@ -33,14 +33,14 @@ class SyncStatusFlowTest {
         (context.applicationContext as TestAquaLogApplication).resetRepository()
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.onNodeWithText("Get started").performClick()
-        composeRule.onNodeWithText("Continue to Aquarium").performClick()
+        composeRule.clickWhenShown("Get started")
+        composeRule.clickWhenShown("Continue to Aquarium")
         composeRule.onNodeWithTag("aquarium-name").performTextInput("Amazonien")
         composeRule.onNodeWithTag("aquarium-volume").performTextInput("120")
-        composeRule.onNodeWithText("Continue to Parameters").performClick()
-        composeRule.onNodeWithText("Try a mini Session").performClick()
-        composeRule.onNodeWithText("See Free and Pro").performClick()
-        composeRule.onNodeWithText("Continue for free").performClick()
+        composeRule.clickWhenShown("Continue to Parameters")
+        composeRule.clickWhenShown("Try a mini Session")
+        composeRule.clickWhenShown("See Free and Pro")
+        composeRule.clickWhenShown("Continue for free")
 
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodes(hasLabel("Measure")).fetchSemanticsNodes().isNotEmpty()
