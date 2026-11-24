@@ -114,30 +114,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      # A booted emulator snapshot, cached once and reused by every shard and run: each boot skips the cold start.
-      - name: Emulator snapshot cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-api36-google_apis-x86_64-pixel_6-4cores-4096M
-      - name: Create the emulator snapshot
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
-        with:
-          api-level: 36
-          target: google_apis
-          arch: x86_64
-          profile: pixel_6
-          avd-name: Pixel_6_API36
-          cores: 4
-          ram-size: 4096M
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
-          script: echo "Emulator snapshot ready for caching."
+      # Cold boot on purpose: a cached, restored snapshot left a system dialog holding the window focus on one shard.
       - name: Android instrumented checks
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
@@ -148,14 +125,14 @@ jobs:
           avd-name: Pixel_6_API36
           cores: 4
           ram-size: 4096M
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           # AndroidJUnitRunner splits the test methods across the shards by itself (shardIndex is 0-based).
+          # A « not responding » or other system dialog takes the window focus from the app under test: close them first.
           script: |
             adb shell svc power stayon true
             adb shell wm dismiss-keyguard
             adb shell settings put secure immersive_mode_confirmations confirmed
+            adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS
             ./gradlew :androidApp:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.numShards=3 -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.index }} --console=plain
       - name: Stop only this job's backend
         if: always()
