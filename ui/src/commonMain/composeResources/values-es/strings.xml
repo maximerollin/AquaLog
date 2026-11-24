@@ -161,7 +161,7 @@
     <string name="edit_aquarium">Editar acuario</string>
     <string name="archive_aquarium">Archivar acuario</string>
     <string name="save_aquarium">Guardar acuario</string>
-    <string name="free_one_aquarium_limit">Gratis conserva todos los datos existentes y permite un acuario. Pro desbloquea acuarios adicionales.</string>
+    <string name="free_aquarium_limit">Gratis mantiene todos los datos existentes y permite dos acuarios. Pro desbloquea más.</string>
     <string name="settings_placeholder">Las configuraciones de cuenta, unidades y apariencia se agregarán en sus secciones dedicadas.</string>
     <string name="feedback_title">Enviar comentarios</string>
     <string name="send_feedback">Enviar comentarios</string>
@@ -285,9 +285,8 @@
     <string name="trends_window_complete_history">Historial completo</string>
     <string name="trends_start_date">Fecha de inicio</string>
     <string name="trends_end_date">Fecha de finalización</string>
-    <string name="date_format_hint">AAAA-MM-DD</string>
     <string name="trends_apply_custom_period">Aplicar periodo personalizado</string>
-    <string name="trends_invalid_custom_period">Introduce una fecha de inicio y después una de fin con el formato AAAA-MM-DD.</string>
+    <string name="trends_invalid_custom_period">Elige una fecha de inicio que no sea posterior a la de fin.</string>
     <string name="trends_advanced_analysis">Análisis Pro avanzado</string>
     <string name="trends_descriptive_disclaimer">Contexto descriptivo únicamente. Aquagenda no diagnostica las condiciones del agua ni recomienda tratamientos.</string>
     <string name="trends_choose_intervention">Elige una intervención para comparar el antes y el después</string>
@@ -560,7 +559,7 @@
     <string name="trends_custom_period">Periodo personalizado</string>
     <string name="trends_hero_legend">▲ Cambio de agua · Referencia, no un diagnóstico</string>
     <plurals name="trends_hero_change_days"><item quantity="one">%1$s en %2$d día</item><item quantity="other">%1$s en %2$d días</item></plurals>
-    <string name="more_pro_banner_title">Varios acuarios, todo el historial</string>
+    <string name="more_pro_banner_title">Más acuarios, todo el historial</string>
     <string name="more_pro_banner_action">Descubrir Pro</string>
     <string name="more_section_data_account">Datos y cuenta</string>
     <string name="task_day_tomorrow">Mañana</string>
@@ -588,7 +587,7 @@
     <string name="range_sheet_done">Listo</string>
     <string name="paywall_pro_overline">Aquagenda Pro</string>
     <string name="paywall_headline">Todos tus acuarios, toda su historia.</string>
-    <string name="paywall_benefit_aquariums">Varios acuarios</string>
+    <string name="paywall_benefit_aquariums">Más de dos acuarios</string>
     <string name="paywall_benefit_history">Historial de más de 90 días</string>
     <string name="paywall_benefit_analysis">Análisis antes / después de una intervención</string>
     <string name="paywall_benefit_widgets">Widgets de seguimiento en la pantalla de inicio</string>
@@ -604,7 +603,7 @@
     <string name="task_delete_title">¿Eliminar esta tarea?</string>
     <string name="task_delete_description">No volverá a aparecer ni a enviarte recordatorios. Lo que ya completaste sigue en la Cronología.</string>
     <string name="archive_aquarium_title">¿Archivar este acuario?</string>
-    <string name="archive_aquarium_description">Sus datos se conservan, pero desaparece de la app y sus tareas dejan de enviar recordatorios. Todavía no se puede restaurar desde la app.</string>
+    <string name="archive_aquarium_description">Sus datos se conservan, pero desaparece de la app y sus tareas dejan de enviar recordatorios. Puedes restaurarlo desde Más, en Acuarios archivados.</string>
     <string name="archive_aquarium_confirm">Archivar</string>
     <string name="measured_parameters_title">Parámetros medidos</string>
     <string name="welcome_sign_in">Ya tengo una cuenta</string>
@@ -615,4 +614,36 @@
     <string name="deletion_link_mismatch">Este enlace de inicio de sesión no corresponde a la eliminación pendiente.</string>
     <string name="deletion_wrong_account">Inicia sesión como %1$s para reanudar la eliminación.</string>
     <string name="deletion_wrong_account_unknown">Inicia sesión con la cuenta pendiente de eliminación.</string>
+    <string name="archived_aquariums">Acuarios archivados</string>
+    <string name="restore_aquarium">Restaurar</string>
+    <string name="restore_aquarium_named">Restaurar %1$s</string>
+    <string name="task_edit">Editar</string>
+    <string name="edit_task">Editar tarea</string>
+    <string name="session_discard_title">¿Descartar esta sesión?</string>
+    <string name="session_discard_description">Lo que has introducido no se guardará.</string>
+    <string name="session_discard_confirm">Descartar</string>
+    <string name="session_discard_keep">Seguir editando</string>
+    <string name="action_quantity_invalid">Introduce un número positivo o déjalo vacío.</string>
+    <string name="calculators_title">Calculadoras</string>
+    <string name="calculator_incomplete">Rellena los campos para ver el resultado.</string>
+    <string name="calculator_unit_liters">L</string>
+    <string name="calculator_unit_gallons">gal EE. UU.</string>
+    <string name="calculator_unit_centimeters">cm</string>
+    <string name="calculator_unit_inches">in</string>
+    <string name="calculator_volume_title">Volumen del acuario</string>
+    <string name="calculator_length">Largo (%1$s)</string>
+    <string name="calculator_width">Ancho (%1$s)</string>
+    <string name="calculator_height">Altura del agua (%1$s)</string>
+    <string name="calculator_volume_result">%1$s L · %2$s gal EE. UU.</string>
+    <string name="calculator_water_change_title">Cambio de agua</string>
+    <string name="calculator_tank_volume">Volumen del acuario (%1$s)</string>
+    <string name="calculator_percent">Parte cambiada (%)</string>
+    <string name="calculator_nitrate_now">Nitratos actuales (mg/L)</string>
+    <string name="calculator_nitrate_new_water">Nitratos del agua nueva (mg/L)</string>
+    <string name="calculator_water_change_result">A cambiar: %1$s %2$s</string>
+    <string name="calculator_nitrate_result">Nitratos estimados después: %1$s mg/L</string>
+    <string name="calculator_dose_title">Dosificación</string>
+    <string name="calculator_dose_amount">Dosis indicada</string>
+    <string name="calculator_dose_per_volume">Para un volumen de (%1$s)</string>
+    <string name="calculator_dose_result">Para este acuario: %1$s, en la unidad de la etiqueta</string>
 </resources>

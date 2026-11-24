@@ -161,7 +161,7 @@
     <string name="edit_aquarium">Edit Aquarium</string>
     <string name="archive_aquarium">Archive Aquarium</string>
     <string name="save_aquarium">Save Aquarium</string>
-    <string name="free_one_aquarium_limit">Free keeps all existing data and allows one Aquarium. Pro unlocks additional Aquariums.</string>
+    <string name="free_aquarium_limit">Free keeps all existing data and allows two Aquariums. Pro unlocks more.</string>
     <string name="settings_placeholder">Account, units and appearance settings will be added in their dedicated slices.</string>
     <string name="feedback_title">Send feedback</string>
     <string name="send_feedback">Send feedback</string>
@@ -285,9 +285,8 @@
     <string name="trends_window_complete_history">Complete history</string>
     <string name="trends_start_date">Start date</string>
     <string name="trends_end_date">End date</string>
-    <string name="date_format_hint">YYYY-MM-DD</string>
     <string name="trends_apply_custom_period">Apply custom period</string>
-    <string name="trends_invalid_custom_period">Enter an ordered start and end date as YYYY-MM-DD.</string>
+    <string name="trends_invalid_custom_period">Choose a start date that is not after the end date.</string>
     <string name="trends_advanced_analysis">Advanced Pro analysis</string>
     <string name="trends_descriptive_disclaimer">Descriptive context only. Aquagenda does not diagnose water conditions or recommend treatment.</string>
     <string name="trends_choose_intervention">Choose an intervention to compare before and after</string>
@@ -560,7 +559,7 @@
     <string name="trends_custom_period">Custom period</string>
     <string name="trends_hero_legend">▲ Water change · Reference, not a diagnosis</string>
     <plurals name="trends_hero_change_days"><item quantity="one">%1$s over %2$d day</item><item quantity="other">%1$s over %2$d days</item></plurals>
-    <string name="more_pro_banner_title">Several aquariums, all your history</string>
+    <string name="more_pro_banner_title">More aquariums, all your history</string>
     <string name="more_pro_banner_action">Discover Pro</string>
     <string name="more_section_data_account">Data and account</string>
     <string name="task_day_tomorrow">Tomorrow</string>
@@ -588,7 +587,7 @@
     <string name="range_sheet_done">Done</string>
     <string name="paywall_pro_overline">Aquagenda Pro</string>
     <string name="paywall_headline">All your tanks, their whole story.</string>
-    <string name="paywall_benefit_aquariums">Several Aquariums</string>
+    <string name="paywall_benefit_aquariums">More than two Aquariums</string>
     <string name="paywall_benefit_history">History beyond 90 days</string>
     <string name="paywall_benefit_analysis">Before / after analysis of an intervention</string>
     <string name="paywall_benefit_widgets">Tracking widgets on your home screen</string>
@@ -604,7 +603,7 @@
     <string name="task_delete_title">Delete this Task?</string>
     <string name="task_delete_description">It will no longer come back or remind you. What you already completed stays in the Chronology.</string>
     <string name="archive_aquarium_title">Archive this Aquarium?</string>
-    <string name="archive_aquarium_description">Its data is kept, but it leaves the app and its Tasks stop reminding you. It cannot be restored from the app yet.</string>
+    <string name="archive_aquarium_description">Its data is kept, but it leaves the app and its Tasks stop reminding you. You can restore it from More, under Archived Aquariums.</string>
     <string name="archive_aquarium_confirm">Archive</string>
     <string name="measured_parameters_title">Measured parameters</string>
     <string name="welcome_sign_in">I already have an account</string>
@@ -615,4 +614,36 @@
     <string name="deletion_link_mismatch">This sign-in link does not match the pending deletion.</string>
     <string name="deletion_wrong_account">Sign in as %1$s to resume the deletion.</string>
     <string name="deletion_wrong_account_unknown">Sign in with the account awaiting deletion.</string>
+    <string name="archived_aquariums">Archived Aquariums</string>
+    <string name="restore_aquarium">Restore</string>
+    <string name="restore_aquarium_named">Restore %1$s</string>
+    <string name="task_edit">Edit</string>
+    <string name="edit_task">Edit Task</string>
+    <string name="session_discard_title">Discard this Session?</string>
+    <string name="session_discard_description">What you entered will not be saved.</string>
+    <string name="session_discard_confirm">Discard</string>
+    <string name="session_discard_keep">Keep editing</string>
+    <string name="action_quantity_invalid">Enter a positive number, or leave it empty.</string>
+    <string name="calculators_title">Calculators</string>
+    <string name="calculator_incomplete">Fill in the fields to see the result.</string>
+    <string name="calculator_unit_liters">L</string>
+    <string name="calculator_unit_gallons">US gal</string>
+    <string name="calculator_unit_centimeters">cm</string>
+    <string name="calculator_unit_inches">in</string>
+    <string name="calculator_volume_title">Tank volume</string>
+    <string name="calculator_length">Length (%1$s)</string>
+    <string name="calculator_width">Width (%1$s)</string>
+    <string name="calculator_height">Water height (%1$s)</string>
+    <string name="calculator_volume_result">%1$s L · %2$s US gal</string>
+    <string name="calculator_water_change_title">Water change</string>
+    <string name="calculator_tank_volume">Tank volume (%1$s)</string>
+    <string name="calculator_percent">Share changed (%)</string>
+    <string name="calculator_nitrate_now">Nitrate now (mg/L)</string>
+    <string name="calculator_nitrate_new_water">Nitrate in new water (mg/L)</string>
+    <string name="calculator_water_change_result">To change: %1$s %2$s</string>
+    <string name="calculator_nitrate_result">Estimated nitrate afterwards: %1$s mg/L</string>
+    <string name="calculator_dose_title">Dosing</string>
+    <string name="calculator_dose_amount">Dose on the label</string>
+    <string name="calculator_dose_per_volume">For a volume of (%1$s)</string>
+    <string name="calculator_dose_result">For this tank: %1$s, in the unit of the label</string>
 </resources>

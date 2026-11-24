@@ -39,6 +39,12 @@ interface AquariumRepository {
 
     suspend fun archiveAquarium(aquariumId: String): Aquarium
 
+    /** Brings an archived Aquarium back; Free is refused once [FREE_AQUARIUM_LIMIT] Aquariums are in use. */
+    suspend fun unarchiveAquarium(
+        aquariumId: String,
+        access: AquariumCreationAccess = AquariumCreationAccess.FREE,
+    ): Aquarium
+
     suspend fun updateAquarium(aquarium: Aquarium): Aquarium
 
     /** Replaces the Aquarium's single photo with [jpeg], or removes it when null. */
@@ -111,6 +117,9 @@ interface AquariumRepository {
     suspend fun createTask(input: TaskInput): CreatedTask
 
     suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult
+
+    /** Changes the Task and its pending Occurrence together; the Occurrence keeps its id, so its reminder is replaced. */
+    suspend fun updateTask(input: TaskEditInput): CreatedTask
 
     /** Removes the Task's pending Occurrences so it never recurs; what was already resolved stays in the history. */
     suspend fun deleteTask(taskId: String)
@@ -271,6 +280,18 @@ class RoomAquariumRepository(
         )
         onSyncNeeded()
         return archived
+    }
+
+    override suspend fun unarchiveAquarium(aquariumId: String, access: AquariumCreationAccess): Aquarium {
+        val existing = requireNotNull(aquariumDao.getSetup(aquariumId)) { "Aquarium does not exist" }.aquarium.toDomain()
+        if (!existing.isArchived) return existing
+        if (access == AquariumCreationAccess.FREE && aquariumDao.activeAquariumCount() >= FREE_AQUARIUM_LIMIT) {
+            throw FreeAquariumLimitReached()
+        }
+        val restored = existing.copy(isArchived = false)
+        aquariumDao.updateAquarium(restored.toEntity(), newSyncOperation(SyncEntityType.AQUARIUM, restored.id))
+        onSyncNeeded()
+        return restored
     }
 
     override suspend fun updateAquarium(aquarium: Aquarium): Aquarium {
@@ -706,6 +727,37 @@ class RoomAquariumRepository(
 
     override suspend fun resolveTaskOccurrence(input: TaskResolutionInput): TaskResolutionResult =
         resolve(input, catchUpAfter = null)
+
+    override suspend fun updateTask(input: TaskEditInput): CreatedTask {
+        require(input.title.isNotBlank()) { "Task title must not be blank" }
+        require(input.minuteOfDay == null || input.minuteOfDay in 0 until 24 * 60)
+        require(input.timeZoneId.isNotBlank())
+        val pending = observePendingTaskOccurrences().first().firstOrNull { it.id == input.occurrenceId }
+            ?: error("Occurrence is not pending")
+        val task = taskDao.taskForOccurrence(input.occurrenceId).toDomain().copy(
+            title = input.title.trim(),
+            recurrence = input.recurrence,
+            monthlyAnchorDay = input.dueDate.day,
+            maintenanceActionType = input.maintenanceActionType,
+        )
+        val occurrence = pending.copy(
+            title = task.title,
+            dueDate = input.dueDate,
+            minuteOfDay = input.minuteOfDay,
+            timeZoneId = input.timeZoneId,
+            maintenanceActionType = input.maintenanceActionType,
+        )
+        taskDao.update(
+            task.toEntity(),
+            occurrence.toEntity(),
+            listOf(
+                newSyncOperation(SyncEntityType.TASK, task.id),
+                newSyncOperation(SyncEntityType.TASK_OCCURRENCE, occurrence.id),
+            ),
+        )
+        onSyncNeeded()
+        return CreatedTask(task, occurrence)
+    }
 
     override suspend fun deleteTask(taskId: String) {
         val operations = taskDao.pendingOccurrenceIds(taskId)

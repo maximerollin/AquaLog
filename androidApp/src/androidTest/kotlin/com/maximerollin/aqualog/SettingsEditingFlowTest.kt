@@ -1,6 +1,14 @@
 package com.maximerollin.aqualog
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
+import androidx.test.espresso.Espresso.closeSoftKeyboard
+import androidx.test.espresso.Espresso.pressBack
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasClickAction
@@ -104,6 +112,127 @@ class SettingsEditingFlowTest {
                 0,
                 runBlocking { application.aquariumRepository.observePendingTaskOccurrences().first() }.size,
             )
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun aTask_isEditedFromItsMenu_inTheSheetThatCreatedIt() {
+        val setup = seedAquarium()
+        runBlocking {
+            application.aquariumRepository.createTask(
+                TaskInput(setup.aquarium.id, "Feed twice", TaskRecurrence.DAILY, TaskDate(2026, 10, 7), null, "Europe/Paris"),
+            )
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.onNode(hasText("See all") and hasClickAction()).performClick()
+            composeRule.onNodeWithContentDescription("More actions, Feed twice").performClick()
+            composeRule.onNodeWithText("Edit").performClick()
+            composeRule.onNodeWithText("Edit Task").assertIsDisplayed()
+            composeRule.onNode(hasText("Feed twice") and hasSetTextAction()).performTextReplacement("Feed once")
+            closeSoftKeyboard()
+            capture("task-edit-sheet.png")
+            composeRule.onNodeWithText("Weekly").performScrollTo().performClick()
+            composeRule.onNodeWithText("Save Task").performScrollTo().performClick()
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasText("Edit Task")).fetchSemanticsNodes().isEmpty()
+            }
+            composeRule.onNodeWithText("Feed once").assertIsDisplayed()
+            val pending = runBlocking { application.aquariumRepository.observePendingTaskOccurrences().first() }.single()
+            assertEquals("Feed once", pending.title)
+            assertEquals(
+                TaskRecurrence.WEEKLY,
+                runBlocking { application.aquariumRepository.observeTaskRecurrences().first() }.getValue(pending.taskId),
+            )
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun anArchivedAquarium_isRestoredFromMore() {
+        val setup = seedAquarium()
+        runBlocking {
+            val second = application.aquariumRepository.createConfiguredAquarium(
+                "Nano", 30.0, VolumeUnit.LITERS, AquariumProfile.ESTABLISHED,
+                OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            )
+            application.aquariumRepository.archiveAquarium(second.aquarium.id)
+            application.aquariumRepository.selectAquarium(setup.aquarium.id)
+        }
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.onNode(hasLabel("More")).performClick()
+            composeRule.scrollAboveBar("settings-list", hasText("Archived Aquariums"))
+            composeRule.onNodeWithText("Archived Aquariums").performClick()
+            composeRule.onNodeWithTag("archived-aquariums").assertIsDisplayed()
+            capture("archived-aquariums.png")
+            composeRule.onNodeWithContentDescription("Restore Nano").performClick()
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                runBlocking { application.aquariumRepository.observeAquariums().first() }.size == 2
+            }
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun calculators_giveAVolume_aWaterChange_andADose() {
+        seedAquarium()
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.onNode(hasLabel("More")).performClick()
+            composeRule.scrollAboveBar("settings-list", hasText("Calculators"))
+            composeRule.onNodeWithText("Calculators").performClick()
+            composeRule.onNodeWithTag("calculators-list").assertIsDisplayed()
+            composeRule.onNode(hasText("Length (cm)") and hasSetTextAction()).performTextInput("80")
+            composeRule.onNode(hasText("Width (cm)") and hasSetTextAction()).performTextInput("30")
+            composeRule.onNode(hasText("Water height (cm)") and hasSetTextAction()).performTextInput("50")
+            closeSoftKeyboard()
+            composeRule.onNodeWithTag("calculator-volume-result").assertTextEquals("120 L · 31.7 US gal")
+            capture("calculators.png")
+
+            composeRule.onNodeWithTag("calculators-list").performScrollToNode(hasTestTag("calculator-water-change-result"))
+            composeRule.onNode(hasText("Share changed (%)") and hasSetTextAction()).performTextInput("25")
+            composeRule.onNode(hasText("Nitrate now (mg/L)") and hasSetTextAction()).performTextInput("40")
+            closeSoftKeyboard()
+            composeRule.onNodeWithTag("calculator-water-change-result")
+                .assertTextEquals("To change: 30 L\nEstimated nitrate afterwards: 30 mg/L")
+
+            composeRule.onNodeWithTag("calculators-list").performScrollToNode(hasTestTag("calculator-dose-result"))
+            composeRule.onNode(hasText("Dose on the label") and hasSetTextAction()).performTextInput("5")
+            composeRule.onNode(hasText("For a volume of (L)") and hasSetTextAction()).performTextInput("50")
+            closeSoftKeyboard()
+            composeRule.onNodeWithTag("calculator-dose-result").assertTextEquals("For this tank: 12, in the unit of the label")
+            composeRule.onNodeWithTag("calculators-back").performClick()
+        } finally {
+            scenario.close()
+        }
+    }
+
+    @Test
+    fun aSessionWithATypedValue_asksBeforeBeingDiscarded() {
+        seedAquarium()
+        val scenario = ActivityScenario.launch(MainActivity::class.java)
+        try {
+            composeRule.onNode(hasLabel("Measure")).performClick()
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeRule.onAllNodes(hasSetTextAction())[0].performTextInput("24.5")
+            closeSoftKeyboard()
+            pressBack()
+            composeRule.onNodeWithText("Discard this Session?").assertIsDisplayed()
+            capture("session-discard.png")
+            composeRule.onNodeWithText("Keep editing").performClick()
+            composeRule.onAllNodes(hasText("Discard this Session?")).assertCountEquals(0)
+            pressBack()
+            composeRule.onNodeWithText("Discard").performClick()
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasLabel("More")).fetchSemanticsNodes().isNotEmpty()
+            }
         } finally {
             scenario.close()
         }

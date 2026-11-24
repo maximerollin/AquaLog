@@ -24,6 +24,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -132,13 +133,36 @@ class MoreSemanticsTest {
     }
 
     @Test
-    fun `archive is disabled in free with its reason`() = french {
+    fun `free archives one of its two aquariums, the limit said under the row`() = french {
         runComposeUiTest {
-            more(free)
-            row("Archiver l’aquarium").assertIsNotEnabled()
+            var archived = 0
+            more(free, MoreActions(onArchive = { archived++ }))
+            row("Archiver l’aquarium").assertIsEnabled().performClick()
+            assertEquals(1, archived)
             row(
-                "La version gratuite conserve toutes les données existantes et autorise un seul aquarium. Pro débloque des aquariums supplémentaires.",
+                "La version gratuite conserve toutes les données existantes et autorise deux aquariums. Pro en débloque davantage.",
             ).assertExists()
+        }
+    }
+
+    @Test
+    fun `the last aquarium cannot be archived`() = french {
+        runComposeUiTest {
+            more(free.copy(aquariums = listOf(salon)))
+            row("Archiver l’aquarium").assertIsNotEnabled()
+        }
+    }
+
+    @Test
+    fun `archived aquariums are listed and restored from their row`() = french {
+        runComposeUiTest {
+            val restored = mutableListOf<String>()
+            val cave = Aquarium("c", "Cave", 30.0, VolumeUnit.LITERS, 0L, isArchived = true)
+            more(free.copy(archivedAquariums = listOf(cave)), MoreActions(onUnarchive = { restored += it }))
+            row("Aquariums archivés").performClick()
+            onNodeWithText("Cave").assertExists()
+            onNode(hasContentDescription("Restaurer Cave")).performClick()
+            assertEquals(listOf("c"), restored)
         }
     }
 

@@ -22,6 +22,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import java.time.LocalDate
+import com.maximerollin.aqualog.ui.theme.PickerTile
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -38,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.maximerollin.aqualog.resources.Res
 import com.maximerollin.aqualog.resources.close
-import com.maximerollin.aqualog.resources.date_format_hint
 import com.maximerollin.aqualog.resources.trends_apply_custom_period
 import com.maximerollin.aqualog.resources.trends_complete_history
 import com.maximerollin.aqualog.resources.trends_custom_period
@@ -55,7 +60,6 @@ import com.maximerollin.aqualog.shared.TrendSnapshot
 import com.maximerollin.aqualog.shared.assistance.ReadingLevel
 import com.maximerollin.aqualog.shared.assistance.readingLevel
 import com.maximerollin.aqualog.ui.theme.CarnetSectionTitle
-import com.maximerollin.aqualog.ui.theme.FilledField
 import com.maximerollin.aqualog.ui.theme.LEVEL_MARK_TAG
 import com.maximerollin.aqualog.ui.theme.LevelMark
 import com.maximerollin.aqualog.ui.theme.levelContainerColor
@@ -213,11 +217,14 @@ private fun StateChip(words: String, level: ReadingLevel) {
     }
 }
 
+private enum class CustomPeriodBound { START, END }
+
 /** Pro choices that used to sit at the bottom of the list: the complete history, or a period between two dates. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CustomPeriodSheet(state: HomeUiState, viewModel: HomeViewModel, onDismiss: () -> Unit) {
     val trends = state.trends
+    var picking by rememberSaveable { mutableStateOf<CustomPeriodBound?>(null) }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -239,27 +246,38 @@ internal fun CustomPeriodSheet(state: HomeUiState, viewModel: HomeViewModel, onD
                 },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
             ) { Text(stringResource(Res.string.trends_complete_history)) }
+            // Two tiles opening the date picker: nobody types a date in a format they have to be told.
+            val formatter = currentLocalizedFormatters()
+            fun shown(value: String) = runCatching { LocalDate.parse(value) }.getOrNull()
+                ?.let { formatter.date(it.year, it.monthValue, it.dayOfMonth) } ?: "—"
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilledField(
-                    value = trends.customStartDate,
-                    onValueChange = viewModel::updateTrendCustomStart,
+                PickerTile(
                     label = stringResource(Res.string.trends_start_date),
-                    modifier = Modifier.weight(1f),
+                    value = shown(trends.customStartDate),
+                    onClick = { picking = CustomPeriodBound.START },
+                    modifier = Modifier.weight(1f).testTag("trend-custom-start"),
                 )
-                FilledField(
-                    value = trends.customEndDate,
-                    onValueChange = viewModel::updateTrendCustomEnd,
+                PickerTile(
                     label = stringResource(Res.string.trends_end_date),
-                    modifier = Modifier.weight(1f),
+                    value = shown(trends.customEndDate),
+                    onClick = { picking = CustomPeriodBound.END },
+                    modifier = Modifier.weight(1f).testTag("trend-custom-end"),
                 )
             }
-            // One hint for both dates, under the pair, as the filled fields have no supporting line of their own.
-            Text(
-                stringResource(Res.string.date_format_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp),
-            )
+            picking?.let { bound ->
+                val current = if (bound == CustomPeriodBound.START) trends.customStartDate else trends.customEndDate
+                TaskDatePickerDialog(
+                    selectedDate = runCatching { LocalDate.parse(current) }.getOrElse { LocalDate.now() },
+                    onDateSelected = {
+                        if (bound == CustomPeriodBound.START) {
+                            viewModel.updateTrendCustomStart(it.toString())
+                        } else {
+                            viewModel.updateTrendCustomEnd(it.toString())
+                        }
+                    },
+                    onDismiss = { picking = null },
+                )
+            }
             Button(
                 onClick = {
                     viewModel.applyTrendCustomPeriod()

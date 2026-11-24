@@ -138,6 +138,11 @@ fun AquaLogContent(
             viewModel,
             framed,
         )
+        state.showCalculators && state.setup != null -> CalculatorsScreen(
+            state.setup.aquarium,
+            viewModel::closeCalculators,
+            framed,
+        )
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(
             state = state.rapidSession,
             aquarium = (state.sessionDetailSetup?.takeIf { state.rapidSession.editingSessionId != null } ?: state.setup).aquarium,
@@ -292,7 +297,8 @@ internal fun AccountContent(state: AccountUiState, aquarium: Aquarium?, actions:
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                WaterPrimaryButton(Res.string.send_magic_link, actions.onRequestMagicLink)
+                // Nothing is sent to an address that cannot be one: the mistake is caught here, not on an error screen.
+                WaterPrimaryButton(Res.string.send_magic_link, actions.onRequestMagicLink, enabled = looksLikeEmail(state.email))
                 WaterTextButton(Res.string.back, actions.onOpenMethods)
             }
             AccountStep.MAGIC_SENT -> {
@@ -364,6 +370,9 @@ private fun AccountHeading(title: StringResource, description: StringResource, d
 }
 
 /** A white filled button on the water, its label deep teal. */
+/** Something before an « @ », then a domain with a dot: enough to stop a blank or half-typed address. */
+internal fun looksLikeEmail(input: String): Boolean = Regex("""^\S+@\S+\.\S{2,}$""").matches(input.trim())
+
 @Composable
 private fun WaterPrimaryButton(label: StringResource, onClick: () -> Unit, enabled: Boolean = true) {
     Button(

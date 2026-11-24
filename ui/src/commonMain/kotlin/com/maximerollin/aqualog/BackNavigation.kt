@@ -10,6 +10,7 @@ internal enum class BackStep {
     CloseTasks,
     CloseRhythm,
     CloseParameters,
+    CloseCalculators,
     CloseSession,
     BackInAddInhabitant,
     CloseSessionDetails,
@@ -37,6 +38,7 @@ internal fun backStep(state: HomeUiState): BackStep? = when {
     state.tasks.isOpen && state.setup != null -> BackStep.CloseTasks
     state.showRhythmSettings && state.setup != null -> BackStep.CloseRhythm
     state.showParameterSettings && state.setup != null -> BackStep.CloseParameters
+    state.showCalculators && state.setup != null -> BackStep.CloseCalculators
     state.rapidSession != null && state.setup != null -> BackStep.CloseSession
     state.addInhabitant != null && state.setup != null -> BackStep.BackInAddInhabitant
     state.sessionDetail != null && state.setup != null -> BackStep.CloseSessionDetails
@@ -52,6 +54,7 @@ internal fun HomeViewModel.perform(step: BackStep) = when (step) {
     BackStep.CloseTasks -> closeTasks()
     BackStep.CloseRhythm -> closeRhythmSettings()
     BackStep.CloseParameters -> closeParameterSettings()
+    BackStep.CloseCalculators -> closeCalculators()
     BackStep.CloseSession -> closeRapidSession()
     BackStep.BackInAddInhabitant -> backInAddInhabitant()
     BackStep.CloseSessionDetails -> closeSessionDetails()

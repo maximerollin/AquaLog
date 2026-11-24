@@ -161,7 +161,7 @@
     <string name="edit_aquarium">Aquarium bearbeiten</string>
     <string name="archive_aquarium">Aquarium archivieren</string>
     <string name="save_aquarium">Aquarium speichern</string>
-    <string name="free_one_aquarium_limit">Kostenlos behält alle vorhandenen Daten und erlaubt ein Aquarium. Pro schaltet weitere Aquarien frei.</string>
+    <string name="free_aquarium_limit">Kostenlos behält alle vorhandenen Daten und erlaubt zwei Aquarien. Pro schaltet weitere frei.</string>
     <string name="settings_placeholder">Konto-, Einheiten- und Darstellungseinstellungen werden in den entsprechenden Slices hinzugefügt.</string>
     <string name="feedback_title">Feedback senden</string>
     <string name="send_feedback">Feedback senden</string>
@@ -285,9 +285,8 @@
     <string name="trends_window_complete_history">Gesamter Verlauf</string>
     <string name="trends_start_date">Startdatum</string>
     <string name="trends_end_date">Enddatum</string>
-    <string name="date_format_hint">JJJJ-MM-TT</string>
     <string name="trends_apply_custom_period">Benutzerdefinierten Zeitraum anwenden</string>
-    <string name="trends_invalid_custom_period">Geben Sie zuerst ein Startdatum und dann ein Enddatum im Format JJJJ-MM-TT ein.</string>
+    <string name="trends_invalid_custom_period">Wählen Sie ein Startdatum, das nicht nach dem Enddatum liegt.</string>
     <string name="trends_advanced_analysis">Erweiterte Pro-Analyse</string>
     <string name="trends_descriptive_disclaimer">Nur beschreibender Kontext. Aquagenda diagnostiziert keine Wasserbedingungen und empfiehlt keine Behandlung.</string>
     <string name="trends_choose_intervention">Wählen Sie einen Eingriff, um vorher und nachher zu vergleichen</string>
@@ -560,7 +559,7 @@
     <string name="trends_custom_period">Eigener Zeitraum</string>
     <string name="trends_hero_legend">▲ Wasserwechsel · Orientierung, keine Diagnose</string>
     <plurals name="trends_hero_change_days"><item quantity="one">%1$s in %2$d Tag</item><item quantity="other">%1$s in %2$d Tagen</item></plurals>
-    <string name="more_pro_banner_title">Mehrere Aquarien, der ganze Verlauf</string>
+    <string name="more_pro_banner_title">Mehr Aquarien, der ganze Verlauf</string>
     <string name="more_pro_banner_action">Pro entdecken</string>
     <string name="more_section_data_account">Daten und Konto</string>
     <string name="task_day_tomorrow">Morgen</string>
@@ -588,7 +587,7 @@
     <string name="range_sheet_done">Fertig</string>
     <string name="paywall_pro_overline">Aquagenda Pro</string>
     <string name="paywall_headline">Alle Ihre Becken, ihre ganze Geschichte.</string>
-    <string name="paywall_benefit_aquariums">Mehrere Aquarien</string>
+    <string name="paywall_benefit_aquariums">Mehr als zwei Aquarien</string>
     <string name="paywall_benefit_history">Verlauf über 90 Tage hinaus</string>
     <string name="paywall_benefit_analysis">Vorher-nachher-Analyse eines Eingriffs</string>
     <string name="paywall_benefit_widgets">Übersichts-Widgets auf dem Startbildschirm</string>
@@ -604,7 +603,7 @@
     <string name="task_delete_title">Diese Aufgabe löschen?</string>
     <string name="task_delete_description">Sie kommt nicht wieder und erinnert Sie nicht mehr. Bereits Erledigtes bleibt in der Chronologie.</string>
     <string name="archive_aquarium_title">Dieses Aquarium archivieren?</string>
-    <string name="archive_aquarium_description">Die Daten bleiben erhalten, aber das Aquarium verschwindet aus der App und seine Aufgaben erinnern nicht mehr. Es lässt sich in der App noch nicht wiederherstellen.</string>
+    <string name="archive_aquarium_description">Die Daten bleiben erhalten, aber das Aquarium verschwindet aus der App und seine Aufgaben erinnern nicht mehr. Sie können es unter Mehr, Archivierte Aquarien, wiederherstellen.</string>
     <string name="archive_aquarium_confirm">Archivieren</string>
     <string name="measured_parameters_title">Gemessene Parameter</string>
     <string name="welcome_sign_in">Ich habe bereits ein Konto</string>
@@ -615,4 +614,36 @@
     <string name="deletion_link_mismatch">Dieser Anmeldelink passt nicht zur ausstehenden Löschung.</string>
     <string name="deletion_wrong_account">Melden Sie sich als %1$s an, um die Löschung fortzusetzen.</string>
     <string name="deletion_wrong_account_unknown">Melden Sie sich mit dem Konto an, dessen Löschung aussteht.</string>
+    <string name="archived_aquariums">Archivierte Aquarien</string>
+    <string name="restore_aquarium">Wiederherstellen</string>
+    <string name="restore_aquarium_named">%1$s wiederherstellen</string>
+    <string name="task_edit">Bearbeiten</string>
+    <string name="edit_task">Aufgabe bearbeiten</string>
+    <string name="session_discard_title">Diese Sitzung verwerfen?</string>
+    <string name="session_discard_description">Ihre Eingaben werden nicht gespeichert.</string>
+    <string name="session_discard_confirm">Verwerfen</string>
+    <string name="session_discard_keep">Weiter bearbeiten</string>
+    <string name="action_quantity_invalid">Geben Sie eine positive Zahl ein oder lassen Sie das Feld leer.</string>
+    <string name="calculators_title">Rechner</string>
+    <string name="calculator_incomplete">Füllen Sie die Felder aus, um das Ergebnis zu sehen.</string>
+    <string name="calculator_unit_liters">L</string>
+    <string name="calculator_unit_gallons">US-Gal.</string>
+    <string name="calculator_unit_centimeters">cm</string>
+    <string name="calculator_unit_inches">Zoll</string>
+    <string name="calculator_volume_title">Beckenvolumen</string>
+    <string name="calculator_length">Länge (%1$s)</string>
+    <string name="calculator_width">Breite (%1$s)</string>
+    <string name="calculator_height">Wasserhöhe (%1$s)</string>
+    <string name="calculator_volume_result">%1$s L · %2$s US-Gal.</string>
+    <string name="calculator_water_change_title">Wasserwechsel</string>
+    <string name="calculator_tank_volume">Beckenvolumen (%1$s)</string>
+    <string name="calculator_percent">Gewechselter Anteil (%)</string>
+    <string name="calculator_nitrate_now">Nitrat aktuell (mg/L)</string>
+    <string name="calculator_nitrate_new_water">Nitrat im Frischwasser (mg/L)</string>
+    <string name="calculator_water_change_result">Zu wechseln: %1$s %2$s</string>
+    <string name="calculator_nitrate_result">Geschätztes Nitrat danach: %1$s mg/L</string>
+    <string name="calculator_dose_title">Dosierung</string>
+    <string name="calculator_dose_amount">Angegebene Dosis</string>
+    <string name="calculator_dose_per_volume">Für ein Volumen von (%1$s)</string>
+    <string name="calculator_dose_result">Für dieses Becken: %1$s, in der Einheit des Etiketts</string>
 </resources>

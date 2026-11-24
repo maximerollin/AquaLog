@@ -16,6 +16,8 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -327,16 +329,16 @@ class TrendsFlowTest {
         trendsTab().performClick()
         composeRule.awaitLabel("Custom period")
         composeRule.onNode(hasLabel("Custom period")).performClick()
-        // Dates in the shown format (YYYY-MM-DD), but the end before the start: the error shows and the sheet stays.
-        composeRule.onNodeWithText("Start date").performTextReplacement(today.toString())
-        composeRule.onNodeWithText("End date").performTextReplacement(today.minusDays(30).toString())
+        // Each date is chosen in the date picker. The end before the start: the error shows and the sheet stays.
+        pickDate("trend-custom-start", today)
+        pickDate("trend-custom-end", today.minusDays(30))
         composeRule.onNodeWithText("Apply custom period").performClick()
-        composeRule.onNodeWithText("Enter an ordered start and end date as YYYY-MM-DD.").assertIsDisplayed()
+        composeRule.onNodeWithText("Choose a start date that is not after the end date.").assertIsDisplayed()
         composeRule.onNodeWithText("Apply custom period").assertIsDisplayed()
 
         // An ordered range closes the sheet; the subtitle names the window and no period reads selected.
-        composeRule.onNodeWithText("Start date").performTextReplacement(today.minusDays(30).toString())
-        composeRule.onNodeWithText("End date").performTextReplacement(today.toString())
+        pickDate("trend-custom-start", today.minusDays(30))
+        pickDate("trend-custom-end", today)
         composeRule.onNodeWithText("Apply custom period").performClick()
         composeRule.onAllNodesWithText("Apply custom period").assertCountEquals(0)
         composeRule.onNodeWithText("Custom tank · Custom period").assertIsDisplayed()
@@ -348,6 +350,19 @@ class TrendsFlowTest {
         composeRule.onNodeWithText("Custom tank").assertIsDisplayed()
         composeRule.onNode(periodRadio() and hasText("7 days")).assertIsNotSelected()
         scenario.close()
+    }
+
+    /** Opens the picker of the tile [tileTag] and enters [date] through the picker's own text mode (US month/day/year). */
+    private fun pickDate(tileTag: String, date: LocalDate) {
+        composeRule.onNodeWithTag(tileTag).performClick()
+        composeRule.onNodeWithTag("task-date-picker").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Switch to text input mode").performClick()
+        composeRule.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("task-date-picker")))
+            .performTextReplacement(date.format(java.time.format.DateTimeFormatter.ofPattern("MMddyyyy")))
+        composeRule.onNodeWithText("OK").performClick()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasTestTag("task-date-picker")).fetchSemanticsNodes().isEmpty()
+        }
     }
 
     private fun parameterRow(label: String) = composeRule.onNode(hasClickAction() and hasText(label))

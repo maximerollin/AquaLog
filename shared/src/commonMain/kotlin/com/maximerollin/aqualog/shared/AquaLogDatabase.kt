@@ -15,6 +15,7 @@ import androidx.room3.Relation
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomDatabaseConstructor
 import androidx.room3.Transaction
+import androidx.room3.Update
 import androidx.room3.Upsert
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.room3.migration.Migration
@@ -437,8 +438,8 @@ abstract class AquariumDao {
     @Upsert
     protected abstract suspend fun upsertSelection(selection: SelectedAquariumEntity)
 
-    @Query("SELECT COUNT(*) FROM aquariums")
-    protected abstract suspend fun aquariumCount(): Int
+    @Query("SELECT COUNT(*) FROM aquariums WHERE isArchived = 0")
+    abstract suspend fun activeAquariumCount(): Int
 
     @Transaction
     open suspend fun create(
@@ -446,7 +447,7 @@ abstract class AquariumDao {
         syncOperation: SyncOperationEntity,
         allowMultiple: Boolean,
     ) {
-        if (!allowMultiple && aquariumCount() > 0) throw FreeAquariumLimitReached()
+        if (!allowMultiple && activeAquariumCount() >= FREE_AQUARIUM_LIMIT) throw FreeAquariumLimitReached()
         insert(aquarium)
         insertSyncOperations(listOf(syncOperation))
     }
@@ -458,7 +459,7 @@ abstract class AquariumDao {
         syncOperations: List<SyncOperationEntity>,
         allowMultiple: Boolean,
     ) {
-        if (!allowMultiple && aquariumCount() > 0) throw FreeAquariumLimitReached()
+        if (!allowMultiple && activeAquariumCount() >= FREE_AQUARIUM_LIMIT) throw FreeAquariumLimitReached()
         insert(aquarium)
         insertParameters(parameters)
         insertSyncOperations(syncOperations)
@@ -702,6 +703,23 @@ abstract class TaskDao {
     protected abstract suspend fun deleteTaskWithoutHistory(taskId: String)
 
     /** Stops the Task: nothing is left to do or to recur. Its resolved Occurrences stay in the Chronology. */
+    @Update
+    protected abstract suspend fun updateTaskRow(task: TaskEntity)
+
+    @Update
+    protected abstract suspend fun updateOccurrenceRow(occurrence: TaskOccurrenceEntity)
+
+    /** Fails, leaving both rows as they were, when the Occurrence is resolved or its new due date is already taken. */
+    @Transaction
+    open suspend fun update(task: TaskEntity, occurrence: TaskOccurrenceEntity, syncOperations: List<SyncOperationEntity>) {
+        require(requireNotNull(getOccurrence(occurrence.id)) { "Occurrence does not exist" }.resolution == null) {
+            "Occurrence is already resolved"
+        }
+        updateTaskRow(task)
+        updateOccurrenceRow(occurrence)
+        insertSyncOperations(syncOperations)
+    }
+
     @Transaction
     open suspend fun delete(taskId: String, syncOperations: List<SyncOperationEntity>) {
         deletePendingOccurrences(taskId)

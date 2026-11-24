@@ -10,6 +10,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.maximerollin.aqualog.shared.AquariumProfile
 import com.maximerollin.aqualog.shared.Aquarium
 import com.maximerollin.aqualog.shared.AquariumCreationAccess
+import com.maximerollin.aqualog.shared.FREE_AQUARIUM_LIMIT
 import com.maximerollin.aqualog.shared.AccountActivationCoordinator
 import com.maximerollin.aqualog.shared.AccountActivationResult
 import com.maximerollin.aqualog.shared.AccountControlCoordinator
@@ -71,6 +72,7 @@ import com.maximerollin.aqualog.shared.TimelineInhabitantChange
 import com.maximerollin.aqualog.shared.TimelineSession
 import com.maximerollin.aqualog.shared.LatestReading
 import com.maximerollin.aqualog.shared.TaskDate
+import com.maximerollin.aqualog.shared.TaskEditInput
 import com.maximerollin.aqualog.shared.TaskInput
 import com.maximerollin.aqualog.shared.TaskUsage
 import com.maximerollin.aqualog.shared.TaskOccurrence
@@ -211,6 +213,8 @@ data class TaskUiState(
     val time: String = "",
     val recurrence: TaskRecurrence = TaskRecurrence.ONCE,
     val linkedAction: MaintenanceActionType? = null,
+    /** The pending Occurrence whose Task the form edits; null while it creates one. */
+    val editingOccurrenceId: String? = null,
     val pendingOccurrences: List<TaskOccurrence> = emptyList(),
     /** Each Task's recurrence by Task id; a Task missing here shows none. */
     val recurrenceByTaskId: Map<String, TaskRecurrence> = emptyMap(),
@@ -334,6 +338,7 @@ private fun HomeUiState.withFreshOnboarding(): HomeUiState {
         destination = fresh.destination,
         showRhythmSettings = false,
         showParameterSettings = false,
+        showCalculators = false,
         pro = pro.copy(showPaywall = false),
     )
 }
@@ -407,6 +412,7 @@ data class HomeUiState(
     val isRestoringAccount: Boolean = false,
     val setup: AquariumSetup? = null,
     val aquariums: List<Aquarium> = emptyList(),
+    val archivedAquariums: List<Aquarium> = emptyList(),
     val aquariumEditor: AquariumEditorUiState? = null,
     val step: OnboardingStep = OnboardingStep.WELCOME,
     val profile: AquariumProfile = AquariumProfile.ESTABLISHED,
@@ -441,6 +447,7 @@ data class HomeUiState(
     val weeklySummary: WeeklySummary? = null,
     val showRhythmSettings: Boolean = false,
     val showParameterSettings: Boolean = false,
+    val showCalculators: Boolean = false,
     /** Id of the Session after which the « looks cycled » card was set aside for the displayed Aquarium, if any. */
     val cycledDismissedSessionId: String? = null,
     /** False until the dismissals of the displayed Aquarium were read, so a dismissed card never flashes. */
@@ -508,6 +515,8 @@ data class RapidSessionUiState(
     val saveError: Boolean = false,
     /** Suspicious values found by the last save attempt, by parameter definition id; never blocks saving. */
     val pendingConcerns: Map<String, MeasurementConcern> = emptyMap(),
+    /** Closing was asked while something is typed: the person confirms before it is thrown away. */
+    val confirmDiscard: Boolean = false,
 ) {
     val hasContent: Boolean
         get() = measurementInputs.values.any(String::isNotBlank) ||
@@ -518,8 +527,14 @@ data class RapidSessionUiState(
             evaluateMeasurement(measurementInputs[definition.id].orEmpty(), definition).isValid
         } ?: false
 
-    val canSave: Boolean get() = hasContent && allMeasurementsValid && !isSaving
+    val allActionQuantitiesValid: Boolean get() = actions.values.all { isValidActionQuantity(it.quantity) }
+
+    val canSave: Boolean get() = hasContent && allMeasurementsValid && allActionQuantitiesValid && !isSaving
 }
+
+/** Blank (no quantity), or a finite decimal that is not negative. */
+internal fun isValidActionQuantity(input: String): Boolean =
+    input.isBlank() || parseDecimalInput(input)?.let { it.isFinite() && it >= 0.0 } == true
 
 private data class RapidSessionDraftSnapshot(
     val idempotencyKey: String,
@@ -594,6 +609,11 @@ class HomeViewModel(
                 }
                 savePhotoTarget()
                 photoCache.keys.retainAll(aquariums.mapNotNull { it.photoId }.toSet())
+            }
+        }
+        viewModelScope.launch {
+            aquariumRepository.observeAquariums(includeArchived = true).collect { all ->
+                mutableUiState.update { it.copy(archivedAquariums = all.filter(Aquarium::isArchived)) }
             }
         }
         viewModelScope.launch {
@@ -824,11 +844,11 @@ class HomeViewModel(
     /** An open view that may hold typed input: a widget tap only brings the app forward. */
     private fun HomeUiState.holdsInput() =
         rapidSession != null || account.step != AccountStep.HIDDEN || showRhythmSettings || showParameterSettings ||
-            aquariumEditor != null || addInhabitant != null
+            showCalculators || aquariumEditor != null || addInhabitant != null
 
     fun openCreateAquarium() {
         val state = mutableUiState.value
-        if (state.aquariums.isNotEmpty() && state.pro.purchaseStatus != ProPurchaseStatus.ACTIVE) {
+        if (state.aquariums.size >= FREE_AQUARIUM_LIMIT && state.pro.purchaseStatus != ProPurchaseStatus.ACTIVE) {
             openProPaywall()
             return
         }
@@ -914,10 +934,29 @@ class HomeViewModel(
     fun archiveCurrentAquarium() {
         val state = mutableUiState.value
         val aquarium = state.setup?.aquarium ?: return
-        if (state.aquariums.size <= 1 || state.pro.purchaseStatus != ProPurchaseStatus.ACTIVE) return
+        // Free too: archiving one of two Aquariums is how a Free user makes room for another.
+        if (state.aquariums.size <= 1) return
         viewModelScope.launch {
             aquariumRepository.archiveAquarium(aquarium.id)
             aquariumRepository.observeCurrentAquarium().first()?.let(::activateAquariumContext)
+        }
+    }
+
+    /** Free at its limit is shown the offer instead: nothing is restored until a place is free. */
+    fun unarchiveAquarium(aquariumId: String) {
+        val state = mutableUiState.value
+        val proActive = state.pro.purchaseStatus == ProPurchaseStatus.ACTIVE
+        if (!proActive && state.aquariums.size >= FREE_AQUARIUM_LIMIT) {
+            openProPaywall()
+            return
+        }
+        viewModelScope.launch {
+            runCatching {
+                aquariumRepository.unarchiveAquarium(
+                    aquariumId,
+                    if (proActive) AquariumCreationAccess.PRO else AquariumCreationAccess.FREE,
+                )
+            }
         }
     }
 
@@ -976,7 +1015,12 @@ class HomeViewModel(
         speciesName: String? = null,
     ) {
         mutableUiState.update {
-            it.copy(feedback = FeedbackUiState(isOpen = true, kind = kind, speciesId = speciesId, speciesName = speciesName))
+            // The message of a dialog closed by mistake is still there.
+            it.copy(
+                feedback = FeedbackUiState(
+                    isOpen = true, kind = kind, speciesId = speciesId, speciesName = speciesName, message = it.feedback.message,
+                ),
+            )
         }
     }
 
@@ -985,7 +1029,7 @@ class HomeViewModel(
     }
 
     fun dismissFeedback() {
-        mutableUiState.update { it.copy(feedback = FeedbackUiState()) }
+        mutableUiState.update { it.copy(feedback = FeedbackUiState(message = it.feedback.message)) }
         maybeAskForReview()
     }
 
@@ -1487,6 +1531,56 @@ class HomeViewModel(
         )
     }
 
+    /** A blank form: nothing of the Task created or edited before is carried over. */
+    fun startNewTask() = updateTasks {
+        it.copy(
+            title = "", time = "", recurrence = TaskRecurrence.ONCE, linkedAction = null, editingOccurrenceId = null,
+            dueDate = LocalDate.now(ZoneId.of(currentTimeZoneId())).toString(), showValidationError = false,
+        )
+    }
+
+    /** The form filled with the Task as it is, through its pending [occurrence]. */
+    fun editTask(occurrence: TaskOccurrence) = updateTasks {
+        it.copy(
+            title = occurrence.title,
+            dueDate = LocalDate.of(occurrence.dueDate.year, occurrence.dueDate.month, occurrence.dueDate.day).toString(),
+            time = occurrence.minuteOfDay?.let { minute -> "%02d:%02d".format(minute / 60, minute % 60) }.orEmpty(),
+            recurrence = it.recurrenceByTaskId[occurrence.taskId] ?: TaskRecurrence.ONCE,
+            linkedAction = occurrence.maintenanceActionType,
+            editingOccurrenceId = occurrence.id,
+            showValidationError = false,
+        )
+    }
+
+    private fun saveEditedTask(occurrenceId: String, form: TaskUiState, date: LocalDate, time: LocalTime?) {
+        updateTasks { it.copy(isSaving = true, showValidationError = false) }
+        viewModelScope.launch {
+            runCatching {
+                aquariumRepository.updateTask(
+                    TaskEditInput(
+                        occurrenceId = occurrenceId,
+                        title = form.title,
+                        recurrence = form.recurrence,
+                        dueDate = TaskDate(date.year, date.monthValue, date.dayOfMonth),
+                        minuteOfDay = time?.let { it.hour * 60 + it.minute },
+                        timeZoneId = currentTimeZoneId(),
+                        maintenanceActionType = form.linkedAction,
+                    ),
+                )
+            }.onSuccess { updated ->
+                taskReminderScheduler.schedule(updated.occurrence)
+                updateTasks {
+                    it.copy(
+                        title = "", time = "", linkedAction = null, editingOccurrenceId = null, isSaving = false,
+                        showValidationError = false, savedCount = it.savedCount + 1,
+                    )
+                }
+            }.onFailure {
+                updateTasks { it.copy(isSaving = false, showValidationError = true) }
+            }
+        }
+    }
+
     fun createTask() {
         val aquariumId = mutableUiState.value.setup?.aquarium?.id ?: return
         val form = mutableUiState.value.tasks
@@ -1498,6 +1592,7 @@ class HomeViewModel(
             updateTasks { it.copy(showValidationError = true) }
             return
         }
+        form.editingOccurrenceId?.let { return saveEditedTask(it, form, date, time) }
         updateTasks { it.copy(isSaving = true, showValidationError = false) }
         viewModelScope.launch {
             runCatching {
@@ -1771,6 +1866,10 @@ class HomeViewModel(
 
     fun openRhythmSettings() = mutableUiState.update { it.copy(showRhythmSettings = true) }
 
+    fun openCalculators() = mutableUiState.update { it.copy(showCalculators = true) }
+
+    fun closeCalculators() = mutableUiState.update { it.copy(showCalculators = false) }
+
     /** The editor shared with onboarding, filled with the current Aquarium's Parameters as they are stored. */
     fun openParameterSettings() {
         val setup = mutableUiState.value.setup ?: return
@@ -1890,9 +1989,19 @@ class HomeViewModel(
     fun dayOf(epochMillis: Long): TaskDate = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.of(currentTimeZoneId())).toLocalDate()
         .let { TaskDate(it.year, it.monthValue, it.dayOfMonth) }
 
+    /** Back or « × »: an untouched Session closes at once, one with something typed asks first. */
     fun closeRapidSession() {
-        setRapidSession(null)
+        val draft = mutableUiState.value.rapidSession
+        if (draft != null && draft.hasContent && !draft.isSaving && !draft.confirmDiscard) {
+            mutableUiState.update { it.copy(rapidSession = it.rapidSession?.copy(confirmDiscard = true)) }
+        } else {
+            setRapidSession(null)
+        }
     }
+
+    fun keepRapidSession() = mutableUiState.update { it.copy(rapidSession = it.rapidSession?.copy(confirmDiscard = false)) }
+
+    fun discardRapidSession() = setRapidSession(null)
 
     fun openSessionDetails() {
         mutableUiState.update { state ->
