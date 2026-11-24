@@ -62,7 +62,7 @@ class SessionReliabilityFlowTest {
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Add observation"))
         composeRule.onNodeWithText("Add observation").performClick()
         composeRule.onNodeWithText("Observation").performTextInput("Eau claire")
-        composeRule.onNodeWithTag("save-session").performClick()
+        composeRule.saveSession()
 
         waitForText("measured today", substring = true)
         composeRule.onNode(hasText("measured today", substring = true) and hasClickAction()).performClick()
@@ -100,7 +100,7 @@ class SessionReliabilityFlowTest {
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Hide incident"))
         composeRule.onNode(hasScrollAction()).performScrollToNode(hasText("Incident"))
         composeRule.onNodeWithText("Incident").performTextInput("Filtre corrigé")
-        composeRule.onNodeWithTag("save-session").performClick()
+        composeRule.saveSession()
 
         waitForText("Session details", substring = true)
         waitForText("25.1", substring = true)

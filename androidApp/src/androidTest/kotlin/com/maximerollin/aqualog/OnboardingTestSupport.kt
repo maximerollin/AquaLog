@@ -4,6 +4,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 
 /**
@@ -19,4 +20,12 @@ internal fun ComposeTestRule.clickWhenShown(text: String, timeoutMillis: Long = 
     val button = hasText(text) and hasClickAction()
     waitUntil(timeoutMillis) { onAllNodes(button).fetchSemanticsNodes().isNotEmpty() }
     onNode(button).performSemanticsAction(SemanticsActions.OnClick)
+}
+
+/**
+ * Saves the open Session through the button's OnClick action. Tests save right after typing, while the keyboard slides
+ * in and moves the bottom bar: an injected touch could miss the button, and the Session was never saved.
+ */
+internal fun ComposeTestRule.saveSession() {
+    onNodeWithTag("save-session").performSemanticsAction(SemanticsActions.OnClick)
 }
