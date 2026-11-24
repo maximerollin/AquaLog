@@ -38,9 +38,9 @@ class AquariumPersistenceTest {
         (context.applicationContext as TestAquaLogApplication).resetRepository()
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
-        composeRule.onNodeWithText("Get started").performClick()
+        composeRule.clickWhenShown("Get started")
         composeRule.onNodeWithText("Cycling").performClick()
-        composeRule.onNodeWithText("Continue to Aquarium").performClick()
+        composeRule.clickWhenShown("Continue to Aquarium")
 
         composeRule.onNodeWithTag("aquarium-name")
             .performTextInput("Amazonien")
@@ -48,8 +48,7 @@ class AquariumPersistenceTest {
             .performTextInput("120.5")
         composeRule.onNodeWithText("US gallons")
             .performClick()
-        composeRule.onNodeWithText("Continue to Parameters")
-            .performClick()
+        composeRule.clickWhenShown("Continue to Parameters")
 
         composeRule.onNodeWithText("Ammonia / ammonium")
             .performScrollTo()
@@ -63,11 +62,11 @@ class AquariumPersistenceTest {
         temperatureUnit.performTextInput("°F")
         composeRule.onNodeWithText("Done").performClick()
         composeRule.onNodeWithTag("parameter-row-ph").performCustomAccessibilityActionWithLabel("Move pH up")
-        composeRule.onNodeWithText("Try a mini Session").performClick()
+        composeRule.clickWhenShown("Try a mini Session")
 
         composeRule.onNodeWithTag("practice-ph")
             .performTextInput("6.8")
-        composeRule.onNodeWithText("See Free and Pro").performClick()
+        composeRule.clickWhenShown("See Free and Pro")
         composeRule.onNodeWithText("All your tanks, their whole story.").assertIsDisplayed()
         composeRule.onNodeWithTag("onboarding-list").performScrollToNode(hasTestTag("plan-annual"))
         composeRule.onNodeWithTag("plan-annual").assertIsSelected()
@@ -78,7 +77,7 @@ class AquariumPersistenceTest {
         composeRule.onNodeWithTag("plan-lifetime").performClick()
         composeRule.onNodeWithText("€34.99 once. Lifetime access, with no trial.").assertIsDisplayed()
         composeRule.onNodeWithTag("choose-pro").assertIsDisplayed()
-        composeRule.onNodeWithText("Continue for free").performClick()
+        composeRule.clickWhenShown("Continue for free")
 
         waitForText("Amazonien")
         composeRule.onNodeWithText("Amazonien").assertIsDisplayed()

@@ -53,14 +53,14 @@ class OnboardingFlowTest {
         val presetOrder = presets.sortedBy { it.position }.map { it.parameter }
         val scenario = ActivityScenario.launch(MainActivity::class.java)
         try {
-            composeRule.onNodeWithText("Get started").performClick()
+            composeRule.clickWhenShown("Get started")
             composeRule.onNodeWithText("Planted / shrimp").performClick()
-            composeRule.onNodeWithText("Continue to Aquarium").performClick()
+            composeRule.clickWhenShown("Continue to Aquarium")
 
             composeRule.onNodeWithTag("aquarium-name").performTextInput("Salon")
             composeRule.onNodeWithTag("aquarium-volume").performTextInput("120")
             composeRule.onNodeWithTag("onboarding-aquarium-live").assertTextContains("Salon", substring = true)
-            composeRule.onNodeWithText("Continue to Parameters").performClick()
+            composeRule.clickWhenShown("Continue to Parameters")
 
             val pillBefore = rowText("parameter-row-ph")
             composeRule.onNodeWithTag("parameter-row-ph").performScrollTo().performClick()
@@ -73,16 +73,16 @@ class OnboardingFlowTest {
             assertNotEquals("the pH pill shows the new minimum", pillBefore, rowText("parameter-row-ph"))
 
             composeRule.onNodeWithTag("parameter-row-ph").performCustomAccessibilityActionWithLabel("Move pH down")
-            composeRule.onNodeWithText("Try a mini Session").performClick()
+            composeRule.clickWhenShown("Try a mini Session")
 
             val first = presets.filter { it.isActive }.minBy { it.position }.parameter.storageValue
             composeRule.onNodeWithTag("practice-$first").performTextInput("7.2")
-            composeRule.onNodeWithText("See Free and Pro").performClick()
+            composeRule.clickWhenShown("See Free and Pro")
 
             composeRule.onNodeWithTag("onboarding-list").performScrollToNode(hasTestTag("plan-annual"))
             composeRule.onNodeWithTag("plan-annual").assertIsSelected()
             composeRule.onNodeWithTag("choose-pro").assertIsDisplayed()
-            composeRule.onNodeWithText("Continue for free").performClick()
+            composeRule.clickWhenShown("Continue for free")
 
             composeRule.waitUntil(10_000) {
                 composeRule.onAllNodes(hasText("Salon")).fetchSemanticsNodes().isNotEmpty()
