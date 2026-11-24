@@ -43,7 +43,7 @@ class PistesFlowTest {
             composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Nitrite").performTextInput("0.25")
-            composeRule.onNodeWithTag("save-session").performClick()
+            composeRule.saveSession()
 
             waitForText("Ideas for Nitrite")
             composeRule.onNodeWithText("Change 30% of the water.").assertIsDisplayed()
@@ -74,7 +74,7 @@ class PistesFlowTest {
             composeRule.onNode(hasLabel("Measure")).performClick()
             waitForText("Measurements")
             composeRule.onNodeWithContentDescription("Measurement for Nitrite").performTextInput("0.25")
-            composeRule.onNodeWithTag("save-session").performClick()
+            composeRule.saveSession()
             waitForText("Ideas for Nitrite")
 
             // The scrim blocks touches, so leave the home through the semantics action, as a programmatic navigation would.
@@ -108,7 +108,7 @@ class PistesFlowTest {
                 it.config.getOrElseNullable(SemanticsProperties.StateDescription) { null }
                     ?.contains("Far above the range") == true
             })
-            composeRule.onNodeWithTag("save-session").performClick()
+            composeRule.saveSession()
             waitForText("Ideas for Nitrite")
             composeRule.onNodeWithText("Close").performClick()
             // The status line reads « 1 value to watch, 1 far out of range · measured today » as one text.

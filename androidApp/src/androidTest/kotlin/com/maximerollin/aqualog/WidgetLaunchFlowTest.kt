@@ -50,7 +50,7 @@ class WidgetLaunchFlowTest {
             waitForText("New Session")
             waitForText("Nano 30")
             composeRule.onNodeWithContentDescription("Measurement for Temperature").performTextInput("24,5")
-            composeRule.onNodeWithTag("save-session").performClick()
+            composeRule.saveSession()
             waitForText("measured today", substring = true)
             runBlocking {
                 val repository = application.aquariumRepository

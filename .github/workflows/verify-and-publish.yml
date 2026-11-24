@@ -24,10 +24,12 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
-  verify:
-    name: JVM, Android, backend and configuration checks
+  # The checks run as parallel jobs: JVM and backend in one, the instrumented tests split over three emulators. The
+  # `verify` job at the end keeps the historical check name and passes only when every one of them passed.
+  checks:
+    name: JVM, backend and configuration checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -59,6 +61,51 @@ jobs:
         run: python3 tools/ci/backend.py prepare
       - name: Database and authenticated HTTP integration
         run: python3 tools/ci/backend.py verify
+      - name: Stop only this job's backend
+        if: always()
+        run: python3 tools/ci/backend.py stop
+      - name: Keep verification reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: verification-reports-jvm
+          path: |
+            shared/build/reports/tests/
+            ui/build/reports/tests/
+            androidApp/build/reports/
+          retention-days: 14
+
+  instrumented:
+    name: Android instrumented checks (shard ${{ matrix.shard }}/3)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      # Every shard runs to the end, so one failing shard still reports the others.
+      fail-fast: false
+      matrix:
+        include:
+          - { shard: 1, index: 0 }
+          - { shard: 2, index: 1 }
+          - { shard: 3, index: 2 }
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1
+        with:
+          version: 2.108.0
+      - name: Install compile SDK
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager 'platforms;android-37.0'
+      - name: Bound Gradle memory
+        run: |
+          mkdir -p ~/.gradle
+          printf 'org.gradle.jvmargs=-Xmx4096M -Dfile.encoding=UTF-8\nkotlin.daemon.jvmargs=-Xmx2048M\norg.gradle.workers.max=2\norg.gradle.parallel=false\n' >> ~/.gradle/gradle.properties
+      # Each shard has its own backend: some instrumented tests sign in and sync against it (10.0.2.2:59321).
+      - name: Start isolated local backend
+        run: python3 tools/ci/backend.py prepare
       # Build after the backend exported its public values, so the emulator never competes with compilation.
       - name: Build instrumented APKs
         run: ./gradlew :androidApp:assembleDebug :androidApp:assembleDebugAndroidTest --console=plain
@@ -67,6 +114,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      # Cold boot on purpose: a cached, restored snapshot left a system dialog holding the window focus on one shard.
       - name: Android instrumented checks
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
         with:
@@ -78,11 +126,14 @@ jobs:
           cores: 4
           ram-size: 4096M
           disable-animations: true
+          # AndroidJUnitRunner splits the test methods across the shards by itself (shardIndex is 0-based).
+          # A « not responding » or other system dialog takes the window focus from the app under test: close them first.
           script: |
             adb shell svc power stayon true
             adb shell wm dismiss-keyguard
             adb shell settings put secure immersive_mode_confirmations confirmed
-            ./gradlew :androidApp:connectedDebugAndroidTest --console=plain
+            adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS
+            ./gradlew :androidApp:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.numShards=3 -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.index }} --console=plain
       - name: Stop only this job's backend
         if: always()
         run: python3 tools/ci/backend.py stop
@@ -90,12 +141,27 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          name: verification-reports
+          name: verification-reports-shard-${{ matrix.shard }}
           path: |
-            shared/build/reports/tests/
             androidApp/build/reports/
             androidApp/build/outputs/androidTest-results/
           retention-days: 14
+
+  # Keeps the check name branch protection and the publish job rely on; passes only when every check job passed.
+  verify:
+    name: JVM, Android, backend and configuration checks
+    if: always()
+    needs: [checks, instrumented]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: All checks passed
+        env:
+          CHECKS: ${{ needs.checks.result }}
+          INSTRUMENTED: ${{ needs.instrumented.result }}
+        run: |
+          echo "JVM and backend: $CHECKS, instrumented shards: $INSTRUMENTED"
+          [[ "$CHECKS" == success && "$INSTRUMENTED" == success ]]
 
   publish:
     name: Signed bundle to Google Play
