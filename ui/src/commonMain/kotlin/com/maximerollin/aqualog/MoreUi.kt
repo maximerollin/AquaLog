@@ -43,6 +43,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -86,6 +88,8 @@ fun MoreScreen(
     rateApp: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
+    // Archiving cannot be undone from the app, so it is never a single tap.
+    var confirmArchive by remember { mutableStateOf(false) }
     MoreContent(
         state = state,
         actions = MoreActions(
@@ -93,6 +97,8 @@ fun MoreScreen(
             onSelectAquarium = viewModel::selectAquarium,
             onAddAquarium = viewModel::openCreateAquarium,
             onOpenRhythm = viewModel::openRhythmSettings,
+            onOpenParameters = viewModel::openParameterSettings,
+            onOpenCalculators = viewModel::openCalculators,
             onOpenTasks = viewModel::openTasks,
             onRemoveInhabitants = viewModel::removeInhabitants,
             onAddInhabitant = viewModel::openAddInhabitant,
@@ -105,21 +111,30 @@ fun MoreScreen(
             onOpenFeedback = { viewModel.openFeedback() },
             rateApp = rateApp,
             onShowAccountDialog = viewModel::showAccountSettingsDialog,
-            onArchive = viewModel::archiveCurrentAquarium,
+            onArchive = { confirmArchive = true },
+            onUnarchive = viewModel::unarchiveAquarium,
             loadPhoto = viewModel::aquariumPhoto,
             cachedPhoto = viewModel::cachedAquariumPhoto,
         ),
         modifier = modifier,
     )
     AccountSettingsDialog(state.accountSettings.dialog, viewModel, externalLinks)
-    state.aquariumEditor?.let { editor ->
-        AquariumEditorDialog(
-            editor = editor,
-            onNameChange = viewModel::updateAquariumEditorName,
-            onVolumeChange = viewModel::updateAquariumEditorVolume,
-            onUnitChange = viewModel::updateAquariumEditorUnit,
-            onSave = viewModel::saveAquariumEditor,
-            onDismiss = viewModel::dismissAquariumEditor,
+    if (confirmArchive) {
+        AlertDialog(
+            onDismissRequest = { confirmArchive = false },
+            title = { Text(stringResource(Res.string.archive_aquarium_title)) },
+            text = { Text(stringResource(Res.string.archive_aquarium_description)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmArchive = false
+                        viewModel.archiveCurrentAquarium()
+                    },
+                ) { Text(stringResource(Res.string.archive_aquarium_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmArchive = false }) { Text(stringResource(Res.string.cancel)) }
+            },
         )
     }
 }
@@ -130,6 +145,9 @@ internal class MoreActions(
     val onSelectAquarium: (String) -> Unit = {},
     val onAddAquarium: () -> Unit = {},
     val onOpenRhythm: () -> Unit = {},
+    val onOpenParameters: () -> Unit = {},
+    val onOpenCalculators: () -> Unit = {},
+    val onUnarchive: (aquariumId: String) -> Unit = {},
     val onOpenTasks: () -> Unit = {},
     val onRemoveInhabitants: (inhabitantId: String, count: Int, onFailed: () -> Unit) -> Unit = { _, _, _ -> },
     val onAddInhabitant: () -> Unit = {},
@@ -175,6 +193,7 @@ internal fun MoreContent(state: HomeUiState, actions: MoreActions, modifier: Mod
     val formatter = currentLocalizedFormatters()
     var showPicker by remember { mutableStateOf(false) }
     var showHabitants by remember(aquarium.id) { mutableStateOf(false) }
+    var showArchived by remember { mutableStateOf(false) }
     val photoId = aquarium.photoId
     var photo by remember(photoId) { mutableStateOf(photoId?.let(actions.cachedPhoto)) }
     LaunchedEffect(photoId) { if (photoId != null && photo == null) photo = actions.loadPhoto(photoId) }
@@ -216,7 +235,15 @@ internal fun MoreContent(state: HomeUiState, actions: MoreActions, modifier: Mod
                         value = inhabitantCount.takeIf { it > 0 }?.let { formatter.number(it.toDouble(), 0) },
                         onClick = { showHabitants = true },
                     )
+                    SettingsRow(
+                        stringResource(Res.string.measured_parameters_title), AquagendaIcons.FlaskConical,
+                        onClick = actions.onOpenParameters,
+                    )
                     SettingsRow(stringResource(Res.string.rhythm_title), AquagendaIcons.Calendar, onClick = actions.onOpenRhythm)
+                    SettingsRow(
+                        stringResource(Res.string.calculators_title), AquagendaIcons.Droplet,
+                        onClick = actions.onOpenCalculators,
+                    )
                     SettingsRow(
                         stringResource(Res.string.open_tasks), AquagendaIcons.Bell,
                         value = pendingTasks.takeIf { it > 0 }?.let { formatter.number(it.toDouble(), 0) },
@@ -319,9 +346,16 @@ internal fun MoreContent(state: HomeUiState, actions: MoreActions, modifier: Mod
                     SettingsRow(
                         stringResource(Res.string.archive_aquarium), AquagendaIcons.Archive,
                         onClick = actions.onArchive,
-                        enabled = proActive && state.aquariums.size > 1,
-                        supporting = if (proActive) null else stringResource(Res.string.free_one_aquarium_limit),
+                        enabled = state.aquariums.size > 1,
+                        supporting = if (proActive) null else stringResource(Res.string.free_aquarium_limit),
                     )
+                    if (state.archivedAquariums.isNotEmpty()) {
+                        SettingsRow(
+                            stringResource(Res.string.archived_aquariums), AquagendaIcons.Archive,
+                            value = formatter.number(state.archivedAquariums.size.toDouble(), 0),
+                            onClick = { showArchived = true },
+                        )
+                    }
                 }
             }
             item(key = "footer") {
@@ -349,6 +383,29 @@ internal fun MoreContent(state: HomeUiState, actions: MoreActions, modifier: Mod
                 actions.onAddInhabitant()
             },
             onDismiss = { showHabitants = false },
+        )
+    }
+    if (showArchived && state.archivedAquariums.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = { showArchived = false },
+            title = { Text(stringResource(Res.string.archived_aquariums)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState()).testTag("archived-aquariums")) {
+                    state.archivedAquariums.forEach { archived ->
+                        val restoreDescription = stringResource(Res.string.restore_aquarium_named, archived.name)
+                        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text(archived.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                            TextButton(
+                                onClick = { actions.onUnarchive(archived.id) },
+                                modifier = Modifier.semantics { contentDescription = restoreDescription },
+                            ) { Text(stringResource(Res.string.restore_aquarium)) }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showArchived = false }) { Text(stringResource(Res.string.close)) }
+            },
         )
     }
     if (showPicker) {

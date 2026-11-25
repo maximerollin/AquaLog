@@ -60,7 +60,8 @@ sealed interface AuthenticationResult {
     data object Cancelled : AuthenticationResult
     data object ExpiredLink : AuthenticationResult
     data object IgnoredCallback : AuthenticationResult
-    data class Failed(val reason: String) : AuthenticationResult
+    /** [transient]: the request did not reach a verdict (offline, server error), so the credentials are not rejected. */
+    data class Failed(val reason: String, val transient: Boolean = false) : AuthenticationResult
 }
 
 sealed interface MagicLinkRequestResult {
@@ -103,6 +104,9 @@ data class InitialAccountCopy(
     val events: List<SessionEvent>,
     /** Pulled with the rest; never sent by migrate-initial-copy: the upserts enqueued at migration carry them. */
     val inhabitants: List<Inhabitant> = emptyList(),
+    /** Like the inhabitants: pulled with the rest, sent by the upserts enqueued at migration. */
+    val tasks: List<AquariumTask> = emptyList(),
+    val taskOccurrences: List<TaskOccurrence> = emptyList(),
 )
 
 enum class InitialMigrationStatus(val storageValue: String) {
@@ -217,6 +221,9 @@ class AccountActivationCoordinator(
 
     private suspend fun refreshAndResume(accountId: String, refreshToken: String): AccountActivationResult {
         val refreshed = authGateway.refreshSession(refreshToken)
+        if (refreshed is AuthenticationResult.Failed && refreshed.transient) {
+            return AccountActivationResult.MigrationFailed(refreshed.reason)
+        }
         if (refreshed !is AuthenticationResult.Authenticated || refreshed.account.accountId != accountId) {
             tokenStorage.clear()
             return AccountActivationResult.ReauthenticationRequired

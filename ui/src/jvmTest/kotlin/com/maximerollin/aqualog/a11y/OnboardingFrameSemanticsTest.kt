@@ -92,13 +92,13 @@ class OnboardingFrameSemanticsTest {
                 AquaLogTheme(false) {
                     Box(Modifier.size(360.dp, 700.dp)) {
                         OnboardingHeader(aquarium, 200.dp, animate = false, step = 2) {
-                            OnboardingTitle("Que suivez-vous ?", null)
+                            OnboardingTitle("Que suivez-vous\u202F?", null)
                         }
                     }
                 }
             }
             waitForIdle()
-            onNode(isHeading() and hasText("Que suivez-vous ?")).assertExists()
+            onNode(isHeading() and hasText("Que suivez-vous\u202F?")).assertExists()
         }
     }
 }

@@ -21,6 +21,7 @@ import com.maximerollin.aqualog.shared.FeedbackOutcome
 import com.maximerollin.aqualog.shared.ProductAnalyticsSchema
 import com.maximerollin.aqualog.shared.ProductTelemetry
 import com.maximerollin.aqualog.shared.RawTechnicalFailure
+import com.maximerollin.aqualog.shared.SyncNetworkException
 import com.maximerollin.aqualog.shared.SyncSessionProvider
 import com.maximerollin.aqualog.shared.TechnicalFailureSchema
 import com.maximerollin.aqualog.shared.TechnicalFailureSink
@@ -197,7 +198,11 @@ internal class SupabaseFeedbackGateway(
         if (first != HTTP_UNAUTHORIZED) return outcome(first)
 
         // The token was rejected: refresh once, then fall back to anonymous rather than lose the feedback.
-        val refreshed = sessionProvider.refreshSession(session) ?: return anonymous(feedback)
+        val refreshed = try {
+            sessionProvider.refreshSession(session)
+        } catch (_: SyncNetworkException) {
+            null
+        } ?: return anonymous(feedback)
         val second = post(feedback, refreshed.accessToken)
         return if (second == HTTP_UNAUTHORIZED) anonymous(feedback) else outcome(second)
     }

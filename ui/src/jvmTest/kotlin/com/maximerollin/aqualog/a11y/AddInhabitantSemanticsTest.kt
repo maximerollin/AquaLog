@@ -111,7 +111,7 @@ class AddInhabitantSemanticsTest {
         runComposeUiTest {
             screen()
             onNode(isHeading() and hasText("Ajouter un habitant")).assertIsDisplayed()
-            val context = onNode(hasText("Planté / crevette", substring = true)).fetchSemanticsNode()
+            val context = onNode(hasText("Planté / crevettes", substring = true)).fetchSemanticsNode()
                 .config[SemanticsProperties.Text].single().text
             assertTrue(context.startsWith("120"), context)
             assertTrue(context.endsWith("2 habitants"), context)
@@ -191,7 +191,7 @@ class AddInhabitantSemanticsTest {
         runComposeUiTest {
             var custom = 0
             screen(actions = AddInhabitantActions(onOpenCustom = { custom++ }))
-            val missing = hasText("Espèce absente ? L'ajouter à la main")
+            val missing = hasText("Espèce absente\u202F? L’ajouter à la main")
             scrolledTo(missing)
             onNode(missing).assertHeightIsAtLeast(48.dp).performClick()
             assertEquals(1, custom)
@@ -202,10 +202,10 @@ class AddInhabitantSemanticsTest {
     fun `encyclopedia failure keeps the custom row`() = french {
         runComposeUiTest {
             screen(add = AddInhabitantUiState(salon.id, species = emptyList(), loadFailed = true))
-            val unavailable = hasText("La liste des espèces n'a pas pu être chargée. Vous pouvez en ajouter une à la main.")
+            val unavailable = hasText("La liste des espèces n’a pas pu être chargée. Vous pouvez en ajouter une à la main.")
             scrolledTo(unavailable)
             onNode(unavailable).assertIsDisplayed()
-            val missing = hasText("Espèce absente ? L'ajouter à la main")
+            val missing = hasText("Espèce absente\u202F? L’ajouter à la main")
             scrolledTo(missing)
             onNode(missing).assertIsDisplayed()
         }
@@ -216,7 +216,7 @@ class AddInhabitantSemanticsTest {
         runComposeUiTest {
             screen(add = search.copy(custom = true, showCustomError = true))
             onNode(isHeading() and hasText("Ajouter à la main")).assertIsDisplayed()
-            val field = onNode(hasSetTextAction() and hasText("Nom de l'espèce"))
+            val field = onNode(hasSetTextAction() and hasText("Nom de l’espèce"))
             field.assertIsDisplayed()
             assertTrue(SemanticsProperties.Error in field.fetchSemanticsNode().config, "a blank name is in error")
             onNodeWithText("Indiquez un nom et choisissez une famille.").performScrollTo().assertIsDisplayed()
@@ -227,7 +227,7 @@ class AddInhabitantSemanticsTest {
     fun `a typed name without a family leaves the name field out of error and shows the message by the button`() = french {
         runComposeUiTest {
             screen(add = search.copy(custom = true, customName = "Guppy", customFamily = null, showCustomError = true))
-            val field = onNode(hasSetTextAction() and hasText("Nom de l'espèce"))
+            val field = onNode(hasSetTextAction() and hasText("Nom de l’espèce"))
             assertFalse(SemanticsProperties.Error in field.fetchSemanticsNode().config, "the typed name is not the gap")
             val message = onNodeWithText("Indiquez un nom et choisissez une famille.").performScrollTo()
             message.assertIsDisplayed()
@@ -247,7 +247,7 @@ class AddInhabitantSemanticsTest {
             val spinner = hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)
             scrolledTo(spinner)
             onNode(spinner).assertIsDisplayed()
-            val missing = hasText("Espèce absente ? L'ajouter à la main")
+            val missing = hasText("Espèce absente\u202F? L’ajouter à la main")
             scrolledTo(missing)
             onNode(missing).assertIsDisplayed()
         }
@@ -283,7 +283,7 @@ class AddInhabitantSemanticsTest {
         runComposeUiTest {
             val cycling = AquariumSetup(salon.copy(profile = AquariumProfile.CYCLING), listOf(ph))
             screen(add = search.copy(custom = true, customFamily = DrawingFamily.TETRA), setup = cycling)
-            onNodeWithText("Attendez que les nitrites soient à 0 avant d'ajouter des poissons.").assertIsDisplayed()
+            onNodeWithText("Attendez que les nitrites soient à 0 avant d’ajouter des poissons.").assertIsDisplayed()
         }
     }
 

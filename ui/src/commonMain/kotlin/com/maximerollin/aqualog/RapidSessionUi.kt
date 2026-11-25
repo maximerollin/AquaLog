@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -35,6 +36,7 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -275,6 +277,19 @@ fun RapidSessionScreen(
             StatusBarOverHeader(listState)
         }
     }
+    if (state.confirmDiscard) {
+        AlertDialog(
+            onDismissRequest = viewModel::keepRapidSession,
+            title = { Text(stringResource(Res.string.session_discard_title)) },
+            text = { Text(stringResource(Res.string.session_discard_description)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::discardRapidSession) { Text(stringResource(Res.string.session_discard_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::keepRapidSession) { Text(stringResource(Res.string.session_discard_keep)) }
+            },
+        )
+    }
 }
 
 /** « Save changes » while editing, else « Save Session » until a valid Measurement is typed, then « Save · 4 measurements ». */
@@ -425,6 +440,8 @@ private fun ActionDetails(action: MaintenanceActionInput, viewModel: HomeViewMod
             onValueChange = { viewModel.updateMaintenanceQuantity(action.type, it) },
             label = stringResource(Res.string.action_quantity),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            isError = !isValidActionQuantity(action.quantity),
+            errorMessage = stringResource(Res.string.action_quantity_invalid),
             modifier = Modifier.weight(1f),
         )
         FilledField(

@@ -108,7 +108,7 @@ class AccountScreenSemanticsTest {
     fun `invitation keeps its two actions`() = french {
         runComposeUiTest {
             account(AccountUiState(AccountStep.INVITATION))
-            onNode(hasText("Sécurisez votre copie de l'Aquarium local") and isHeading()).assertIsDisplayed()
+            onNode(hasText("Mettez à l’abri votre aquarium local") and isHeading()).assertIsDisplayed()
             onNode(hasText("Votre première session est enregistrée localement.", substring = true)).assertIsDisplayed()
             assertFullWidthAction("Créer un compte")
             assertFullWidthAction("Pas maintenant")
@@ -123,7 +123,7 @@ class AccountScreenSemanticsTest {
         runComposeUiTest {
             account(AccountUiState(AccountStep.METHODS))
             onNode(hasText("Créez votre compte") and isHeading()).assertIsDisplayed()
-            listOf("Continuer avec Google", "Continuer avec l'e-mail", "Annuler").forEach {
+            listOf("Continuer avec Google", "Continuer avec l’e-mail", "Annuler").forEach {
                 assertFullWidthAction(it)
                 onNode(hasText(it) and button).performClick()
             }
@@ -151,9 +151,9 @@ class AccountScreenSemanticsTest {
                     }
                 }
             }
-            onNode(hasText("Lien magique par email") and isHeading()).assertIsDisplayed()
-            onNode(hasSetTextAction() and hasText("Adresse email")).performTextInput("nemo@example.com")
-            onNode(hasText("Envoyer un lien magique") and button).performClick()
+            onNode(hasText("Lien de connexion par e-mail") and isHeading()).assertIsDisplayed()
+            onNode(hasSetTextAction() and hasText("Adresse e-mail")).performTextInput("nemo@example.com")
+            onNode(hasText("Envoyer le lien de connexion") and button).performClick()
             onNode(hasText("Retour") and button).performScrollTo().performClick()
             assertEquals(listOf("email:nemo@example.com", "send", "methods"), calls)
         }
@@ -165,8 +165,8 @@ class AccountScreenSemanticsTest {
             calls.clear()
             runComposeUiTest {
                 account(AccountUiState(step))
-                assertFullWidthAction("Retour à l'Aquarium")
-                onNode(hasText("Retour à l'Aquarium") and button).performClick()
+                assertFullWidthAction("Retour à l’aquarium")
+                onNode(hasText("Retour à l’aquarium") and button).performClick()
                 assertEquals(listOf("dismiss"), calls, "$step")
             }
         }
@@ -187,15 +187,15 @@ class AccountScreenSemanticsTest {
         runComposeUiTest {
             account(AccountUiState(AccountStep.ERROR, error = AccountError.EXPIRED_LINK))
             onNode(hasText("Vos données locales sont en sécurité") and isHeading()).assertIsDisplayed()
-            onNode(hasText("Ce lien a expiré. Demandez un nouveau lien magique et réessayez.")).assertIsDisplayed()
-            onNode(hasText("Essayer à nouveau") and button).performClick()
-            onNode(hasText("Retour à l'Aquarium") and button).performScrollTo().performClick()
+            onNode(hasText("Ce lien a expiré. Demandez un nouveau lien de connexion et réessayez.")).assertIsDisplayed()
+            onNode(hasText("Réessayer") and button).performClick()
+            onNode(hasText("Retour à l’aquarium") and button).performScrollTo().performClick()
             assertEquals(listOf("methods", "dismiss"), calls)
         }
         calls.clear()
         runComposeUiTest {
             account(AccountUiState(AccountStep.ERROR, error = AccountError.MIGRATION))
-            onNode(hasText("Essayer à nouveau") and button).performClick()
+            onNode(hasText("Réessayer") and button).performClick()
             assertEquals(listOf("retry"), calls)
         }
     }
@@ -208,7 +208,7 @@ class AccountScreenSemanticsTest {
             assertFalse(SemanticsProperties.ContentDescription in cloud.config, "the cloud is not read")
             assertTrue(cloud.children.none { SemanticsProperties.ContentDescription in it.config }, "the cloud is not read")
             val backing = onNodeWithTag(FULL_SCREEN_BACKING_TAG).fetchSemanticsNode().boundsInRoot
-            val title = onNode(hasText("Sécurisez votre copie de l'Aquarium local")).fetchSemanticsNode().boundsInRoot
+            val title = onNode(hasText("Mettez à l’abri votre aquarium local")).fetchSemanticsNode().boundsInRoot
             assertTrue(title.top >= backing.top + 48 * density.density - 1f, "title $title below the fade of $backing")
             assertTrue(cloud.boundsInRoot.top >= backing.top, "cloud ${cloud.boundsInRoot} on $backing")
         }
@@ -219,7 +219,7 @@ class AccountScreenSemanticsTest {
         runComposeUiTest {
             account(AccountUiState(AccountStep.INVITATION), aquarium = null)
             onNodeWithTag(FULL_SCREEN_BACKING_TAG).assertExists()
-            onNode(hasText("Sécurisez votre copie de l'Aquarium local") and isHeading()).assertIsDisplayed()
+            onNode(hasText("Mettez à l’abri votre aquarium local") and isHeading()).assertIsDisplayed()
         }
     }
 
@@ -249,7 +249,7 @@ class AccountScreenSemanticsTest {
             }
             onNodeWithTag(FULL_SCREEN_BACKING_TAG).assertExists()
             onNode(hasText("Accès au compte supprimé") and isHeading()).assertIsDisplayed()
-            onNode(hasText("La suppression du cloud est confirmée", substring = true)).assertIsDisplayed()
+            onNode(hasText("La suppression dans le cloud est confirmée", substring = true)).assertIsDisplayed()
             onNode(hasText("La suppression du compte n’a pas pu reprendre", substring = true)).assertIsDisplayed()
             assertFullWidthAction("Terminer le nettoyage local")
             onNode(hasText("Terminer le nettoyage local") and button).performClick()

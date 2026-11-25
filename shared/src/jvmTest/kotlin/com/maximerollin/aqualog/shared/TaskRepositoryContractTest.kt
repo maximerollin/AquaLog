@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.runTest
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class TaskRepositoryContractTest {
@@ -221,6 +222,96 @@ class TaskRepositoryContractTest {
 
         assertEquals(mapOf(weekly.id to TaskRecurrence.WEEKLY), recurrences)
         reopened.close()
+    }
+
+    @Test
+    fun `Free keeps two Aquariums in use, archived ones aside, and restores one only while a place is free`() = runTest {
+        val fixture = taskFixture()
+        val first = fixture.createAquarium().aquarium.id
+        val second = fixture.createAquarium().aquarium.id
+        assertFailsWith<FreeAquariumLimitReached> { fixture.createAquarium() }
+
+        fixture.repository.archiveAquarium(first)
+        val third = fixture.createAquarium().aquarium.id
+        assertFailsWith<FreeAquariumLimitReached> { fixture.repository.unarchiveAquarium(first) }
+        assertEquals(setOf(second, third), fixture.repository.observeAquariums().first().map { it.id }.toSet())
+
+        assertEquals(false, fixture.repository.unarchiveAquarium(first, AquariumCreationAccess.PRO).isArchived)
+        assertEquals(3, fixture.repository.observeAquariums().first().size)
+        fixture.close()
+    }
+
+    @Test
+    fun `editing a Task changes it and its pending Occurrence, which keeps its id`() = runTest {
+        val fixture = taskFixture()
+        val aquariumId = fixture.createAquarium().aquarium.id
+        val created = fixture.repository.createTask(
+            TaskInput(aquariumId, "Dose", TaskRecurrence.DAILY, TaskDate(2027, 1, 10), null, "Europe/Paris"),
+        )
+
+        val edited = fixture.repository.updateTask(
+            TaskEditInput(
+                created.occurrence.id, "  Dose iron ", TaskRecurrence.MONTHLY, TaskDate(2027, 1, 31), 8 * 60, "Europe/Paris",
+                MaintenanceActionType.FERTILIZATION,
+            ),
+        )
+
+        val pending = fixture.repository.observePendingTaskOccurrences().first().single()
+        assertEquals(edited.occurrence, pending)
+        assertEquals(created.occurrence.id, pending.id)
+        assertEquals("Dose iron", pending.title)
+        assertEquals(TaskDate(2027, 1, 31), pending.dueDate)
+        assertEquals(8 * 60, pending.minuteOfDay)
+        assertEquals(MaintenanceActionType.FERTILIZATION, pending.maintenanceActionType)
+        assertEquals(mapOf(created.task.id to TaskRecurrence.MONTHLY), fixture.repository.observeTaskRecurrences().first())
+        // The month-end anchor follows the new due date.
+        val next = fixture.repository.resolveTaskOccurrence(
+            TaskResolutionInput(pending.id, TaskResolution.IGNORED, 1_800_000_000_000L),
+        ).nextOccurrence
+        assertEquals(TaskDate(2027, 2, 28), next?.dueDate)
+        fixture.close()
+    }
+
+    @Test
+    fun `deleting a Task removes what is pending and keeps what was resolved`() = runTest {
+        val fixture = taskFixture()
+        val aquariumId = fixture.createAquarium().aquarium.id
+        fun input(title: String) = TaskInput(aquariumId, title, TaskRecurrence.DAILY, TaskDate(2027, 1, 10), null, "Europe/Paris")
+        val mistake = fixture.repository.createTask(input("Mistake"))
+        val dosing = fixture.repository.createTask(input("Dose"))
+        val done = fixture.repository.resolveTaskOccurrence(
+            TaskResolutionInput(dosing.occurrence.id, TaskResolution.COMPLETED, 1_800_000_000_000L),
+        )
+
+        fixture.repository.deleteTask(mistake.task.id)
+        fixture.repository.deleteTask(dosing.task.id)
+
+        assertTrue(fixture.repository.observePendingTaskOccurrences().first().isEmpty())
+        assertEquals(listOf(done.resolved.id), fixture.repository.observeResolvedTaskOccurrences().first().map { it.id })
+        assertEquals(setOf(dosing.task.id), fixture.repository.observeTaskRecurrences().first().keys)
+        fixture.close()
+    }
+
+    @Test
+    fun `the Occurrences of an archived Aquarium are no longer pending`() = runTest {
+        val fixture = taskFixture()
+        val kept = fixture.createAquarium().aquarium.id
+        val archived = fixture.repository.createConfiguredAquarium(
+            name = "Nano",
+            volume = 30.0,
+            volumeUnit = VolumeUnit.LITERS,
+            profile = AquariumProfile.ESTABLISHED,
+            parameters = OnboardingPresets.parametersFor(AquariumProfile.ESTABLISHED),
+            access = AquariumCreationAccess.PRO,
+        ).aquarium.id
+        listOf(kept, archived).forEach {
+            fixture.repository.createTask(TaskInput(it, "Glass", TaskRecurrence.WEEKLY, TaskDate(2027, 1, 10), null, "Europe/Paris"))
+        }
+
+        fixture.repository.archiveAquarium(archived)
+
+        assertEquals(listOf(kept), fixture.repository.observePendingTaskOccurrences().first().map { it.aquariumId })
+        fixture.close()
     }
 
     private fun taskFixture(

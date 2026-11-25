@@ -14,9 +14,9 @@ class StringResourcesTest {
         val previous = Locale.getDefault()
         Locale.setDefault(Locale.FRENCH)
         try {
-            assertEquals("Continuer vers l'Aquarium", getString(Res.string.continue_to_aquarium))
-            assertEquals("2 Mesures", getPluralString(Res.plurals.session_measurement_count, 2, 2))
-            assertEquals("1 Mesure", getPluralString(Res.plurals.session_measurement_count, 1, 1))
+            assertEquals("Continuer vers l’aquarium", getString(Res.string.continue_to_aquarium))
+            assertEquals("2 mesures", getPluralString(Res.plurals.session_measurement_count, 2, 2))
+            assertEquals("1 mesure", getPluralString(Res.plurals.session_measurement_count, 1, 1))
         } finally {
             Locale.setDefault(previous)
         }

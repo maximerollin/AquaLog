@@ -293,7 +293,9 @@ class SupabaseAuthGateway(
                         user.optString("email").takeIf(String::isNotBlank),
                     ),
                 )
-            }.getOrElse { AuthenticationResult.Failed(it.message ?: "Session refresh failed") }
+            }.getOrElse {
+                AuthenticationResult.Failed(it.message ?: "Session refresh failed", transient = it.isTransientAuthFailure())
+            }
         }
     }
 
@@ -372,7 +374,7 @@ class SupabaseAuthGateway(
             }
             val response = (if (responseCode in 200..299) inputStream else errorStream)
                 ?.bufferedReader()?.use { it.readText() }.orEmpty()
-            if (responseCode !in 200..299) error("Supabase Auth returned HTTP $responseCode")
+            if (responseCode !in 200..299) throw AuthHttpException(responseCode)
             response
         }.also { connection.disconnect() }
     }
@@ -500,3 +502,12 @@ private fun InitialAccountCopy.toJson(accountId: String) = JSONObject()
     .put("events", JSONArray(events.map { JSONObject().put("id", it.id).put("sessionId", it.sessionId).put("type", it.type.storageValue).put("note", it.note) }))
 
 private fun JSONObject.putNullable(name: String, value: Any?): JSONObject = put(name, value ?: JSONObject.NULL)
+
+internal class AuthHttpException(val status: Int) : IllegalStateException("Supabase Auth returned HTTP $status")
+
+/** Offline, a timeout, a rate limit or a server error says nothing about the refresh token: only a 4xx rejects it. */
+internal fun Throwable.isTransientAuthFailure(): Boolean = when (this) {
+    is java.io.IOException -> true
+    is AuthHttpException -> status == 429 || status >= 500
+    else -> false
+}

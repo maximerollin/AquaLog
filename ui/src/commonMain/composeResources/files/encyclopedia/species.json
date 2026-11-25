@@ -263,7 +263,7 @@
       "en": "Panda corydoras",
       "de": "Panda-Panzerwels",
       "it": "Corydoras panda",
-      "es": "Corydora panda"
+      "es": "Corydoras panda"
     },
     "kind": "FISH",
     "family": "CATFISH",
@@ -683,7 +683,7 @@
     "scientificName": "Hemigrammus bleheri",
     "names": {
       "fr": "Tétra nez rouge",
-      "en": "Red-nosed Tetra",
+      "en": "Rummy-nose tetra",
       "de": "Rotnasensalmler",
       "it": "Tetra naso rosso",
       "es": "Tetra nariz roja"
@@ -808,7 +808,7 @@
     "wikidata": "Q923185",
     "scientificName": "Hyphessobrycon amandae",
     "names": {
-      "fr": "Tétra amande",
+      "fr": "Tétra feu",
       "en": "Ember tetra",
       "de": "Funkensalmler",
       "it": "Tetra ember",
@@ -1146,7 +1146,7 @@
     "scientificName": "Hemigrammus erythrozonus",
     "names": {
       "fr": "Néon rose",
-      "en": "Glowlight Tetra",
+      "en": "Glowlight tetra",
       "de": "Glühlichtsalmler",
       "it": "Neon rosa",
       "es": "Tetra luz"
@@ -1442,7 +1442,7 @@
       "fr": "Feu de position",
       "en": "Head-and-taillight tetra",
       "de": "Schlusslichtsalmler",
-      "it": "Tetra feu di posizione",
+      "it": "Tetra fanalino",
       "es": "Tetra luz de posición"
     },
     "kind": "FISH",
@@ -1568,7 +1568,7 @@
       "fr": "Tétra aux yeux rouges",
       "en": "Redeye tetra",
       "de": "Rotaugen-Moenkhausia",
-      "it": "Moenkhausia sanctaefilomenae",
+      "it": "Tetra occhi rossi",
       "es": "Tetra de ojo rojo"
     },
     "kind": "FISH",
@@ -2158,7 +2158,7 @@
       "fr": "Rasbora moustique",
       "en": "Mosquito rasbora",
       "de": "Moskitobärbling",
-      "it": "Rasbora moustique",
+      "it": "Rasbora zanzara",
       "es": "Rasbora mosquito"
     },
     "kind": "FISH",
@@ -2620,8 +2620,8 @@
       "fr": "Ramirezi",
       "en": "Ram cichlid",
       "de": "Südamerikanischer Schmetterlingsbuntbarsch",
-      "it": "Mikrogeophagus ramirezi",
-      "es": "Mikrogeophagus ramirezi"
+      "it": "Ramirezi",
+      "es": "Ramirezi"
     },
     "kind": "FISH",
     "family": "CICHLID",
@@ -2746,8 +2746,8 @@
       "fr": "Discus commun",
       "en": "Discus",
       "de": "Symphysodon aequifasciatus",
-      "it": "Symphysodon aequifasciatus",
-      "es": "Symphysodon aequifasciatus"
+      "it": "Discus",
+      "es": "Disco"
     },
     "kind": "FISH",
     "family": "CICHLID",
@@ -2788,8 +2788,8 @@
       "fr": "Pelmato",
       "en": "Kribensis",
       "de": "Purpurprachtbarsch",
-      "it": "Pelvicachromis pulcher",
-      "es": "Pelvicachromis pulcher"
+      "it": "Kribensis",
+      "es": "Kribensis"
     },
     "kind": "FISH",
     "family": "CICHLID",
@@ -2830,8 +2830,8 @@
       "fr": "Oscar",
       "en": "Oscar",
       "de": "Pfauenaugenbuntbarsch",
-      "it": "Astronotus ocellatus",
-      "es": "Astronotus ocellatus"
+      "it": "Oscar",
+      "es": "Óscar"
     },
     "kind": "FISH",
     "family": "CICHLID",
@@ -3003,7 +3003,7 @@
       "en": "Blue acara",
       "de": "Blaupunktbuntbarsch",
       "it": "Acara blu",
-      "es": "Andinoacara pulcher"
+      "es": "Acara azul"
     },
     "kind": "FISH",
     "family": "CICHLID",
@@ -3086,10 +3086,10 @@
     "scientificName": "Amatitlania nigrofasciata",
     "names": {
       "fr": "Nigro",
-      "en": "Convict Cichlid",
+      "en": "Convict cichlid",
       "de": "Zebrabuntbarsch",
       "it": "Amatitlania nigrofasciata",
-      "es": "Amatitlania nigrofasciata"
+      "es": "Cíclido convicto"
     },
     "kind": "FISH",
     "family": "CICHLID",
@@ -3255,7 +3255,7 @@
     "scientificName": "Badis badis",
     "names": {
       "fr": "Perche bleue",
-      "en": "Blue perch",
+      "en": "Badis",
       "de": "Blaubarsch",
       "it": "Badis badis",
       "es": "Badis badis"
@@ -3299,8 +3299,8 @@
       "fr": "Gourami perlé",
       "en": "Pearl gourami",
       "de": "Mosaikfadenfisch",
-      "it": "Trichopodus leerii",
-      "es": "Trichopodus leerii"
+      "it": "Gourami perla",
+      "es": "Gurami perla"
     },
     "kind": "FISH",
     "family": "LABYRINTH",
@@ -3341,8 +3341,8 @@
       "fr": "Gourami bleu",
       "en": "Three spot gourami",
       "de": "Gepunkteter Fadenfisch",
-      "it": "Trichopodus trichopterus",
-      "es": "Trichopodus trichopterus"
+      "it": "Gourami blu",
+      "es": "Gurami azul"
     },
     "kind": "FISH",
     "family": "LABYRINTH",
@@ -3385,7 +3385,7 @@
       "fr": "Gourami miel",
       "en": "Honey gourami",
       "de": "Honiggurami",
-      "it": "Trichogaster chuna",
+      "it": "Gourami miele",
       "es": "Gurami miel"
     },
     "kind": "FISH",
@@ -3472,8 +3472,8 @@
       "fr": "Macropode",
       "en": "Paradise fish",
       "de": "Makropode",
-      "it": "Macropodus opercularis",
-      "es": "Macropodus opercularis"
+      "it": "Pesce paradiso",
+      "es": "Pez paraíso"
     },
     "kind": "FISH",
     "family": "LABYRINTH",
@@ -3516,8 +3516,8 @@
       "fr": "Gourami embrasseur",
       "en": "Kissing gourami",
       "de": "Küssender Gurami",
-      "it": "Gurami sbaciucchione",
-      "es": "Helostoma temminckii"
+      "it": "Gourami baciatore",
+      "es": "Gurami besador"
     },
     "kind": "FISH",
     "family": "LABYRINTH",
@@ -3559,7 +3559,7 @@
       "fr": "Gourami chocolat",
       "en": "Chocolate gourami",
       "de": "Schokoladengurami",
-      "it": "Sphaerichthys osphromenoides",
+      "it": "Gourami cioccolato",
       "es": "Gurami chocolate"
     },
     "kind": "FISH",
@@ -3601,8 +3601,8 @@
       "fr": "Gourami lune",
       "en": "Moonlight gourami",
       "de": "Mondscheinfadenfisch",
-      "it": "Gurami chiaro di luna",
-      "es": "Trichopodus microlepis"
+      "it": "Gourami chiaro di luna",
+      "es": "Gurami luna"
     },
     "kind": "FISH",
     "family": "LABYRINTH",
@@ -3643,8 +3643,8 @@
       "fr": "Corydoras bronze",
       "en": "Bronze corydoras",
       "de": "Metallpanzerwels",
-      "it": "Coridora bronzino",
-      "es": "Corydoras aeneus"
+      "it": "Corydoras bronzeo",
+      "es": "Corydoras bronce"
     },
     "kind": "FISH",
     "family": "CATFISH",
@@ -3685,8 +3685,8 @@
       "fr": "Corydoras poivré",
       "en": "Peppered corydoras",
       "de": "Marmorierter Panzerwels",
-      "it": "Coridora paleato",
-      "es": "Corydoras paleatus"
+      "it": "Corydoras paleatus",
+      "es": "Corydoras pimienta"
     },
     "kind": "FISH",
     "family": "CATFISH",
@@ -3895,7 +3895,7 @@
       "fr": "Loche-clown",
       "en": "Clown loach",
       "de": "Prachtschmerle",
-      "it": "Chromobotia macracanthus",
+      "it": "Botia pagliaccio",
       "es": "Botia payaso"
     },
     "kind": "FISH",
@@ -3935,10 +3935,10 @@
     "scientificName": "Pangio kuhlii",
     "names": {
       "fr": "Kuhli",
-      "en": "Kuhli Loach",
+      "en": "Kuhli loach",
       "de": "Geflecktes Dornauge",
-      "it": "Pangio kuhlii",
-      "es": "Pangio kuhlii"
+      "it": "Kuhli",
+      "es": "Kuhli"
     },
     "kind": "FISH",
     "family": "CATFISH",
@@ -4184,7 +4184,7 @@
       "fr": "Silure de verre",
       "en": "Glass catfish",
       "de": "Indischer Glaswels",
-      "it": "Kryptopterus vitreolus",
+      "it": "Pesce gatto di vetro",
       "es": "Pez gato de cristal"
     },
     "kind": "FISH",
@@ -4472,7 +4472,7 @@
       "en": "Japanese rice fish",
       "de": "Medaka",
       "it": "Pesce del riso",
-      "es": "Oryzias latipes"
+      "es": "Medaka"
     },
     "kind": "FISH",
     "family": "CYPRINID",
@@ -4598,8 +4598,8 @@
       "fr": "Tétraodon nain",
       "en": "Dwarf pufferfish",
       "de": "Zwerg-Kugelfisch",
-      "it": "Carinotetraodon travancoricus",
-      "es": "Carinotetraodon travancoricus"
+      "it": "Pesce palla nano",
+      "es": "Pez globo enano"
     },
     "kind": "FISH",
     "family": "CICHLID",
@@ -4811,8 +4811,8 @@
       "fr": "Crevette bambou",
       "en": "Bamboo shrimp",
       "de": "Molukken-Fächergarnele",
-      "it": "Atyopsis moluccensis",
-      "es": "Atyopsis moluccensis"
+      "it": "Gamberetto bambù",
+      "es": "Gamba bambú"
     },
     "kind": "SHRIMP",
     "family": "SHRIMP",
@@ -4853,8 +4853,8 @@
       "fr": "Crevette fantôme",
       "en": "Ghost shrimp",
       "de": "Palaemonetes paludosus",
-      "it": "Palaemonetes paludosus",
-      "es": "Palaemonetes paludosus"
+      "it": "Gamberetto fantasma",
+      "es": "Gamba fantasma"
     },
     "kind": "SHRIMP",
     "family": "SHRIMP",
@@ -5019,7 +5019,7 @@
     "scientificName": "Planorbella duryi",
     "names": {
       "fr": "Planorbe rouge",
-      "en": "Seminole rams-horn",
+      "en": "Red ramshorn snail",
       "de": "Abgeplattete Posthornschnecke",
       "it": "Planorbella duryi",
       "es": "Planorbella duryi"
@@ -5103,7 +5103,7 @@
     "scientificName": "Melanoides tuberculata",
     "names": {
       "fr": "Mélanoïde",
-      "en": "Malaysian Trumpet Snail",
+      "en": "Malaysian trumpet snail",
       "de": "Nadel-Kronenschnecke",
       "it": "Melanoides tuberculata",
       "es": "Melanoides tuberculata"
@@ -5145,7 +5145,7 @@
     "scientificName": "Physella acuta",
     "names": {
       "fr": "Physe",
-      "en": "Acute bladder snail",
+      "en": "Bladder snail",
       "de": "Spitze Blasenschnecke",
       "it": "Physella acuta",
       "es": "Physella acuta"
@@ -5189,8 +5189,8 @@
       "fr": "Escargot assassin",
       "en": "Assassin snail",
       "de": "Raubturmdeckelschnecke",
-      "it": "Anentome helena",
-      "es": "Anentome helena"
+      "it": "Lumaca assassina",
+      "es": "Caracol asesino"
     },
     "kind": "SNAIL",
     "family": "SNAIL",
@@ -5265,8 +5265,8 @@
       "fr": "Fougère de Java",
       "en": "Java fern",
       "de": "Javafarn",
-      "it": "Leptochilus pteropus",
-      "es": "Leptochilus pteropus"
+      "it": "Felce di Giava",
+      "es": "Helecho de Java"
     },
     "kind": "PLANT",
     "family": "PLANT",
@@ -5299,8 +5299,8 @@
       "fr": "Mousse de Java",
       "en": "Java moss",
       "de": "Javamoos",
-      "it": "Taxiphyllum barbieri",
-      "es": "Taxiphyllum barbieri"
+      "it": "Muschio di Giava",
+      "es": "Musgo de Java"
     },
     "kind": "PLANT",
     "family": "PLANT",
@@ -5331,7 +5331,7 @@
     "scientificName": "Cryptocoryne wendtii",
     "names": {
       "fr": "Cryptocoryne wendtii",
-      "en": "Wendt's water trumpet",
+      "en": "Cryptocoryne wendtii",
       "de": "Cryptocoryne wendtii",
       "it": "Cryptocoryne wendtii",
       "es": "Cryptocoryne wendtii"
@@ -5467,7 +5467,7 @@
     "scientificName": "Vallisneria americana",
     "names": {
       "fr": "Vallisnérie d'Amérique",
-      "en": "Wild celery",
+      "en": "Jungle val",
       "de": "Vallisneria americana",
       "it": "Vallisneria americana",
       "es": "Vallisneria americana"
@@ -5535,7 +5535,7 @@
     "scientificName": "Hygrophila polysperma",
     "names": {
       "fr": "Hygrophila polysperma",
-      "en": "Indian waterweed",
+      "en": "Dwarf hygrophila",
       "de": "Indischer Wasserfreund",
       "it": "Hygrophila polysperma",
       "es": "Hygrophila polysperma"
@@ -5776,7 +5776,7 @@
       "en": "Common duckweed",
       "de": "Kleine Wasserlinse",
       "it": "Lenticchia d'acqua",
-      "es": "Lemna minor"
+      "es": "Lenteja de agua"
     },
     "kind": "PLANT",
     "family": "PLANT",
@@ -5843,8 +5843,8 @@
       "fr": "Marimo",
       "en": "Marimo",
       "de": "Mooskugel",
-      "it": "Alga a Palla",
-      "es": "Aegagropila linnaei"
+      "it": "Marimo",
+      "es": "Marimo"
     },
     "kind": "PLANT",
     "family": "PLANT",

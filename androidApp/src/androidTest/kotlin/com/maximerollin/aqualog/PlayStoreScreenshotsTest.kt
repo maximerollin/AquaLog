@@ -102,6 +102,9 @@ class PlayStoreScreenshotsTest {
             compose.onNodeWithTag("rapid-session-list").performScrollToIndex(0)
             capture(language, "02-session")
             compose.onNode(hasLabel(strings.getString(Res.string.cancel)) and hasClickAction()).performClick()
+            // Values are typed: closing asks before it throws them away.
+            awaitText(strings.getString(Res.string.session_discard_title))
+            compose.onNode(hasText(strings.getString(Res.string.session_discard_confirm)) and hasClickAction()).performClick()
 
             compose.awaitLabel(strings.getString(Res.string.navigation_history))
             compose.onNode(hasLabel(strings.getString(Res.string.navigation_history))).performClick()
@@ -114,7 +117,8 @@ class PlayStoreScreenshotsTest {
 
             compose.onNode(hasLabel(strings.getString(Res.string.navigation_more))).performClick()
             val discoverPro = strings.getString(Res.string.more_pro_banner_action)
-            compose.onNodeWithTag("settings-list").performScrollToNode(hasText(discoverPro))
+            // Above the floating bar: a banner left under it would not receive the click.
+            compose.scrollAboveBar("settings-list", hasText(discoverPro))
             compose.onNode(hasText(discoverPro) and hasClickAction()).performClick()
             awaitText(strings.getString(Res.string.paywall_headline))
             compose.waitUntil(10_000) { compose.onAllNodes(hasText(demo.annualPrice, substring = true)).fetchSemanticsNodes().isNotEmpty() }

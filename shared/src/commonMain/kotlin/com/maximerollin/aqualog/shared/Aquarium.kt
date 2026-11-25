@@ -16,7 +16,10 @@ enum class AquariumCreationAccess {
     PRO,
 }
 
-class FreeAquariumLimitReached : IllegalStateException("Free supports one Aquarium")
+/** Aquariums a Free user keeps in use at once; archived ones do not count, and Pro has no limit. */
+const val FREE_AQUARIUM_LIMIT = 2
+
+class FreeAquariumLimitReached : IllegalStateException("Free supports $FREE_AQUARIUM_LIMIT Aquariums")
 
 data class AquariumSetup(
     val aquarium: Aquarium,

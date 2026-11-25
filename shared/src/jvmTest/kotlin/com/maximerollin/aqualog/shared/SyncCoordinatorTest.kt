@@ -431,6 +431,50 @@ class SyncCoordinatorTest {
     }
 
     @Test
+    fun `a Task created, resolved and deleted on either device reaches the other, with one next Occurrence`() = runTest {
+        val firstDevice = fixture()
+        val secondDevice = fixture()
+        val aquarium = firstDevice.repository.createAquarium("Amazonien", 120.0, VolumeUnit.LITERS)
+        val cloud = InMemorySyncBackend(failAfterFirstAcceptedPush = false)
+        val sessionProvider = FixedSyncSessionProvider(SyncSession("account-1", "access-token"))
+        val firstCoordinator = SyncCoordinator(firstDevice.repository, cloud, sessionProvider)
+        val secondCoordinator = SyncCoordinator(secondDevice.repository, cloud, sessionProvider)
+        suspend fun synchronizeBoth() = repeat(2) {
+            assertIs<SyncRunResult.Synchronized>(firstCoordinator.runOnce())
+            assertIs<SyncRunResult.Synchronized>(secondCoordinator.runOnce())
+        }
+        suspend fun Fixture.pending() = repository.observePendingTaskOccurrences().first()
+        fun completed(occurrenceId: String) = TaskResolutionInput(occurrenceId, TaskResolution.COMPLETED, 1_800_000_000_000L)
+
+        val created = firstDevice.repository.createTask(
+            TaskInput(aquarium.id, "Water change", TaskRecurrence.WEEKLY, TaskDate(2027, 1, 10), null, "Europe/Paris"),
+        )
+        synchronizeBoth()
+        assertEquals(listOf(created.occurrence), secondDevice.pending())
+
+        // Both resolve the same Occurrence before they synchronize: the next one is the same row on each.
+        firstDevice.repository.resolveTaskOccurrence(completed(created.occurrence.id))
+        secondDevice.repository.resolveTaskOccurrence(completed(created.occurrence.id))
+        synchronizeBoth()
+        assertEquals(listOf(TaskDate(2027, 1, 17)), firstDevice.pending().map { it.dueDate })
+        assertEquals(firstDevice.pending(), secondDevice.pending())
+        assertEquals(
+            listOf(created.occurrence.id),
+            secondDevice.repository.observeResolvedTaskOccurrences().first().map { it.id },
+        )
+
+        secondDevice.repository.deleteTask(created.task.id)
+        synchronizeBoth()
+        assertEquals(emptyList<TaskOccurrence>(), firstDevice.pending())
+        assertEquals(
+            listOf(created.occurrence.id),
+            firstDevice.repository.observeResolvedTaskOccurrences().first().map { it.id },
+        )
+        firstDevice.database.close()
+        secondDevice.database.close()
+    }
+
+    @Test
     fun `inhabitants added then partly removed on one device reach a second device`() = runTest {
         val firstDevice = fixture()
         val secondDevice = fixture()
@@ -772,6 +816,8 @@ class SyncCoordinatorTest {
         private val actions = linkedMapOf<String, MaintenanceAction>()
         private val events = linkedMapOf<String, SessionEvent>()
         private val inhabitants = linkedMapOf<String, Inhabitant>()
+        private val tasks = linkedMapOf<String, AquariumTask>()
+        private val taskOccurrences = linkedMapOf<String, TaskOccurrence>()
         private val acceptedOperationKeys = mutableSetOf<String>()
         private val versions = linkedMapOf<Pair<SyncEntityType, String>, RemoteEntityVersion>()
 
@@ -784,6 +830,8 @@ class SyncCoordinatorTest {
                 actions.values.toList(),
                 events.values.toList(),
                 inhabitants.values.toList(),
+                tasks.values.toList(),
+                taskOccurrences.values.toList(),
             )
 
         override suspend fun push(session: SyncSession, batch: PendingSyncBatch) {
@@ -813,6 +861,8 @@ class SyncCoordinatorTest {
                     SyncEntityType.MAINTENANCE_ACTION -> actions.remove(operation.entityId)
                     SyncEntityType.EVENT -> events.remove(operation.entityId)
                     SyncEntityType.INHABITANT -> inhabitants.remove(operation.entityId)
+                    SyncEntityType.TASK -> tasks.remove(operation.entityId)
+                    SyncEntityType.TASK_OCCURRENCE -> taskOccurrences.remove(operation.entityId)
                 }
             }
             batch.aquariums.forEach { aquariums[it.id] = it }
@@ -822,6 +872,8 @@ class SyncCoordinatorTest {
             batch.maintenanceActions.forEach { actions[it.id] = it }
             batch.events.forEach { events[it.id] = it }
             batch.inhabitants.forEach { inhabitants[it.id] = it }
+            batch.tasks.forEach { tasks[it.id] = it }
+            batch.taskOccurrences.forEach { taskOccurrences[it.id] = it }
             afterNextPush?.also { callback ->
                 afterNextPush = null
                 callback()

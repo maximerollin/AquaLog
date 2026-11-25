@@ -115,6 +115,11 @@ class BackNavigationFlowTest {
             composeRule.waitUntil(timeoutMillis = 10_000) { !scenario.imeVisible() }
 
             pressBack()
+            // A value is typed: Back asks before it throws the Session away.
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasText("Discard this Session?")).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeRule.onNodeWithText("Discard").performClick()
 
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasTestTag("home-list")).fetchSemanticsNodes().isNotEmpty()
@@ -134,8 +139,8 @@ class BackNavigationFlowTest {
         try {
             composeRule.awaitLabel("More")
             composeRule.onNode(hasLabel("More")).performClick()
-            composeRule.scrollAboveBar("settings-list", hasText("Analysis rhythm"))
-            composeRule.onNodeWithText("Analysis rhythm").performClick()
+            composeRule.scrollAboveBar("settings-list", hasText("Testing schedule"))
+            composeRule.onNodeWithText("Testing schedule").performClick()
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasTestTag("rhythm-list")).fetchSemanticsNodes().isNotEmpty()
             }

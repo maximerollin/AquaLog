@@ -4,6 +4,12 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.first
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -67,8 +73,39 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private val requestNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    /**
+     * Once, after the first Session: from then on tests come due and the weekly summary has something to say, and
+     * neither notification can be shown without the permission. Tasks still ask on their own screen.
+     */
+    private fun askForNotificationsAfterFirstSession() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (!(application as AquaLogApplication).runsForegroundPrompts) return
+        val preferences = getSharedPreferences("prompts", MODE_PRIVATE)
+        if (preferences.getBoolean(NOTIFICATIONS_ASKED, false)) return
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                homeViewModel.uiState.first { it.setup != null && it.latestSession != null && it.rapidSession == null }
+                if (preferences.getBoolean(NOTIFICATIONS_ASKED, false)) return@repeatOnLifecycle
+                preferences.edit().putBoolean(NOTIFICATIONS_ASKED, true).apply()
+                if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        }
+    }
+
+    /** What another device changed is only read during a sync, so each return to the app starts one. */
+    override fun onStart() {
+        super.onStart()
+        val application = application as AquaLogApplication
+        if (application.runsForegroundPrompts) AndroidSyncScheduler.requestImmediate(application)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        askForNotificationsAfterFirstSession()
         (application as AquaLogApplication).attachReviewActivity(this)
         proPurchaseCoordinator
         setContent {
@@ -190,6 +227,7 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_WIDGET_AQUARIUM_ID = "widget-aquarium-id"
         const val EXTRA_WIDGET_TARGET = "widget-target"
+        private const val NOTIFICATIONS_ASKED = "notifications-asked"
         private const val MAX_PORTABLE_DATA_BYTES = 10 * 1024 * 1024
     }
 }

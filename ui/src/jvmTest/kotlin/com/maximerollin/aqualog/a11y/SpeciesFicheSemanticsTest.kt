@@ -251,7 +251,7 @@ class SpeciesFicheSemanticsTest {
     fun `cycling banner shows on a fish fiche while cycling`() = french {
         runComposeUiTest {
             screen(setup = AquariumSetup(salon.copy(profile = AquariumProfile.CYCLING), listOf(ph)))
-            val banner = hasText("Attendez que les nitrites soient à 0 avant d'ajouter des poissons.")
+            val banner = hasText("Attendez que les nitrites soient à 0 avant d’ajouter des poissons.")
             scrolledTo(banner)
             onNode(banner).assertIsDisplayed()
         }
@@ -281,7 +281,7 @@ class SpeciesFicheSemanticsTest {
             onNode(hasText("Va bien dans Salon")).assertExists()
             val row = hasContentDescription("pH", substring = true)
             onAllNodes(row).assertCountEquals(0)
-            val details = hasText("Détail ›")
+            val details = hasText("Détails ›")
             scrolledTo(details)
             onNode(details).assertHeightIsAtLeast(48.dp).performClick()
             scrolledTo(row)

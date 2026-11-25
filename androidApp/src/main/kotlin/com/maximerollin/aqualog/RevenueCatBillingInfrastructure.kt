@@ -73,18 +73,24 @@ class RevenueCatBillingGateway(
 
     override suspend fun loadAnnualOffer(): AnnualProOffer {
         val products = products(ANNUAL_PRO_PRODUCT_ID, ProductType.SUBS)
-        val option = products.flatMap { it.subscriptionOptions.orEmpty() }.firstOrNull { option ->
-            val free = option.freePhase
+        val yearly = products.flatMap { it.subscriptionOptions.orEmpty() }.filter { option ->
             val paid = option.fullPricePhase
-            free != null && free.billingPeriod.iso8601 in setOf("P14D", "P2W") && (free.billingCycleCount ?: 1) == 1 &&
-                paid?.billingPeriod?.iso8601 == "P1Y" && paid.price.amountMicros > 0L && option.introPhase == null
-        } ?: error("The annual RevenueCat product has no eligible 14-day trial")
+            paid?.billingPeriod?.iso8601 == "P1Y" && paid.price.amountMicros > 0L && option.introPhase == null
+        }
+        val trial = yearly.firstOrNull { option ->
+            val free = option.freePhase
+            free != null && free.billingPeriod.iso8601 in setOf("P14D", "P2W") && (free.billingCycleCount ?: 1) == 1
+        }
+        // Play only returns the trial to an account that never used it: everyone else subscribes without one.
+        val option = trial ?: yearly.firstOrNull { it.freePhase == null }
+            ?: error("The annual RevenueCat product has no yearly plan")
         annualOption = option
+        val trialDays = if (trial != null) 14 else 0
         return AnnualProOffer(
             ANNUAL_PRO_PRODUCT_ID,
             requireNotNull(option.fullPricePhase).price.formatted,
-            14,
-            Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 14) }.timeInMillis,
+            trialDays,
+            Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, trialDays) }.timeInMillis,
         )
     }
 
@@ -107,7 +113,11 @@ class RevenueCatBillingGateway(
             identify(accountId)
             // Recheck the offer after identification; never silently replace a promised trial with a paid base plan.
             val params = if (annual) {
+                val trialPromised = annualOption?.freePhase != null
                 loadAnnualOffer()
+                if (trialPromised && annualOption?.freePhase == null) {
+                    return@withLock BillingLaunchResult.Failed("The free trial is no longer available; review the offer")
+                }
                 PurchaseParams.Builder(currentActivity, requireNotNull(annualOption)).build()
             } else {
                 loadLifetimeOffer()

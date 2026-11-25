@@ -32,11 +32,15 @@ class AndroidTaskReminderScheduler(
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) : TaskReminderScheduler {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
+    private val preferences = context.getSharedPreferences(REMINDER_PREFERENCES, Context.MODE_PRIVATE)
 
     override fun schedule(occurrence: TaskOccurrence) {
         if (occurrence.resolution != null) return
         val alarmAt = occurrence.alarmEpochMillis()
-        val triggerAt = maxOf(alarmAt, nowMillis() + MINIMUM_DELAY_MILLIS)
+        val now = nowMillis()
+        // A late reminder is shown once (the device may have been off at its time), not at every reconcile.
+        if (alarmAt <= now && occurrence.id in preferences.ids(KEY_SHOWN)) return
+        val triggerAt = maxOf(alarmAt, now + MINIMUM_DELAY_MILLIS)
         alarmManager.setAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             triggerAt,
@@ -48,7 +52,14 @@ class AndroidTaskReminderScheduler(
         alarmManager.cancel(pendingIntent(occurrenceId, ""))
     }
 
+    /** Also cancels the alarms of Occurrences that are gone: resolved elsewhere, deleted, or removed with the local copy. */
     override fun reconcile(occurrences: List<TaskOccurrence>) {
+        val pending = occurrences.mapTo(mutableSetOf(), TaskOccurrence::id)
+        (preferences.ids(KEY_SCHEDULED) - pending).forEach(::cancel)
+        preferences.edit()
+            .putStringSet(KEY_SCHEDULED, pending)
+            .putStringSet(KEY_SHOWN, preferences.ids(KEY_SHOWN) intersect pending)
+            .apply()
         occurrences.forEach(::schedule)
     }
 
@@ -108,6 +119,9 @@ class AndroidTaskReminderScheduler(
         internal const val EXTRA_OCCURRENCE_ID = "occurrence-id"
         internal const val EXTRA_TASK_TITLE = "task-title"
         private const val MINIMUM_DELAY_MILLIS = 1_000L
+        internal const val REMINDER_PREFERENCES = "task-reminders"
+        private const val KEY_SCHEDULED = "scheduled-occurrences"
+        internal const val KEY_SHOWN = "shown-occurrences"
         private const val DUE_TESTS_REQUEST_CODE = 0x7e57
         private const val WEEKLY_SUMMARY_REQUEST_CODE = 0xb11a
     }
@@ -119,8 +133,22 @@ class TaskReminderReceiver : BroadcastReceiver() {
         val title = intent.getStringExtra(AndroidTaskReminderScheduler.EXTRA_TASK_TITLE).orEmpty()
         val occurrenceId = intent.getStringExtra(AndroidTaskReminderScheduler.EXTRA_OCCURRENCE_ID) ?: return
         postReminder(context, ReminderChannel.TASKS, occurrenceId.hashCode(), title, context.getString(R.string.task_notification_text))
+        val preferences = context.getSharedPreferences(
+            AndroidTaskReminderScheduler.REMINDER_PREFERENCES,
+            Context.MODE_PRIVATE,
+        )
+        preferences.edit()
+            .putStringSet(
+                AndroidTaskReminderScheduler.KEY_SHOWN,
+                preferences.ids(AndroidTaskReminderScheduler.KEY_SHOWN) + occurrenceId,
+            )
+            .apply()
     }
 }
+
+/** A copy: the set SharedPreferences returns must not be modified. */
+private fun android.content.SharedPreferences.ids(key: String): Set<String> =
+    getStringSet(key, null)?.toSet().orEmpty()
 
 private fun cannotNotify(context: Context): Boolean =
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -172,13 +200,14 @@ private const val WEEKLY_SUMMARY_NOTIFICATION_ID = 0xb11a
 /** Fires at 09:00 while tests are due: lists them across Aquariums, then schedules the next reminder. */
 class DueTestReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (cannotNotify(context)) return
         val application = context.applicationContext as? AquaLogApplication ?: return
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
                 val summary = application.aquariumRepository.dueTestSummary(localToday(), ZoneId.systemDefault().id)
-                if (summary.dueToday.isNotEmpty()) {
+                // Without the permission nothing is shown, but the next reminder is still scheduled: the chain
+                // must survive until the permission is granted.
+                if (summary.dueToday.isNotEmpty() && !cannotNotify(context)) {
                     val text = context.getString(R.string.due_tests_notification_text, dueTestsLabels(summary.dueToday))
                     postReminder(context, ReminderChannel.DUE_TESTS, DUE_TESTS_NOTIFICATION_ID, text, null)
                 }

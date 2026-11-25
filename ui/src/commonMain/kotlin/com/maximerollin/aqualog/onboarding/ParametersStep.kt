@@ -138,28 +138,37 @@ fun ParametersContent(
             }
         }
         item { PaperSheetTop() }
-        item {
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    stringResource(Res.string.parameters_hint),
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                ParametersCard(parameters, actions, onOpen = { openRange = it.storageValue })
-                if (showError) {
-                    Text(
-                        stringResource(Res.string.invalid_parameters),
-                        modifier = Modifier.padding(horizontal = 20.dp),
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-        }
+        item { ParametersEditor(parameters, showError, actions, onOpen = { openRange = it.storageValue }) }
     }
     parameters.firstOrNull { it.parameter.storageValue == openRange }?.let { state ->
         RangeSheet(state, actions, onDismiss = { openRange = null })
+    }
+}
+
+/** The hint, the card of rows and the validation error: onboarding step 3 and the Parameters settings share it. */
+@Composable
+internal fun ParametersEditor(
+    parameters: List<ParameterEditorState>,
+    showError: Boolean,
+    actions: OnboardingActions,
+    onOpen: (BuiltInParameter) -> Unit,
+) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            stringResource(Res.string.parameters_hint),
+            modifier = Modifier.padding(horizontal = 20.dp),
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        ParametersCard(parameters, actions, onOpen = onOpen)
+        if (showError) {
+            Text(
+                stringResource(Res.string.invalid_parameters),
+                modifier = Modifier.padding(horizontal = 20.dp),
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
     }
 }
 

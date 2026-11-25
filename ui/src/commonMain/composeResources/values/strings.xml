@@ -56,11 +56,10 @@
     <string name="continue_for_free">Continue for free</string>
     <string name="continue_with_pro">Continue with Pro</string>
     <string name="loading_google_play_offer">Loading the localized Google Play offer…</string>
-    <string name="pro_offer_summary">%1$s per year after a %2$d-day free trial. First billing date: %3$s.</string>
+    <string name="pro_offer_summary">%1$s per year after a %2$d-day free trial. First billing date: %3$s. Renews automatically every year until cancelled; cancel any time in Google Play.</string>
     <string name="pro_lifetime_offer_summary">%1$s once. Lifetime access, with no trial.</string>
     <string name="google_play_offer_unavailable">The localized Google Play offer is unavailable. No trial has started.</string>
     <string name="restore_purchase">Restore Google Play purchase</string>
-    <string name="back_to_settings">Back to Settings</string>
     <string name="subscription_settings_description">Free includes 90 days of history. Review Pro, retry a purchase or restore an existing subscription.</string>
     <string name="pro_active">Pro active</string>
     <string name="pro_message_play_unavailable">Google Play is unavailable. No purchase has started.</string>
@@ -162,7 +161,7 @@
     <string name="edit_aquarium">Edit Aquarium</string>
     <string name="archive_aquarium">Archive Aquarium</string>
     <string name="save_aquarium">Save Aquarium</string>
-    <string name="free_one_aquarium_limit">Free keeps all existing data and allows one Aquarium. Pro unlocks additional Aquariums.</string>
+    <string name="free_aquarium_limit">Free keeps all existing data and allows two Aquariums. Pro unlocks more.</string>
     <string name="settings_placeholder">Account, units and appearance settings will be added in their dedicated slices.</string>
     <string name="feedback_title">Send feedback</string>
     <string name="send_feedback">Send feedback</string>
@@ -170,7 +169,7 @@
     <string name="feedback_message_label">Your message</string>
     <string name="feedback_character_count">%1$d/2000</string>
     <string name="feedback_sent">Message sent. Thank you.</string>
-    <string name="feedback_unavailable">Feedback delivery is not configured in this build. Your message was not sent.</string>
+    <string name="feedback_unavailable">Feedback cannot be sent yet. Your message was not sent.</string>
     <string name="sync_status_synced">✓ Synced</string>
     <string name="sync_status_pending">○ Sync pending</string>
     <string name="sync_status_failed">Sync unavailable</string>
@@ -179,7 +178,7 @@
     <string name="sync_failure_server">The sync service could not complete the request. Your local data remains available.</string>
     <string name="sync_failure_unknown">Sync did not complete. Your local data remains available.</string>
     <string name="sync_retry">Retry sync</string>
-    <string name="portable_data_replace_explanation">Restore validates the whole file first, then atomically replaces Aquarium data on this device. Stable IDs prevent duplicates. Account credentials and billing data are never included.</string>
+    <string name="portable_data_replace_explanation">Restore checks the whole file first, then replaces all Aquarium data on this device in one step. Sign-in details and billing data are never included.</string>
     <string name="export_data">Export data</string>
     <string name="restore_from_export">Restore from export</string>
     <string name="portable_import_confirmation_title">Replace local Aquarium data?</string>
@@ -190,9 +189,9 @@
     <string name="portable_problem_invalid_document">This file is incomplete or is not an Aquagenda JSON export. Your local data was not changed.</string>
     <string name="portable_problem_missing_version">This export has no valid format version. Your local data was not changed.</string>
     <string name="portable_problem_unsupported_version">This Aquagenda export version is not supported. Your local data was not changed.</string>
-    <string name="portable_problem_schema_mismatch">This file does not match the declared Aquagenda format version. Your local data was not changed.</string>
-    <string name="portable_problem_duplicate_strategy">This export uses an unsupported duplicate strategy. Your local data was not changed.</string>
-    <string name="portable_problem_duplicate_ids">This export contains empty or duplicate stable IDs. Your local data was not changed.</string>
+    <string name="portable_problem_schema_mismatch">This file does not match the Aquagenda format it declares. Your local data was not changed.</string>
+    <string name="portable_problem_duplicate_strategy">This export handles duplicates in a way this version does not support. Your local data was not changed.</string>
+    <string name="portable_problem_duplicate_ids">This export contains empty or duplicate identifiers. Your local data was not changed.</string>
     <string name="portable_problem_aquariums">This export contains an invalid Aquarium. Your local data was not changed.</string>
     <string name="portable_problem_photo">This export contains an Aquarium photo that is not a readable JPEG. Your local data was not changed.</string>
     <string name="portable_problem_parameters">The export must contain every built-in Parameter in order, with at least one active. Your local data was not changed.</string>
@@ -203,7 +202,7 @@
     <string name="portable_problem_tasks">This export contains an invalid Task or Aquarium relation. Your local data was not changed.</string>
     <string name="portable_problem_occurrences">This export contains an invalid Task Occurrence or broken relation. Your local data was not changed.</string>
     <string name="portable_problem_inhabitants">This export contains an invalid inhabitant or one that references a missing Aquarium. Your local data was not changed.</string>
-    <string name="portable_problem_account_linked">Disconnect your linked account before restoring a portable local copy. Your local data and account were not changed.</string>
+    <string name="portable_problem_account_linked">Sign out of your account before restoring an export. Your local data and account were not changed.</string>
     <string name="portable_problem_database">Restore failed while replacing the local copy. No imported data was kept.</string>
     <string name="portable_storage_error">Android could not read or write this document. Try another location.</string>
     <string name="account_local_only">Local-only</string>
@@ -213,7 +212,7 @@
     <string name="account_deletion_resume_failed">Account deletion could not be resumed. Your local data was not changed.</string>
     <string name="authentication_link_processing_failed">The authentication link could not be processed safely. Try again.</string>
     <string name="sign_out">Sign out</string>
-    <string name="sign_out_copy_choice">Choose what happens to this device’s local copy. Keeping it disconnects cloud ownership and pending uploads. Removing it deletes the local Aquarium data.</string>
+    <string name="sign_out_copy_choice">Choose what happens to the copy on this device. If you keep it, it is detached from your account and pending uploads are dropped. If you remove it, the Aquarium data on this device is deleted.</string>
     <string name="keep_local_copy">Keep local copy</string>
     <string name="remove_local_copy">Remove local copy</string>
     <string name="delete_account">Delete account</string>
@@ -228,11 +227,11 @@
     <string name="account_deleted_cleanup_description">Cloud deletion is confirmed and account tokens are cleared. Finish removing the local copy before using Aquagenda again.</string>
     <string name="finish_local_cleanup">Finish local cleanup</string>
     <string name="privacy_policy">Privacy</string>
-    <string name="privacy_policy_local">Aquagenda stores Aquarium records locally. When purchases are configured, RevenueCat processes purchase information and an opaque account identifier to manage Pro access. Aquarium records are not sent to RevenueCat. Portable exports exclude account tokens and billing data. The published policy is available when configured. LogSnag receives payment status and review-flow request events without an account identifier or Aquarium content.</string>
+    <string name="privacy_policy_local">Aquagenda stores your Aquarium records on this device. With an account, your records and Aquarium photos are also synchronised to Aquagenda’s cloud backend so you can find them on another device. Purchases go through Google Play; RevenueCat processes purchase information and a pseudonymous account identifier to manage Pro access, and never receives Aquarium records. Feedback you send contains your message and, without an account, a random device identifier. Exports exclude account tokens and billing data. LogSnag receives payment status and review-request events without an account identifier or Aquarium content.</string>
     <string name="support">Support</string>
-    <string name="support_unconfigured">No hosted support channel is configured for this build. Your local Aquarium data and portable export remain available.</string>
+    <string name="support_unconfigured">Support is not available yet. Your local Aquarium data and exports remain available.</string>
     <string name="close">Close</string>
-    <string name="open_privacy_policy">Open published policy</string>
+    <string name="open_privacy_policy">Open the privacy policy</string>
     <string name="open_support">Open support</string>
 
     <string name="timeline_title">Chronology</string>
@@ -263,9 +262,9 @@
     <string name="trends_title">Trends</string>
     <string name="trends_free_limit">Free trends show up to 90 days. Older data stays saved.</string>
     <string name="trends_parameter_heading">%1$s trend</string>
-    <string name="trends_indicative_target">Indicative target %1$s–%2$s %3$s · reference only, not a diagnosis</string>
-    <string name="trends_chart_description">%1$s trend chart · solid line and circle point markers · hatched indicative target · diamond Event markers</string>
-    <string name="trends_legend">● Measurements · ▧ hatched indicative target · ◆ Events</string>
+    <string name="trends_indicative_target">Indicative range %1$s–%2$s %3$s · reference only, not a diagnosis</string>
+    <string name="trends_chart_description">%1$s trend chart · solid line and circle point markers · hatched indicative range · diamond Event markers</string>
+    <string name="trends_legend">● Measurements · ▧ hatched indicative range · ◆ Events</string>
     <string name="trends_sparkline_legend">Shaded band: indicative range · ▲ Water changes</string>
     <string name="trends_row_expanded">Expanded</string>
     <string name="trends_row_collapsed">Collapsed</string>
@@ -286,9 +285,8 @@
     <string name="trends_window_complete_history">Complete history</string>
     <string name="trends_start_date">Start date</string>
     <string name="trends_end_date">End date</string>
-    <string name="date_format_hint">YYYY-MM-DD</string>
     <string name="trends_apply_custom_period">Apply custom period</string>
-    <string name="trends_invalid_custom_period">Enter an ordered start and end date as YYYY-MM-DD.</string>
+    <string name="trends_invalid_custom_period">Choose a start date that is not after the end date.</string>
     <string name="trends_advanced_analysis">Advanced Pro analysis</string>
     <string name="trends_descriptive_disclaimer">Descriptive context only. Aquagenda does not diagnose water conditions or recommend treatment.</string>
     <string name="trends_choose_intervention">Choose an intervention to compare before and after</string>
@@ -393,7 +391,7 @@
     <string name="piste_add_kh_buffer">Add a buffer to raise the KH.</string>
     <string name="piste_check_tap_water_and_decor">Check the tap water and limestone decorations.</string>
     <string name="piste_check_heater_setting">Check the heater setting.</string>
-    <string name="piste_vent_or_lights_off">Ventilate the surface or switch off the lighting for a few hours.</string>
+    <string name="piste_vent_or_lights_off">Blow a fan across the surface or switch off the lighting for a few hours.</string>
     <string name="piste_check_heater_works">Check that the heater is working.</string>
     <string name="piste_adjust_heater_power">Match its power to the tank volume.</string>
     <string name="piste_add_remineralizer">Add a remineralizer.</string>
@@ -417,12 +415,12 @@
     <string name="parameter_short_phosphate">PO₄</string>
     <string name="due_tests_row">Test %1$s</string>
     <string name="list_pair">%1$s and %2$s</string>
-    <string name="rhythm_title">Analysis rhythm</string>
+    <string name="rhythm_title">Testing schedule</string>
     <string name="rhythm_never">Never</string>
     <string name="rhythm_auto_never">Auto (never)</string>
     <plurals name="rhythm_auto_days"><item quantity="one">Auto (%1$d day)</item><item quantity="other">Auto (%1$d days)</item></plurals>
     <plurals name="rhythm_days"><item quantity="one">%1$d day</item><item quantity="other">%1$d days</item></plurals>
-    <string name="cycled_proposal_text">Your tank looks cycled. Switch to the rhythm of an established tank?</string>
+    <string name="cycled_proposal_text">Your tank looks cycled. Switch to an established-tank schedule?</string>
     <string name="cycled_proposal_switch">Switch to established</string>
     <string name="cycled_proposal_later">Later</string>
     <string name="weekly_summary_title">Weekly summary</string>
@@ -471,7 +469,7 @@
     <string name="habitants_reason_ph_too_low">pH low</string>
     <string name="habitants_reason_too_warm">Too warm</string>
     <string name="habitants_reason_too_cold">Too cold</string>
-    <string name="habitants_reason_eats_small_fish">Hunts small</string>
+    <string name="habitants_reason_eats_small_fish">Eats small fish</string>
     <string name="habitants_reason_eats_shrimp">Eats shrimp</string>
     <string name="habitants_reason_eats_snails">Eats snails</string>
     <string name="habitants_reason_fin_nipping">Fin nipping</string>
@@ -561,7 +559,7 @@
     <string name="trends_custom_period">Custom period</string>
     <string name="trends_hero_legend">▲ Water change · Reference, not a diagnosis</string>
     <plurals name="trends_hero_change_days"><item quantity="one">%1$s over %2$d day</item><item quantity="other">%1$s over %2$d days</item></plurals>
-    <string name="more_pro_banner_title">Several aquariums, all your history</string>
+    <string name="more_pro_banner_title">More aquariums, all your history</string>
     <string name="more_pro_banner_action">Discover Pro</string>
     <string name="more_section_data_account">Data and account</string>
     <string name="task_day_tomorrow">Tomorrow</string>
@@ -589,7 +587,7 @@
     <string name="range_sheet_done">Done</string>
     <string name="paywall_pro_overline">Aquagenda Pro</string>
     <string name="paywall_headline">All your tanks, their whole story.</string>
-    <string name="paywall_benefit_aquariums">Several Aquariums</string>
+    <string name="paywall_benefit_aquariums">More than two Aquariums</string>
     <string name="paywall_benefit_history">History beyond 90 days</string>
     <string name="paywall_benefit_analysis">Before / after analysis of an intervention</string>
     <string name="paywall_benefit_widgets">Tracking widgets on your home screen</string>
@@ -599,4 +597,53 @@
     <string name="paywall_lifetime_terms">once, no trial</string>
     <string name="paywall_recommended">Recommended</string>
     <string name="paywall_choose_pro">Choose Pro</string>
+    <string name="paywall_annual_terms_no_trial">per year</string>
+    <string name="pro_offer_summary_no_trial">%1$s per year, billed when you confirm. Renews automatically every year until cancelled; cancel any time in Google Play.</string>
+    <string name="task_delete">Delete Task</string>
+    <string name="task_delete_title">Delete this Task?</string>
+    <string name="task_delete_description">It will no longer come back or remind you. What you already completed stays in the Chronology.</string>
+    <string name="archive_aquarium_title">Archive this Aquarium?</string>
+    <string name="archive_aquarium_description">Its data is kept, but it leaves the app and its Tasks stop reminding you. You can restore it from More, under Archived Aquariums.</string>
+    <string name="archive_aquarium_confirm">Archive</string>
+    <string name="measured_parameters_title">Measured parameters</string>
+    <string name="welcome_sign_in">I already have an account</string>
+    <string name="deletion_authentication_in_browser">Finish signing in in your browser to resume the account deletion.</string>
+    <string name="deletion_link_sent">Open the sign-in link sent to your account’s e-mail address to resume the deletion.</string>
+    <string name="deletion_authentication_cancelled">Sign-in was cancelled. The account deletion is still pending.</string>
+    <string name="deletion_link_expired">This sign-in link has expired. Request a new one to resume the deletion.</string>
+    <string name="deletion_link_mismatch">This sign-in link does not match the pending deletion.</string>
+    <string name="deletion_wrong_account">Sign in as %1$s to resume the deletion.</string>
+    <string name="deletion_wrong_account_unknown">Sign in with the account awaiting deletion.</string>
+    <string name="archived_aquariums">Archived Aquariums</string>
+    <string name="restore_aquarium">Restore</string>
+    <string name="restore_aquarium_named">Restore %1$s</string>
+    <string name="task_edit">Edit</string>
+    <string name="edit_task">Edit Task</string>
+    <string name="session_discard_title">Discard this Session?</string>
+    <string name="session_discard_description">What you entered will not be saved.</string>
+    <string name="session_discard_confirm">Discard</string>
+    <string name="session_discard_keep">Keep editing</string>
+    <string name="action_quantity_invalid">Enter a positive number, or leave it empty.</string>
+    <string name="calculators_title">Calculators</string>
+    <string name="calculator_incomplete">Fill in the fields to see the result.</string>
+    <string name="calculator_unit_liters">L</string>
+    <string name="calculator_unit_gallons">US gal</string>
+    <string name="calculator_unit_centimeters">cm</string>
+    <string name="calculator_unit_inches">in</string>
+    <string name="calculator_volume_title">Tank volume</string>
+    <string name="calculator_length">Length (%1$s)</string>
+    <string name="calculator_width">Width (%1$s)</string>
+    <string name="calculator_height">Water height (%1$s)</string>
+    <string name="calculator_volume_result">%1$s L · %2$s US gal</string>
+    <string name="calculator_water_change_title">Water change</string>
+    <string name="calculator_tank_volume">Tank volume (%1$s)</string>
+    <string name="calculator_percent">Share changed (%)</string>
+    <string name="calculator_nitrate_now">Nitrate now (mg/L)</string>
+    <string name="calculator_nitrate_new_water">Nitrate in new water (mg/L)</string>
+    <string name="calculator_water_change_result">To change: %1$s %2$s</string>
+    <string name="calculator_nitrate_result">Estimated nitrate afterwards: %1$s mg/L</string>
+    <string name="calculator_dose_title">Dosing</string>
+    <string name="calculator_dose_amount">Dose on the label</string>
+    <string name="calculator_dose_per_volume">For a volume of (%1$s)</string>
+    <string name="calculator_dose_result">For this tank: %1$s, in the unit of the label</string>
 </resources>

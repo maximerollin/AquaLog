@@ -112,7 +112,7 @@ fun AquaLogContent(
     val inset = framed.windowInsetsPadding(WindowInsets.statusBars)
     val onboardingActions = remember(viewModel) { viewModel.onboardingActions() }
     when {
-        state.isLoading -> LoadingContent(inset)
+        state.isLoading || state.isRestoringAccount -> LoadingContent(inset)
         state.accountSettings.pendingDeletion?.phase == AccountDeletionPhase.CLOUD_DELETED -> {
             AccountDeletionCleanupScreen(state.accountSettings, state.setup?.aquarium, viewModel, modifier)
         }
@@ -132,9 +132,20 @@ fun AquaLogContent(
             viewModel,
             framed,
         )
+        state.showParameterSettings && state.setup != null -> ParameterSettingsScreen(
+            state,
+            state.setup.aquarium,
+            viewModel,
+            framed,
+        )
+        state.showCalculators && state.setup != null -> CalculatorsScreen(
+            state.setup.aquarium,
+            viewModel::closeCalculators,
+            framed,
+        )
         state.rapidSession != null && state.setup != null -> RapidSessionScreen(
             state = state.rapidSession,
-            aquarium = state.setup.aquarium,
+            aquarium = (state.sessionDetailSetup?.takeIf { state.rapidSession.editingSessionId != null } ?: state.setup).aquarium,
             viewModel = viewModel,
             modifier = framed,
         )
@@ -142,7 +153,7 @@ fun AquaLogContent(
         state.addInhabitant != null && state.setup != null -> AddInhabitantScreen(state.addInhabitant, state, viewModel, framed)
         state.sessionDetail != null && state.setup != null -> SessionDetailsScreen(
             recorded = state.sessionDetail,
-            setup = state.setup,
+            setup = state.sessionDetailSetup ?: state.setup,
             returnToTimeline = state.sessionDetailReturnsToTimeline,
             showDeleteConfirmation = state.showDeleteConfirmation,
             viewModel = viewModel,
@@ -286,7 +297,8 @@ internal fun AccountContent(state: AccountUiState, aquarium: Aquarium?, actions:
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                WaterPrimaryButton(Res.string.send_magic_link, actions.onRequestMagicLink)
+                // Nothing is sent to an address that cannot be one: the mistake is caught here, not on an error screen.
+                WaterPrimaryButton(Res.string.send_magic_link, actions.onRequestMagicLink, enabled = looksLikeEmail(state.email))
                 WaterTextButton(Res.string.back, actions.onOpenMethods)
             }
             AccountStep.MAGIC_SENT -> {
@@ -358,6 +370,9 @@ private fun AccountHeading(title: StringResource, description: StringResource, d
 }
 
 /** A white filled button on the water, its label deep teal. */
+/** Something before an « @ », then a domain with a dot: enough to stop a blank or half-typed address. */
+internal fun looksLikeEmail(input: String): Boolean = Regex("""^\S+@\S+\.\S{2,}$""").matches(input.trim())
+
 @Composable
 private fun WaterPrimaryButton(label: StringResource, onClick: () -> Unit, enabled: Boolean = true) {
     Button(
@@ -436,6 +451,17 @@ private fun AquariumShell(
             modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 16.dp),
         )
     }
+    // Here rather than in More: « Add Aquarium » also opens it from the home's Aquarium picker.
+    state.aquariumEditor?.let { editor ->
+        AquariumEditorDialog(
+            editor = editor,
+            onNameChange = viewModel::updateAquariumEditorName,
+            onVolumeChange = viewModel::updateAquariumEditorVolume,
+            onUnitChange = viewModel::updateAquariumEditorUnit,
+            onSave = viewModel::saveAquariumEditor,
+            onDismiss = viewModel::dismissAquariumEditor,
+        )
+    }
 }
 
 @Composable
@@ -500,13 +526,19 @@ private fun PortableImportConfirmation(
 
 @Composable
 internal fun AccountSettingsUiState.localizedSafeDetail(): String? = safeMessage?.let {
-    stringResource(
-        when (it) {
-            AccountSafeMessage.SIGN_OUT_FAILED -> Res.string.account_sign_out_failed
-            AccountSafeMessage.DELETION_RESUME_FAILED -> Res.string.account_deletion_resume_failed
-            AccountSafeMessage.AUTHENTICATION_LINK_FAILED -> Res.string.authentication_link_processing_failed
-        },
-    )
+    val resource = when (it) {
+        AccountSafeMessage.SIGN_OUT_FAILED -> Res.string.account_sign_out_failed
+        AccountSafeMessage.DELETION_RESUME_FAILED -> Res.string.account_deletion_resume_failed
+        AccountSafeMessage.AUTHENTICATION_LINK_FAILED -> Res.string.authentication_link_processing_failed
+        AccountSafeMessage.DELETION_AUTHENTICATION_IN_BROWSER -> Res.string.deletion_authentication_in_browser
+        AccountSafeMessage.DELETION_LINK_SENT -> Res.string.deletion_link_sent
+        AccountSafeMessage.DELETION_AUTHENTICATION_CANCELLED -> Res.string.deletion_authentication_cancelled
+        AccountSafeMessage.DELETION_LINK_EXPIRED -> Res.string.deletion_link_expired
+        AccountSafeMessage.DELETION_LINK_MISMATCH -> Res.string.deletion_link_mismatch
+        AccountSafeMessage.DELETION_WRONG_ACCOUNT -> Res.string.deletion_wrong_account
+        AccountSafeMessage.DELETION_WRONG_ACCOUNT_UNKNOWN -> Res.string.deletion_wrong_account_unknown
+    }
+    safeMessageArgument?.let { argument -> stringResource(resource, argument) } ?: stringResource(resource)
 } ?: safeDetail
 
 private fun FeedbackKind.labelResource(): StringResource = when (this) {

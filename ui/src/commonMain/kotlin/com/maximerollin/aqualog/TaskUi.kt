@@ -35,6 +35,11 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import com.maximerollin.aqualog.resources.cancel
+import com.maximerollin.aqualog.resources.delete
+import com.maximerollin.aqualog.resources.task_delete
+import com.maximerollin.aqualog.resources.task_delete_title
+import com.maximerollin.aqualog.resources.task_delete_description
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -117,6 +122,9 @@ fun TaskScreen(
             onBack = viewModel::closeTasks,
             onComplete = viewModel::completeTask,
             onResolve = viewModel::resolveTask,
+            onDelete = viewModel::deleteTask,
+            onNew = viewModel::startNewTask,
+            onEdit = viewModel::editTask,
             onTitleChange = viewModel::updateTaskTitle,
             onDueDateChange = viewModel::updateTaskDueDate,
             onTimeChange = viewModel::updateTaskTime,
@@ -133,6 +141,9 @@ internal class TaskActions(
     val onBack: () -> Unit = {},
     val onComplete: (occurrence: TaskOccurrence, onFailed: () -> Unit) -> Unit = { _, _ -> },
     val onResolve: (TaskOccurrence, TaskResolution) -> Unit = { _, _ -> },
+    val onDelete: (TaskOccurrence) -> Unit = {},
+    val onNew: () -> Unit = {},
+    val onEdit: (TaskOccurrence) -> Unit = {},
     val onTitleChange: (String) -> Unit = {},
     val onDueDateChange: (String) -> Unit = {},
     val onTimeChange: (String) -> Unit = {},
@@ -198,7 +209,12 @@ internal fun TaskContent(
                             Modifier.testTag("tasks-back"),
                         )
                     },
-                    action = { GlassIconButton(AquagendaIcons.Plus, stringResource(Res.string.new_task), { creating = true }) },
+                    action = {
+                        GlassIconButton(AquagendaIcons.Plus, stringResource(Res.string.new_task), {
+                            actions.onNew()
+                            creating = true
+                        })
+                    },
                     // The sheet's top edge, the next item, covers the water's bottom.
                     modifier = Modifier.overlapNext(30.dp),
                 )
@@ -247,6 +263,10 @@ internal fun TaskContent(
                                     recurrence = state.recurrenceByTaskId[occurrence.taskId],
                                     overdue = occurrence.dueDate.toEpochDay() < today.toEpochDay(),
                                     actions = actions,
+                                    onEdit = {
+                                        actions.onEdit(occurrence)
+                                        creating = true
+                                    },
                                 )
                             }
                         }
@@ -272,7 +292,7 @@ private fun NewTaskSheet(state: TaskUiState, actions: TaskActions, onDismiss: ()
         // The title and « Fermer » stay put while the form scrolls under them, so closing is always one tap away.
         Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                stringResource(Res.string.new_task),
+                stringResource(if (state.editingOccurrenceId != null) Res.string.edit_task else Res.string.new_task),
                 modifier = Modifier.weight(1f).semantics { heading() },
                 style = TextStyle(fontFamily = frauncesFamily(), fontSize = 24.sp, fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
@@ -391,7 +411,7 @@ private fun NewTaskSheet(state: TaskUiState, actions: TaskActions, onDismiss: ()
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun TaskDatePickerDialog(selectedDate: LocalDate, onDateSelected: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+internal fun TaskDatePickerDialog(selectedDate: LocalDate, onDateSelected: (LocalDate) -> Unit, onDismiss: () -> Unit) {
     // Material3 date pickers work in UTC midnight milliseconds.
     val state = rememberDatePickerState(
         initialSelectedDateMillis = selectedDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
@@ -458,12 +478,19 @@ private fun ReminderBanner(
  * then the ⋮ menu. An unknown recurrence is left out; « late » is in the alert colour and in words.
  */
 @Composable
-private fun TaskRow(occurrence: TaskOccurrence, recurrence: TaskRecurrence?, overdue: Boolean, actions: TaskActions) {
+private fun TaskRow(
+    occurrence: TaskOccurrence,
+    recurrence: TaskRecurrence?,
+    overdue: Boolean,
+    actions: TaskActions,
+    onEdit: () -> Unit,
+) {
     val colors = MaterialTheme.colorScheme
     val formatter = currentLocalizedFormatters()
     // Guards against a double tap resolving the occurrence twice before the list refreshes.
     var completed by remember(occurrence.id) { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
+    var confirmDelete by remember(occurrence.id) { mutableStateOf(false) }
     val completeDescription = "${stringResource(Res.string.task_complete)}, ${occurrence.title}"
     val moreDescription = "${stringResource(Res.string.task_more_actions)}, ${occurrence.title}"
     val overdueLabel = stringResource(Res.string.task_overdue)
@@ -515,6 +542,13 @@ private fun TaskRow(occurrence: TaskOccurrence, recurrence: TaskRecurrence?, ove
             }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.task_edit)) },
+                    onClick = {
+                        menuOpen = false
+                        onEdit()
+                    },
+                )
+                DropdownMenuItem(
                     text = { Text(stringResource(Res.string.task_postpone)) },
                     onClick = {
                         menuOpen = false
@@ -528,8 +562,33 @@ private fun TaskRow(occurrence: TaskOccurrence, recurrence: TaskRecurrence?, ove
                         actions.onResolve(occurrence, TaskResolution.IGNORED)
                     },
                 )
+                DropdownMenuItem(
+                    text = { Text(stringResource(Res.string.task_delete), color = colors.error) },
+                    onClick = {
+                        menuOpen = false
+                        confirmDelete = true
+                    },
+                )
             }
         }
+    }
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text(stringResource(Res.string.task_delete_title)) },
+            text = { Text(stringResource(Res.string.task_delete_description)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmDelete = false
+                        actions.onDelete(occurrence)
+                    },
+                ) { Text(stringResource(Res.string.delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) { Text(stringResource(Res.string.cancel)) }
+            },
+        )
     }
 }
 

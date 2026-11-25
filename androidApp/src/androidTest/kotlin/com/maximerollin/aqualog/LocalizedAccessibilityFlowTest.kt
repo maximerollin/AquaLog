@@ -391,7 +391,7 @@ class LocalizedAccessibilityFlowTest {
                 assertEssentialActionByTag("plan-lifetime")
                 scrollAndAssertEssentialAction(localized.getString(Res.string.restore_purchase))
                 assertEssentialActionByTag("choose-pro")
-                assertAction(localized.getString(Res.string.back_to_settings))
+                assertAction(localized.getString(Res.string.close))
                 captureAndInspect("pro-$language-$mode.png")
             }
         }
