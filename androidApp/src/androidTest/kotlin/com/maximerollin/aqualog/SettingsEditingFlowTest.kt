@@ -19,6 +19,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -73,6 +74,7 @@ class SettingsEditingFlowTest {
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasTestTag("range-sheet")).fetchSemanticsNodes().isEmpty()
             }
+            composeRule.onNodeWithTag("parameter-settings-list").performScrollToIndex(0)
             composeRule.onNodeWithTag("parameter-settings-back").performClick()
             composeRule.waitUntil(timeoutMillis = 10_000) {
                 composeRule.onAllNodes(hasTestTag("parameter-settings-list")).fetchSemanticsNodes().isEmpty()
@@ -206,7 +208,12 @@ class SettingsEditingFlowTest {
             composeRule.onNode(hasText("For a volume of (L)") and hasSetTextAction()).performTextInput("50")
             closeSoftKeyboard()
             composeRule.onNodeWithTag("calculator-dose-result").assertTextEquals("For this tank: 12, in the unit of the label")
+            // The header is the list's first item: on a short screen it is scrolled out of composition by now.
+            composeRule.onNodeWithTag("calculators-list").performScrollToIndex(0)
             composeRule.onNodeWithTag("calculators-back").performClick()
+            composeRule.waitUntil(timeoutMillis = 10_000) {
+                composeRule.onAllNodes(hasTestTag("calculators-list")).fetchSemanticsNodes().isEmpty()
+            }
         } finally {
             scenario.close()
         }
